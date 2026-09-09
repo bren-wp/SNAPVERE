@@ -39,6 +39,11 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenCaptureServic
 
     public static bool IsSupported()
     {
+        if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041))
+        {
+            return false;
+        }
+
         try
         {
             return GraphicsCaptureSession.IsSupported();
@@ -57,10 +62,10 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenCaptureServic
         ArgumentNullException.ThrowIfNull(display);
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (!IsSupported())
+        if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041) || !IsSupported())
         {
             throw new PlatformNotSupportedException(
-                "Windows.Graphics.Capture is not supported on this Windows installation.");
+                "Windows.Graphics.Capture monitor acquisition requires Windows 10 version 2004 (build 19041) or later.");
         }
 
         var bounds = display.Bounds.Normalize();
