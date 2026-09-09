@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Snapvere.Packaging</AssemblyName>
+    <RootNamespace>Snapvere.Packaging</RootNamespace>
+  </PropertyGroup>
+</Project>

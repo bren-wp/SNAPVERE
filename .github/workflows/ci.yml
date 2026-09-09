@@ -12,7 +12,7 @@ permissions:
 jobs:
   build-test:
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -22,7 +22,7 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Restore
+      - name: Restore solution
         run: dotnet restore SNAPVERE.sln
 
       - name: Build x64
@@ -30,3 +30,94 @@ jobs:
 
       - name: Test
         run: dotnet test tests/Snapvere.UnitTests/Snapvere.UnitTests.csproj --configuration Release --no-restore -p:Platform=x64 --logger "trx;LogFileName=snapvere-tests.trx"
+
+  build-x86:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore x86 app
+        run: dotnet restore src/Snapvere.App/Snapvere.App.csproj --runtime win-x86
+
+      - name: Build x86 app
+        run: dotnet build src/Snapvere.App/Snapvere.App.csproj --configuration Release --runtime win-x86 --no-restore -p:Platform=x86
+
+  package-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Publish self-contained SNAPVERE payload
+        shell: pwsh
+        run: |
+          $rid = "win-${{ matrix.arch }}"
+          dotnet publish src/Snapvere.App/Snapvere.App.csproj `
+            --configuration Release `
+            --runtime $rid `
+            -p:Platform=${{ matrix.arch }} `
+            -p:SelfContained=true `
+            -p:WindowsAppSDKSelfContained=true `
+            -p:PublishReadyToRun=true `
+            -p:DebugType=None `
+            -p:DebugSymbols=false `
+            --output "artifacts/app-${{ matrix.arch }}"
+
+      - name: Build embedded payload
+        shell: pwsh
+        run: |
+          Compress-Archive `
+            -Path "artifacts/app-${{ matrix.arch }}/*" `
+            -DestinationPath "artifacts/SNAPVERE-payload-${{ matrix.arch }}.zip" `
+            -CompressionLevel Optimal
+
+      - name: Publish Setup EXE
+        shell: pwsh
+        run: |
+          $payload = Join-Path $PWD "artifacts/SNAPVERE-payload-${{ matrix.arch }}.zip"
+          dotnet publish src/Snapvere.Setup/Snapvere.Setup.csproj `
+            --configuration Release `
+            --runtime "win-${{ matrix.arch }}" `
+            -p:Platform=${{ matrix.arch }} `
+            -p:SnapverePayloadPath="$payload" `
+            -p:Version=0.0.1 `
+            --output "artifacts/setup-${{ matrix.arch }}"
+
+      - name: Publish Portable EXE
+        shell: pwsh
+        run: |
+          $payload = Join-Path $PWD "artifacts/SNAPVERE-payload-${{ matrix.arch }}.zip"
+          dotnet publish src/Snapvere.Portable/Snapvere.Portable.csproj `
+            --configuration Release `
+            --runtime "win-${{ matrix.arch }}" `
+            -p:Platform=${{ matrix.arch }} `
+            -p:SnapverePayloadPath="$payload" `
+            -p:Version=0.0.1 `
+            --output "artifacts/portable-${{ matrix.arch }}"
+
+      - name: Validate package outputs
+        shell: pwsh
+        run: |
+          $setup = "artifacts/setup-${{ matrix.arch }}/SNAPVERE-Setup.exe"
+          $portable = "artifacts/portable-${{ matrix.arch }}/SNAPVERE-Portable.exe"
+          if (-not (Test-Path $setup)) { throw "Setup executable was not produced: $setup" }
+          if (-not (Test-Path $portable)) { throw "Portable executable was not produced: $portable" }
+          if ((Get-Item $setup).Length -lt 1MB) { throw "Setup executable is unexpectedly small." }
+          if ((Get-Item $portable).Length -lt 1MB) { throw "Portable executable is unexpectedly small." }

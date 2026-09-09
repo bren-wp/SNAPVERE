@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>SNAPVERE-Setup</AssemblyName>
+    <RootNamespace>Snapvere.Setup</RootNamespace>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Platforms>x86;x64</Platforms>
+    <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <PublishTrimmed>false</PublishTrimmed>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Snapvere.Packaging\Snapvere.Packaging.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\LICENSE" LogicalName="Snapvere.License.txt" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(SnapverePayloadPath)' != '' and Exists('$(SnapverePayloadPath)')">
+    <EmbeddedResource Include="$(SnapverePayloadPath)" LogicalName="Snapvere.Payload.zip" />
+  </ItemGroup>
+</Project>
