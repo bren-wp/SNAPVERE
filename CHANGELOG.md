@@ -4,14 +4,39 @@ All notable SNAPVERE changes are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- `Print Screen` global shortcut for Region Capture
+- independent `Ctrl+Shift+1` Region fallback when Print Screen is already registered by Windows or another application
+- compact tray-first Capture Center with Region/Screen actions, four recent captures, Open folder and Hide to tray
+- inline Region annotation tools: Pen, Line, Arrow, Box and Highlight
+- Region Copy to Windows clipboard in addition to local PNG Save
+- installed and Portable Region-editor runtime probe for x64 and x86 CI
+- Windows.Graphics.Capture + Direct3D 11 monitor backend
+- Microsoft.Windows.CsWin32 generated D3D interop
+- resilient preferred/fallback screen-capture orchestration tests
+
+### Changed
+
+- production `IScreenCaptureService` now prefers Windows.Graphics.Capture on Windows 10 version 2004 / build 19041 and later
+- GDI is retained as automatic compatibility fallback and as the supported path for Windows 10 builds below 19041
+- caller cancellation no longer risks being converted into a fallback capture attempt
+- Region editor visual tree is created programmatically instead of depending on a secondary Window XAML resource
+- Region capture is presented as the primary SNAPVERE workflow rather than a large dashboard-style launcher
+
+### Fixed
+
+- Region editor runtime termination caused by a templated WinUI `ProgressRing` during visual-tree materialization on packaged x64/x86 CI runs
+- generated COM interface accessibility errors in the WGC backend
+- WGC HRESULT helper compilation inside the capture service
+- Windows platform analyzer warning for cursor-capture support by guarding WGC monitor acquisition to build 19041+
+
 ### Planned
 
 - coordinated cross-monitor Region Capture
-- Windows.Graphics.Capture/D3D primary backend
 - Window Capture and smart targeting
 - Scrolling Capture
-- clipboard Quick Actions
-- annotation Editor
+- richer annotation tools including text and blur/pixelate
 - full History, Pin to Screen and OCR
 - automatic update mechanism
 
@@ -30,22 +55,22 @@ All notable SNAPVERE changes are documented here.
 
 - application startup no longer instantiates the former complex `MainWindow` composition path
 - the primary window uses the standard Windows title bar and conservative WinUI controls for improved runtime compatibility
-- WinUI runtime validation now runs on `windows-2022`, a supported Windows App SDK 1.8 server target, instead of the unsupported Server 2025 image behind `windows-latest`
+- WinUI runtime validation runs on `windows-2022`, a supported Windows App SDK 1.8 server target
 - release metadata, documentation and package names advance to 0.0.2
 
 ### Fixed
 
 - startup failure caused by the former `MainWindow.xaml` `Application.LoadComponent` path (`0x802B000A`)
 - subsequent deferred WinUI runtime termination (`0xC000027B`) observed on the unsupported Windows Server 2025 GitHub runner
-- release QA now distinguishes successful window activation from a process that crashes immediately after activation
-- x64 and x86 installed and Portable builds now pass the same normal-startup survival gate on the supported CI platform
+- release QA distinguishes successful window activation from a process that crashes immediately after activation
+- x64 and x86 installed and Portable builds pass the same normal-startup survival gate on the supported CI platform
 
 ### Security
 
-- release still requires explicit silent license acceptance
+- release requires explicit silent license acceptance
 - installer cleanup remains constrained by the SNAPVERE installation marker
 - Portable extraction traversal and expanded-size protections remain enabled
-- release artifacts continue to publish SHA-256 checksums
+- release artifacts publish SHA-256 checksums
 
 ## [0.0.1] - 2026-09-09
 
@@ -112,4 +137,4 @@ All notable SNAPVERE changes are documented here.
 - xUnit global using required for test compilation
 - WinUI `Application` type ambiguity introduced by the `Snapvere.Application` namespace
 - payload directory-entry suffix handling in release packaging
-- GUI Setup lifecycle validation now waits for the process and checks the real exit code instead of relying on PowerShell `$LASTEXITCODE`
+- GUI Setup lifecycle validation waits for the process and checks the real exit code instead of relying on PowerShell `$LASTEXITCODE`

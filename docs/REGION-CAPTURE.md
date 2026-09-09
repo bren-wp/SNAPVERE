@@ -2,71 +2,78 @@
 
 ## Status
 
-The primary-display freeze-frame Region Capture workflow is implemented in the current development branch. SNAPVERE now freezes the selected display, opens a borderless overlay over the exact physical display bounds, maps XAML pointer coordinates through the centralized DPI transformer, supports drag/move/eight-handle resize, crops pixels from the same frozen frame and persists the result through the atomic PNG writer.
+Region Capture is implemented for the primary display with a frozen-frame selection/editor workflow. SNAPVERE freezes the display before showing the overlay, maps WinUI pointer coordinates into physical pixels, supports drag/move/eight-handle resize, provides inline annotation tools, and finishes through Copy or Save.
 
-The current implementation intentionally targets the primary display only. Cross-monitor region selection, smart window/control targeting, magnifier/crosshair polish and virtual-desktop freeze composition remain follow-up work and are not presented as completed features.
+`Print Screen` is the preferred global Region shortcut. `Ctrl+Shift+1` is registered independently as a fallback so a Windows or third-party Print Screen conflict does not remove keyboard access to Region Capture.
 
-## Implemented workflow
+The current implementation intentionally targets one display per capture. Coordinated cross-monitor freeze composition and mixed-DPI selection spanning multiple monitors remain follow-up work.
+
+## Workflow
 
 ```text
-Region action
+Print Screen / Ctrl+Shift+1 / tray / launcher
   ↓
-hide SNAPVERE main window
+hide SNAPVERE launcher when visible
   ↓
 freeze primary display frame
   ↓
-open borderless always-on-top overlay
+open borderless always-on-top editor
   ↓
-dim non-selected area
+drag / move / resize physical-pixel selection
   ↓
-drag / move / resize selection
+optional Pen / Line / Arrow / Box / Highlight annotations
   ↓
-map logical XAML input → physical display pixels
-  ↓
-crop the same frozen frame
-  ↓
-encode PNG
-  ↓
-temp file + atomic move to Pictures\SNAPVERE
+Copy → Windows clipboard
+or
+Save → PNG → atomic move to Pictures\SNAPVERE
 ```
+
+The preview, crop and annotation render all originate from the same frozen `CaptureFrame`; the desktop is not recaptured after selection.
 
 ## Coordinate contract
 
-Region selection geometry uses physical pixels. XAML logical coordinates never enter `RegionSelectionGeometry` directly.
+Region geometry uses physical pixels. WinUI logical coordinates never enter `RegionSelectionGeometry` directly.
 
-`DpiCoordinateTransformer` is the central conversion layer and now supports both integer geometry and sub-DIP `double` pointer coordinates. This avoids rounding too early at 125%, 150%, 175% and 200% scaling.
+`DpiCoordinateTransformer` converts sub-DIP `double` pointer coordinates to physical display coordinates before geometry operations. This avoids premature rounding at common scaling factors including 125%, 150%, 175% and 200%.
 
-The overlay converts a local XAML pointer position into a physical display-local pixel position and then adds the display's physical desktop origin. Negative desktop origins therefore remain valid.
+The overlay adds the display's physical desktop origin after local conversion, so negative virtual-desktop coordinates remain valid.
 
 ## Selection interaction
 
-The overlay currently supports:
+The editor supports:
 
 - drag in any direction with normalization;
 - move an existing selection by dragging its body;
-- eight visible resize handles;
+- eight resize handles;
 - one-physical-pixel minimum size;
-- arrow-key movement by one physical pixel;
-- `Shift` + arrow movement by 10 physical pixels;
-- `Delete` to clear the active selection;
-- `Enter` to save;
-- double-click to save;
-- `Esc` to cancel without creating a file;
-- a live physical-pixel `W × H` badge.
+- Arrow movement by 1 physical pixel;
+- Shift+Arrow movement by 10 physical pixels;
+- Delete to clear the selection;
+- a live physical-pixel `W × H` badge;
+- Enter and double-click to save;
+- Esc to cancel without creating a file.
 
-The dimming layer is composed from four rectangles around the selection so the selected area remains an unobscured view of the frozen frame.
+The dimming layer is composed from four rectangles around the selected region so the active pixels remain unobscured.
 
-## Freeze frame and pixel extraction
+## Inline annotation
 
-`RegionCaptureWorkflow.PreparePrimaryDisplayAsync` captures the frame before the overlay is shown and rejects the session if the returned frame dimensions no longer match the display bounds.
+After selecting a region, the same overlay provides lightweight markup without opening a separate editor window:
 
-`SaveSelectionAsync` maps absolute desktop coordinates back into frame-local coordinates, then calls `CaptureFrameCropper`. The cropper copies BGRA8 scanlines while respecting source stride, so padded source frames remain correct.
+- Pen for freehand strokes;
+- Line;
+- Arrow;
+- Box/rectangle;
+- Highlight;
+- selectable annotation color;
+- Undo for annotation operations.
 
-The overlay preview and final crop therefore originate from the same `CaptureFrame` instance.
+Annotations are rendered against the selected frozen image for final Copy or Save output. Selection geometry remains independent from annotation geometry so editing tools do not alter the capture rectangle.
 
-## Persistence
+## Copy and Save
 
-Screen and Region workflows share `CaptureFileWriter`. PNG files are written to a uniquely named temporary file, flushed, and moved atomically into the final capture path. Failed writes perform best-effort temporary-file cleanup.
+**Copy** renders the selected image plus annotations and places the result on the Windows clipboard. It does not create a PNG file.
+
+**Save** renders the same result and persists it through `CaptureFileWriter`, which writes a temporary PNG, flushes it and atomically moves it to the final collision-safe path.
 
 Default output remains:
 
@@ -74,30 +81,47 @@ Default output remains:
 Pictures\SNAPVERE\SNAPVERE_yyyy-MM-dd_HHmmss.png
 ```
 
+## Capture backend
+
+Region preparation consumes `IScreenCaptureService`. On Windows 10 2004 / build 19041 and later, the production service prefers `WindowsGraphicsCaptureService`, which uses Windows.Graphics.Capture and Direct3D 11. Expected unsupported/native acquisition failures fall back to `GdiScreenCaptureService` through `ResilientScreenCaptureService`.
+
+On supported Windows builds older than 19041, the GDI compatibility backend remains available without raising the minimum application OS above Windows 10 1809 / build 17763.
+
+## Runtime stability
+
+The Region editor visual tree is created programmatically. This avoids dependence on a secondary Window XAML resource at runtime. CI also launches the actual editor in installed and Portable packages on x64 and x86 and waits for its root surface to load.
+
+A previous templated `ProgressRing` status element was removed after runtime QA showed it could terminate WinUI during editor materialization on the CI Windows Server environment. Status feedback now uses a simpler text surface that passes the installed/Portable runtime probe.
+
 ## Automated QA
 
-Automated coverage now includes:
+Automated coverage includes:
 
 - 100%, 125%, 150%, 175% and 200% DPI scaling;
-- sub-DIP pointer conversion at 125%;
+- sub-DIP pointer conversion;
 - negative virtual-desktop coordinates;
 - reverse drag and bounds clamping;
 - body move and eight-handle resize geometry;
 - minimum selection dimensions;
-- padded-stride frame cropping;
+- padded-stride BGRA8 cropping;
 - negative desktop origin → local crop mapping;
-- display/frame geometry change detection;
-- atomic PNG persistence and temporary-file cleanup checks.
+- display/frame geometry-change detection;
+- atomic PNG persistence and temporary-file cleanup;
+- WGC preferred/fallback orchestration and cancellation behavior;
+- x64/x86 installed Region-editor materialization;
+- x64/x86 Portable Region-editor materialization.
 
-## Remaining Region Capture work
+The hosted CI runtime probe validates editor startup, not a real interactive end-user WGC screenshot.
 
-The following is still required before the Region milestone is considered production-complete:
+## Remaining Region work
 
-1. one coordinated overlay/freeze model spanning multiple monitors;
+The following remains intentionally deferred:
+
+1. coordinated freeze/overlay composition spanning multiple monitors;
 2. cross-monitor selection across mixed DPI and negative X/Y origins;
-3. smart window/control targeting before manual drag;
-4. magnifier and crosshair cursor polish;
-5. touch/pen interaction QA;
-6. portrait and rotated monitor QA;
-7. high-contrast/accessibility review;
-8. Windows.Graphics.Capture/D3D primary acquisition path with GDI retained only as compatibility fallback.
+3. smart window/control targeting;
+4. magnifier and crosshair polish;
+5. richer editor tools such as text, blur/pixelate and numbered steps;
+6. touch/pen interaction QA;
+7. portrait and rotated monitor QA;
+8. high-contrast/accessibility review.
