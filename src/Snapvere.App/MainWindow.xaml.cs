@@ -17,6 +17,17 @@ public sealed partial class MainWindow : Window
     private RegionCaptureWindow? _regionCaptureWindow;
     private bool _captureInProgress;
 
+    private Grid TitleBarDragRegion = null!;
+    private TextBlock VersionText = null!;
+    private InfoBar CaptureStatus = null!;
+    private Button RegionCaptureButton = null!;
+    private Button ScreenCaptureButton = null!;
+    private ListView RecentCapturesList = null!;
+    private TextBlock RecentCapturesCountText = null!;
+    private Border HistoryEmptyState = null!;
+    private TextBlock HistoryEmptyTitle = null!;
+    private TextBlock HistoryEmptyMessage = null!;
+
     public MainWindow(
         ScreenCaptureWorkflow screenCaptureWorkflow,
         RegionCaptureWorkflow regionCaptureWorkflow,
@@ -27,6 +38,7 @@ public sealed partial class MainWindow : Window
         _captureHistoryService = captureHistoryService ?? throw new ArgumentNullException(nameof(captureHistoryService));
 
         InitializeComponent();
+        BuildCaptureCenter();
         ConfigureWindowChrome();
         VersionText.Text = $"v{typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "0.0.2"}";
         RefreshRecentCaptures();
@@ -88,6 +100,523 @@ public sealed partial class MainWindow : Window
             InfoBarSeverity.Warning,
             "System tray unavailable",
             "SNAPVERE could not create its Windows notification-area icon. Capture buttons and global hotkeys remain available.");
+
+    private void BuildCaptureCenter()
+    {
+        RootContent.RequestedTheme = ElementTheme.Dark;
+        RootContent.Background = Brush(0x0B, 0x0D, 0x12);
+        RootContent.RowDefinitions.Add(new RowDefinition { Height = new GridLength(48) });
+        RootContent.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+        BuildTitleBar();
+        BuildWorkspace();
+    }
+
+    private void BuildTitleBar()
+    {
+        TitleBarDragRegion = new Grid
+        {
+            Padding = new Thickness(18, 0, 148, 0),
+            Background = Brush(0x0B, 0x0D, 0x12)
+        };
+        TitleBarDragRegion.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        TitleBarDragRegion.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        TitleBarDragRegion.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var logo = new Border
+        {
+            Width = 28,
+            Height = 28,
+            CornerRadius = new CornerRadius(8),
+            Background = Brush(0x7C, 0x6C, 0xFF),
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = new TextBlock
+            {
+                Text = "S",
+                Foreground = Brush(0xFF, 0xFF, 0xFF),
+                FontSize = 14,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            }
+        };
+
+        var brand = new TextBlock
+        {
+            Text = "SNAPVERE",
+            Foreground = Brush(0xFF, 0xFF, 0xFF),
+            FontSize = 13,
+            Margin = new Thickness(10, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(brand, 1);
+
+        VersionText = new TextBlock
+        {
+            Text = "v0.0.2",
+            Foreground = Brush(0xD8, 0xDC, 0xE5),
+            FontSize = 11,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var versionBadge = new Border
+        {
+            Padding = new Thickness(10, 4, 10, 4),
+            CornerRadius = new CornerRadius(10),
+            Background = Brush(0x20, 0x26, 0x33),
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = VersionText
+        };
+        Grid.SetColumn(versionBadge, 2);
+
+        TitleBarDragRegion.Children.Add(logo);
+        TitleBarDragRegion.Children.Add(brand);
+        TitleBarDragRegion.Children.Add(versionBadge);
+
+        Grid.SetRow(TitleBarDragRegion, 0);
+        RootContent.Children.Add(TitleBarDragRegion);
+    }
+
+    private void BuildWorkspace()
+    {
+        var workspace = new Grid();
+        workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(220) });
+        workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        Grid.SetRow(workspace, 1);
+
+        workspace.Children.Add(BuildSidebar());
+
+        var scroller = new ScrollViewer
+        {
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Content = BuildMainContent()
+        };
+        Grid.SetColumn(scroller, 1);
+        workspace.Children.Add(scroller);
+
+        RootContent.Children.Add(workspace);
+    }
+
+    private Border BuildSidebar()
+    {
+        var sidebarGrid = new Grid();
+        sidebarGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        sidebarGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        sidebarGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var navigation = new StackPanel { Spacing = 10 };
+        navigation.Children.Add(new TextBlock
+        {
+            Text = "CAPTURE",
+            Foreground = Brush(0x98, 0xA2, 0xB3),
+            FontSize = 10,
+            Margin = new Thickness(8, 0, 0, 4)
+        });
+        navigation.Children.Add(new Border
+        {
+            Padding = new Thickness(12, 10, 12, 10),
+            CornerRadius = new CornerRadius(10),
+            Background = Brush(0x26, 0x21, 0x42),
+            Child = new TextBlock
+            {
+                Text = "Capture center",
+                Foreground = Brush(0xFF, 0xFF, 0xFF)
+            }
+        });
+        navigation.Children.Add(new TextBlock
+        {
+            Text = "Region  ·  Ctrl + Shift + 1",
+            Foreground = Brush(0x98, 0xA2, 0xB3),
+            FontSize = 12,
+            Margin = new Thickness(10, 4, 0, 0)
+        });
+        navigation.Children.Add(new TextBlock
+        {
+            Text = "Screen  ·  Ctrl + Shift + 4",
+            Foreground = Brush(0x98, 0xA2, 0xB3),
+            FontSize = 12,
+            Margin = new Thickness(10, 0, 0, 0)
+        });
+
+        var localFirst = new Border
+        {
+            Padding = new Thickness(12),
+            CornerRadius = new CornerRadius(12),
+            Background = Brush(0x18, 0x1C, 0x25),
+            BorderBrush = Brush(0x2A, 0x31, 0x40),
+            BorderThickness = new Thickness(1)
+        };
+        var localStack = new StackPanel { Spacing = 5 };
+        localStack.Children.Add(new TextBlock
+        {
+            Text = "Local-first",
+            Foreground = Brush(0xFF, 0xFF, 0xFF),
+            FontSize = 12
+        });
+        localStack.Children.Add(new TextBlock
+        {
+            Text = "No account, telemetry, or cloud upload is required for capture.",
+            Foreground = Brush(0x98, 0xA2, 0xB3),
+            FontSize = 11,
+            TextWrapping = TextWrapping.Wrap
+        });
+        localFirst.Child = localStack;
+        Grid.SetRow(localFirst, 2);
+
+        sidebarGrid.Children.Add(navigation);
+        sidebarGrid.Children.Add(localFirst);
+
+        return new Border
+        {
+            Background = Brush(0x12, 0x15, 0x1C),
+            BorderBrush = Brush(0x2A, 0x31, 0x40),
+            BorderThickness = new Thickness(0, 1, 1, 0),
+            Padding = new Thickness(16, 22, 16, 18),
+            Child = sidebarGrid
+        };
+    }
+
+    private Grid BuildMainContent()
+    {
+        var content = new Grid
+        {
+            Padding = new Thickness(34, 28, 34, 34),
+            MaxWidth = 1080,
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+        content.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        content.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        content.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        content.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        content.Children.Add(BuildHeader());
+
+        CaptureStatus = new InfoBar
+        {
+            Margin = new Thickness(0, 20, 0, 0),
+            IsOpen = false,
+            IsClosable = true
+        };
+        Grid.SetRow(CaptureStatus, 1);
+        content.Children.Add(CaptureStatus);
+
+        var captureGrid = new Grid
+        {
+            Margin = new Thickness(0, 24, 0, 0),
+            ColumnSpacing = 14
+        };
+        captureGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3, GridUnitType.Star) });
+        captureGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
+        captureGrid.Children.Add(BuildRegionCard());
+
+        var rightCards = new StackPanel { Spacing = 14 };
+        rightCards.Children.Add(BuildScreenCard());
+        rightCards.Children.Add(BuildPrivacyCard());
+        Grid.SetColumn(rightCards, 1);
+        captureGrid.Children.Add(rightCards);
+        Grid.SetRow(captureGrid, 2);
+        content.Children.Add(captureGrid);
+
+        var history = BuildHistorySection();
+        Grid.SetRow(history, 3);
+        content.Children.Add(history);
+
+        return content;
+    }
+
+    private Grid BuildHeader()
+    {
+        var header = new Grid();
+        var text = new StackPanel { Spacing = 6 };
+        text.Children.Add(new TextBlock
+        {
+            Text = "Capture center",
+            Foreground = Brush(0xFF, 0xFF, 0xFF),
+            FontSize = 32
+        });
+        text.Children.Add(new TextBlock
+        {
+            Text = "Fast capture, precise selection, local PNG output.",
+            Foreground = Brush(0x98, 0xA2, 0xB3),
+            FontSize = 15
+        });
+
+        var openFolder = new Button
+        {
+            Content = "Open folder",
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        openFolder.Click += OpenCaptureFolderButton_Click;
+
+        header.Children.Add(text);
+        header.Children.Add(openFolder);
+        return header;
+    }
+
+    private Border BuildRegionCard()
+    {
+        var layout = new Grid();
+        layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var top = new Grid();
+        top.Children.Add(new Border
+        {
+            Width = 44,
+            Height = 44,
+            CornerRadius = new CornerRadius(12),
+            Background = Brush(0x46, 0x3F, 0x78),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Child = new TextBlock
+            {
+                Text = "R",
+                Foreground = Brush(0xFF, 0xFF, 0xFF),
+                FontSize = 18,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            }
+        });
+        top.Children.Add(new Border
+        {
+            Padding = new Thickness(9, 5, 9, 5),
+            CornerRadius = new CornerRadius(8),
+            Background = Brush(0x42, 0x3B, 0x69),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Child = new TextBlock
+            {
+                Text = "Ctrl + Shift + 1",
+                Foreground = Brush(0xFF, 0xFF, 0xFF),
+                FontSize = 11
+            }
+        });
+
+        var copy = new StackPanel
+        {
+            Margin = new Thickness(0, 22, 0, 20),
+            Spacing = 8,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        copy.Children.Add(new TextBlock
+        {
+            Text = "Capture a precise region",
+            Foreground = Brush(0xFF, 0xFF, 0xFF),
+            FontSize = 24
+        });
+        copy.Children.Add(new TextBlock
+        {
+            Text = "Freeze the display, drag an exact area, fine-tune the selection, then save it locally as PNG.",
+            Foreground = Brush(0xD8, 0xD6, 0xF2),
+            FontSize = 13,
+            TextWrapping = TextWrapping.Wrap,
+            MaxWidth = 560
+        });
+        Grid.SetRow(copy, 1);
+
+        RegionCaptureButton = new Button
+        {
+            Content = "Select region",
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Padding = new Thickness(18, 10, 18, 10),
+            Background = Brush(0x7C, 0x6C, 0xFF),
+            Foreground = Brush(0xFF, 0xFF, 0xFF)
+        };
+        RegionCaptureButton.Click += RegionCaptureButton_Click;
+        Grid.SetRow(RegionCaptureButton, 2);
+
+        layout.Children.Add(top);
+        layout.Children.Add(copy);
+        layout.Children.Add(RegionCaptureButton);
+
+        return new Border
+        {
+            MinHeight = 260,
+            Padding = new Thickness(26),
+            CornerRadius = new CornerRadius(18),
+            Background = Brush(0x30, 0x2A, 0x63),
+            BorderBrush = Brush(0x57, 0x49, 0xC9),
+            BorderThickness = new Thickness(1),
+            Child = layout
+        };
+    }
+
+    private Border BuildScreenCard()
+    {
+        var stack = new StackPanel { Spacing = 14 };
+        var top = new Grid();
+        top.Children.Add(new Border
+        {
+            Width = 40,
+            Height = 40,
+            CornerRadius = new CornerRadius(11),
+            Background = Brush(0x26, 0x21, 0x42),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Child = new TextBlock
+            {
+                Text = "S",
+                Foreground = Brush(0xA8, 0x9E, 0xFF),
+                FontSize = 16,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            }
+        });
+        top.Children.Add(new Border
+        {
+            Padding = new Thickness(8, 4, 8, 4),
+            CornerRadius = new CornerRadius(7),
+            Background = Brush(0x20, 0x26, 0x33),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = new TextBlock
+            {
+                Text = "Ctrl + Shift + 4",
+                Foreground = Brush(0x98, 0xA2, 0xB3),
+                FontSize = 10
+            }
+        });
+        stack.Children.Add(top);
+
+        var copy = new StackPanel { Spacing = 5 };
+        copy.Children.Add(new TextBlock
+        {
+            Text = "Full screen",
+            Foreground = Brush(0xFF, 0xFF, 0xFF),
+            FontSize = 19
+        });
+        copy.Children.Add(new TextBlock
+        {
+            Text = "Capture the primary display directly to Pictures\\SNAPVERE.",
+            Foreground = Brush(0x98, 0xA2, 0xB3),
+            FontSize = 12,
+            TextWrapping = TextWrapping.Wrap
+        });
+        stack.Children.Add(copy);
+
+        ScreenCaptureButton = new Button
+        {
+            Content = "Capture screen",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Padding = new Thickness(12, 9, 12, 9)
+        };
+        ScreenCaptureButton.Click += ScreenCaptureButton_Click;
+        stack.Children.Add(ScreenCaptureButton);
+
+        return Card(stack, 22);
+    }
+
+    private Border BuildPrivacyCard()
+    {
+        var stack = new StackPanel { Spacing = 8 };
+        stack.Children.Add(new TextBlock
+        {
+            Text = "Private by default",
+            Foreground = Brush(0xFF, 0xFF, 0xFF),
+            FontSize = 13
+        });
+        stack.Children.Add(new TextBlock
+        {
+            Text = "Captures stay on this PC. SNAPVERE does not require an account or telemetry connection.",
+            Foreground = Brush(0x98, 0xA2, 0xB3),
+            FontSize = 11,
+            TextWrapping = TextWrapping.Wrap
+        });
+        return Card(stack, 18);
+    }
+
+    private StackPanel BuildHistorySection()
+    {
+        var section = new StackPanel
+        {
+            Margin = new Thickness(0, 30, 0, 0),
+            Spacing = 12
+        };
+
+        var header = new Grid();
+        var titleStack = new StackPanel { Spacing = 3 };
+        titleStack.Children.Add(new TextBlock
+        {
+            Text = "Recent captures",
+            Foreground = Brush(0xFF, 0xFF, 0xFF),
+            FontSize = 21
+        });
+        RecentCapturesCountText = new TextBlock
+        {
+            Text = "Local screenshots from Pictures\\SNAPVERE",
+            Foreground = Brush(0x98, 0xA2, 0xB3),
+            FontSize = 12
+        };
+        titleStack.Children.Add(RecentCapturesCountText);
+
+        var refresh = new Button
+        {
+            Content = "Refresh",
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        refresh.Click += RefreshHistoryButton_Click;
+
+        header.Children.Add(titleStack);
+        header.Children.Add(refresh);
+        section.Children.Add(header);
+
+        RecentCapturesList = new ListView
+        {
+            SelectionMode = ListViewSelectionMode.None,
+            IsItemClickEnabled = true,
+            MaxHeight = 330,
+            Visibility = Visibility.Collapsed
+        };
+        RecentCapturesList.ItemClick += RecentCapturesList_ItemClick;
+        section.Children.Add(RecentCapturesList);
+
+        HistoryEmptyTitle = new TextBlock
+        {
+            Text = "No local captures yet",
+            Foreground = Brush(0xFF, 0xFF, 0xFF),
+            FontSize = 16,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        HistoryEmptyMessage = new TextBlock
+        {
+            Text = "Your completed Region and Screen captures will appear here.",
+            Foreground = Brush(0x98, 0xA2, 0xB3),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            MaxWidth = 460
+        };
+        var emptyStack = new StackPanel
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Spacing = 7
+        };
+        emptyStack.Children.Add(HistoryEmptyTitle);
+        emptyStack.Children.Add(HistoryEmptyMessage);
+        HistoryEmptyState = new Border
+        {
+            Padding = new Thickness(24),
+            CornerRadius = new CornerRadius(16),
+            Background = Brush(0x18, 0x1C, 0x25),
+            BorderBrush = Brush(0x2A, 0x31, 0x40),
+            BorderThickness = new Thickness(1),
+            Child = emptyStack
+        };
+        section.Children.Add(HistoryEmptyState);
+
+        return section;
+    }
+
+    private static Border Card(UIElement child, double padding)
+        => new()
+        {
+            Padding = new Thickness(padding),
+            CornerRadius = new CornerRadius(18),
+            Background = Brush(0x18, 0x1C, 0x25),
+            BorderBrush = Brush(0x2A, 0x31, 0x40),
+            BorderThickness = new Thickness(1),
+            Child = child
+        };
+
+    private static SolidColorBrush Brush(byte red, byte green, byte blue)
+        => new(Windows.UI.Color.FromArgb(0xFF, red, green, blue));
 
     private void ConfigureWindowChrome()
     {

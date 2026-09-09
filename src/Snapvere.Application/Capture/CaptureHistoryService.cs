@@ -8,6 +8,9 @@ public sealed record CaptureHistoryItem(
 {
     public string MetadataText => $"{ModifiedAt.LocalDateTime:g} · {FormatFileSize(FileSizeBytes)}";
 
+    public override string ToString()
+        => $"{FileName}    {MetadataText}";
+
     private static string FormatFileSize(long bytes)
     {
         if (bytes < 1024)
