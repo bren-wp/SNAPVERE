@@ -133,7 +133,7 @@ jobs:
           if ((Get-Item $setup).Length -lt 1MB) { throw "Setup executable is unexpectedly small." }
           if ((Get-Item $portable).Length -lt 1MB) { throw "Portable executable is unexpectedly small." }
 
-      - name: Smoke test Setup, activated WinUI startup, normal launch, uninstall and Portable startup
+      - name: Smoke test Setup, main window, region editor, uninstall and Portable startup
         shell: pwsh
         run: |
           function Write-StartupLogIfPresent {
@@ -183,8 +183,47 @@ jobs:
             }
           }
 
+          function Invoke-RegionOverlayProbe([string]$FilePath, [string]$Name) {
+            $marker = Join-Path $env:TEMP "SNAPVERE/region-overlay-probe.ready"
+            Remove-Item $marker -Force -ErrorAction SilentlyContinue
+            $env:SNAPVERE_REGION_OVERLAY_PROBE = "1"
+            $process = $null
+
+            try {
+              $process = Start-Process -FilePath $FilePath -ArgumentList @("--region-overlay-probe") -PassThru
+              if (-not $process.WaitForExit(20000)) {
+                Write-StartupLogIfPresent
+                try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
+                throw "$Name region-overlay probe timed out after 20 seconds."
+              }
+
+              if ($process.ExitCode -ne 0) {
+                Write-StartupLogIfPresent
+                throw "$Name region-overlay probe failed with exit code $($process.ExitCode)."
+              }
+
+              if (-not (Test-Path $marker)) {
+                Write-StartupLogIfPresent
+                throw "$Name exited successfully but never loaded the Region Capture editor."
+              }
+
+              $markerText = Get-Content $marker -Raw
+              if ($markerText -notmatch "SNAPVERE 0\.0\.2 REGION_OVERLAY_READY") {
+                throw "$Name region-overlay marker is invalid: $markerText"
+              }
+
+              Write-Host "$Name region-overlay marker: $markerText"
+            }
+            finally {
+              Remove-Item Env:SNAPVERE_REGION_OVERLAY_PROBE -ErrorAction SilentlyContinue
+              Remove-Item $marker -Force -ErrorAction SilentlyContinue
+              if ($null -ne $process) { $process.Dispose() }
+            }
+          }
+
           function Invoke-NormalAppLaunch([string]$FilePath, [string]$Name) {
             Remove-Item Env:SNAPVERE_STARTUP_PROBE -ErrorAction SilentlyContinue
+            Remove-Item Env:SNAPVERE_REGION_OVERLAY_PROBE -ErrorAction SilentlyContinue
             $process = Start-Process -FilePath $FilePath -PassThru
             try {
               if ($process.WaitForExit(5000)) {
@@ -206,6 +245,7 @@ jobs:
 
           function Invoke-NormalPortableLaunch([string]$FilePath) {
             Remove-Item Env:SNAPVERE_STARTUP_PROBE -ErrorAction SilentlyContinue
+            Remove-Item Env:SNAPVERE_REGION_OVERLAY_PROBE -ErrorAction SilentlyContinue
             $launcher = Start-Process -FilePath $FilePath -PassThru
             try {
               if (-not $launcher.WaitForExit(15000)) {
@@ -253,6 +293,7 @@ jobs:
           }
 
           Invoke-StartupProbe $installedApp "Installed SNAPVERE"
+          Invoke-RegionOverlayProbe $installedApp "Installed SNAPVERE"
           Invoke-NormalAppLaunch $installedApp "Installed SNAPVERE"
 
           $installedSetup = Join-Path $install "SNAPVERE-Setup.exe"
@@ -266,4 +307,5 @@ jobs:
           if (Test-Path $installedApp) { throw "Snapvere.exe remains after uninstall cleanup timeout." }
 
           Invoke-StartupProbe $portable "Portable SNAPVERE"
+          Invoke-RegionOverlayProbe $portable "Portable SNAPVERE"
           Invoke-NormalPortableLaunch $portable

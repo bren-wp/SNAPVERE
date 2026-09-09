@@ -10,6 +10,7 @@ internal static class Program
     private const string PayloadResourceName = "Snapvere.Payload.zip";
     private const string AppExecutableName = "Snapvere.exe";
     private const string StartupProbeEnvironmentVariable = "SNAPVERE_STARTUP_PROBE";
+    private const string RegionOverlayProbeEnvironmentVariable = "SNAPVERE_REGION_OVERLAY_PROBE";
 
     [STAThread]
     private static void Main(string[] args)
@@ -104,18 +105,18 @@ internal static class Program
         using var process = Process.Start(startInfo)
             ?? throw new InvalidOperationException("Windows could not create the SNAPVERE process.");
 
-        if (IsStartupProbeRequested(args))
+        if (IsValidationProbeRequested(args))
         {
             if (!process.WaitForExit(20_000))
             {
                 TryTerminate(process);
-                throw new TimeoutException("SNAPVERE did not complete its startup probe within 20 seconds.");
+                throw new TimeoutException("SNAPVERE did not complete its validation probe within 20 seconds.");
             }
 
             if (process.ExitCode != 0)
             {
                 throw new InvalidOperationException(
-                    $"SNAPVERE startup probe failed with exit code {process.ExitCode}.");
+                    $"SNAPVERE validation probe failed with exit code {process.ExitCode}.");
             }
 
             Environment.ExitCode = 0;
@@ -130,18 +131,23 @@ internal static class Program
         }
     }
 
-    private static bool IsStartupProbeRequested(IReadOnlyList<string> args)
+    private static bool IsValidationProbeRequested(IReadOnlyList<string> args)
     {
         if (string.Equals(
                 Environment.GetEnvironmentVariable(StartupProbeEnvironmentVariable),
+                "1",
+                StringComparison.Ordinal) ||
+            string.Equals(
+                Environment.GetEnvironmentVariable(RegionOverlayProbeEnvironmentVariable),
                 "1",
                 StringComparison.Ordinal))
         {
             return true;
         }
 
-        return args.Any(
-            argument => string.Equals(argument, "--startup-probe", StringComparison.OrdinalIgnoreCase));
+        return args.Any(argument =>
+            string.Equals(argument, "--startup-probe", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(argument, "--region-overlay-probe", StringComparison.OrdinalIgnoreCase));
     }
 
     private static void TryTerminate(Process process)
