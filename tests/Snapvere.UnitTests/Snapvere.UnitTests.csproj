@@ -16,5 +16,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Snapvere.Capture\Snapvere.Capture.csproj" />
     <ProjectReference Include="..\..\src\Snapvere.Domain\Snapvere.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Snapvere.Imaging\Snapvere.Imaging.csproj" />
   </ItemGroup>
 </Project>
