@@ -4,6 +4,8 @@ VisualStudioVersion = 17.0.0.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snapvere.App", "src\Snapvere.App\Snapvere.App.csproj", "{8B830A62-2D29-4E52-A33A-63E2F854F427}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snapvere.Application", "src\Snapvere.Application\Snapvere.Application.csproj", "{D60654A8-381F-45A7-9480-F5A5CCB35C08}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snapvere.Domain", "src\Snapvere.Domain\Snapvere.Domain.csproj", "{A043C255-936A-493F-B0A7-0A4188F51BC1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snapvere.Capture", "src\Snapvere.Capture\Snapvere.Capture.csproj", "{4196A5B0-B2E1-4FA6-8BB8-353FBD5DFA96}"
@@ -30,6 +32,14 @@ Global
     {8B830A62-2D29-4E52-A33A-63E2F854F427}.Release|ARM64.Build.0 = Release|ARM64
     {8B830A62-2D29-4E52-A33A-63E2F854F427}.Release|x64.ActiveCfg = Release|x64
     {8B830A62-2D29-4E52-A33A-63E2F854F427}.Release|x64.Build.0 = Release|x64
+    {D60654A8-381F-45A7-9480-F5A5CCB35C08}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+    {D60654A8-381F-45A7-9480-F5A5CCB35C08}.Debug|ARM64.Build.0 = Debug|Any CPU
+    {D60654A8-381F-45A7-9480-F5A5CCB35C08}.Debug|x64.ActiveCfg = Debug|Any CPU
+    {D60654A8-381F-45A7-9480-F5A5CCB35C08}.Debug|x64.Build.0 = Debug|Any CPU
+    {D60654A8-381F-45A7-9480-F5A5CCB35C08}.Release|ARM64.ActiveCfg = Release|Any CPU
+    {D60654A8-381F-45A7-9480-F5A5CCB35C08}.Release|ARM64.Build.0 = Release|Any CPU
+    {D60654A8-381F-45A7-9480-F5A5CCB35C08}.Release|x64.ActiveCfg = Release|Any CPU
+    {D60654A8-381F-45A7-9480-F5A5CCB35C08}.Release|x64.Build.0 = Release|Any CPU
     {A043C255-936A-493F-B0A7-0A4188F51BC1}.Debug|ARM64.ActiveCfg = Debug|Any CPU
     {A043C255-936A-493F-B0A7-0A4188F51BC1}.Debug|ARM64.Build.0 = Debug|Any CPU
     {A043C255-936A-493F-B0A7-0A4188F51BC1}.Debug|x64.ActiveCfg = Debug|Any CPU

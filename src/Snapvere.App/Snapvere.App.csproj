@@ -16,6 +16,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Snapvere.Application\Snapvere.Application.csproj" />
     <ProjectReference Include="..\Snapvere.Capture\Snapvere.Capture.csproj" />
     <ProjectReference Include="..\Snapvere.Domain\Snapvere.Domain.csproj" />
     <ProjectReference Include="..\Snapvere.Imaging\Snapvere.Imaging.csproj" />

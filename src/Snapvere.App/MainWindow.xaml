@@ -34,6 +34,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
           </Grid.RowDefinitions>
 
           <StackPanel Spacing="6">
@@ -42,7 +43,14 @@
             <TextBlock Text="Fast, precise screen capture for Windows." FontSize="15" Opacity="0.72" />
           </StackPanel>
 
-          <Grid Grid.Row="1" Margin="0,28,0,0" ColumnSpacing="12" RowSpacing="12">
+          <InfoBar
+              x:Name="CaptureStatus"
+              Grid.Row="1"
+              Margin="0,20,0,0"
+              IsOpen="False"
+              IsClosable="True" />
+
+          <Grid Grid.Row="2" Margin="0,28,0,0" ColumnSpacing="12" RowSpacing="12">
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="*" />
               <ColumnDefinition Width="*" />
@@ -52,38 +60,45 @@
               <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Button Grid.Row="0" Grid.Column="0" MinHeight="82" HorizontalAlignment="Stretch" AutomationProperties.Name="Capture region">
+            <Button Grid.Row="0" Grid.Column="0" MinHeight="82" HorizontalAlignment="Stretch" IsEnabled="False" AutomationProperties.Name="Region capture in development">
               <StackPanel Spacing="4">
                 <TextBlock Text="Region" FontSize="17" FontWeight="SemiBold" />
-                <TextBlock Text="Select a precise area" Opacity="0.68" />
+                <TextBlock Text="Selection engine ready — overlay in development" Opacity="0.68" TextWrapping="Wrap" />
               </StackPanel>
             </Button>
-            <Button Grid.Row="0" Grid.Column="1" MinHeight="82" HorizontalAlignment="Stretch" AutomationProperties.Name="Capture window">
+            <Button Grid.Row="0" Grid.Column="1" MinHeight="82" HorizontalAlignment="Stretch" IsEnabled="False" AutomationProperties.Name="Window capture in development">
               <StackPanel Spacing="4">
                 <TextBlock Text="Window" FontSize="17" FontWeight="SemiBold" />
-                <TextBlock Text="Capture an application window" Opacity="0.68" />
+                <TextBlock Text="Window targeting in development" Opacity="0.68" />
               </StackPanel>
             </Button>
-            <Button Grid.Row="1" Grid.Column="0" MinHeight="82" HorizontalAlignment="Stretch" AutomationProperties.Name="Capture screen">
+            <Button
+                x:Name="ScreenCaptureButton"
+                Grid.Row="1"
+                Grid.Column="0"
+                MinHeight="82"
+                HorizontalAlignment="Stretch"
+                Click="ScreenCaptureButton_Click"
+                AutomationProperties.Name="Capture primary screen to Pictures SNAPVERE">
               <StackPanel Spacing="4">
                 <TextBlock Text="Screen" FontSize="17" FontWeight="SemiBold" />
-                <TextBlock Text="Capture the active display" Opacity="0.68" />
+                <TextBlock Text="Capture primary display to Pictures\SNAPVERE" Opacity="0.68" TextWrapping="Wrap" />
               </StackPanel>
             </Button>
-            <Button Grid.Row="1" Grid.Column="1" MinHeight="82" HorizontalAlignment="Stretch" IsEnabled="False" AutomationProperties.Name="Scrolling capture planned">
+            <Button Grid.Row="1" Grid.Column="1" MinHeight="82" HorizontalAlignment="Stretch" IsEnabled="False" AutomationProperties.Name="Scrolling capture in development">
               <StackPanel Spacing="4">
                 <TextBlock Text="Scroll" FontSize="17" FontWeight="SemiBold" />
-                <TextBlock Text="Planned — not exposed as a fake feature" Opacity="0.68" />
+                <TextBlock Text="Planned — not exposed as a fake feature" Opacity="0.68" TextWrapping="Wrap" />
               </StackPanel>
             </Button>
           </Grid>
 
-          <StackPanel Grid.Row="2" Margin="0,34,0,0" Spacing="10">
+          <StackPanel Grid.Row="3" Margin="0,34,0,0" Spacing="10">
             <TextBlock Text="Recent captures" FontSize="20" FontWeight="SemiBold" />
             <Border Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
               <StackPanel HorizontalAlignment="Center" Spacing="8">
-                <TextBlock Text="No captures yet." FontSize="17" FontWeight="SemiBold" HorizontalAlignment="Center" />
-                <TextBlock Text="Press Print Screen or choose a capture mode to create your first screenshot." TextWrapping="Wrap" TextAlignment="Center" Opacity="0.68" MaxWidth="420" />
+                <TextBlock Text="History UI not enabled yet." FontSize="17" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                <TextBlock Text="Completed screen captures are saved locally. History will appear only after its storage workflow is implemented." TextWrapping="Wrap" TextAlignment="Center" Opacity="0.68" MaxWidth="480" />
               </StackPanel>
             </Border>
           </StackPanel>

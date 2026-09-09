@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Snapvere.Application</AssemblyName>
+    <RootNamespace>Snapvere.Application</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Snapvere.Capture\Snapvere.Capture.csproj" />
+    <ProjectReference Include="..\Snapvere.Domain\Snapvere.Domain.csproj" />
+    <ProjectReference Include="..\Snapvere.Imaging\Snapvere.Imaging.csproj" />
+    <ProjectReference Include="..\Snapvere.Shared\Snapvere.Shared.csproj" />
+  </ItemGroup>
+</Project>
