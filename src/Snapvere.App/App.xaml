@@ -6,13 +6,37 @@
     <ResourceDictionary>
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Default">
-          <SolidColorBrush x:Key="SnapvereAccentBrush" Color="#6750D8" />
+          <SolidColorBrush x:Key="SnapvereAccentBrush" Color="#7C6CFF" />
+          <SolidColorBrush x:Key="SnapvereCanvasBrush" Color="#0B0D12" />
+          <SolidColorBrush x:Key="SnapvereSurfaceBrush" Color="#12151C" />
+          <SolidColorBrush x:Key="SnapvereSurfaceRaisedBrush" Color="#181C25" />
+          <SolidColorBrush x:Key="SnapvereSurfaceSoftBrush" Color="#202633" />
+          <SolidColorBrush x:Key="SnapvereBorderBrush" Color="#2A3140" />
+          <SolidColorBrush x:Key="SnapvereTextSecondaryBrush" Color="#98A2B3" />
+          <SolidColorBrush x:Key="SnapvereAccentSoftBrush" Color="#262142" />
+          <SolidColorBrush x:Key="SnapvereSuccessBrush" Color="#45D6A2" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
-          <SolidColorBrush x:Key="SnapvereAccentBrush" Color="#5C45CF" />
+          <SolidColorBrush x:Key="SnapvereAccentBrush" Color="#6557E8" />
+          <SolidColorBrush x:Key="SnapvereCanvasBrush" Color="#F6F7FA" />
+          <SolidColorBrush x:Key="SnapvereSurfaceBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="SnapvereSurfaceRaisedBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="SnapvereSurfaceSoftBrush" Color="#EEF0F5" />
+          <SolidColorBrush x:Key="SnapvereBorderBrush" Color="#DDE1E8" />
+          <SolidColorBrush x:Key="SnapvereTextSecondaryBrush" Color="#667085" />
+          <SolidColorBrush x:Key="SnapvereAccentSoftBrush" Color="#ECE9FF" />
+          <SolidColorBrush x:Key="SnapvereSuccessBrush" Color="#137A5B" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="HighContrast">
-          <SolidColorBrush x:Key="SnapvereAccentBrush" Color="{ThemeResource SystemAccentColor}" />
+          <SolidColorBrush x:Key="SnapvereAccentBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+          <SolidColorBrush x:Key="SnapvereCanvasBrush" Color="{ThemeResource SystemColorWindowColor}" />
+          <SolidColorBrush x:Key="SnapvereSurfaceBrush" Color="{ThemeResource SystemColorWindowColor}" />
+          <SolidColorBrush x:Key="SnapvereSurfaceRaisedBrush" Color="{ThemeResource SystemColorButtonFaceColor}" />
+          <SolidColorBrush x:Key="SnapvereSurfaceSoftBrush" Color="{ThemeResource SystemColorButtonFaceColor}" />
+          <SolidColorBrush x:Key="SnapvereBorderBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+          <SolidColorBrush x:Key="SnapvereTextSecondaryBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+          <SolidColorBrush x:Key="SnapvereAccentSoftBrush" Color="{ThemeResource SystemColorButtonFaceColor}" />
+          <SolidColorBrush x:Key="SnapvereSuccessBrush" Color="{ThemeResource SystemColorHighlightColor}" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>

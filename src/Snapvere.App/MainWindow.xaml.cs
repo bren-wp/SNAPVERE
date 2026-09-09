@@ -1,8 +1,11 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Snapvere.Application.Capture;
 using Snapvere.Capture.Hotkeys;
 using Snapvere.Domain.Capture;
+using System.Diagnostics;
+using Windows.Graphics;
 
 namespace Snapvere.App;
 
@@ -24,8 +27,8 @@ public sealed partial class MainWindow : Window
         _captureHistoryService = captureHistoryService ?? throw new ArgumentNullException(nameof(captureHistoryService));
 
         InitializeComponent();
-        VersionText.Text = $"v{typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "0.0.1"}";
-        RootNavigation.SelectedItem = RootNavigation.MenuItems[0];
+        ConfigureWindowChrome();
+        VersionText.Text = $"v{typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "0.0.2"}";
         RefreshRecentCaptures();
     }
 
@@ -68,26 +71,47 @@ public sealed partial class MainWindow : Window
             ", ",
             report.Conflicts.Select(conflict => conflict.Binding.GestureText));
 
-        CaptureStatus.IsOpen = true;
-        CaptureStatus.Severity = InfoBarSeverity.Warning;
-        CaptureStatus.Title = "Some global hotkeys are unavailable";
-        CaptureStatus.Message = $"Another application is already using: {gestures}. Capture buttons remain available.";
+        ShowStatus(
+            InfoBarSeverity.Warning,
+            "Some global hotkeys are unavailable",
+            $"Another application is already using: {gestures}. Capture buttons remain available.");
     }
 
     public void ReportHotkeyHostFailure()
-    {
-        CaptureStatus.IsOpen = true;
-        CaptureStatus.Severity = InfoBarSeverity.Warning;
-        CaptureStatus.Title = "Global hotkeys unavailable";
-        CaptureStatus.Message = "SNAPVERE could not start the Windows global-hotkey host. Capture buttons remain available.";
-    }
+        => ShowStatus(
+            InfoBarSeverity.Warning,
+            "Global hotkeys unavailable",
+            "SNAPVERE could not start the Windows global-hotkey host. Capture buttons remain available.");
 
     public void ReportTrayHostFailure()
+        => ShowStatus(
+            InfoBarSeverity.Warning,
+            "System tray unavailable",
+            "SNAPVERE could not create its Windows notification-area icon. Capture buttons and global hotkeys remain available.");
+
+    private void ConfigureWindowChrome()
     {
-        CaptureStatus.IsOpen = true;
-        CaptureStatus.Severity = InfoBarSeverity.Warning;
-        CaptureStatus.Title = "System tray unavailable";
-        CaptureStatus.Message = "SNAPVERE could not create its Windows notification-area icon. Capture buttons and global hotkeys remain available.";
+        Title = "SNAPVERE — Capture Center";
+        ExtendsContentIntoTitleBar = true;
+        SetTitleBar(TitleBarDragRegion);
+
+        try
+        {
+            SystemBackdrop = new MicaBackdrop();
+        }
+        catch
+        {
+            SystemBackdrop = null;
+        }
+
+        try
+        {
+            AppWindow.Resize(new SizeInt32(1180, 780));
+        }
+        catch
+        {
+            // Windows retains its default size when resize is unavailable.
+        }
     }
 
     private async void RegionCaptureButton_Click(object sender, RoutedEventArgs e)
@@ -99,6 +123,53 @@ public sealed partial class MainWindow : Window
     private void RefreshHistoryButton_Click(object sender, RoutedEventArgs e)
         => RefreshRecentCaptures();
 
+    private void OpenCaptureFolderButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var directory = _captureHistoryService.GetCaptureDirectory();
+            Directory.CreateDirectory(directory);
+            _ = Process.Start(new ProcessStartInfo(directory)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        {
+            ShowStatus(
+                InfoBarSeverity.Error,
+                "Capture folder unavailable",
+                "Windows could not open the local SNAPVERE capture folder.");
+        }
+    }
+
+    private void RecentCapturesList_ItemClick(object sender, ItemClickEventArgs e)
+    {
+        if (e.ClickedItem is not CaptureHistoryItem item)
+        {
+            return;
+        }
+
+        try
+        {
+            if (!File.Exists(item.FilePath))
+            {
+                RefreshRecentCaptures();
+                ShowStatus(InfoBarSeverity.Warning, "Capture moved", "That screenshot is no longer available at its original path.");
+                return;
+            }
+
+            _ = Process.Start(new ProcessStartInfo(item.FilePath)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        {
+            ShowStatus(InfoBarSeverity.Error, "Could not open capture", "Windows could not open that screenshot with the default image application.");
+        }
+    }
+
     private async Task ExecuteRegionCaptureAsync()
     {
         if (!TryBeginCapture())
@@ -106,10 +177,10 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        CaptureStatus.IsOpen = true;
-        CaptureStatus.Severity = InfoBarSeverity.Informational;
-        CaptureStatus.Title = "Preparing region capture";
-        CaptureStatus.Message = "Freezing the primary display before the selection overlay opens.";
+        ShowStatus(
+            InfoBarSeverity.Informational,
+            "Preparing region capture",
+            "Freezing the primary display before the selection overlay opens.");
 
         var restoreMainWindow = AppWindow.IsVisible;
 
@@ -129,24 +200,23 @@ public sealed partial class MainWindow : Window
 
             if (outcome.IsCancelled || outcome.SaveResult is null)
             {
-                CaptureStatus.Severity = InfoBarSeverity.Informational;
-                CaptureStatus.Title = "Region capture cancelled";
-                CaptureStatus.Message = "No file was created.";
+                ShowStatus(InfoBarSeverity.Informational, "Region capture cancelled", "No file was created.");
             }
             else
             {
-                CaptureStatus.Severity = InfoBarSeverity.Success;
-                CaptureStatus.Title = "Region captured";
-                CaptureStatus.Message =
-                    $"Saved {outcome.SaveResult.Width}×{outcome.SaveResult.Height} PNG to {outcome.SaveResult.FilePath}";
+                ShowStatus(
+                    InfoBarSeverity.Success,
+                    "Region captured",
+                    $"Saved {outcome.SaveResult.Width}×{outcome.SaveResult.Height} PNG to {outcome.SaveResult.FilePath}");
                 RefreshRecentCaptures();
             }
         }
         catch (Exception exception)
         {
-            CaptureStatus.Severity = InfoBarSeverity.Error;
-            CaptureStatus.Title = "SNAPVERE couldn't capture the region";
-            CaptureStatus.Message = GetUserFacingCaptureError(exception);
+            ShowStatus(
+                InfoBarSeverity.Error,
+                "SNAPVERE couldn't capture the region",
+                GetUserFacingCaptureError(exception));
         }
         finally
         {
@@ -163,10 +233,10 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        CaptureStatus.IsOpen = true;
-        CaptureStatus.Severity = InfoBarSeverity.Informational;
-        CaptureStatus.Title = "Capturing screen";
-        CaptureStatus.Message = "SNAPVERE is capturing the primary display.";
+        ShowStatus(
+            InfoBarSeverity.Informational,
+            "Capturing screen",
+            "SNAPVERE is capturing the primary display.");
 
         var restoreMainWindow = AppWindow.IsVisible;
 
@@ -181,16 +251,18 @@ public sealed partial class MainWindow : Window
             var result = await _screenCaptureWorkflow.CapturePrimaryDisplayToDefaultFolderAsync(
                 includeCursor: false);
 
-            CaptureStatus.Severity = InfoBarSeverity.Success;
-            CaptureStatus.Title = "Screen captured";
-            CaptureStatus.Message = $"Saved {result.Width}×{result.Height} PNG to {result.FilePath}";
+            ShowStatus(
+                InfoBarSeverity.Success,
+                "Screen captured",
+                $"Saved {result.Width}×{result.Height} PNG to {result.FilePath}");
             RefreshRecentCaptures();
         }
         catch (Exception exception)
         {
-            CaptureStatus.Severity = InfoBarSeverity.Error;
-            CaptureStatus.Title = "SNAPVERE couldn't capture the screen";
-            CaptureStatus.Message = GetUserFacingCaptureError(exception);
+            ShowStatus(
+                InfoBarSeverity.Error,
+                "SNAPVERE couldn't capture the screen",
+                GetUserFacingCaptureError(exception));
         }
         finally
         {
@@ -241,10 +313,17 @@ public sealed partial class MainWindow : Window
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
+            RecentCapturesCountText.Text = captures.Count switch
+            {
+                0 => "Local screenshots from Pictures\\SNAPVERE",
+                1 => "1 recent local capture",
+                _ => $"{captures.Count} recent local captures"
+            };
+
             if (captures.Count == 0)
             {
-                HistoryEmptyTitle.Text = "No local captures yet.";
-                HistoryEmptyMessage.Text = "Completed Screen and Region captures will appear here after they are saved locally.";
+                HistoryEmptyTitle.Text = "No local captures yet";
+                HistoryEmptyMessage.Text = "Your completed Region and Screen captures will appear here.";
             }
         }
         catch (UnauthorizedAccessException)
@@ -264,6 +343,7 @@ public sealed partial class MainWindow : Window
         HistoryEmptyState.Visibility = Visibility.Visible;
         HistoryEmptyTitle.Text = "Recent captures unavailable";
         HistoryEmptyMessage.Text = message;
+        RecentCapturesCountText.Text = "Local history is currently unavailable";
     }
 
     private void SetCaptureButtonsEnabled(bool isEnabled)
@@ -272,18 +352,12 @@ public sealed partial class MainWindow : Window
         ScreenCaptureButton.IsEnabled = isEnabled;
     }
 
-    private void RootNavigation_SelectionChanged(
-        NavigationView sender,
-        NavigationViewSelectionChangedEventArgs args)
+    private void ShowStatus(InfoBarSeverity severity, string title, string message)
     {
-        if (args.SelectedItemContainer?.Tag is string tag)
-        {
-            Title = tag switch
-            {
-                "capture" => "SNAPVERE — Capture",
-                _ => "SNAPVERE"
-            };
-        }
+        CaptureStatus.IsOpen = true;
+        CaptureStatus.Severity = severity;
+        CaptureStatus.Title = title;
+        CaptureStatus.Message = message;
     }
 
     private static string GetUserFacingCaptureError(Exception exception)
