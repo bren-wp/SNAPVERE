@@ -14,7 +14,7 @@ public sealed class CaptureFrameAnnotatorTests
             CaptureAnnotationKind.Line,
             [new CaptureAnnotationPoint(2, 4), new CaptureAnnotationPoint(9, 4)],
             CaptureAnnotationColor.Coral,
-            thickness: 3);
+            3);
 
         var result = CaptureFrameAnnotator.Apply(frame, [annotation]);
         var pixel = PixelAt(result, 5, 4);
@@ -33,7 +33,7 @@ public sealed class CaptureFrameAnnotatorTests
             CaptureAnnotationKind.Highlight,
             [new CaptureAnnotationPoint(1, 4), new CaptureAnnotationPoint(6, 4)],
             CaptureAnnotationColor.Amber,
-            thickness: 5);
+            5);
 
         var result = CaptureFrameAnnotator.Apply(frame, [annotation]);
         var pixel = PixelAt(result, 4, 4);
@@ -52,7 +52,7 @@ public sealed class CaptureFrameAnnotatorTests
             CaptureAnnotationKind.Rectangle,
             [new CaptureAnnotationPoint(-4, -4), new CaptureAnnotationPoint(7, 7)],
             CaptureAnnotationColor.Mint,
-            thickness: 4);
+            4);
 
         var result = CaptureFrameAnnotator.Apply(frame, [annotation]);
 
