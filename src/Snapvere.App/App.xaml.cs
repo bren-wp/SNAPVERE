@@ -6,11 +6,15 @@ using Snapvere.Capture;
 using Snapvere.Capture.Hotkeys;
 using Snapvere.Capture.Windows;
 using Snapvere.Imaging;
+using System.Runtime.InteropServices;
 
 namespace Snapvere.App;
 
 public partial class App : Microsoft.UI.Xaml.Application
 {
+    private const string StartupProbeEnvironmentVariable = "SNAPVERE_STARTUP_PROBE";
+    private const string StartupProbeMarkerFileName = "startup-probe.ready";
+
     private readonly ServiceProvider _services;
     private MainWindow? _window;
     private IGlobalHotkeyService? _hotkeyService;
@@ -61,13 +65,7 @@ public partial class App : Microsoft.UI.Xaml.Application
 
             if (IsStartupProbeRequested())
             {
-                StartupDiagnostics.WriteLine("Startup probe succeeded; terminating probe process cleanly.");
-                _ = _window.DispatcherQueue.TryEnqueue(() =>
-                {
-                    _window?.Close();
-                    Environment.ExitCode = 0;
-                    Environment.Exit(0);
-                });
+                CompleteStartupProbe();
                 return;
             }
 
@@ -82,8 +80,33 @@ public partial class App : Microsoft.UI.Xaml.Application
     }
 
     private static bool IsStartupProbeRequested()
-        => Environment.GetCommandLineArgs().Any(
+    {
+        if (string.Equals(
+                Environment.GetEnvironmentVariable(StartupProbeEnvironmentVariable),
+                "1",
+                StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return Environment.GetCommandLineArgs().Any(
             argument => string.Equals(argument, "--startup-probe", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static void CompleteStartupProbe()
+    {
+        var probeDirectory = Path.Combine(Path.GetTempPath(), "SNAPVERE");
+        Directory.CreateDirectory(probeDirectory);
+
+        var markerPath = Path.Combine(probeDirectory, StartupProbeMarkerFileName);
+        var version = typeof(App).Assembly.GetName().Version?.ToString(3) ?? "unknown";
+        File.WriteAllText(
+            markerPath,
+            $"SNAPVERE {version} READY | PID={Environment.ProcessId} | ARCH={RuntimeInformation.ProcessArchitecture} | {DateTimeOffset.UtcNow:O}");
+
+        StartupDiagnostics.WriteLine($"Startup probe reached activated main window. Marker={markerPath}");
+        Environment.Exit(0);
+    }
 
     private void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
     {
