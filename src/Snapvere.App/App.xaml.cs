@@ -35,10 +35,15 @@ public partial class App : Microsoft.UI.Xaml.Application
 
             var services = new ServiceCollection();
             services.AddSingleton<IDisplayDiscovery, Win32DisplayDiscovery>();
-            services.AddSingleton<IScreenCaptureService, GdiScreenCaptureService>();
+            services.AddSingleton(TimeProvider.System);
+            services.AddSingleton<GdiScreenCaptureService>();
+            services.AddSingleton<WindowsGraphicsCaptureService>();
+            services.AddSingleton<IScreenCaptureService>(provider =>
+                new ResilientScreenCaptureService(
+                    provider.GetRequiredService<WindowsGraphicsCaptureService>(),
+                    provider.GetRequiredService<GdiScreenCaptureService>()));
             services.AddSingleton<PngCaptureEncoder>();
             services.AddSingleton(new CapturePathProvider());
-            services.AddSingleton(TimeProvider.System);
             services.AddSingleton<CaptureFileWriter>();
             services.AddSingleton<ScreenCaptureWorkflow>();
             services.AddSingleton<RegionCaptureWorkflow>();
@@ -49,7 +54,7 @@ public partial class App : Microsoft.UI.Xaml.Application
             services.AddTransient<CaptureCenterWindow>();
 
             _services = services.BuildServiceProvider(validateScopes: true);
-            StartupDiagnostics.WriteLine("Application services initialized.");
+            StartupDiagnostics.WriteLine("Application services initialized. WGC is preferred with GDI fallback.");
         }
         catch (Exception exception)
         {
