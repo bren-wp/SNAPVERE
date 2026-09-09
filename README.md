@@ -12,69 +12,120 @@ SNAPVERE is a local-first Windows capture application focused on fast region sel
 
 ## Development status
 
-SNAPVERE is under active development. The repository currently contains the production foundation, WinUI 3 application shell, capture domain contracts, DPI coordinate transformation, initial unit tests, CI, and the first canonical brand assets. Features are listed as implemented only when working code exists; planned features are not presented as finished.
+SNAPVERE is under active development. The current codebase contains a working primary-display screenshot workflow, atomic local PNG persistence and the first freeze-frame Region Capture overlay. Features are listed as implemented only when working code exists; planned capabilities remain disabled in the UI until their real workflow exists.
 
 ## Technology
 
 - C# / .NET 10 LTS (`10.0.12`, SDK `10.0.401`)
 - WinUI 3
-- Windows App SDK `1.8.11` (`Microsoft.WindowsAppSDK` `1.8.260804001`)
+- Windows App SDK 1.8 stable line
 - Windows 11 x64 and ARM64 targets
 - Nullable reference types, .NET analyzers and central package management
-- xUnit test foundation
+- xUnit automated tests
 - GitHub Actions on Windows
 
 ## Architecture
 
-The capture engine, image pipeline and UI are separate projects. UI code does not own screen-capture geometry or frame contracts.
+Capture acquisition, application orchestration, image processing and WinUI presentation are separate projects.
 
 ```text
-Capture source
+WinUI action / future hotkey
     ↓
-Snapvere.Capture
+Snapvere.Application workflow
     ↓
-CaptureFrame / domain geometry
+Snapvere.Capture acquisition + physical-pixel geometry
     ↓
-Snapvere.Imaging
+CaptureFrame
     ↓
-Clipboard / Save / Editor / OCR
+Snapvere.Imaging crop / encode
+    ↓
+CaptureFileWriter
+    ↓
+local atomic PNG
 ```
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/REGION-CAPTURE.md`](docs/REGION-CAPTURE.md).
 
-## Current implemented foundation
+## Implemented now
 
-- production solution and project structure
-- strict compiler/analyzer configuration
-- x64/ARM64 application target configuration
-- WinUI shell and navigation foundation
-- System/Light/Dark-ready resource foundation
-- per-monitor-v2 DPI application manifest
-- capture mode/domain models
-- validated BGRA8 `CaptureFrame` contract
-- logical ↔ physical DPI coordinate transformation
-- tests for 100%, 125%, 150%, 200%, negative coordinates and mixed-axis DPI
-- Windows CI restore/build/test workflow
-- canonical SNAPVERE SVG symbol and dark/light README logos
+### Production foundation
+
+- strict compiler/analyzer configuration;
+- central NuGet package management;
+- x64/ARM64 application targets;
+- per-monitor-v2 DPI manifest;
+- WinUI shell with System/Light/Dark-ready resources;
+- GitHub Actions restore → Release x64 build → test pipeline;
+- canonical SNAPVERE SVG symbol and README brand assets.
+
+### Capture and geometry
+
+- native Win32 active-display discovery;
+- primary monitor selection;
+- physical virtual-desktop coordinates, including negative X/Y origins;
+- 100/125/150/175/200% DPI conversion coverage;
+- sub-DIP XAML pointer conversion without premature integer rounding;
+- validated BGRA8 `CaptureFrame` contract;
+- GDI monitor-capture compatibility backend with optional cursor rendering;
+- pixel-accurate BGRA8 cropper that respects source stride.
+
+### Screen Capture
+
+- real primary-display capture;
+- PNG encoding without an external imaging dependency;
+- collision-safe file naming;
+- temp-file + atomic-move persistence;
+- default save folder `Pictures\SNAPVERE`.
+
+### Region Capture
+
+- main-window hide before freeze acquisition;
+- frozen primary-display preview;
+- borderless always-on-top selection overlay;
+- four-sided dimming around the active selection;
+- reverse-direction drag normalization;
+- drag-to-move existing selection;
+- eight resize handles;
+- physical-pixel W × H badge;
+- arrow-key 1 px movement;
+- Shift + Arrow 10 px movement;
+- Enter/double-click save and Esc cancel;
+- final crop from the same frozen frame shown in the overlay;
+- shared atomic PNG writer with Screen Capture.
+
+## Current limitations
+
+The following are not yet complete and are intentionally not exposed as finished capabilities:
+
+- cross-monitor Region Capture over one coordinated virtual-desktop overlay;
+- Windows.Graphics.Capture/D3D primary backend;
+- Window Capture;
+- Scrolling Capture;
+- clipboard output;
+- global hotkeys and tray workflow;
+- Quick Actions;
+- annotation editor;
+- History and Pin to Screen;
+- OCR;
+- installer/portable packaging, updater and licensing foundation.
 
 ## Roadmap
 
-1. Native display discovery and virtual desktop mapping
-2. Windows.Graphics.Capture full-screen/monitor capture
-3. Freeze-frame region overlay and precise selection handles
-4. Clipboard and PNG/JPEG/WebP encoding
-5. Global hotkeys and tray workflow
-6. Quick Actions
-7. Non-destructive annotation editor
-8. History and Pin to Screen
-9. Local OCR with compatible fallback
-10. Scrolling capture stitching
-11. Installer, portable packaging, signed updates and licensing foundation
-12. Accessibility, HDR, mixed-DPI hardening and release QA
+1. Harden Region Capture on mixed-DPI multi-monitor layouts
+2. Add Windows.Graphics.Capture/D3D primary acquisition with GDI fallback
+3. Implement global hotkeys and tray workflow
+4. Implement Window Capture and smart target selection
+5. Add clipboard and Quick Actions
+6. Build the non-destructive annotation editor
+7. Add History and Pin to Screen
+8. Add local OCR with compatible fallback
+9. Implement scrolling-capture stitching
+10. Add installer, portable packaging, signed updates and licensing foundation
+11. Complete accessibility, HDR, mixed-DPI hardening and release QA
 
 ## Build
 
-Use Windows 11 with Visual Studio Build Tools/Visual Studio including Windows application development prerequisites and .NET SDK defined in `global.json`.
+Use Windows 11 with Visual Studio Build Tools/Visual Studio including Windows application development prerequisites and the .NET SDK defined in `global.json`.
 
 ```powershell
 dotnet restore SNAPVERE.sln
@@ -84,7 +135,7 @@ dotnet test tests/Snapvere.UnitTests/Snapvere.UnitTests.csproj -c Release -p:Pla
 
 ## Privacy
 
-SNAPVERE is designed to capture, edit, OCR, save and retain history locally. No screenshot pixels, OCR text, clipboard contents or user files should be sent to third parties without an explicit user action.
+SNAPVERE is designed to capture, edit, OCR, save and retain history locally. Screenshot pixels, OCR text, clipboard contents and user files must not be sent to third parties without an explicit user action.
 
 ## Security
 

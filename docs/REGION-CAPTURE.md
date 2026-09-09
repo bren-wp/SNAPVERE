@@ -2,72 +2,102 @@
 
 ## Status
 
-Selection geometry foundation is implemented and tested. Freeze-frame acquisition, overlay rendering, pointer integration and final pixel extraction are the next implementation steps.
+The primary-display freeze-frame Region Capture workflow is implemented in the current development branch. SNAPVERE now freezes the selected display, opens a borderless overlay over the exact physical display bounds, maps XAML pointer coordinates through the centralized DPI transformer, supports drag/move/eight-handle resize, crops pixels from the same frozen frame and persists the result through the atomic PNG writer.
 
-## Required workflow
+The current implementation intentionally targets the primary display only. Cross-monitor region selection, smart window/control targeting, magnifier/crosshair polish and virtual-desktop freeze composition remain follow-up work and are not presented as completed features.
+
+## Implemented workflow
 
 ```text
-Hotkey
+Region action
   ↓
-Freeze current virtual desktop frame
+hide SNAPVERE main window
   ↓
-Dim non-selected area
+freeze primary display frame
   ↓
-Pointer / smart-window target
+open borderless always-on-top overlay
   ↓
-Drag or select region
+dim non-selected area
   ↓
-Move / resize / keyboard fine adjustment
+drag / move / resize selection
   ↓
-Capture selected physical-pixel rectangle
+map logical XAML input → physical display pixels
+  ↓
+crop the same frozen frame
+  ↓
+encode PNG
+  ↓
+temp file + atomic move to Pictures\SNAPVERE
 ```
 
 ## Coordinate contract
 
-Region selection geometry uses physical pixels. The overlay may render in XAML logical units, but pointer positions must be transformed explicitly before entering `RegionSelectionGeometry`.
+Region selection geometry uses physical pixels. XAML logical coordinates never enter `RegionSelectionGeometry` directly.
 
-This prevents mixed-DPI drift when a selection crosses monitor boundaries.
+`DpiCoordinateTransformer` is the central conversion layer and now supports both integer geometry and sub-DIP `double` pointer coordinates. This avoids rounding too early at 125%, 150%, 175% and 200% scaling.
 
-## Implemented geometry operations
+The overlay converts a local XAML pointer position into a physical display-local pixel position and then adds the display's physical desktop origin. Negative desktop origins therefore remain valid.
 
-`RegionSelectionGeometry` currently supports:
+## Selection interaction
 
-- reverse-direction drag normalization
-- clamp to the full virtual desktop
-- moving a selection without changing its size
-- single-pixel fine movement
-- eight resize handles
-- minimum width/height enforcement
-- negative virtual-desktop coordinates
+The overlay currently supports:
 
-`SelectionHandle.Body` maps resize input to a move operation, allowing the overlay controller to use one interaction contract for drag/move/resize.
+- drag in any direction with normalization;
+- move an existing selection by dragging its body;
+- eight visible resize handles;
+- one-physical-pixel minimum size;
+- arrow-key movement by one physical pixel;
+- `Shift` + arrow movement by 10 physical pixels;
+- `Delete` to clear the active selection;
+- `Enter` to save;
+- double-click to save;
+- `Esc` to cancel without creating a file;
+- a live physical-pixel `W × H` badge.
 
-## Overlay responsibilities
+The dimming layer is composed from four rectangles around the selection so the selected area remains an unobscured view of the frozen frame.
 
-The overlay presentation layer must not duplicate geometry calculations. It should:
+## Freeze frame and pixel extraction
 
-1. transform pointer input to physical pixels;
-2. call the region geometry engine;
-3. render the returned rectangle;
-4. display dimensions/coordinates;
-5. commit or cancel the selection.
+`RegionCaptureWorkflow.PreparePrimaryDisplayAsync` captures the frame before the overlay is shown and rejects the session if the returned frame dimensions no longer match the display bounds.
 
-## Freeze frame
+`SaveSelectionAsync` maps absolute desktop coordinates back into frame-local coordinates, then calls `CaptureFrameCropper`. The cropper copies BGRA8 scanlines while respecting source stride, so padded source frames remain correct.
 
-Before selection begins, SNAPVERE must capture a stable desktop frame. The visual shown during selection and the pixels ultimately cropped must come from the same frozen capture set where practical, preventing animated content from changing between user selection and final output.
+The overlay preview and final crop therefore originate from the same `CaptureFrame` instance.
 
-## Keyboard behavior
+## Persistence
 
-Planned overlay behavior:
+Screen and Region workflows share `CaptureFileWriter`. PNG files are written to a uniquely named temporary file, flushed, and moved atomically into the final capture path. Failed writes perform best-effort temporary-file cleanup.
 
-- Arrow keys: move selection by 1 physical pixel
-- Shift + Arrow: move by a larger configurable step
-- handle-focused Arrow keys: resize by 1 physical pixel
-- Enter: capture
-- Escape: cancel
+Default output remains:
 
-## QA
+```text
+Pictures\SNAPVERE\SNAPVERE_yyyy-MM-dd_HHmmss.png
+```
 
-Automated tests cover reverse drag, negative-coordinate clamping, boundary-limited movement, handle-specific resize, minimum size and one-physical-pixel adjustment.
+## Automated QA
 
-Manual QA must additionally cover pointer capture, cross-monitor drag, 100/125/150/175/200% mixed scaling, portrait displays and high-contrast rendering.
+Automated coverage now includes:
+
+- 100%, 125%, 150%, 175% and 200% DPI scaling;
+- sub-DIP pointer conversion at 125%;
+- negative virtual-desktop coordinates;
+- reverse drag and bounds clamping;
+- body move and eight-handle resize geometry;
+- minimum selection dimensions;
+- padded-stride frame cropping;
+- negative desktop origin → local crop mapping;
+- display/frame geometry change detection;
+- atomic PNG persistence and temporary-file cleanup checks.
+
+## Remaining Region Capture work
+
+The following is still required before the Region milestone is considered production-complete:
+
+1. one coordinated overlay/freeze model spanning multiple monitors;
+2. cross-monitor selection across mixed DPI and negative X/Y origins;
+3. smart window/control targeting before manual drag;
+4. magnifier and crosshair cursor polish;
+5. touch/pen interaction QA;
+6. portrait and rotated monitor QA;
+7. high-contrast/accessibility review;
+8. Windows.Graphics.Capture/D3D primary acquisition path with GDI retained only as compatibility fallback.
