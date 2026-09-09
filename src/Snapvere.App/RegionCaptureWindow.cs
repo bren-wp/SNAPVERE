@@ -24,7 +24,12 @@ public sealed record RegionCaptureOutcome(
     CaptureSaveResult? SaveResult,
     bool CopiedToClipboard = false);
 
-public sealed partial class RegionCaptureWindow : Window
+/// <summary>
+/// Runtime-safe region selection and inline editor. The entire visual tree is
+/// constructed in C# so installed and portable builds do not depend on a
+/// secondary Window XAML resource being resolved by Application.LoadComponent.
+/// </summary>
+public sealed class RegionCaptureWindow : Window
 {
     private const double HandleRadius = 5d;
 
@@ -35,6 +40,41 @@ public sealed partial class RegionCaptureWindow : Window
         new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly List<CaptureAnnotation> _annotations = [];
     private readonly List<CaptureAnnotationPoint> _draftPoints = [];
+
+    private readonly Grid _overlayRoot;
+    private readonly Image _frozenImage;
+    private readonly Canvas _overlayCanvas;
+    private readonly Canvas _annotationLayer;
+    private readonly Rectangle _fullDim;
+    private readonly Rectangle _topDim;
+    private readonly Rectangle _leftDim;
+    private readonly Rectangle _rightDim;
+    private readonly Rectangle _bottomDim;
+    private readonly Border _selectionBorder;
+    private readonly Border _selectionBadge;
+    private readonly TextBlock _selectionSizeText;
+    private readonly Ellipse _topLeftHandle;
+    private readonly Ellipse _topHandle;
+    private readonly Ellipse _topRightHandle;
+    private readonly Ellipse _rightHandle;
+    private readonly Ellipse _bottomRightHandle;
+    private readonly Ellipse _bottomHandle;
+    private readonly Ellipse _bottomLeftHandle;
+    private readonly Ellipse _leftHandle;
+    private readonly Border _toolPalette;
+    private readonly Border _actionPalette;
+    private readonly Border _captureHint;
+    private readonly Border _overlayStatus;
+    private readonly ProgressRing _saveProgress;
+    private readonly TextBlock _overlayStatusText;
+    private readonly Button _keyboardFocusTarget;
+    private readonly Button _moveToolButton;
+    private readonly Button _penToolButton;
+    private readonly Button _lineToolButton;
+    private readonly Button _arrowToolButton;
+    private readonly Button _rectangleToolButton;
+    private readonly Button _highlightToolButton;
+    private readonly Button _undoButton;
 
     private PixelRect _selection;
     private PixelRect _dragStartSelection;
@@ -57,13 +97,88 @@ public sealed partial class RegionCaptureWindow : Window
         _pngEncoder = pngEncoder ?? throw new ArgumentNullException(nameof(pngEncoder));
         _session = session ?? throw new ArgumentNullException(nameof(session));
 
-        InitializeComponent();
+        Title = "SNAPVERE — Region Capture";
+
+        _frozenImage = new Image
+        {
+            Stretch = Stretch.Fill,
+            IsHitTestVisible = false
+        };
+        _overlayCanvas = new Canvas { Background = Brush(0x00, 0x00, 0x00, 0x00) };
+        _annotationLayer = new Canvas { IsHitTestVisible = false };
+
+        _fullDim = CreateDimRectangle();
+        _topDim = CreateDimRectangle(Visibility.Collapsed);
+        _leftDim = CreateDimRectangle(Visibility.Collapsed);
+        _rightDim = CreateDimRectangle(Visibility.Collapsed);
+        _bottomDim = CreateDimRectangle(Visibility.Collapsed);
+
+        _selectionBorder = new Border
+        {
+            BorderBrush = Brush(0xFF, 0x7C, 0x6C, 0xFF),
+            BorderThickness = new Thickness(2),
+            CornerRadius = new CornerRadius(2),
+            IsHitTestVisible = false,
+            Visibility = Visibility.Collapsed
+        };
+        _selectionSizeText = Text(string.Empty, 12, Brush(0xFF, 0xFF, 0xFF, 0xFF), Microsoft.UI.Text.FontWeights.SemiBold);
+        _selectionBadge = new Border
+        {
+            Background = Brush(0xF0, 0x15, 0x17, 0x1C),
+            BorderBrush = Brush(0x40, 0xFF, 0xFF, 0xFF),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(7),
+            Padding = new Thickness(9, 5, 9, 5),
+            IsHitTestVisible = false,
+            Visibility = Visibility.Collapsed,
+            Child = _selectionSizeText
+        };
+
+        _topLeftHandle = CreateResizeHandle(SelectionHandle.TopLeft, "Resize top left");
+        _topHandle = CreateResizeHandle(SelectionHandle.Top, "Resize top");
+        _topRightHandle = CreateResizeHandle(SelectionHandle.TopRight, "Resize top right");
+        _rightHandle = CreateResizeHandle(SelectionHandle.Right, "Resize right");
+        _bottomRightHandle = CreateResizeHandle(SelectionHandle.BottomRight, "Resize bottom right");
+        _bottomHandle = CreateResizeHandle(SelectionHandle.Bottom, "Resize bottom");
+        _bottomLeftHandle = CreateResizeHandle(SelectionHandle.BottomLeft, "Resize bottom left");
+        _leftHandle = CreateResizeHandle(SelectionHandle.Left, "Resize left");
+
+        _moveToolButton = CreateToolButton("Move", "None", "Move or resize selection");
+        _penToolButton = CreateToolButton("Pen", nameof(CaptureAnnotationKind.Pen), "Freehand pen");
+        _lineToolButton = CreateToolButton("Line", nameof(CaptureAnnotationKind.Line), "Straight line");
+        _arrowToolButton = CreateToolButton("Arrow", nameof(CaptureAnnotationKind.Arrow), "Arrow");
+        _rectangleToolButton = CreateToolButton("Box", nameof(CaptureAnnotationKind.Rectangle), "Rectangle");
+        _highlightToolButton = CreateToolButton("Mark", nameof(CaptureAnnotationKind.Highlight), "Highlighter");
+        _undoButton = CreatePaletteButton("Undo", "Undo last annotation");
+        _undoButton.Click += UndoButton_Click;
+
+        _toolPalette = BuildToolPalette();
+        _actionPalette = BuildActionPalette();
+        _captureHint = BuildCaptureHint();
+
+        _saveProgress = new ProgressRing { Width = 18, Height = 18, IsActive = false };
+        _overlayStatusText = Text(string.Empty, 12, Brush(0xFF, 0xFF, 0xFF, 0xFF));
+        _overlayStatusText.TextWrapping = TextWrapping.Wrap;
+        _overlayStatusText.MaxWidth = 620;
+        _overlayStatus = BuildStatusPanel();
+
+        _keyboardFocusTarget = new Button
+        {
+            Width = 1,
+            Height = 1,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top,
+            Opacity = 0,
+            IsTabStop = true
+        };
+        AutomationProperties.SetName(_keyboardFocusTarget, "Region capture keyboard input");
+
+        _overlayRoot = BuildRoot();
+        Content = _overlayRoot;
+
+        WireEvents();
         ConfigureOverlayWindow();
         UpdateToolButtonStates();
-
-        OverlayRoot.Loaded += OverlayRoot_Loaded;
-        OverlayRoot.SizeChanged += OverlayRoot_SizeChanged;
-        Closed += RegionCaptureWindow_Closed;
     }
 
     public Task<RegionCaptureOutcome> ShowAsync()
@@ -72,10 +187,151 @@ public sealed partial class RegionCaptureWindow : Window
         return _completion.Task;
     }
 
+    private Grid BuildRoot()
+    {
+        var root = new Grid
+        {
+            Background = Brush(0xFF, 0x00, 0x00, 0x00),
+            RequestedTheme = ElementTheme.Dark
+        };
+        root.Children.Add(_frozenImage);
+        root.Children.Add(_overlayCanvas);
+        root.Children.Add(_annotationLayer);
+        root.Children.Add(_captureHint);
+        root.Children.Add(_overlayStatus);
+        root.Children.Add(_keyboardFocusTarget);
+
+        _overlayCanvas.Children.Add(_fullDim);
+        _overlayCanvas.Children.Add(_topDim);
+        _overlayCanvas.Children.Add(_leftDim);
+        _overlayCanvas.Children.Add(_rightDim);
+        _overlayCanvas.Children.Add(_bottomDim);
+        _overlayCanvas.Children.Add(_selectionBorder);
+        _overlayCanvas.Children.Add(_selectionBadge);
+        _overlayCanvas.Children.Add(_topLeftHandle);
+        _overlayCanvas.Children.Add(_topHandle);
+        _overlayCanvas.Children.Add(_topRightHandle);
+        _overlayCanvas.Children.Add(_rightHandle);
+        _overlayCanvas.Children.Add(_bottomRightHandle);
+        _overlayCanvas.Children.Add(_bottomHandle);
+        _overlayCanvas.Children.Add(_bottomLeftHandle);
+        _overlayCanvas.Children.Add(_leftHandle);
+        _overlayCanvas.Children.Add(_toolPalette);
+        _overlayCanvas.Children.Add(_actionPalette);
+        return root;
+    }
+
+    private Border BuildToolPalette()
+    {
+        var stack = new StackPanel { Spacing = 4 };
+        stack.Children.Add(_moveToolButton);
+        stack.Children.Add(_penToolButton);
+        stack.Children.Add(_lineToolButton);
+        stack.Children.Add(_arrowToolButton);
+        stack.Children.Add(_rectangleToolButton);
+        stack.Children.Add(_highlightToolButton);
+        stack.Children.Add(Separator());
+
+        var firstColors = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 3,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        firstColors.Children.Add(CreateColorButton("Coral", 0xFF, 0x5A, 0x72));
+        firstColors.Children.Add(CreateColorButton("Amber", 0xFF, 0xC8, 0x57));
+        stack.Children.Add(firstColors);
+
+        var secondColors = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 3,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        secondColors.Children.Add(CreateColorButton("Mint", 0x45, 0xD6, 0xA2));
+        secondColors.Children.Add(CreateColorButton("Indigo", 0x7C, 0x6C, 0xFF));
+        stack.Children.Add(secondColors);
+        stack.Children.Add(Separator());
+        stack.Children.Add(_undoButton);
+
+        return Palette(stack);
+    }
+
+    private Border BuildActionPalette()
+    {
+        var stack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5 };
+        var copy = CreatePaletteButton("Copy", "Copy selection to clipboard");
+        copy.Click += CopyButton_Click;
+        var save = CreatePaletteButton("Save", "Save PNG");
+        save.Click += SaveButton_Click;
+        var close = CreatePaletteButton("Close", "Cancel capture");
+        close.Click += CancelButton_Click;
+        stack.Children.Add(copy);
+        stack.Children.Add(save);
+        stack.Children.Add(close);
+        return Palette(stack);
+    }
+
+    private Border BuildCaptureHint()
+    {
+        var hint = Text(
+            "Drag to select · choose a tool to annotate · Enter save · Esc cancel",
+            12,
+            Brush(0xE8, 0xFF, 0xFF, 0xFF));
+        return new Border
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(16),
+            Padding = new Thickness(12, 8, 12, 8),
+            Background = Brush(0xE8, 0x11, 0x13, 0x18),
+            BorderBrush = Brush(0x30, 0xFF, 0xFF, 0xFF),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(9),
+            IsHitTestVisible = false,
+            Child = hint
+        };
+    }
+
+    private Border BuildStatusPanel()
+    {
+        var stack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+        stack.Children.Add(_saveProgress);
+        stack.Children.Add(_overlayStatusText);
+        return new Border
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Margin = new Thickness(20),
+            Padding = new Thickness(14, 9, 14, 9),
+            Background = Brush(0xF0, 0x15, 0x17, 0x1C),
+            BorderBrush = Brush(0x38, 0xFF, 0xFF, 0xFF),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(9),
+            Visibility = Visibility.Collapsed,
+            IsHitTestVisible = false,
+            Child = stack
+        };
+    }
+
+    private void WireEvents()
+    {
+        _overlayRoot.Loaded += OverlayRoot_Loaded;
+        _overlayRoot.SizeChanged += OverlayRoot_SizeChanged;
+        _overlayRoot.KeyDown += OverlayRoot_KeyDown;
+        _overlayRoot.KeyUp += OverlayRoot_KeyUp;
+
+        _overlayCanvas.PointerPressed += OverlayCanvas_PointerPressed;
+        _overlayCanvas.PointerMoved += OverlayCanvas_PointerMoved;
+        _overlayCanvas.PointerReleased += OverlayCanvas_PointerReleased;
+        _overlayCanvas.PointerCaptureLost += OverlayCanvas_PointerCaptureLost;
+        _overlayCanvas.DoubleTapped += OverlayCanvas_DoubleTapped;
+        Closed += RegionCaptureWindow_Closed;
+    }
+
     private void ConfigureOverlayWindow()
     {
         var bounds = _session.Display.Bounds.Normalize();
-
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
             presenter.SetBorderAndTitleBar(false, false);
@@ -85,20 +341,16 @@ public sealed partial class RegionCaptureWindow : Window
             presenter.IsAlwaysOnTop = true;
         }
 
-        AppWindow.MoveAndResize(new RectInt32(
-            bounds.X,
-            bounds.Y,
-            bounds.Width,
-            bounds.Height));
+        AppWindow.MoveAndResize(new RectInt32(bounds.X, bounds.Y, bounds.Width, bounds.Height));
     }
 
     private async void OverlayRoot_Loaded(object sender, RoutedEventArgs e)
     {
         try
         {
-            FrozenImage.Source = await CreateFrozenBitmapAsync(_session.FrozenFrame);
+            _frozenImage.Source = await CreateFrozenBitmapAsync(_session.FrozenFrame);
             UpdateSelectionVisuals();
-            _ = KeyboardFocusTarget.Focus(FocusState.Programmatic);
+            _ = _keyboardFocusTarget.Focus(FocusState.Programmatic);
         }
         catch (Exception exception)
         {
@@ -116,7 +368,7 @@ public sealed partial class RegionCaptureWindow : Window
             return;
         }
 
-        var pointerPoint = e.GetCurrentPoint(OverlayCanvas);
+        var pointerPoint = e.GetCurrentPoint(_overlayCanvas);
         if (!pointerPoint.Properties.IsLeftButtonPressed)
         {
             return;
@@ -141,7 +393,7 @@ public sealed partial class RegionCaptureWindow : Window
             _activeHandle = SelectionHandle.None;
             _dragAnchor = point;
             _dragStartSelection = default;
-            _pointerCaptured = OverlayCanvas.CapturePointer(e.Pointer);
+            _pointerCaptured = _overlayCanvas.CapturePointer(e.Pointer);
             UpdateToolButtonStates();
             UpdateSelectionVisuals();
         }
@@ -164,23 +416,20 @@ public sealed partial class RegionCaptureWindow : Window
 
         _activeAnnotationTool = null;
         UpdateToolButtonStates();
-        var pointerPoint = e.GetCurrentPoint(OverlayCanvas);
+        var pointerPoint = e.GetCurrentPoint(_overlayCanvas);
         var point = ToDesktopPixel(pointerPoint.Position.X, pointerPoint.Position.Y);
         BeginManipulation(handle, point, e);
         e.Handled = true;
     }
 
-    private void BeginManipulation(
-        SelectionHandle handle,
-        PixelPoint point,
-        PointerRoutedEventArgs e)
+    private void BeginManipulation(SelectionHandle handle, PixelPoint point, PointerRoutedEventArgs e)
     {
         _annotationInProgress = false;
         _isCreatingSelection = false;
         _activeHandle = handle;
         _dragAnchor = point;
         _dragStartSelection = _selection;
-        _pointerCaptured = OverlayCanvas.CapturePointer(e.Pointer);
+        _pointerCaptured = _overlayCanvas.CapturePointer(e.Pointer);
     }
 
     private void BeginAnnotation(PixelPoint desktopPoint, PointerRoutedEventArgs e)
@@ -195,7 +444,7 @@ public sealed partial class RegionCaptureWindow : Window
         _activeHandle = SelectionHandle.None;
         _draftPoints.Clear();
         _draftPoints.Add(ToSelectionLocal(desktopPoint));
-        _pointerCaptured = OverlayCanvas.CapturePointer(e.Pointer);
+        _pointerCaptured = _overlayCanvas.CapturePointer(e.Pointer);
         RenderAnnotations();
     }
 
@@ -206,7 +455,7 @@ public sealed partial class RegionCaptureWindow : Window
             return;
         }
 
-        var pointerPoint = e.GetCurrentPoint(OverlayCanvas);
+        var pointerPoint = e.GetCurrentPoint(_overlayCanvas);
         var current = ToDesktopPixel(pointerPoint.Position.X, pointerPoint.Position.Y);
 
         if (_annotationInProgress)
@@ -226,7 +475,6 @@ public sealed partial class RegionCaptureWindow : Window
         {
             var deltaX = checked(current.X - _dragAnchor.X);
             var deltaY = checked(current.Y - _dragAnchor.Y);
-
             _selection = _activeHandle == SelectionHandle.Body
                 ? RegionSelectionGeometry.Move(_dragStartSelection, deltaX, deltaY, bounds)
                 : RegionSelectionGeometry.Resize(
@@ -253,8 +501,7 @@ public sealed partial class RegionCaptureWindow : Window
         var localPoint = ToSelectionLocal(desktopPoint);
         if (_activeAnnotationTool is CaptureAnnotationKind.Pen or CaptureAnnotationKind.Highlight)
         {
-            var previous = _draftPoints[^1];
-            if (previous != localPoint)
+            if (_draftPoints[^1] != localPoint)
             {
                 _draftPoints.Add(localPoint);
             }
@@ -296,7 +543,7 @@ public sealed partial class RegionCaptureWindow : Window
 
         if (_pointerCaptured)
         {
-            OverlayCanvas.ReleasePointerCapture(e.Pointer);
+            _overlayCanvas.ReleasePointerCapture(e.Pointer);
         }
 
         _pointerCaptured = false;
@@ -305,7 +552,7 @@ public sealed partial class RegionCaptureWindow : Window
         _annotationInProgress = false;
         _draftPoints.Clear();
         UpdateSelectionVisuals();
-        _ = KeyboardFocusTarget.Focus(FocusState.Programmatic);
+        _ = _keyboardFocusTarget.Focus(FocusState.Programmatic);
     }
 
     private void FinalizeDraftAnnotation()
@@ -357,11 +604,11 @@ public sealed partial class RegionCaptureWindow : Window
                 {
                     _activeAnnotationTool = null;
                     UpdateToolButtonStates();
-                    e.Handled = true;
-                    break;
                 }
-
-                CancelCapture();
+                else
+                {
+                    CancelCapture();
+                }
                 e.Handled = true;
                 break;
 
@@ -393,28 +640,19 @@ public sealed partial class RegionCaptureWindow : Window
                 NudgeSelection(-GetKeyboardStep(), 0);
                 e.Handled = true;
                 break;
-
             case VirtualKey.Right when _activeAnnotationTool is null:
                 NudgeSelection(GetKeyboardStep(), 0);
                 e.Handled = true;
                 break;
-
             case VirtualKey.Up when _activeAnnotationTool is null:
                 NudgeSelection(0, -GetKeyboardStep());
                 e.Handled = true;
                 break;
-
             case VirtualKey.Down when _activeAnnotationTool is null:
                 NudgeSelection(0, GetKeyboardStep());
                 e.Handled = true;
                 break;
         }
-    }
-
-    private static bool IsControlDown()
-    {
-        var state = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control);
-        return (state & Windows.UI.Core.CoreVirtualKeyStates.Down) != 0;
     }
 
     private void OverlayRoot_KeyUp(object sender, KeyRoutedEventArgs e)
@@ -423,6 +661,12 @@ public sealed partial class RegionCaptureWindow : Window
         {
             _shiftDown = false;
         }
+    }
+
+    private static bool IsControlDown()
+    {
+        var state = Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Control);
+        return (state & Windows.UI.Core.CoreVirtualKeyStates.Down) != 0;
     }
 
     private void NudgeSelection(int deltaX, int deltaY)
@@ -437,7 +681,6 @@ public sealed partial class RegionCaptureWindow : Window
             deltaX,
             deltaY,
             _session.Display.Bounds);
-
         UpdateSelectionVisuals();
     }
 
@@ -460,7 +703,7 @@ public sealed partial class RegionCaptureWindow : Window
         }
 
         UpdateToolButtonStates();
-        _ = KeyboardFocusTarget.Focus(FocusState.Programmatic);
+        _ = _keyboardFocusTarget.Focus(FocusState.Programmatic);
     }
 
     private void ColorButton_Click(object sender, RoutedEventArgs e)
@@ -477,13 +720,13 @@ public sealed partial class RegionCaptureWindow : Window
             "Indigo" => CaptureAnnotationColor.Indigo,
             _ => CaptureAnnotationColor.Coral
         };
-        _ = KeyboardFocusTarget.Focus(FocusState.Programmatic);
+        _ = _keyboardFocusTarget.Focus(FocusState.Programmatic);
     }
 
     private void UndoButton_Click(object sender, RoutedEventArgs e)
     {
         UndoLastAnnotation();
-        _ = KeyboardFocusTarget.Focus(FocusState.Programmatic);
+        _ = _keyboardFocusTarget.Focus(FocusState.Programmatic);
     }
 
     private async void CopyButton_Click(object sender, RoutedEventArgs e)
@@ -509,16 +752,15 @@ public sealed partial class RegionCaptureWindow : Window
 
     private void UpdateToolButtonStates()
     {
-        var activeBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x5D, 0x52, 0xD9));
-        var inactiveBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x21, 0x25, 0x2E));
-
-        MoveToolButton.Background = _activeAnnotationTool is null ? activeBrush : inactiveBrush;
-        PenToolButton.Background = _activeAnnotationTool == CaptureAnnotationKind.Pen ? activeBrush : inactiveBrush;
-        LineToolButton.Background = _activeAnnotationTool == CaptureAnnotationKind.Line ? activeBrush : inactiveBrush;
-        ArrowToolButton.Background = _activeAnnotationTool == CaptureAnnotationKind.Arrow ? activeBrush : inactiveBrush;
-        RectangleToolButton.Background = _activeAnnotationTool == CaptureAnnotationKind.Rectangle ? activeBrush : inactiveBrush;
-        HighlightToolButton.Background = _activeAnnotationTool == CaptureAnnotationKind.Highlight ? activeBrush : inactiveBrush;
-        UndoButton.IsEnabled = _annotations.Count > 0;
+        var active = Brush(0xFF, 0x5D, 0x52, 0xD9);
+        var inactive = Brush(0xFF, 0x21, 0x25, 0x2E);
+        _moveToolButton.Background = _activeAnnotationTool is null ? active : inactive;
+        _penToolButton.Background = _activeAnnotationTool == CaptureAnnotationKind.Pen ? active : inactive;
+        _lineToolButton.Background = _activeAnnotationTool == CaptureAnnotationKind.Line ? active : inactive;
+        _arrowToolButton.Background = _activeAnnotationTool == CaptureAnnotationKind.Arrow ? active : inactive;
+        _rectangleToolButton.Background = _activeAnnotationTool == CaptureAnnotationKind.Rectangle ? active : inactive;
+        _highlightToolButton.Background = _activeAnnotationTool == CaptureAnnotationKind.Highlight ? active : inactive;
+        _undoButton.IsEnabled = _annotations.Count > 0;
     }
 
     private async Task CommitSelectionAsync()
@@ -541,7 +783,7 @@ public sealed partial class RegionCaptureWindow : Window
         {
             _saving = false;
             ShowStatus(GetUserFacingError(exception), isBusy: false);
-            _ = KeyboardFocusTarget.Focus(FocusState.Programmatic);
+            _ = _keyboardFocusTarget.Focus(FocusState.Programmatic);
         }
     }
 
@@ -562,14 +804,10 @@ public sealed partial class RegionCaptureWindow : Window
             await _pngEncoder.EncodeAsync(frame, png);
 
             using var randomAccessStream = new InMemoryRandomAccessStream();
-            var pngBytes = png.ToArray();
-            await randomAccessStream.WriteAsync(pngBytes.AsBuffer());
+            await randomAccessStream.WriteAsync(png.ToArray().AsBuffer());
             randomAccessStream.Seek(0);
 
-            var package = new DataPackage
-            {
-                RequestedOperation = DataPackageOperation.Copy
-            };
+            var package = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
             package.SetBitmap(RandomAccessStreamReference.CreateFromStream(randomAccessStream));
             Clipboard.SetContent(package);
             Clipboard.Flush();
@@ -581,7 +819,7 @@ public sealed partial class RegionCaptureWindow : Window
         {
             _saving = false;
             ShowStatus(GetUserFacingError(exception), isBusy: false);
-            _ = KeyboardFocusTarget.Focus(FocusState.Programmatic);
+            _ = _keyboardFocusTarget.Focus(FocusState.Programmatic);
         }
     }
 
@@ -601,43 +839,39 @@ public sealed partial class RegionCaptureWindow : Window
 
     private void ShowStatus(string message, bool isBusy)
     {
-        OverlayStatusText.Text = message;
-        SaveProgress.IsActive = isBusy;
-        OverlayStatus.Visibility = Visibility.Visible;
+        _overlayStatusText.Text = message;
+        _saveProgress.IsActive = isBusy;
+        _overlayStatus.Visibility = Visibility.Visible;
     }
 
     private void UpdateSelectionVisuals()
     {
-        var totalWidth = Math.Max(0d, OverlayCanvas.ActualWidth);
-        var totalHeight = Math.Max(0d, OverlayCanvas.ActualHeight);
-        SetRectangle(FullDim, 0, 0, totalWidth, totalHeight);
+        var totalWidth = Math.Max(0d, _overlayCanvas.ActualWidth);
+        var totalHeight = Math.Max(0d, _overlayCanvas.ActualHeight);
+        SetRectangle(_fullDim, 0, 0, totalWidth, totalHeight);
 
         if (_selection.IsEmpty)
         {
-            FullDim.Visibility = Visibility.Visible;
+            _fullDim.Visibility = Visibility.Visible;
             SetSelectionChromeVisibility(Visibility.Collapsed);
-            ToolPalette.Visibility = Visibility.Collapsed;
-            ActionPalette.Visibility = Visibility.Collapsed;
-            CaptureHint.Visibility = Visibility.Visible;
-            AnnotationLayer.Children.Clear();
-            AnnotationLayer.Clip = null;
+            _toolPalette.Visibility = Visibility.Collapsed;
+            _actionPalette.Visibility = Visibility.Collapsed;
+            _captureHint.Visibility = Visibility.Visible;
+            _annotationLayer.Children.Clear();
+            _annotationLayer.Clip = null;
             return;
         }
 
-        FullDim.Visibility = Visibility.Collapsed;
+        _fullDim.Visibility = Visibility.Collapsed;
         SetSelectionChromeVisibility(Visibility.Visible);
-        ToolPalette.Visibility = Visibility.Visible;
-        ActionPalette.Visibility = Visibility.Visible;
-        CaptureHint.Visibility = Visibility.Collapsed;
+        _toolPalette.Visibility = Visibility.Visible;
+        _actionPalette.Visibility = Visibility.Visible;
+        _captureHint.Visibility = Visibility.Collapsed;
 
         var displayBounds = _session.Display.Bounds.Normalize();
         var selection = RegionSelectionGeometry.Clamp(_selection, displayBounds);
-        var x = DpiCoordinateTransformer.PhysicalToLogical(
-            checked(selection.X - displayBounds.X),
-            _session.Display.DpiX);
-        var y = DpiCoordinateTransformer.PhysicalToLogical(
-            checked(selection.Y - displayBounds.Y),
-            _session.Display.DpiY);
+        var x = DpiCoordinateTransformer.PhysicalToLogical(selection.X - displayBounds.X, _session.Display.DpiX);
+        var y = DpiCoordinateTransformer.PhysicalToLogical(selection.Y - displayBounds.Y, _session.Display.DpiY);
         var width = DpiCoordinateTransformer.PhysicalToLogical(selection.Width, _session.Display.DpiX);
         var height = DpiCoordinateTransformer.PhysicalToLogical(selection.Height, _session.Display.DpiY);
         var right = Math.Min(totalWidth, x + width);
@@ -648,96 +882,78 @@ public sealed partial class RegionCaptureWindow : Window
         width = Math.Max(0d, right - x);
         height = Math.Max(0d, bottom - y);
 
-        SetRectangle(TopDim, 0, 0, totalWidth, y);
-        SetRectangle(LeftDim, 0, y, x, height);
-        SetRectangle(RightDim, right, y, Math.Max(0d, totalWidth - right), height);
-        SetRectangle(BottomDim, 0, bottom, totalWidth, Math.Max(0d, totalHeight - bottom));
+        SetRectangle(_topDim, 0, 0, totalWidth, y);
+        SetRectangle(_leftDim, 0, y, x, height);
+        SetRectangle(_rightDim, right, y, Math.Max(0d, totalWidth - right), height);
+        SetRectangle(_bottomDim, 0, bottom, totalWidth, Math.Max(0d, totalHeight - bottom));
 
-        Canvas.SetLeft(SelectionBorder, x);
-        Canvas.SetTop(SelectionBorder, y);
-        SelectionBorder.Width = width;
-        SelectionBorder.Height = height;
+        Canvas.SetLeft(_selectionBorder, x);
+        Canvas.SetTop(_selectionBorder, y);
+        _selectionBorder.Width = width;
+        _selectionBorder.Height = height;
 
-        SelectionSizeText.Text = $"{selection.Width} × {selection.Height}";
-        SelectionBadge.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
-        var badgeWidth = SelectionBadge.DesiredSize.Width;
-        var badgeHeight = SelectionBadge.DesiredSize.Height;
-        var badgeX = Math.Clamp(x, 0d, Math.Max(0d, totalWidth - badgeWidth));
-        var badgeY = y >= badgeHeight + 8d
-            ? y - badgeHeight - 8d
-            : Math.Min(totalHeight - badgeHeight, bottom + 8d);
-        Canvas.SetLeft(SelectionBadge, badgeX);
-        Canvas.SetTop(SelectionBadge, Math.Max(0d, badgeY));
+        _selectionSizeText.Text = $"{selection.Width} × {selection.Height}";
+        _selectionBadge.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+        var badgeWidth = _selectionBadge.DesiredSize.Width;
+        var badgeHeight = _selectionBadge.DesiredSize.Height;
+        Canvas.SetLeft(_selectionBadge, Math.Clamp(x, 0d, Math.Max(0d, totalWidth - badgeWidth)));
+        var badgeY = y >= badgeHeight + 8d ? y - badgeHeight - 8d : Math.Min(totalHeight - badgeHeight, bottom + 8d);
+        Canvas.SetTop(_selectionBadge, Math.Max(0d, badgeY));
 
-        PlaceHandle(TopLeftHandle, x, y);
-        PlaceHandle(TopHandle, x + (width / 2d), y);
-        PlaceHandle(TopRightHandle, right, y);
-        PlaceHandle(RightHandle, right, y + (height / 2d));
-        PlaceHandle(BottomRightHandle, right, bottom);
-        PlaceHandle(BottomHandle, x + (width / 2d), bottom);
-        PlaceHandle(BottomLeftHandle, x, bottom);
-        PlaceHandle(LeftHandle, x, y + (height / 2d));
+        PlaceHandle(_topLeftHandle, x, y);
+        PlaceHandle(_topHandle, x + width / 2d, y);
+        PlaceHandle(_topRightHandle, right, y);
+        PlaceHandle(_rightHandle, right, y + height / 2d);
+        PlaceHandle(_bottomRightHandle, right, bottom);
+        PlaceHandle(_bottomHandle, x + width / 2d, bottom);
+        PlaceHandle(_bottomLeftHandle, x, bottom);
+        PlaceHandle(_leftHandle, x, y + height / 2d);
 
         PositionFloatingPalettes(x, y, right, bottom, totalWidth, totalHeight);
         RenderAnnotations();
         UpdateToolButtonStates();
     }
 
-    private void PositionFloatingPalettes(
-        double x,
-        double y,
-        double right,
-        double bottom,
-        double totalWidth,
-        double totalHeight)
+    private void PositionFloatingPalettes(double x, double y, double right, double bottom, double totalWidth, double totalHeight)
     {
-        ToolPalette.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
-        ActionPalette.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
-
-        var toolWidth = ToolPalette.DesiredSize.Width;
-        var toolHeight = ToolPalette.DesiredSize.Height;
-        var actionWidth = ActionPalette.DesiredSize.Width;
-        var actionHeight = ActionPalette.DesiredSize.Height;
+        _toolPalette.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+        _actionPalette.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+        var toolWidth = _toolPalette.DesiredSize.Width;
+        var toolHeight = _toolPalette.DesiredSize.Height;
+        var actionWidth = _actionPalette.DesiredSize.Width;
+        var actionHeight = _actionPalette.DesiredSize.Height;
 
         var toolX = right + 8d + toolWidth <= totalWidth
             ? right + 8d
             : x >= toolWidth + 8d
                 ? x - toolWidth - 8d
                 : Math.Clamp(right - toolWidth - 8d, 0d, Math.Max(0d, totalWidth - toolWidth));
-        var toolY = Math.Clamp(y, 0d, Math.Max(0d, totalHeight - toolHeight));
+        Canvas.SetLeft(_toolPalette, toolX);
+        Canvas.SetTop(_toolPalette, Math.Clamp(y, 0d, Math.Max(0d, totalHeight - toolHeight)));
 
-        var actionX = Math.Clamp(right - actionWidth, 0d, Math.Max(0d, totalWidth - actionWidth));
-        var actionY = bottom + 8d + actionHeight <= totalHeight
-            ? bottom + 8d
-            : Math.Max(0d, y - actionHeight - 8d);
-
-        Canvas.SetLeft(ToolPalette, toolX);
-        Canvas.SetTop(ToolPalette, toolY);
-        Canvas.SetLeft(ActionPalette, actionX);
-        Canvas.SetTop(ActionPalette, actionY);
+        Canvas.SetLeft(_actionPalette, Math.Clamp(right - actionWidth, 0d, Math.Max(0d, totalWidth - actionWidth)));
+        Canvas.SetTop(
+            _actionPalette,
+            bottom + 8d + actionHeight <= totalHeight ? bottom + 8d : Math.Max(0d, y - actionHeight - 8d));
     }
 
     private void RenderAnnotations()
     {
-        AnnotationLayer.Children.Clear();
+        _annotationLayer.Children.Clear();
         if (_selection.IsEmpty)
         {
-            AnnotationLayer.Clip = null;
+            _annotationLayer.Clip = null;
             return;
         }
 
         var displayBounds = _session.Display.Bounds.Normalize();
         var selection = RegionSelectionGeometry.Clamp(_selection, displayBounds);
-        var selectionX = DpiCoordinateTransformer.PhysicalToLogical(
-            checked(selection.X - displayBounds.X),
-            _session.Display.DpiX);
-        var selectionY = DpiCoordinateTransformer.PhysicalToLogical(
-            checked(selection.Y - displayBounds.Y),
-            _session.Display.DpiY);
+        var selectionX = DpiCoordinateTransformer.PhysicalToLogical(selection.X - displayBounds.X, _session.Display.DpiX);
+        var selectionY = DpiCoordinateTransformer.PhysicalToLogical(selection.Y - displayBounds.Y, _session.Display.DpiY);
         var selectionWidth = DpiCoordinateTransformer.PhysicalToLogical(selection.Width, _session.Display.DpiX);
         var selectionHeight = DpiCoordinateTransformer.PhysicalToLogical(selection.Height, _session.Display.DpiY);
 
-        AnnotationLayer.Clip = new RectangleGeometry
+        _annotationLayer.Clip = new RectangleGeometry
         {
             Rect = new Windows.Foundation.Rect(selectionX, selectionY, selectionWidth, selectionHeight)
         };
@@ -769,27 +985,19 @@ public sealed partial class RegionCaptureWindow : Window
     private void AddAnnotationVisual(CaptureAnnotation annotation, double selectionX, double selectionY)
     {
         var brush = AnnotationBrush(annotation);
-        var thickness = Math.Max(
-            1d,
-            DpiCoordinateTransformer.PhysicalToLogical(annotation.Thickness, _session.Display.DpiX));
+        var thickness = Math.Max(1d, DpiCoordinateTransformer.PhysicalToLogical(annotation.Thickness, _session.Display.DpiX));
 
         switch (annotation.Kind)
         {
             case CaptureAnnotationKind.Pen:
             case CaptureAnnotationKind.Highlight:
-            {
-                var polyline = new Polyline
-                {
-                    Stroke = brush,
-                    StrokeThickness = thickness
-                };
+                var polyline = new Polyline { Stroke = brush, StrokeThickness = thickness };
                 foreach (var point in annotation.Points)
                 {
                     polyline.Points.Add(ToOverlayPoint(point, selectionX, selectionY));
                 }
-                AnnotationLayer.Children.Add(polyline);
+                _annotationLayer.Children.Add(polyline);
                 break;
-            }
 
             case CaptureAnnotationKind.Line:
                 AddLineVisual(annotation.Points[0], annotation.Points[^1], selectionX, selectionY, brush, thickness);
@@ -815,7 +1023,7 @@ public sealed partial class RegionCaptureWindow : Window
     {
         var first = ToOverlayPoint(start, selectionX, selectionY);
         var second = ToOverlayPoint(end, selectionX, selectionY);
-        AnnotationLayer.Children.Add(new Line
+        _annotationLayer.Children.Add(new Line
         {
             X1 = first.X,
             Y1 = first.Y,
@@ -826,17 +1034,10 @@ public sealed partial class RegionCaptureWindow : Window
         });
     }
 
-    private void AddRectangleVisual(
-        CaptureAnnotation annotation,
-        double selectionX,
-        double selectionY,
-        SolidColorBrush brush,
-        double thickness)
+    private void AddRectangleVisual(CaptureAnnotation annotation, double selectionX, double selectionY, SolidColorBrush brush, double thickness)
     {
         var first = ToOverlayPoint(annotation.Points[0], selectionX, selectionY);
         var second = ToOverlayPoint(annotation.Points[^1], selectionX, selectionY);
-        var left = Math.Min(first.X, second.X);
-        var top = Math.Min(first.Y, second.Y);
         var rectangle = new Rectangle
         {
             Width = Math.Abs(second.X - first.X),
@@ -844,21 +1045,16 @@ public sealed partial class RegionCaptureWindow : Window
             Stroke = brush,
             StrokeThickness = thickness
         };
-        Canvas.SetLeft(rectangle, left);
-        Canvas.SetTop(rectangle, top);
-        AnnotationLayer.Children.Add(rectangle);
+        Canvas.SetLeft(rectangle, Math.Min(first.X, second.X));
+        Canvas.SetTop(rectangle, Math.Min(first.Y, second.Y));
+        _annotationLayer.Children.Add(rectangle);
     }
 
-    private void AddArrowVisual(
-        CaptureAnnotation annotation,
-        double selectionX,
-        double selectionY,
-        SolidColorBrush brush,
-        double thickness)
+    private void AddArrowVisual(CaptureAnnotation annotation, double selectionX, double selectionY, SolidColorBrush brush, double thickness)
     {
         var start = ToOverlayPoint(annotation.Points[0], selectionX, selectionY);
         var end = ToOverlayPoint(annotation.Points[^1], selectionX, selectionY);
-        AnnotationLayer.Children.Add(new Line
+        _annotationLayer.Children.Add(new Line
         {
             X1 = start.X,
             Y1 = start.Y,
@@ -879,11 +1075,10 @@ public sealed partial class RegionCaptureWindow : Window
         var headLength = Math.Clamp(Math.Max(10d, thickness * 4d), 10d, Math.Max(10d, length * 0.45d));
         var angle = Math.Atan2(dy, dx);
         const double wingAngle = 0.58d;
-
         for (var direction = -1; direction <= 1; direction += 2)
         {
             var wing = angle + direction * wingAngle;
-            AnnotationLayer.Children.Add(new Line
+            _annotationLayer.Children.Add(new Line
             {
                 X1 = end.X,
                 Y1 = end.Y,
@@ -895,10 +1090,7 @@ public sealed partial class RegionCaptureWindow : Window
         }
     }
 
-    private Windows.Foundation.Point ToOverlayPoint(
-        CaptureAnnotationPoint point,
-        double selectionX,
-        double selectionY)
+    private Windows.Foundation.Point ToOverlayPoint(CaptureAnnotationPoint point, double selectionX, double selectionY)
         => new(
             selectionX + DpiCoordinateTransformer.PhysicalToLogical(point.X, _session.Display.DpiX),
             selectionY + DpiCoordinateTransformer.PhysicalToLogical(point.Y, _session.Display.DpiY));
@@ -908,11 +1100,7 @@ public sealed partial class RegionCaptureWindow : Window
         var alpha = annotation.Kind == CaptureAnnotationKind.Highlight
             ? Math.Min(annotation.Color.Alpha, (byte)96)
             : annotation.Color.Alpha;
-        return new SolidColorBrush(Windows.UI.Color.FromArgb(
-            alpha,
-            annotation.Color.Red,
-            annotation.Color.Green,
-            annotation.Color.Blue));
+        return Brush(alpha, annotation.Color.Red, annotation.Color.Green, annotation.Color.Blue);
     }
 
     private static int GetAnnotationThickness(CaptureAnnotationKind kind)
@@ -926,35 +1114,129 @@ public sealed partial class RegionCaptureWindow : Window
     private CaptureAnnotationPoint ToSelectionLocal(PixelPoint desktopPoint)
     {
         var selection = _selection.Normalize();
-        var x = Math.Clamp(desktopPoint.X - selection.X, 0, Math.Max(0, selection.Width - 1));
-        var y = Math.Clamp(desktopPoint.Y - selection.Y, 0, Math.Max(0, selection.Height - 1));
-        return new CaptureAnnotationPoint(x, y);
+        return new CaptureAnnotationPoint(
+            Math.Clamp(desktopPoint.X - selection.X, 0, Math.Max(0, selection.Width - 1)),
+            Math.Clamp(desktopPoint.Y - selection.Y, 0, Math.Max(0, selection.Height - 1)));
     }
 
     private void SetSelectionChromeVisibility(Visibility visibility)
     {
-        TopDim.Visibility = visibility;
-        LeftDim.Visibility = visibility;
-        RightDim.Visibility = visibility;
-        BottomDim.Visibility = visibility;
-        SelectionBorder.Visibility = visibility;
-        SelectionBadge.Visibility = visibility;
-        TopLeftHandle.Visibility = visibility;
-        TopHandle.Visibility = visibility;
-        TopRightHandle.Visibility = visibility;
-        RightHandle.Visibility = visibility;
-        BottomRightHandle.Visibility = visibility;
-        BottomHandle.Visibility = visibility;
-        BottomLeftHandle.Visibility = visibility;
-        LeftHandle.Visibility = visibility;
+        _topDim.Visibility = visibility;
+        _leftDim.Visibility = visibility;
+        _rightDim.Visibility = visibility;
+        _bottomDim.Visibility = visibility;
+        _selectionBorder.Visibility = visibility;
+        _selectionBadge.Visibility = visibility;
+        _topLeftHandle.Visibility = visibility;
+        _topHandle.Visibility = visibility;
+        _topRightHandle.Visibility = visibility;
+        _rightHandle.Visibility = visibility;
+        _bottomRightHandle.Visibility = visibility;
+        _bottomHandle.Visibility = visibility;
+        _bottomLeftHandle.Visibility = visibility;
+        _leftHandle.Visibility = visibility;
     }
 
-    private static void SetRectangle(
-        Rectangle rectangle,
-        double x,
-        double y,
-        double width,
-        double height)
+    private static Rectangle CreateDimRectangle(Visibility visibility = Visibility.Visible)
+        => new()
+        {
+            Fill = Brush(0xA0, 0x00, 0x00, 0x00),
+            IsHitTestVisible = false,
+            Visibility = visibility
+        };
+
+    private Ellipse CreateResizeHandle(SelectionHandle handle, string automationName)
+    {
+        var ellipse = new Ellipse
+        {
+            Tag = handle.ToString(),
+            Width = 10,
+            Height = 10,
+            Fill = Brush(0xFF, 0xFF, 0xFF, 0xFF),
+            Stroke = Brush(0xFF, 0x7C, 0x6C, 0xFF),
+            StrokeThickness = 2,
+            Visibility = Visibility.Collapsed
+        };
+        AutomationProperties.SetName(ellipse, automationName);
+        ellipse.PointerPressed += Handle_PointerPressed;
+        return ellipse;
+    }
+
+    private Button CreateToolButton(string text, string tag, string tooltip)
+    {
+        var button = CreatePaletteButton(text, tooltip);
+        button.Tag = tag;
+        button.MinWidth = 58;
+        button.Click += AnnotationToolButton_Click;
+        return button;
+    }
+
+    private static Button CreatePaletteButton(string text, string tooltip)
+    {
+        var button = new Button
+        {
+            Content = text,
+            Padding = new Thickness(8, 5, 8, 5),
+            MinHeight = 30,
+            Foreground = Brush(0xFF, 0xFF, 0xFF, 0xFF)
+        };
+        ToolTipService.SetToolTip(button, tooltip);
+        return button;
+    }
+
+    private Button CreateColorButton(string tag, byte red, byte green, byte blue)
+    {
+        var button = new Button
+        {
+            Tag = tag,
+            Width = 25,
+            Height = 25,
+            Padding = new Thickness(0),
+            Content = new Ellipse
+            {
+                Width = 13,
+                Height = 13,
+                Fill = Brush(0xFF, red, green, blue)
+            }
+        };
+        ToolTipService.SetToolTip(button, tag);
+        button.Click += ColorButton_Click;
+        return button;
+    }
+
+    private static Rectangle Separator()
+        => new()
+        {
+            Height = 1,
+            Fill = Brush(0x35, 0xFF, 0xFF, 0xFF),
+            Margin = new Thickness(4, 2, 4, 2)
+        };
+
+    private static Border Palette(UIElement child)
+        => new()
+        {
+            Visibility = Visibility.Collapsed,
+            Background = Brush(0xF5, 0x11, 0x13, 0x18),
+            BorderBrush = Brush(0x45, 0xFF, 0xFF, 0xFF),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(5),
+            Child = child
+        };
+
+    private static TextBlock Text(string value, double size, SolidColorBrush foreground, Microsoft.UI.Text.FontWeight? weight = null)
+        => new()
+        {
+            Text = value,
+            FontSize = size,
+            Foreground = foreground,
+            FontWeight = weight ?? Microsoft.UI.Text.FontWeights.Normal
+        };
+
+    private static SolidColorBrush Brush(byte alpha, byte red, byte green, byte blue)
+        => new(Windows.UI.Color.FromArgb(alpha, red, green, blue));
+
+    private static void SetRectangle(Rectangle rectangle, double x, double y, double width, double height)
     {
         Canvas.SetLeft(rectangle, x);
         Canvas.SetTop(rectangle, y);
@@ -976,10 +1258,8 @@ public sealed partial class RegionCaptureWindow : Window
             yDip,
             _session.Display.DpiX,
             _session.Display.DpiY);
-
         var x = checked(bounds.X + local.X);
         var y = checked(bounds.Y + local.Y);
-
         return new PixelPoint(
             Math.Clamp(x, bounds.Left, bounds.Right),
             Math.Clamp(y, bounds.Top, bounds.Bottom));
@@ -995,15 +1275,13 @@ public sealed partial class RegionCaptureWindow : Window
     private static async Task<WriteableBitmap> CreateFrozenBitmapAsync(CaptureFrame frame)
     {
         frame.Validate();
-
         var rowLength = checked(frame.Size.Width * 4);
         var packedPixels = new byte[checked(rowLength * frame.Size.Height)];
         var source = frame.Bgra8Pixels.Span;
 
         for (var y = 0; y < frame.Size.Height; y++)
         {
-            source
-                .Slice(checked(y * frame.Stride), rowLength)
+            source.Slice(checked(y * frame.Stride), rowLength)
                 .CopyTo(packedPixels.AsSpan(checked(y * rowLength), rowLength));
         }
 
