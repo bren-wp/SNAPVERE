@@ -60,6 +60,14 @@ public partial class App : Microsoft.UI.Xaml.Application
         {
             _window = _services.GetRequiredService<MainWindow>();
             _window.Closed += OnMainWindowClosed;
+
+            // A solid application surface is already rendered by the Capture
+            // Center. Disable the optional backdrop before first activation so
+            // startup remains deterministic on Server, VM, RDP and other
+            // sessions where composition backdrops can fail asynchronously.
+            _window.SystemBackdrop = null;
+            StartupDiagnostics.WriteLine("Main window composition fallback selected.");
+
             _window.Activate();
             StartupDiagnostics.WriteLine("Main window activated.");
 
@@ -69,8 +77,13 @@ public partial class App : Microsoft.UI.Xaml.Application
                 return;
             }
 
+            StartupDiagnostics.WriteLine("Starting global hotkey host.");
             StartGlobalHotkeys();
+            StartupDiagnostics.WriteLine("Global hotkey host startup completed.");
+
+            StartupDiagnostics.WriteLine("Starting system tray host.");
             StartTrayIcon();
+            StartupDiagnostics.WriteLine("System tray host startup completed.");
         }
         catch (Exception exception)
         {
