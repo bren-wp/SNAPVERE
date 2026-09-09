@@ -11,7 +11,7 @@ jobs:
   release:
     if: contains(github.event.head_commit.message, '[release 0.0.1]')
     runs-on: windows-latest
-    timeout-minutes: 75
+    timeout-minutes: 85
     env:
       SNAPVERE_VERSION: 0.0.1
     steps:
@@ -32,6 +32,10 @@ jobs:
           dotnet build SNAPVERE.sln --configuration Release --no-restore -p:Platform=x64
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet test tests/Snapvere.UnitTests/Snapvere.UnitTests.csproj --configuration Release --no-restore -p:Platform=x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet restore src/Snapvere.App/Snapvere.App.csproj --runtime win-x86
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet build src/Snapvere.App/Snapvere.App.csproj --configuration Release --runtime win-x86 --no-restore -p:Platform=x86
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build x64 and x86 release packages
@@ -100,16 +104,27 @@ jobs:
           }
 
           foreach ($arch in @("x64", "x86")) {
-            $setup = Resolve-Path "release/SNAPVERE-$env:SNAPVERE_VERSION-Setup-$arch.exe"
+            $setup = (Resolve-Path "release/SNAPVERE-$env:SNAPVERE_VERSION-Setup-$arch.exe").Path
             $install = Join-Path $env:LOCALAPPDATA "Programs/SNAPVERE"
 
-            & $setup --silent --accept-license
-            if ($LASTEXITCODE -ne 0) { throw "$arch installer lifecycle test failed to install." }
-            if (-not (Test-Path (Join-Path $install "Snapvere.exe"))) { throw "$arch install is missing Snapvere.exe." }
+            $licenseProbe = Start-Process -FilePath $setup -ArgumentList @("--silent") -Wait -PassThru
+            if ($licenseProbe.ExitCode -ne 2) { throw "$arch setup accepted silent install without explicit license acceptance." }
 
-            & (Join-Path $install "SNAPVERE-Setup.exe") --uninstall --silent
-            if ($LASTEXITCODE -ne 0) { throw "$arch installer lifecycle test failed to uninstall." }
-            Start-Sleep -Seconds 4
+            $installProcess = Start-Process -FilePath $setup -ArgumentList @("--silent", "--accept-license") -Wait -PassThru
+            if ($installProcess.ExitCode -ne 0) { throw "$arch installer lifecycle test failed to install with code $($installProcess.ExitCode)." }
+            if (-not (Test-Path (Join-Path $install "Snapvere.exe"))) { throw "$arch install is missing Snapvere.exe." }
+            if (-not (Test-Path (Join-Path $install "SNAPVERE-Setup.exe"))) { throw "$arch install is missing maintenance Setup." }
+            if (Get-ChildItem $install -Filter "uninstall*.exe" -ErrorAction SilentlyContinue) { throw "$arch install contains a separate uninstall executable." }
+
+            $installedSetup = Join-Path $install "SNAPVERE-Setup.exe"
+            $uninstallProcess = Start-Process -FilePath $installedSetup -ArgumentList @("--uninstall", "--silent") -Wait -PassThru
+            if ($uninstallProcess.ExitCode -ne 0) { throw "$arch installer lifecycle test failed to uninstall with code $($uninstallProcess.ExitCode)." }
+
+            $deadline = (Get-Date).AddSeconds(15)
+            while ((Test-Path (Join-Path $install "Snapvere.exe")) -and (Get-Date) -lt $deadline) {
+              Start-Sleep -Milliseconds 250
+            }
+            if (Test-Path (Join-Path $install "Snapvere.exe")) { throw "$arch uninstall cleanup timed out." }
           }
 
       - name: Generate SHA-256 checksums
@@ -123,6 +138,9 @@ jobs:
       - name: Create v0.0.1 tag
         shell: pwsh
         run: |
+          if (git ls-remote --exit-code --tags origin "refs/tags/v$env:SNAPVERE_VERSION") {
+            throw "Tag v$env:SNAPVERE_VERSION already exists. Refusing to replace an immutable release tag."
+          }
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "v$env:SNAPVERE_VERSION" -m "SNAPVERE v$env:SNAPVERE_VERSION"

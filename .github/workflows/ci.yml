@@ -51,7 +51,7 @@ jobs:
 
   package-smoke:
     runs-on: windows-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -79,6 +79,7 @@ jobs:
             -p:DebugType=None `
             -p:DebugSymbols=false `
             --output "artifacts/app-${{ matrix.arch }}"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build embedded payload
         shell: pwsh
@@ -99,6 +100,7 @@ jobs:
             -p:SnapverePayloadPath="$payload" `
             -p:Version=0.0.1 `
             --output "artifacts/setup-${{ matrix.arch }}"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Publish Portable EXE
         shell: pwsh
@@ -111,6 +113,7 @@ jobs:
             -p:SnapverePayloadPath="$payload" `
             -p:Version=0.0.1 `
             --output "artifacts/portable-${{ matrix.arch }}"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Validate package outputs
         shell: pwsh
@@ -125,26 +128,31 @@ jobs:
       - name: Smoke test Setup install and uninstall
         shell: pwsh
         run: |
-          $setup = Resolve-Path "artifacts/setup-${{ matrix.arch }}/SNAPVERE-Setup.exe"
+          $setup = (Resolve-Path "artifacts/setup-${{ matrix.arch }}/SNAPVERE-Setup.exe").Path
           $install = Join-Path $env:LOCALAPPDATA "Programs/SNAPVERE"
 
-          & $setup --silent
-          if ($LASTEXITCODE -ne 2) {
-            throw "Silent setup without --accept-license must exit with code 2; got $LASTEXITCODE."
+          $licenseProbe = Start-Process -FilePath $setup -ArgumentList @("--silent") -Wait -PassThru
+          if ($licenseProbe.ExitCode -ne 2) {
+            throw "Silent setup without --accept-license must exit with code 2; got $($licenseProbe.ExitCode)."
           }
 
-          & $setup --silent --accept-license
-          if ($LASTEXITCODE -ne 0) { throw "Silent install failed with exit code $LASTEXITCODE." }
+          $installProcess = Start-Process -FilePath $setup -ArgumentList @("--silent", "--accept-license") -Wait -PassThru
+          if ($installProcess.ExitCode -ne 0) { throw "Silent install failed with exit code $($installProcess.ExitCode)." }
           if (-not (Test-Path (Join-Path $install "Snapvere.exe"))) { throw "Installed Snapvere.exe is missing." }
           if (-not (Test-Path (Join-Path $install "SNAPVERE-Setup.exe"))) { throw "Installed setup maintenance executable is missing." }
           if (Get-ChildItem $install -Filter "uninstall*.exe" -ErrorAction SilentlyContinue) {
             throw "A separate uninstall.exe-style executable must not be installed."
           }
 
-          & (Join-Path $install "SNAPVERE-Setup.exe") --uninstall --silent
-          if ($LASTEXITCODE -ne 0) { throw "Silent uninstall failed with exit code $LASTEXITCODE." }
+          $installedSetup = Join-Path $install "SNAPVERE-Setup.exe"
+          $uninstallProcess = Start-Process -FilePath $installedSetup -ArgumentList @("--uninstall", "--silent") -Wait -PassThru
+          if ($uninstallProcess.ExitCode -ne 0) { throw "Silent uninstall failed with exit code $($uninstallProcess.ExitCode)." }
 
-          Start-Sleep -Seconds 4
+          $deadline = (Get-Date).AddSeconds(15)
+          while ((Test-Path (Join-Path $install "Snapvere.exe")) -and (Get-Date) -lt $deadline) {
+            Start-Sleep -Milliseconds 250
+          }
+
           if (Test-Path (Join-Path $install "Snapvere.exe")) {
-            throw "Snapvere.exe remains after uninstall."
+            throw "Snapvere.exe remains after uninstall cleanup timeout."
           }
