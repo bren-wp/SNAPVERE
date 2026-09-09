@@ -203,16 +203,18 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenCaptureServic
 
         try
         {
-            Marshal.QueryInterface(
+            ThrowIfFailed(
+                Marshal.QueryInterface(
                     (nint)d3dDevicePointer,
                     in DxgiDeviceGuid,
-                    out dxgiDevicePointer)
-                .ThrowIfFailed("ID3D11Device.QueryInterface(IDXGIDevice)");
+                    out dxgiDevicePointer),
+                "ID3D11Device.QueryInterface(IDXGIDevice)");
 
-            CreateDirect3D11DeviceFromDXGIDevice(
+            ThrowIfFailed(
+                CreateDirect3D11DeviceFromDXGIDevice(
                     dxgiDevicePointer,
-                    out graphicsDevicePointer)
-                .ThrowIfFailed("CreateDirect3D11DeviceFromDXGIDevice");
+                    out graphicsDevicePointer),
+                "CreateDirect3D11DeviceFromDXGIDevice");
 
             var managed = MarshalInspectable<IDirect3DDevice>.FromAbi(graphicsDevicePointer);
             graphicsDevicePointer = nint.Zero;
@@ -245,19 +247,21 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenCaptureServic
 
         try
         {
-            Marshal.QueryInterface(
+            ThrowIfFailed(
+                Marshal.QueryInterface(
                     factory.ThisPtr,
                     in GraphicsCaptureItemInteropGuid,
-                    out interopPointer)
-                .ThrowIfFailed("GraphicsCaptureItem.QueryInterface(IGraphicsCaptureItemInterop)");
+                    out interopPointer),
+                "GraphicsCaptureItem.QueryInterface(IGraphicsCaptureItemInterop)");
 
             var interop = ComInterfaceMarshaller<IGraphicsCaptureItemInterop>
                 .ConvertToManaged((void*)interopPointer)
                 ?? throw new COMException("Could not project IGraphicsCaptureItemInterop.");
             interopPointer = nint.Zero;
 
-            interop.CreateForMonitor(monitor, in GraphicsCaptureItemGuid, out itemPointer)
-                .ThrowIfFailed("GraphicsCaptureItem.CreateForMonitor");
+            ThrowIfFailed(
+                interop.CreateForMonitor(monitor, in GraphicsCaptureItemGuid, out itemPointer),
+                "GraphicsCaptureItem.CreateForMonitor");
 
             var item = MarshalInspectable<GraphicsCaptureItem>.FromAbi(itemPointer);
             itemPointer = nint.Zero;
@@ -354,19 +358,21 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenCaptureServic
 
         try
         {
-            Marshal.QueryInterface(
+            ThrowIfFailed(
+                Marshal.QueryInterface(
                     surfacePointer,
                     in Direct3DDxgiInterfaceAccessGuid,
-                    out accessPointer)
-                .ThrowIfFailed("IDirect3DSurface.QueryInterface(IDirect3DDxgiInterfaceAccess)");
+                    out accessPointer),
+                "IDirect3DSurface.QueryInterface(IDirect3DDxgiInterfaceAccess)");
 
             var access = ComInterfaceMarshaller<IDirect3DDxgiInterfaceAccess>
                 .ConvertToManaged((void*)accessPointer)
                 ?? throw new COMException("Could not project IDirect3DDxgiInterfaceAccess.");
             accessPointer = nint.Zero;
 
-            access.GetInterface(in D3D11Texture2DGuid, out texturePointer)
-                .ThrowIfFailed("IDirect3DDxgiInterfaceAccess.GetInterface");
+            ThrowIfFailed(
+                access.GetInterface(in D3D11Texture2DGuid, out texturePointer),
+                "IDirect3DDxgiInterfaceAccess.GetInterface");
 
             var texture = ComInterfaceMarshaller<D3D.ID3D11Texture2D>
                 .ConvertToManaged((void*)texturePointer)
@@ -410,7 +416,7 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenCaptureServic
         return true;
     }
 
-    private static void ThrowIfFailed(this int hresult, string operation)
+    private static void ThrowIfFailed(int hresult, string operation)
     {
         if (hresult < 0)
         {
@@ -427,7 +433,7 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenCaptureServic
 
     [GeneratedComInterface]
     [Guid("3628E81B-3CAC-4C60-B7F4-23CE0E0C3356")]
-    private partial interface IGraphicsCaptureItemInterop
+    internal partial interface IGraphicsCaptureItemInterop
     {
         [PreserveSig]
         int CreateForWindow(nint window, in Guid iid, out nint result);
@@ -438,7 +444,7 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenCaptureServic
 
     [GeneratedComInterface]
     [Guid("A9B3D012-3DF2-4EE3-B8D1-8695F457D3C1")]
-    private partial interface IDirect3DDxgiInterfaceAccess
+    internal partial interface IDirect3DDxgiInterfaceAccess
     {
         [PreserveSig]
         int GetInterface(in Guid iid, out nint result);
