@@ -57,7 +57,7 @@ public static class EmbeddedPayload
                 throw new InvalidDataException("The SNAPVERE package attempted to write outside its destination.");
             }
 
-            if (entry.FullName.EndsWith('/', StringComparison.Ordinal) ||
+            if (entry.FullName.EndsWith("/", StringComparison.Ordinal) ||
                 entry.FullName.EndsWith("\\", StringComparison.Ordinal))
             {
                 Directory.CreateDirectory(targetPath);
