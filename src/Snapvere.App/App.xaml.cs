@@ -141,6 +141,13 @@ public partial class App : Microsoft.UI.Xaml.Application
 
     private void StartRegionOverlayProbe()
     {
+        _window = _services.GetRequiredService<CaptureCenterWindow>();
+        _window.Closed += OnMainWindowClosed;
+        _window.Activate();
+        StartupDiagnostics.WriteLine("Region overlay probe host window activated.");
+        _window.AppWindow.Hide();
+        StartupDiagnostics.WriteLine("Region overlay probe host window hidden.");
+
         const int width = 640;
         const int height = 360;
         var stride = checked(width * 4);
@@ -186,6 +193,7 @@ public partial class App : Microsoft.UI.Xaml.Application
 
         StartupDiagnostics.WriteLine("Region overlay probe window created.");
         _ = _regionProbeWindow.ShowAsync();
+        StartupDiagnostics.WriteLine("Region overlay probe activation requested.");
     }
 
     private async void RegionOverlayProbeRoot_Loaded(object sender, RoutedEventArgs e)
@@ -202,7 +210,7 @@ public partial class App : Microsoft.UI.Xaml.Application
                 markerPath,
                 $"SNAPVERE {version} REGION_OVERLAY_READY | PID={Environment.ProcessId} | ARCH={RuntimeInformation.ProcessArchitecture} | {DateTimeOffset.UtcNow:O}");
 
-            StartupDiagnostics.WriteLine($"Region overlay probe loaded editor XAML. Marker={markerPath}");
+            StartupDiagnostics.WriteLine($"Region overlay probe loaded editor surface. Marker={markerPath}");
             Environment.Exit(0);
         }
         catch (Exception exception)
