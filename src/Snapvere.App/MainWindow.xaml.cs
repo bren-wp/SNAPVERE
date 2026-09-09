@@ -43,6 +43,17 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    public void ShowFromTray()
+    {
+        if (_captureInProgress)
+        {
+            return;
+        }
+
+        AppWindow.Show();
+        Activate();
+    }
+
     public void ApplyHotkeyRegistrationReport(GlobalHotkeyRegistrationReport report)
     {
         ArgumentNullException.ThrowIfNull(report);
@@ -68,6 +79,14 @@ public sealed partial class MainWindow : Window
         CaptureStatus.Severity = InfoBarSeverity.Warning;
         CaptureStatus.Title = "Global hotkeys unavailable";
         CaptureStatus.Message = "SNAPVERE could not start the Windows global-hotkey host. Capture buttons remain available.";
+    }
+
+    public void ReportTrayHostFailure()
+    {
+        CaptureStatus.IsOpen = true;
+        CaptureStatus.Severity = InfoBarSeverity.Warning;
+        CaptureStatus.Title = "System tray unavailable";
+        CaptureStatus.Message = "SNAPVERE could not create its Windows notification-area icon. Capture buttons and global hotkeys remain available.";
     }
 
     private async void RegionCaptureButton_Click(object sender, RoutedEventArgs e)
