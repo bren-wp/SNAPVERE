@@ -9,6 +9,7 @@ internal static class Program
 {
     private const string PayloadResourceName = "Snapvere.Payload.zip";
     private const string AppExecutableName = "Snapvere.exe";
+    private const string StartupProbeEnvironmentVariable = "SNAPVERE_STARTUP_PROBE";
 
     [STAThread]
     private static void Main(string[] args)
@@ -103,10 +104,7 @@ internal static class Program
         using var process = Process.Start(startInfo)
             ?? throw new InvalidOperationException("Windows could not create the SNAPVERE process.");
 
-        var startupProbe = args.Any(
-            argument => string.Equals(argument, "--startup-probe", StringComparison.OrdinalIgnoreCase));
-
-        if (startupProbe)
+        if (IsStartupProbeRequested(args))
         {
             if (!process.WaitForExit(20_000))
             {
@@ -130,6 +128,20 @@ internal static class Program
                 $"SNAPVERE exited during startup with code {process.ExitCode}. " +
                 "See the startup log path below for details.");
         }
+    }
+
+    private static bool IsStartupProbeRequested(IReadOnlyList<string> args)
+    {
+        if (string.Equals(
+                Environment.GetEnvironmentVariable(StartupProbeEnvironmentVariable),
+                "1",
+                StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return args.Any(
+            argument => string.Equals(argument, "--startup-probe", StringComparison.OrdinalIgnoreCase));
     }
 
     private static void TryTerminate(Process process)
