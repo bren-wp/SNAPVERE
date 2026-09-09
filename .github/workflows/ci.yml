@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: snapvere-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   SNAPVERE_VERSION: 0.0.2
 
