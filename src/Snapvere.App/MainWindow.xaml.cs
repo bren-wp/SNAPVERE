@@ -7,17 +7,87 @@ namespace Snapvere.App;
 public sealed partial class MainWindow : Window
 {
     private readonly ScreenCaptureWorkflow _screenCaptureWorkflow;
+    private readonly RegionCaptureWorkflow _regionCaptureWorkflow;
+    private RegionCaptureWindow? _regionCaptureWindow;
 
-    public MainWindow(ScreenCaptureWorkflow screenCaptureWorkflow)
+    public MainWindow(
+        ScreenCaptureWorkflow screenCaptureWorkflow,
+        RegionCaptureWorkflow regionCaptureWorkflow)
     {
         _screenCaptureWorkflow = screenCaptureWorkflow ?? throw new ArgumentNullException(nameof(screenCaptureWorkflow));
+        _regionCaptureWorkflow = regionCaptureWorkflow ?? throw new ArgumentNullException(nameof(regionCaptureWorkflow));
+
         InitializeComponent();
         RootNavigation.SelectedItem = RootNavigation.MenuItems[0];
     }
 
+    private async void RegionCaptureButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_regionCaptureWindow is not null)
+        {
+            return;
+        }
+
+        SetCaptureButtonsEnabled(false);
+        CaptureStatus.IsOpen = true;
+        CaptureStatus.Severity = InfoBarSeverity.Informational;
+        CaptureStatus.Title = "Preparing region capture";
+        CaptureStatus.Message = "Freezing the primary display before the selection overlay opens.";
+
+        var mainWindowHidden = false;
+
+        try
+        {
+            AppWindow.Hide();
+            mainWindowHidden = true;
+
+            // Give Desktop Window Manager one short presentation interval to remove
+            // the SNAPVERE main window before freezing the display.
+            await Task.Delay(120);
+
+            var session = await _regionCaptureWorkflow.PreparePrimaryDisplayAsync(includeCursor: false);
+            var overlay = new RegionCaptureWindow(_regionCaptureWorkflow, session);
+            _regionCaptureWindow = overlay;
+
+            var outcome = await overlay.ShowAsync();
+
+            if (outcome.IsCancelled || outcome.SaveResult is null)
+            {
+                CaptureStatus.Severity = InfoBarSeverity.Informational;
+                CaptureStatus.Title = "Region capture cancelled";
+                CaptureStatus.Message = "No file was created.";
+            }
+            else
+            {
+                CaptureStatus.Severity = InfoBarSeverity.Success;
+                CaptureStatus.Title = "Region captured";
+                CaptureStatus.Message =
+                    $"Saved {outcome.SaveResult.Width}×{outcome.SaveResult.Height} PNG to {outcome.SaveResult.FilePath}";
+            }
+        }
+        catch (Exception exception)
+        {
+            CaptureStatus.Severity = InfoBarSeverity.Error;
+            CaptureStatus.Title = "SNAPVERE couldn't capture the region";
+            CaptureStatus.Message = GetUserFacingCaptureError(exception);
+        }
+        finally
+        {
+            _regionCaptureWindow = null;
+
+            if (mainWindowHidden)
+            {
+                AppWindow.Show();
+                Activate();
+            }
+
+            SetCaptureButtonsEnabled(true);
+        }
+    }
+
     private async void ScreenCaptureButton_Click(object sender, RoutedEventArgs e)
     {
-        ScreenCaptureButton.IsEnabled = false;
+        SetCaptureButtonsEnabled(false);
         CaptureStatus.IsOpen = true;
         CaptureStatus.Severity = InfoBarSeverity.Informational;
         CaptureStatus.Title = "Capturing screen";
@@ -40,27 +110,25 @@ public sealed partial class MainWindow : Window
         }
         finally
         {
-            ScreenCaptureButton.IsEnabled = true;
+            SetCaptureButtonsEnabled(true);
         }
+    }
+
+    private void SetCaptureButtonsEnabled(bool isEnabled)
+    {
+        RegionCaptureButton.IsEnabled = isEnabled;
+        ScreenCaptureButton.IsEnabled = isEnabled;
     }
 
     private void RootNavigation_SelectionChanged(
         NavigationView sender,
         NavigationViewSelectionChangedEventArgs args)
     {
-        if (args.IsSettingsSelected)
-        {
-            Title = "SNAPVERE — Settings";
-            return;
-        }
-
         if (args.SelectedItemContainer?.Tag is string tag)
         {
             Title = tag switch
             {
                 "capture" => "SNAPVERE — Capture",
-                "history" => "SNAPVERE — History",
-                "editor" => "SNAPVERE — Editor",
                 _ => "SNAPVERE"
             };
         }

@@ -22,7 +22,9 @@ public partial class App : Microsoft.UI.Xaml.Application
         services.AddSingleton<PngCaptureEncoder>();
         services.AddSingleton(new CapturePathProvider());
         services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<CaptureFileWriter>();
         services.AddSingleton<ScreenCaptureWorkflow>();
+        services.AddSingleton<RegionCaptureWorkflow>();
         services.AddTransient<MainWindow>();
 
         _services = services.BuildServiceProvider(validateScopes: true);

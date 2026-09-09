@@ -7,7 +7,7 @@
     <NavigationView
         x:Name="RootNavigation"
         IsBackButtonVisible="Collapsed"
-        IsSettingsVisible="True"
+        IsSettingsVisible="False"
         PaneDisplayMode="LeftCompact"
         SelectionChanged="RootNavigation_SelectionChanged">
       <NavigationView.MenuItems>
@@ -16,12 +16,12 @@
             <SymbolIcon Symbol="Camera" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
-        <NavigationViewItem Content="History" Tag="history">
+        <NavigationViewItem Content="History" Tag="history" IsEnabled="False" AutomationProperties.Name="History in development">
           <NavigationViewItem.Icon>
             <SymbolIcon Symbol="Clock" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
-        <NavigationViewItem Content="Editor" Tag="editor">
+        <NavigationViewItem Content="Editor" Tag="editor" IsEnabled="False" AutomationProperties.Name="Editor in development">
           <NavigationViewItem.Icon>
             <SymbolIcon Symbol="Edit" />
           </NavigationViewItem.Icon>
@@ -60,10 +60,17 @@
               <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Button Grid.Row="0" Grid.Column="0" MinHeight="82" HorizontalAlignment="Stretch" IsEnabled="False" AutomationProperties.Name="Region capture in development">
+            <Button
+                x:Name="RegionCaptureButton"
+                Grid.Row="0"
+                Grid.Column="0"
+                MinHeight="82"
+                HorizontalAlignment="Stretch"
+                Click="RegionCaptureButton_Click"
+                AutomationProperties.Name="Capture a selected region">
               <StackPanel Spacing="4">
                 <TextBlock Text="Region" FontSize="17" FontWeight="SemiBold" />
-                <TextBlock Text="Selection engine ready — overlay in development" Opacity="0.68" TextWrapping="Wrap" />
+                <TextBlock Text="Freeze screen, drag a precise region, resize and save" Opacity="0.68" TextWrapping="Wrap" />
               </StackPanel>
             </Button>
             <Button Grid.Row="0" Grid.Column="1" MinHeight="82" HorizontalAlignment="Stretch" IsEnabled="False" AutomationProperties.Name="Window capture in development">
@@ -98,7 +105,7 @@
             <Border Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
               <StackPanel HorizontalAlignment="Center" Spacing="8">
                 <TextBlock Text="History UI not enabled yet." FontSize="17" FontWeight="SemiBold" HorizontalAlignment="Center" />
-                <TextBlock Text="Completed screen captures are saved locally. History will appear only after its storage workflow is implemented." TextWrapping="Wrap" TextAlignment="Center" Opacity="0.68" MaxWidth="480" />
+                <TextBlock Text="Completed screen and region captures are saved locally. History will appear only after its storage workflow is implemented." TextWrapping="Wrap" TextAlignment="Center" Opacity="0.68" MaxWidth="480" />
               </StackPanel>
             </Border>
           </StackPanel>

@@ -9,6 +9,7 @@ public sealed class DpiCoordinateTransformerTests
     [InlineData(96, 100, 100)]
     [InlineData(120, 100, 125)]
     [InlineData(144, 100, 150)]
+    [InlineData(168, 100, 175)]
     [InlineData(192, 100, 200)]
     public void LogicalToPhysical_ScalesAtCommonWindowsDpi(uint dpi, int logical, int expected)
     {
@@ -16,6 +17,22 @@ public sealed class DpiCoordinateTransformerTests
 
         Assert.Equal(expected, actual.X);
         Assert.Equal(expected, actual.Y);
+    }
+
+    [Fact]
+    public void LogicalToPhysical_DoubleInputPreservesSubDipPrecision()
+    {
+        var actual = DpiCoordinateTransformer.LogicalToPhysical(100.4d, 100.4d, 120, 120);
+
+        Assert.Equal(new PixelPoint(126, 126), actual);
+    }
+
+    [Fact]
+    public void PhysicalToLogical_DoubleOutputSupportsOverlayLayoutWithoutIntegerDrift()
+    {
+        var actual = DpiCoordinateTransformer.PhysicalToLogical(126, 120);
+
+        Assert.Equal(100.8d, actual, precision: 6);
     }
 
     [Fact]

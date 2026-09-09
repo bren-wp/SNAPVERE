@@ -31,12 +31,15 @@ public sealed class ScreenCaptureWorkflowTests
                 timestamp,
                 primary.Id);
 
-            var workflow = new ScreenCaptureWorkflow(
-                new FakeDisplayDiscovery(primary),
-                new FakeScreenCaptureService(frame),
+            var fileWriter = new CaptureFileWriter(
                 new PngCaptureEncoder(),
                 new CapturePathProvider(directory),
                 new FixedTimeProvider(timestamp));
+
+            var workflow = new ScreenCaptureWorkflow(
+                new FakeDisplayDiscovery(primary),
+                new FakeScreenCaptureService(frame),
+                fileWriter);
 
             var result = await workflow.CapturePrimaryDisplayToDefaultFolderAsync(includeCursor: false);
 
