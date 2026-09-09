@@ -50,18 +50,26 @@ public sealed class CaptureHistoryService
             return [];
         }
 
-        return Directory
-            .EnumerateFiles(directory, "SNAPVERE_*.png", SearchOption.TopDirectoryOnly)
-            .Select(path => new FileInfo(path))
-            .Where(file => file.Exists)
-            .OrderByDescending(file => file.LastWriteTimeUtc)
-            .ThenByDescending(file => file.Name, StringComparer.OrdinalIgnoreCase)
-            .Take(limit)
-            .Select(file => new CaptureHistoryItem(
-                file.FullName,
-                file.Name,
-                new DateTimeOffset(file.LastWriteTimeUtc, TimeSpan.Zero),
-                file.Length))
+        var newest = new PriorityQueue<CaptureHistoryItem, long>();
+
+        foreach (var path in Directory.EnumerateFiles(directory, "SNAPVERE_*.png", SearchOption.TopDirectoryOnly))
+        {
+            if (!TryReadCapture(path, out var item))
+            {
+                continue;
+            }
+
+            newest.Enqueue(item, item.ModifiedAt.UtcTicks);
+            if (newest.Count > limit)
+            {
+                _ = newest.Dequeue();
+            }
+        }
+
+        return newest.UnorderedItems
+            .Select(entry => entry.Element)
+            .OrderByDescending(item => item.ModifiedAt)
+            .ThenByDescending(item => item.FileName, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
 
@@ -82,6 +90,37 @@ public sealed class CaptureHistoryService
     public string GetCaptureDirectory()
         => _pathProvider.GetDefaultCaptureDirectory();
 
+    private static bool TryReadCapture(string path, out CaptureHistoryItem item)
+    {
+        try
+        {
+            var file = new FileInfo(path);
+            file.Refresh();
+            if (!file.Exists)
+            {
+                item = null!;
+                return false;
+            }
+
+            item = new CaptureHistoryItem(
+                file.FullName,
+                file.Name,
+                new DateTimeOffset(file.LastWriteTimeUtc, TimeSpan.Zero),
+                file.Length);
+            return true;
+        }
+        catch (IOException)
+        {
+            item = null!;
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            item = null!;
+            return false;
+        }
+    }
+
     private string GetValidatedCapturePath(string filePath)
     {
         var root = Path.GetFullPath(_pathProvider.GetDefaultCaptureDirectory());
@@ -96,7 +135,9 @@ public sealed class CaptureHistoryService
             throw new InvalidOperationException("The requested history item is outside the SNAPVERE capture directory.");
         }
 
-        if (!string.Equals(Path.GetExtension(candidate), ".png", StringComparison.OrdinalIgnoreCase))
+        var fileName = Path.GetFileName(candidate);
+        if (!fileName.StartsWith("SNAPVERE_", StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(Path.GetExtension(fileName), ".png", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("Only SNAPVERE PNG capture files can be managed by this history service.");
         }

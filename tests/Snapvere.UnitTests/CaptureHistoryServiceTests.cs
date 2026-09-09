@@ -42,6 +42,36 @@ public sealed class CaptureHistoryServiceTests
     }
 
     [Fact]
+    public void GetRecentCaptures_BoundsLargeDirectoriesToRequestedTopN()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"snapvere-history-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            var baseline = DateTime.UtcNow.AddHours(-1);
+            for (var index = 0; index < 100; index++)
+            {
+                _ = CreateCapture(
+                    directory,
+                    $"SNAPVERE_2026-09-09_12{index:000}.png",
+                    1,
+                    baseline.AddSeconds(index));
+            }
+
+            var service = new CaptureHistoryService(new CapturePathProvider(directory));
+            var recent = service.GetRecentCaptures(limit: 5);
+
+            Assert.Equal(5, recent.Count);
+            Assert.True(recent.Zip(recent.Skip(1), (left, right) => left.ModifiedAt >= right.ModifiedAt).All(value => value));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void DeleteCapture_RejectsPathOutsideCaptureDirectory()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"snapvere-history-{Guid.NewGuid():N}");
@@ -60,6 +90,27 @@ public sealed class CaptureHistoryServiceTests
         {
             Directory.Delete(directory, recursive: true);
             File.Delete(outside);
+        }
+    }
+
+    [Fact]
+    public void DeleteCapture_RejectsNonSnapverePngInsideCaptureDirectory()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"snapvere-history-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            var unrelatedPng = Path.Combine(directory, "holiday.png");
+            File.WriteAllBytes(unrelatedPng, [1, 2, 3]);
+            var service = new CaptureHistoryService(new CapturePathProvider(directory));
+
+            Assert.Throws<InvalidOperationException>(() => service.DeleteCapture(unrelatedPng));
+            Assert.True(File.Exists(unrelatedPng));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
         }
     }
 
