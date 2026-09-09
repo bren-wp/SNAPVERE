@@ -6,6 +6,7 @@ namespace Snapvere.App.Services;
 internal static class StartupDiagnostics
 {
     private const long MaximumLogBytes = 512 * 1024;
+    private const int MaximumExceptionDepth = 8;
     private static int _initialized;
 
     public static string LogFilePath => Path.Combine(
@@ -47,12 +48,8 @@ internal static class StartupDiagnostics
         var builder = new StringBuilder();
         builder.Append(DateTimeOffset.Now.ToString("O"));
         builder.Append(" | ");
-        builder.Append(stage);
-        builder.Append(" | ");
-        builder.Append(exception.GetType().FullName);
-        builder.Append(" | ");
-        builder.AppendLine(exception.Message);
-        builder.AppendLine(exception.StackTrace);
+        builder.AppendLine(stage);
+        AppendException(builder, exception, depth: 0);
 
         WriteRaw(builder.ToString());
     }
@@ -82,6 +79,35 @@ internal static class StartupDiagnostics
             message,
             "SNAPVERE startup error",
             NativeMethods.MbOk | NativeMethods.MbIconError | NativeMethods.MbSetForeground);
+    }
+
+    private static void AppendException(StringBuilder builder, Exception exception, int depth)
+    {
+        if (depth >= MaximumExceptionDepth)
+        {
+            builder.AppendLine("Exception chain truncated.");
+            return;
+        }
+
+        builder.Append("Exception[");
+        builder.Append(depth);
+        builder.Append("] Type=");
+        builder.Append(exception.GetType().FullName);
+        builder.Append(" | HResult=0x");
+        builder.Append(exception.HResult.ToString("X8", System.Globalization.CultureInfo.InvariantCulture));
+        builder.Append(" | Message=");
+        builder.AppendLine(exception.Message);
+
+        if (!string.IsNullOrWhiteSpace(exception.StackTrace))
+        {
+            builder.AppendLine(exception.StackTrace);
+        }
+
+        if (exception.InnerException is not null)
+        {
+            builder.AppendLine("Inner exception:");
+            AppendException(builder, exception.InnerException, depth + 1);
+        }
     }
 
     private static void WriteRaw(string text)
