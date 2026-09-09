@@ -45,13 +45,23 @@ public interface IGlobalHotkeyService : IDisposable
 
 public static class DefaultCaptureHotkeys
 {
+    private const uint PrintScreenKey = 0x2C;
     private const uint Key1 = 0x31;
     private const uint Key2 = 0x32;
     private const uint Key3 = 0x33;
     private const uint Key4 = 0x34;
 
+    private const HotkeyModifiers StandardModifiers =
+        HotkeyModifiers.Control |
+        HotkeyModifiers.Shift |
+        HotkeyModifiers.NoRepeat;
+
+    private static readonly CaptureHotkeyBinding PrintScreenRegion =
+        new(0x5300, CaptureMode.Region, HotkeyModifiers.NoRepeat, PrintScreenKey, "Print Screen");
+
     private static readonly IReadOnlyList<CaptureHotkeyBinding> AllBindings =
     [
+        PrintScreenRegion,
         new(0x5301, CaptureMode.Region, StandardModifiers, Key1, "Ctrl+Shift+1"),
         new(0x5302, CaptureMode.Window, StandardModifiers, Key2, "Ctrl+Shift+2"),
         new(0x5303, CaptureMode.Scrolling, StandardModifiers, Key3, "Ctrl+Shift+3"),
@@ -61,20 +71,17 @@ public static class DefaultCaptureHotkeys
     private static readonly IReadOnlyList<CaptureHotkeyBinding> Implemented =
     [
         AllBindings[0],
-        AllBindings[3]
+        AllBindings[1],
+        AllBindings[4]
     ];
-
-    private const HotkeyModifiers StandardModifiers =
-        HotkeyModifiers.Control |
-        HotkeyModifiers.Shift |
-        HotkeyModifiers.NoRepeat;
 
     public static IReadOnlyList<CaptureHotkeyBinding> All => AllBindings;
 
     /// <summary>
-    /// Only bindings whose capture workflows are real should be registered.
-    /// Window and Scrolling remain documented defaults but are deliberately
-    /// excluded until those workflows are implemented.
+    /// Region capture deliberately has two bindings. Print Screen provides the
+    /// expected screenshot-app workflow when Windows permits it, while
+    /// Ctrl+Shift+1 remains a conflict-safe fallback. Window and Scrolling stay
+    /// unregistered until their workflows are genuinely implemented.
     /// </summary>
     public static IReadOnlyList<CaptureHotkeyBinding> ImplementedNow => Implemented;
 }
