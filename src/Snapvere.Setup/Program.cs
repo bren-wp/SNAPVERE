@@ -34,6 +34,7 @@ internal static class Program
             return;
         }
 
-        Application.Run(new SetupForm(uninstall));
+        using var setupForm = new SetupForm(uninstall);
+        Application.Run(setupForm);
     }
 }
