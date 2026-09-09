@@ -61,8 +61,13 @@ public partial class App : Microsoft.UI.Xaml.Application
 
             if (IsStartupProbeRequested())
             {
-                StartupDiagnostics.WriteLine("Startup probe succeeded; closing probe window.");
-                _ = _window.DispatcherQueue.TryEnqueue(() => _window?.Close());
+                StartupDiagnostics.WriteLine("Startup probe succeeded; terminating probe process cleanly.");
+                _ = _window.DispatcherQueue.TryEnqueue(() =>
+                {
+                    _window?.Close();
+                    Environment.ExitCode = 0;
+                    Environment.Exit(0);
+                });
                 return;
             }
 
