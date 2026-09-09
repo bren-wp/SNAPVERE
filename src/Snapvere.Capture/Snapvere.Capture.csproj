@@ -2,7 +2,15 @@
   <PropertyGroup>
     <AssemblyName>Snapvere.Capture</AssemblyName>
     <RootNamespace>Snapvere.Capture</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <CsWin32RunAsBuildTask>true</CsWin32RunAsBuildTask>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.CsWin32">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Snapvere.Domain\Snapvere.Domain.csproj" />
     <ProjectReference Include="..\Snapvere.Shared\Snapvere.Shared.csproj" />
