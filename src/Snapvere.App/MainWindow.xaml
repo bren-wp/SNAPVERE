@@ -47,7 +47,7 @@
       <Border
           Grid.Column="3"
           Padding="9,4"
-          CornerRadius="999"
+          CornerRadius="12"
           Background="{ThemeResource SnapvereSurfaceSoftBrush}"
           BorderBrush="{ThemeResource SnapvereBorderBrush}"
           BorderThickness="1"
@@ -146,14 +146,13 @@
               <TextBlock Text="Capture center" FontSize="34" FontWeight="SemiBold" />
               <TextBlock Text="Fast capture, precise selection, local PNG output." FontSize="15" Foreground="{ThemeResource SnapvereTextSecondaryBrush}" />
             </StackPanel>
-            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
-              <Button Click="OpenCaptureFolderButton_Click" ToolTipService.ToolTip="Open Pictures\SNAPVERE">
-                <StackPanel Orientation="Horizontal" Spacing="7">
-                  <FontIcon Glyph="&#xE838;" FontSize="14" />
-                  <TextBlock Text="Open folder" />
-                </StackPanel>
-              </Button>
-            </StackPanel>
+            <Button
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Click="OpenCaptureFolderButton_Click"
+                ToolTipService.ToolTip="Open Pictures\SNAPVERE">
+              <TextBlock Text="Open folder" />
+            </Button>
           </Grid>
 
           <InfoBar
@@ -165,8 +164,8 @@
 
           <Grid Grid.Row="2" Margin="0,24,0,0" ColumnSpacing="14">
             <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="1.35*" />
-              <ColumnDefinition Width="0.85*" />
+              <ColumnDefinition Width="3*" />
+              <ColumnDefinition Width="2*" />
             </Grid.ColumnDefinitions>
 
             <Border
@@ -174,15 +173,9 @@
                 MinHeight="270"
                 Padding="28"
                 CornerRadius="20"
+                Background="#302A63"
                 BorderBrush="#5749C9"
                 BorderThickness="1">
-              <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                  <GradientStop Color="#302A63" Offset="0" />
-                  <GradientStop Color="#1B1833" Offset="0.58" />
-                  <GradientStop Color="#151821" Offset="1" />
-                </LinearGradientBrush>
-              </Border.Background>
               <Grid>
                 <Grid.RowDefinitions>
                   <RowDefinition Height="Auto" />
@@ -191,10 +184,10 @@
                 </Grid.RowDefinitions>
 
                 <Grid>
-                  <Border Width="46" Height="46" CornerRadius="13" Background="#2DFFFFFF" HorizontalAlignment="Left">
-                    <FontIcon Glyph="&#xEA86;" FontSize="21" Foreground="White" />
+                  <Border Width="46" Height="46" CornerRadius="13" Background="#463F78" HorizontalAlignment="Left">
+                    <TextBlock Text="R" FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                   </Border>
-                  <Border HorizontalAlignment="Right" Padding="9,5" CornerRadius="8" Background="#24FFFFFF">
+                  <Border HorizontalAlignment="Right" Padding="9,5" CornerRadius="8" Background="#423B69">
                     <TextBlock Text="Ctrl + Shift + 1" FontSize="11" Foreground="White" />
                   </Border>
                 </Grid>
@@ -209,13 +202,10 @@
                     Grid.Row="2"
                     Click="RegionCaptureButton_Click"
                     HorizontalAlignment="Left"
-                    Style="{StaticResource AccentButtonStyle}"
+                    Style="{ThemeResource AccentButtonStyle}"
                     Padding="18,10"
                     AutomationProperties.Name="Capture a region, Ctrl Shift 1">
-                  <StackPanel Orientation="Horizontal" Spacing="8">
-                    <FontIcon Glyph="&#xE722;" FontSize="15" />
-                    <TextBlock Text="Select region" FontWeight="SemiBold" />
-                  </StackPanel>
+                  <TextBlock Text="Select region" FontWeight="SemiBold" />
                 </Button>
               </Grid>
             </Border>
@@ -230,7 +220,7 @@
                 <StackPanel Spacing="14">
                   <Grid>
                     <Border Width="40" Height="40" CornerRadius="11" Background="{ThemeResource SnapvereAccentSoftBrush}" HorizontalAlignment="Left">
-                      <FontIcon Glyph="&#xE7F4;" FontSize="18" Foreground="{ThemeResource SnapvereAccentBrush}" />
+                      <TextBlock Text="S" FontSize="16" FontWeight="Bold" Foreground="{ThemeResource SnapvereAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <Border HorizontalAlignment="Right" VerticalAlignment="Center" Padding="8,4" CornerRadius="7" Background="{ThemeResource SnapvereSurfaceSoftBrush}">
                       <TextBlock Text="Ctrl + Shift + 4" FontSize="10" Foreground="{ThemeResource SnapvereTextSecondaryBrush}" />
@@ -258,10 +248,7 @@
                   BorderBrush="{ThemeResource SnapvereBorderBrush}"
                   BorderThickness="1">
                 <StackPanel Spacing="8">
-                  <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Ellipse Width="7" Height="7" Fill="{ThemeResource SnapvereSuccessBrush}" VerticalAlignment="Center" />
-                    <TextBlock Text="Private by default" FontSize="13" FontWeight="SemiBold" />
-                  </StackPanel>
+                  <TextBlock Text="Private by default" FontSize="13" FontWeight="SemiBold" />
                   <TextBlock Text="Captures stay on this PC. SNAPVERE does not require an account or telemetry connection." FontSize="11" TextWrapping="Wrap" Foreground="{ThemeResource SnapvereTextSecondaryBrush}" />
                 </StackPanel>
               </Border>
@@ -279,12 +266,8 @@
                   VerticalAlignment="Center"
                   Click="RefreshHistoryButton_Click"
                   ToolTipService.ToolTip="Refresh recent captures"
-                  AutomationProperties.Name="Refresh recent captures">
-                <StackPanel Orientation="Horizontal" Spacing="7">
-                  <FontIcon Glyph="&#xE72C;" FontSize="13" />
-                  <TextBlock Text="Refresh" />
-                </StackPanel>
-              </Button>
+                  AutomationProperties.Name="Refresh recent captures"
+                  Content="Refresh" />
             </Grid>
 
             <ListView
@@ -298,18 +281,14 @@
                 <DataTemplate>
                   <Grid Padding="8,10" MinWidth="480">
                     <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="Auto" />
                       <ColumnDefinition Width="*" />
                       <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Border Width="42" Height="42" CornerRadius="11" Background="{ThemeResource SnapvereAccentSoftBrush}" VerticalAlignment="Center">
-                      <FontIcon Glyph="&#xEB9F;" FontSize="17" Foreground="{ThemeResource SnapvereAccentBrush}" />
-                    </Border>
-                    <StackPanel Grid.Column="1" Margin="12,0,12,0" Spacing="3" VerticalAlignment="Center">
+                    <StackPanel Spacing="3" VerticalAlignment="Center">
                       <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                       <TextBlock Text="{Binding MetadataText}" Foreground="{ThemeResource SnapvereTextSecondaryBrush}" FontSize="11" />
                     </StackPanel>
-                    <FontIcon Grid.Column="2" Glyph="&#xE72A;" FontSize="12" Foreground="{ThemeResource SnapvereTextSecondaryBrush}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="Open" FontSize="11" Foreground="{ThemeResource SnapvereTextSecondaryBrush}" VerticalAlignment="Center" />
                   </Grid>
                 </DataTemplate>
               </ListView.ItemTemplate>
@@ -323,9 +302,6 @@
                 BorderThickness="1"
                 BorderBrush="{ThemeResource SnapvereBorderBrush}">
               <StackPanel HorizontalAlignment="Center" Spacing="7">
-                <Border Width="42" Height="42" CornerRadius="12" Background="{ThemeResource SnapvereSurfaceSoftBrush}">
-                  <FontIcon Glyph="&#xEB9F;" FontSize="17" Foreground="{ThemeResource SnapvereTextSecondaryBrush}" />
-                </Border>
                 <TextBlock x:Name="HistoryEmptyTitle" Text="No local captures yet" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" />
                 <TextBlock x:Name="HistoryEmptyMessage" Text="Your completed Region and Screen captures will appear here." TextWrapping="Wrap" TextAlignment="Center" Foreground="{ThemeResource SnapvereTextSecondaryBrush}" MaxWidth="460" />
               </StackPanel>
