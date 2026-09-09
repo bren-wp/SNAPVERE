@@ -1,0 +1,38 @@
+# Build output
+**/bin/
+**/obj/
+artifacts/
+TestResults/
+
+# IDE
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Windows/package output
+AppPackages/
+BundleArtifacts/
+*.appx
+*.appxbundle
+*.msix
+*.msixbundle
+*.cer
+*.pfx
+*.snk
+
+# SNAPVERE runtime/user data
+Data/
+Captures/
+History/
+Settings/
+Temp/
+logs/
+*.dmp
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

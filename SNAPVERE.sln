@@ -1,0 +1,62 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.0.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snapvere.App", "src\Snapvere.App\Snapvere.App.csproj", "{8B830A62-2D29-4E52-A33A-63E2F854F427}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snapvere.Domain", "src\Snapvere.Domain\Snapvere.Domain.csproj", "{A043C255-936A-493F-B0A7-0A4188F51BC1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snapvere.Capture", "src\Snapvere.Capture\Snapvere.Capture.csproj", "{4196A5B0-B2E1-4FA6-8BB8-353FBD5DFA96}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snapvere.Imaging", "src\Snapvere.Imaging\Snapvere.Imaging.csproj", "{8A11A073-A08D-4F8B-A49B-9A257F9361D0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snapvere.Shared", "src\Snapvere.Shared\Snapvere.Shared.csproj", "{AA49573C-8CE7-49C0-B818-6966D27A1F0F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snapvere.UnitTests", "tests\Snapvere.UnitTests\Snapvere.UnitTests.csproj", "{CE280C1C-0C00-4A83-A3D7-0C1FC1F8E903}"
+EndProject
+Global
+  GlobalSection(SolutionConfigurationPlatforms) = preSolution
+    Debug|ARM64 = Debug|ARM64
+    Debug|x64 = Debug|x64
+    Release|ARM64 = Release|ARM64
+    Release|x64 = Release|x64
+  EndGlobalSection
+  GlobalSection(ProjectConfigurationPlatforms) = postSolution
+    {8B830A62-2D29-4E52-A33A-63E2F854F427}.Debug|ARM64.ActiveCfg = Debug|ARM64
+    {8B830A62-2D29-4E52-A33A-63E2F854F427}.Debug|ARM64.Build.0 = Debug|ARM64
+    {8B830A62-2D29-4E52-A33A-63E2F854F427}.Debug|x64.ActiveCfg = Debug|x64
+    {8B830A62-2D29-4E52-A33A-63E2F854F427}.Debug|x64.Build.0 = Debug|x64
+    {8B830A62-2D29-4E52-A33A-63E2F854F427}.Release|ARM64.ActiveCfg = Release|ARM64
+    {8B830A62-2D29-4E52-A33A-63E2F854F427}.Release|ARM64.Build.0 = Release|ARM64
+    {8B830A62-2D29-4E52-A33A-63E2F854F427}.Release|x64.ActiveCfg = Release|x64
+    {8B830A62-2D29-4E52-A33A-63E2F854F427}.Release|x64.Build.0 = Release|x64
+    {A043C255-936A-493F-B0A7-0A4188F51BC1}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+    {A043C255-936A-493F-B0A7-0A4188F51BC1}.Debug|ARM64.Build.0 = Debug|Any CPU
+    {A043C255-936A-493F-B0A7-0A4188F51BC1}.Debug|x64.ActiveCfg = Debug|Any CPU
+    {A043C255-936A-493F-B0A7-0A4188F51BC1}.Debug|x64.Build.0 = Debug|Any CPU
+    {A043C255-936A-493F-B0A7-0A4188F51BC1}.Release|ARM64.ActiveCfg = Release|Any CPU
+    {A043C255-936A-493F-B0A7-0A4188F51BC1}.Release|ARM64.Build.0 = Release|Any CPU
+    {A043C255-936A-493F-B0A7-0A4188F51BC1}.Release|x64.ActiveCfg = Release|Any CPU
+    {A043C255-936A-493F-B0A7-0A4188F51BC1}.Release|x64.Build.0 = Release|Any CPU
+    {4196A5B0-B2E1-4FA6-8BB8-353FBD5DFA96}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+    {4196A5B0-B2E1-4FA6-8BB8-353FBD5DFA96}.Debug|ARM64.Build.0 = Debug|Any CPU
+    {4196A5B0-B2E1-4FA6-8BB8-353FBD5DFA96}.Debug|x64.ActiveCfg = Debug|Any CPU
+    {4196A5B0-B2E1-4FA6-8BB8-353FBD5DFA96}.Debug|x64.Build.0 = Debug|Any CPU
+    {4196A5B0-B2E1-4FA6-8BB8-353FBD5DFA96}.Release|ARM64.ActiveCfg = Release|Any CPU
+    {4196A5B0-B2E1-4FA6-8BB8-353FBD5DFA96}.Release|ARM64.Build.0 = Release|Any CPU
+    {4196A5B0-B2E1-4FA6-8BB8-353FBD5DFA96}.Release|x64.ActiveCfg = Release|Any CPU
+    {4196A5B0-B2E1-4FA6-8BB8-353FBD5DFA96}.Release|x64.Build.0 = Release|Any CPU
+    {8A11A073-A08D-4F8B-A49B-9A257F9361D0}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+    {8A11A073-A08D-4F8B-A49B-9A257F9361D0}.Debug|x64.ActiveCfg = Debug|Any CPU
+    {8A11A073-A08D-4F8B-A49B-9A257F9361D0}.Release|ARM64.ActiveCfg = Release|Any CPU
+    {8A11A073-A08D-4F8B-A49B-9A257F9361D0}.Release|x64.ActiveCfg = Release|Any CPU
+    {AA49573C-8CE7-49C0-B818-6966D27A1F0F}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+    {AA49573C-8CE7-49C0-B818-6966D27A1F0F}.Debug|x64.ActiveCfg = Debug|Any CPU
+    {AA49573C-8CE7-49C0-B818-6966D27A1F0F}.Release|ARM64.ActiveCfg = Release|Any CPU
+    {AA49573C-8CE7-49C0-B818-6966D27A1F0F}.Release|x64.ActiveCfg = Release|Any CPU
+    {CE280C1C-0C00-4A83-A3D7-0C1FC1F8E903}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+    {CE280C1C-0C00-4A83-A3D7-0C1FC1F8E903}.Debug|x64.ActiveCfg = Debug|Any CPU
+    {CE280C1C-0C00-4A83-A3D7-0C1FC1F8E903}.Release|ARM64.ActiveCfg = Release|Any CPU
+    {CE280C1C-0C00-4A83-A3D7-0C1FC1F8E903}.Release|x64.ActiveCfg = Release|Any CPU
+  EndGlobalSection
+EndGlobal

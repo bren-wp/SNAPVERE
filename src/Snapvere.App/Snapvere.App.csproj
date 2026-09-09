@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>Snapvere</AssemblyName>
+    <RootNamespace>Snapvere.App</RootNamespace>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+    <Platforms>x64;ARM64</Platforms>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Snapvere.Capture\Snapvere.Capture.csproj" />
+    <ProjectReference Include="..\Snapvere.Domain\Snapvere.Domain.csproj" />
+    <ProjectReference Include="..\Snapvere.Imaging\Snapvere.Imaging.csproj" />
+    <ProjectReference Include="..\Snapvere.Shared\Snapvere.Shared.csproj" />
+  </ItemGroup>
+</Project>

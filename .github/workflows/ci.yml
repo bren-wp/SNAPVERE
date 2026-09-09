@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore SNAPVERE.sln
+
+      - name: Build x64
+        run: dotnet build SNAPVERE.sln --configuration Release --no-restore -p:Platform=x64
+
+      - name: Test
+        run: dotnet test tests/Snapvere.UnitTests/Snapvere.UnitTests.csproj --configuration Release --no-build -p:Platform=x64 --logger "trx;LogFileName=snapvere-tests.trx"
