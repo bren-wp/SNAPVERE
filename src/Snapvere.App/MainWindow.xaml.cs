@@ -24,6 +24,7 @@ public sealed partial class MainWindow : Window
         _captureHistoryService = captureHistoryService ?? throw new ArgumentNullException(nameof(captureHistoryService));
 
         InitializeComponent();
+        VersionText.Text = $"v{typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "0.0.1"}";
         RootNavigation.SelectedItem = RootNavigation.MenuItems[0];
         RefreshRecentCaptures();
     }

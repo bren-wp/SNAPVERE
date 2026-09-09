@@ -1,8 +1,21 @@
 # Changelog
 
-All notable SNAPVERE changes are documented here. The project has not reached a production release yet.
+All notable SNAPVERE changes are documented here.
 
 ## [Unreleased]
+
+### Planned
+
+- coordinated cross-monitor Region Capture
+- Windows.Graphics.Capture/D3D primary backend
+- Window Capture and smart targeting
+- Scrolling Capture
+- clipboard Quick Actions
+- annotation Editor
+- full History, Pin to Screen and OCR
+- updater and Authenticode signing
+
+## [0.0.1] - 2026-09-09
 
 ### Added
 
@@ -23,20 +36,43 @@ All notable SNAPVERE changes are documented here. The project has not reached a 
 - freeze-frame primary-display Region Capture workflow
 - borderless Region overlay with dimming, live dimensions and eight resize handles
 - Region move, keyboard nudge, Enter/double-click commit and Esc cancel interactions
-- Region workflow tests for negative desktop coordinates and display-change detection
-- Windows GitHub Actions CI foundation
-- canonical SNAPVERE vector symbol
-- dark/light README logo assets
-- architecture, branding, Region Capture, contribution and security documentation
+- conflict-aware `Ctrl+Shift+1` Region and `Ctrl+Shift+4` Screen global hotkeys
+- native Windows system tray with Show, Region, Screen and Exit actions
+- tray recovery after Windows Explorer restart
+- local Recent Captures filesystem index
+- x86/32-bit application target in addition to x64
+- self-contained x64/x86 publish validation
+- modern per-user SNAPVERE Setup executable with MPL 2.0 license acceptance
+- Windows Installed apps uninstall registration using `SNAPVERE-Setup.exe --uninstall`
+- optional Start menu/Desktop shortcuts
+- single-file x64/x86 Portable launchers
+- guarded embedded ZIP extraction with directory-traversal protection
+- package extraction security unit tests
+- release SHA-256 checksum generation
+- GitHub Actions release automation for v0.0.1
+- canonical SNAPVERE vector symbol and dark/light README assets
+- architecture, branding, Region Capture, installation, contribution and security documentation
 
 ### Changed
 
 - capture persistence moved out of individual workflows into `CaptureFileWriter`
-- DPI conversion now accepts sub-DIP pointer coordinates to avoid premature rounding
-- unfinished History, Editor, Window and Scrolling workflows remain disabled rather than appearing functional
+- DPI conversion accepts sub-DIP pointer coordinates to avoid premature rounding
+- main capture UI exposes implemented hotkeys and release version information
+- Region overlay uses SNAPVERE branding and clearer keyboard guidance
+- unfinished History, Editor, Window and Scrolling workflows remain disabled instead of appearing functional
+- CI now validates x64 build/test, x86 build and x64/x86 release packaging
+
+### Security
+
+- installer/portable extraction rejects absolute paths and paths escaping the package destination
+- embedded extraction is size/entry bounded and uses temporary files before final replacement
+- default installation is per-user and does not request elevation
+- silent installation requires explicit `--accept-license`
+- release workflow publishes SHA-256 checksums
 
 ### Fixed
 
 - solution test-project build configuration in CI
 - xUnit global using required for test compilation
 - WinUI `Application` type ambiguity introduced by the `Snapvere.Application` namespace
+- payload directory-entry suffix handling in release packaging

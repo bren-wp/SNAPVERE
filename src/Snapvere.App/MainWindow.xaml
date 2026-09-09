@@ -16,12 +16,12 @@
             <SymbolIcon Symbol="Camera" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
-        <NavigationViewItem Content="History" Tag="history" IsEnabled="False" AutomationProperties.Name="Full history in development">
+        <NavigationViewItem Content="History" Tag="history" IsEnabled="False" AutomationProperties.Name="Full history coming after version 0.0.1">
           <NavigationViewItem.Icon>
             <SymbolIcon Symbol="Clock" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
-        <NavigationViewItem Content="Editor" Tag="editor" IsEnabled="False" AutomationProperties.Name="Editor in development">
+        <NavigationViewItem Content="Editor" Tag="editor" IsEnabled="False" AutomationProperties.Name="Editor coming after version 0.0.1">
           <NavigationViewItem.Icon>
             <SymbolIcon Symbol="Edit" />
           </NavigationViewItem.Icon>
@@ -29,19 +29,36 @@
       </NavigationView.MenuItems>
 
       <ScrollViewer>
-        <Grid Padding="36,28" MaxWidth="1060" HorizontalAlignment="Stretch">
+        <Grid Padding="36,28,36,34" MaxWidth="1080" HorizontalAlignment="Stretch">
           <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
           </Grid.RowDefinitions>
 
-          <StackPanel Spacing="6">
-            <TextBlock Text="SNAPVERE" FontSize="13" FontWeight="SemiBold" Opacity="0.72" />
-            <TextBlock Text="Capture anything." FontSize="32" FontWeight="SemiBold" />
-            <TextBlock Text="Fast, precise screen capture for Windows." FontSize="15" Opacity="0.72" />
-          </StackPanel>
+          <Grid>
+            <StackPanel Spacing="6">
+              <TextBlock Text="SNAPVERE" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource SnapvereAccentBrush}" />
+              <TextBlock Text="Capture anything." FontSize="34" FontWeight="SemiBold" />
+              <TextBlock Text="Precise, local-first screen capture for Windows." FontSize="15" Opacity="0.72" />
+            </StackPanel>
+
+            <Border
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Padding="12,7"
+                CornerRadius="999"
+                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock x:Name="VersionText" Text="v0.0.1" FontSize="12" FontWeight="SemiBold" />
+                <TextBlock Text="Local only" FontSize="12" Opacity="0.68" />
+              </StackPanel>
+            </Border>
+          </Grid>
 
           <InfoBar
               x:Name="CaptureStatus"
@@ -64,47 +81,74 @@
                 x:Name="RegionCaptureButton"
                 Grid.Row="0"
                 Grid.Column="0"
-                MinHeight="82"
+                MinHeight="96"
                 HorizontalAlignment="Stretch"
                 Click="RegionCaptureButton_Click"
-                AutomationProperties.Name="Capture a selected region">
-              <StackPanel Spacing="4">
-                <TextBlock Text="Region" FontSize="17" FontWeight="SemiBold" />
-                <TextBlock Text="Freeze screen, drag a precise region, resize and save" Opacity="0.68" TextWrapping="Wrap" />
+                AutomationProperties.Name="Region capture, Ctrl Shift 1">
+              <Grid Width="Auto" ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="5">
+                  <TextBlock Text="Region" FontSize="18" FontWeight="SemiBold" />
+                  <TextBlock Text="Freeze the display, drag a precise area, resize, then save." Opacity="0.68" TextWrapping="Wrap" MaxWidth="360" />
+                </StackPanel>
+                <Border Grid.Column="1" VerticalAlignment="Top" Padding="8,4" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+                  <TextBlock Text="Ctrl+Shift+1" FontSize="11" Opacity="0.82" />
+                </Border>
+              </Grid>
+            </Button>
+
+            <Button Grid.Row="0" Grid.Column="1" MinHeight="96" HorizontalAlignment="Stretch" IsEnabled="False" AutomationProperties.Name="Window capture coming after version 0.0.1">
+              <StackPanel Spacing="5">
+                <TextBlock Text="Window" FontSize="18" FontWeight="SemiBold" />
+                <TextBlock Text="Smart window targeting is scheduled after the first release." Opacity="0.68" TextWrapping="Wrap" />
+                <TextBlock Text="Coming after 0.0.1" FontSize="11" Opacity="0.58" />
               </StackPanel>
             </Button>
-            <Button Grid.Row="0" Grid.Column="1" MinHeight="82" HorizontalAlignment="Stretch" IsEnabled="False" AutomationProperties.Name="Window capture in development">
-              <StackPanel Spacing="4">
-                <TextBlock Text="Window" FontSize="17" FontWeight="SemiBold" />
-                <TextBlock Text="Window targeting in development" Opacity="0.68" />
-              </StackPanel>
-            </Button>
+
             <Button
                 x:Name="ScreenCaptureButton"
                 Grid.Row="1"
                 Grid.Column="0"
-                MinHeight="82"
+                MinHeight="96"
                 HorizontalAlignment="Stretch"
                 Click="ScreenCaptureButton_Click"
-                AutomationProperties.Name="Capture primary screen to Pictures SNAPVERE">
-              <StackPanel Spacing="4">
-                <TextBlock Text="Screen" FontSize="17" FontWeight="SemiBold" />
-                <TextBlock Text="Capture primary display to Pictures\SNAPVERE" Opacity="0.68" TextWrapping="Wrap" />
-              </StackPanel>
+                AutomationProperties.Name="Screen capture, Ctrl Shift 4">
+              <Grid Width="Auto" ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="5">
+                  <TextBlock Text="Screen" FontSize="18" FontWeight="SemiBold" />
+                  <TextBlock Text="Capture the primary display and save a PNG to Pictures\\SNAPVERE." Opacity="0.68" TextWrapping="Wrap" MaxWidth="360" />
+                </StackPanel>
+                <Border Grid.Column="1" VerticalAlignment="Top" Padding="8,4" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+                  <TextBlock Text="Ctrl+Shift+4" FontSize="11" Opacity="0.82" />
+                </Border>
+              </Grid>
             </Button>
-            <Button Grid.Row="1" Grid.Column="1" MinHeight="82" HorizontalAlignment="Stretch" IsEnabled="False" AutomationProperties.Name="Scrolling capture in development">
-              <StackPanel Spacing="4">
-                <TextBlock Text="Scroll" FontSize="17" FontWeight="SemiBold" />
-                <TextBlock Text="Planned — not exposed as a fake feature" Opacity="0.68" TextWrapping="Wrap" />
+
+            <Button Grid.Row="1" Grid.Column="1" MinHeight="96" HorizontalAlignment="Stretch" IsEnabled="False" AutomationProperties.Name="Scrolling capture coming after version 0.0.1">
+              <StackPanel Spacing="5">
+                <TextBlock Text="Scrolling" FontSize="18" FontWeight="SemiBold" />
+                <TextBlock Text="Long-page stitching remains disabled until capture and seam quality are production-ready." Opacity="0.68" TextWrapping="Wrap" />
+                <TextBlock Text="Coming after 0.0.1" FontSize="11" Opacity="0.58" />
               </StackPanel>
             </Button>
           </Grid>
 
           <StackPanel Grid.Row="3" Margin="0,34,0,0" Spacing="10">
             <Grid>
-              <TextBlock Text="Recent captures" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
+              <StackPanel Spacing="2">
+                <TextBlock Text="Recent captures" FontSize="20" FontWeight="SemiBold" />
+                <TextBlock Text="Newest local PNG files from Pictures\\SNAPVERE." FontSize="12" Opacity="0.62" />
+              </StackPanel>
               <Button
                   HorizontalAlignment="Right"
+                  VerticalAlignment="Center"
                   Content="Refresh"
                   Click="RefreshHistoryButton_Click"
                   AutomationProperties.Name="Refresh recent captures" />
@@ -123,9 +167,9 @@
                       <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <Border
-                        Width="36"
-                        Height="36"
-                        CornerRadius="8"
+                        Width="38"
+                        Height="38"
+                        CornerRadius="9"
                         Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                         VerticalAlignment="Center">
                       <SymbolIcon Symbol="Pictures" />
@@ -151,6 +195,19 @@
               </StackPanel>
             </Border>
           </StackPanel>
+
+          <Border
+              Grid.Row="4"
+              Margin="0,28,0,0"
+              Padding="14,10"
+              CornerRadius="10"
+              Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+            <TextBlock
+                Text="Private by default · no account · no telemetry · captures stay on this PC"
+                FontSize="12"
+                Opacity="0.70"
+                HorizontalAlignment="Center" />
+          </Border>
         </Grid>
       </ScrollViewer>
     </NavigationView>

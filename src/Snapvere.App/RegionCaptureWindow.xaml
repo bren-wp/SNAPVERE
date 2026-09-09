@@ -21,15 +21,15 @@
         PointerReleased="OverlayCanvas_PointerReleased"
         PointerCaptureLost="OverlayCanvas_PointerCaptureLost"
         DoubleTapped="OverlayCanvas_DoubleTapped">
-      <Rectangle x:Name="FullDim" Fill="#99000000" IsHitTestVisible="False" />
-      <Rectangle x:Name="TopDim" Fill="#99000000" IsHitTestVisible="False" Visibility="Collapsed" />
-      <Rectangle x:Name="LeftDim" Fill="#99000000" IsHitTestVisible="False" Visibility="Collapsed" />
-      <Rectangle x:Name="RightDim" Fill="#99000000" IsHitTestVisible="False" Visibility="Collapsed" />
-      <Rectangle x:Name="BottomDim" Fill="#99000000" IsHitTestVisible="False" Visibility="Collapsed" />
+      <Rectangle x:Name="FullDim" Fill="#A0000000" IsHitTestVisible="False" />
+      <Rectangle x:Name="TopDim" Fill="#A0000000" IsHitTestVisible="False" Visibility="Collapsed" />
+      <Rectangle x:Name="LeftDim" Fill="#A0000000" IsHitTestVisible="False" Visibility="Collapsed" />
+      <Rectangle x:Name="RightDim" Fill="#A0000000" IsHitTestVisible="False" Visibility="Collapsed" />
+      <Rectangle x:Name="BottomDim" Fill="#A0000000" IsHitTestVisible="False" Visibility="Collapsed" />
 
       <Border
           x:Name="SelectionBorder"
-          BorderBrush="#FF0A84FF"
+          BorderBrush="{ThemeResource SnapvereAccentBrush}"
           BorderThickness="2"
           CornerRadius="2"
           IsHitTestVisible="False"
@@ -37,9 +37,11 @@
 
       <Border
           x:Name="SelectionBadge"
-          Background="#E6212121"
-          CornerRadius="6"
-          Padding="8,4"
+          Background="#EB17191F"
+          BorderBrush="#38FFFFFF"
+          BorderThickness="1"
+          CornerRadius="7"
+          Padding="9,5"
           IsHitTestVisible="False"
           Visibility="Collapsed">
         <TextBlock
@@ -49,27 +51,29 @@
             FontWeight="SemiBold" />
       </Border>
 
-      <Ellipse x:Name="TopLeftHandle" Tag="TopLeft" Width="10" Height="10" Fill="White" Stroke="#FF0A84FF" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize top left" />
-      <Ellipse x:Name="TopHandle" Tag="Top" Width="10" Height="10" Fill="White" Stroke="#FF0A84FF" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize top" />
-      <Ellipse x:Name="TopRightHandle" Tag="TopRight" Width="10" Height="10" Fill="White" Stroke="#FF0A84FF" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize top right" />
-      <Ellipse x:Name="RightHandle" Tag="Right" Width="10" Height="10" Fill="White" Stroke="#FF0A84FF" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize right" />
-      <Ellipse x:Name="BottomRightHandle" Tag="BottomRight" Width="10" Height="10" Fill="White" Stroke="#FF0A84FF" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize bottom right" />
-      <Ellipse x:Name="BottomHandle" Tag="Bottom" Width="10" Height="10" Fill="White" Stroke="#FF0A84FF" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize bottom" />
-      <Ellipse x:Name="BottomLeftHandle" Tag="BottomLeft" Width="10" Height="10" Fill="White" Stroke="#FF0A84FF" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize bottom left" />
-      <Ellipse x:Name="LeftHandle" Tag="Left" Width="10" Height="10" Fill="White" Stroke="#FF0A84FF" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize left" />
+      <Ellipse x:Name="TopLeftHandle" Tag="TopLeft" Width="10" Height="10" Fill="White" Stroke="{ThemeResource SnapvereAccentBrush}" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize top left" />
+      <Ellipse x:Name="TopHandle" Tag="Top" Width="10" Height="10" Fill="White" Stroke="{ThemeResource SnapvereAccentBrush}" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize top" />
+      <Ellipse x:Name="TopRightHandle" Tag="TopRight" Width="10" Height="10" Fill="White" Stroke="{ThemeResource SnapvereAccentBrush}" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize top right" />
+      <Ellipse x:Name="RightHandle" Tag="Right" Width="10" Height="10" Fill="White" Stroke="{ThemeResource SnapvereAccentBrush}" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize right" />
+      <Ellipse x:Name="BottomRightHandle" Tag="BottomRight" Width="10" Height="10" Fill="White" Stroke="{ThemeResource SnapvereAccentBrush}" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize bottom right" />
+      <Ellipse x:Name="BottomHandle" Tag="Bottom" Width="10" Height="10" Fill="White" Stroke="{ThemeResource SnapvereAccentBrush}" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize bottom" />
+      <Ellipse x:Name="BottomLeftHandle" Tag="BottomLeft" Width="10" Height="10" Fill="White" Stroke="{ThemeResource SnapvereAccentBrush}" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize bottom left" />
+      <Ellipse x:Name="LeftHandle" Tag="Left" Width="10" Height="10" Fill="White" Stroke="{ThemeResource SnapvereAccentBrush}" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize left" />
     </Canvas>
 
     <Border
         HorizontalAlignment="Center"
         VerticalAlignment="Top"
         Margin="20"
-        Padding="14,9"
-        Background="#E6212121"
-        CornerRadius="8"
+        Padding="15,10"
+        Background="#EB17191F"
+        BorderBrush="#28FFFFFF"
+        BorderThickness="1"
+        CornerRadius="9"
         IsHitTestVisible="False">
       <StackPanel Orientation="Horizontal" Spacing="10">
-        <TextBlock Text="Drag to select" Foreground="White" FontWeight="SemiBold" />
-        <TextBlock Text="Enter save · Esc cancel · Arrows nudge · Shift+Arrows 10 px" Foreground="#DFFFFFFF" />
+        <TextBlock Text="Select a region" Foreground="White" FontWeight="SemiBold" />
+        <TextBlock Text="Enter save · Double-click save · Esc cancel · Arrows move · Shift 10 px" Foreground="#DFFFFFFF" />
       </StackPanel>
     </Border>
 
@@ -79,8 +83,10 @@
         VerticalAlignment="Bottom"
         Margin="20"
         Padding="14,9"
-        Background="#E6212121"
-        CornerRadius="8"
+        Background="#EB17191F"
+        BorderBrush="#28FFFFFF"
+        BorderThickness="1"
+        CornerRadius="9"
         Visibility="Collapsed"
         IsHitTestVisible="False">
       <StackPanel Orientation="Horizontal" Spacing="10">

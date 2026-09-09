@@ -19,38 +19,67 @@ internal static class Program
         {
             var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.1";
             var architecture = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
-            var cacheRoot = Path.Combine(
-                Path.GetTempPath(),
-                "SNAPVERE",
-                "Portable",
-                $"{version}-{architecture}");
-            var readyMarker = Path.Combine(cacheRoot, ".ready");
-            var executable = Path.Combine(cacheRoot, AppExecutableName);
+            using var launchMutex = new Mutex(
+                initiallyOwned: false,
+                $@"Local\Brendigo.SNAPVERE.Portable.{version}.{architecture}");
 
-            if (!File.Exists(readyMarker) || !File.Exists(executable))
+            var ownsMutex = false;
+            try
             {
-                EmbeddedPayload.DeleteDirectoryBestEffort(cacheRoot);
-                Directory.CreateDirectory(cacheRoot);
-
-                using var payload = Assembly.GetExecutingAssembly().GetManifestResourceStream(PayloadResourceName)
-                    ?? throw new InvalidOperationException("The SNAPVERE application payload is missing from this portable package.");
-                EmbeddedPayload.ExtractZipSafely(payload, cacheRoot);
-
-                if (!File.Exists(executable))
+                try
                 {
-                    throw new InvalidDataException("The portable package does not contain Snapvere.exe.");
+                    ownsMutex = launchMutex.WaitOne(TimeSpan.FromSeconds(60));
+                }
+                catch (AbandonedMutexException)
+                {
+                    ownsMutex = true;
                 }
 
-                File.WriteAllText(readyMarker, $"SNAPVERE {version} {architecture}");
+                if (!ownsMutex)
+                {
+                    throw new TimeoutException("Another SNAPVERE Portable launch is still preparing its application files.");
+                }
+
+                var cacheRoot = Path.Combine(
+                    Path.GetTempPath(),
+                    "SNAPVERE",
+                    "Portable",
+                    $"{version}-{architecture}");
+                var readyMarker = Path.Combine(cacheRoot, ".ready");
+                var executable = Path.Combine(cacheRoot, AppExecutableName);
+
+                if (!File.Exists(readyMarker) || !File.Exists(executable))
+                {
+                    EmbeddedPayload.DeleteDirectoryBestEffort(cacheRoot);
+                    Directory.CreateDirectory(cacheRoot);
+
+                    using var payload = Assembly.GetExecutingAssembly().GetManifestResourceStream(PayloadResourceName)
+                        ?? throw new InvalidOperationException("The SNAPVERE application payload is missing from this portable package.");
+                    EmbeddedPayload.ExtractZipSafely(payload, cacheRoot);
+
+                    if (!File.Exists(executable))
+                    {
+                        throw new InvalidDataException("The portable package does not contain Snapvere.exe.");
+                    }
+
+                    File.WriteAllText(readyMarker, $"SNAPVERE {version} {architecture}");
+                }
+
+                CleanupOldCaches(Path.GetDirectoryName(cacheRoot)!, cacheRoot);
+
+                Process.Start(new ProcessStartInfo(executable)
+                {
+                    WorkingDirectory = cacheRoot,
+                    UseShellExecute = true
+                });
             }
-
-            CleanupOldCaches(Path.GetDirectoryName(cacheRoot)!, cacheRoot);
-
-            Process.Start(new ProcessStartInfo(executable)
+            finally
             {
-                WorkingDirectory = cacheRoot,
-                UseShellExecute = true
-            });
+                if (ownsMutex)
+                {
+                    launchMutex.ReleaseMutex();
+                }
+            }
         }
         catch (Exception exception)
         {

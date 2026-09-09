@@ -1,6 +1,7 @@
 using Microsoft.Win32;
 using Snapvere.Packaging;
 using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -13,9 +14,12 @@ internal static class InstallerEngine
     private const string ProductName = "SNAPVERE";
     private const string AppExecutableName = "Snapvere.exe";
     private const string InstalledSetupName = "SNAPVERE-Setup.exe";
+    private const string InstallationMarkerName = ".snapvere-installation";
+    private const string InstallationMarkerPrefix = "SNAPVERE-INSTALLATION-V1";
     private const string PayloadResourceName = "Snapvere.Payload.zip";
     private const string LicenseResourceName = "Snapvere.License.txt";
     private const string UninstallRegistryPath = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\SNAPVERE";
+    private const uint MoveFileDelayUntilReboot = 0x00000004;
 
     public static string VersionText =>
         Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.1";
@@ -72,6 +76,10 @@ internal static class InstallerEngine
                 {
                     throw new InvalidDataException("The SNAPVERE package does not contain Snapvere.exe.");
                 }
+
+                File.WriteAllText(
+                    Path.Combine(stagingRoot, InstallationMarkerName),
+                    $"{InstallationMarkerPrefix}{Environment.NewLine}{VersionText}{Environment.NewLine}");
 
                 progress?.Invoke(78);
 
@@ -164,19 +172,20 @@ internal static class InstallerEngine
                 return new InstallerResult(false, 1618, runningMessage);
             }
 
-            DeleteFileBestEffort(GetStartMenuShortcutPath());
-            DeleteFileBestEffort(GetDesktopShortcutPath());
-            DeleteUninstallRegistration();
-
             var currentSetupPath = Environment.ProcessPath;
             if (currentSetupPath is not null && IsPathInside(currentSetupPath, installRoot))
             {
-                DeleteInstallContentsExcept(installRoot, currentSetupPath);
-                ScheduleSelfDelete(currentSetupPath, installRoot);
+                StartDeferredCleanup(currentSetupPath, installRoot);
+                DeleteFileBestEffort(GetStartMenuShortcutPath());
+                DeleteFileBestEffort(GetDesktopShortcutPath());
+                DeleteUninstallRegistration();
             }
             else
             {
-                EmbeddedPayload.DeleteDirectoryBestEffort(installRoot);
+                DeleteFileBestEffort(GetStartMenuShortcutPath());
+                DeleteFileBestEffort(GetDesktopShortcutPath());
+                DeleteUninstallRegistration();
+                DeleteValidatedInstallationWithRetries(installRoot);
             }
 
             return new InstallerResult(true, 0, $"SNAPVERE {VersionText} was removed from this Windows account.");
@@ -188,6 +197,41 @@ internal static class InstallerEngine
         catch (Exception exception)
         {
             return new InstallerResult(false, 1, exception.Message);
+        }
+    }
+
+    public static InstallerResult CompleteDeferredUninstall(
+        string installDirectory,
+        int waitForProcessId,
+        bool silent)
+    {
+        try
+        {
+            if (waitForProcessId > 0)
+            {
+                try
+                {
+                    using var process = Process.GetProcessById(waitForProcessId);
+                    _ = process.WaitForExit(20_000);
+                }
+                catch (ArgumentException)
+                {
+                    // The parent setup already exited.
+                }
+                catch (InvalidOperationException)
+                {
+                    // The parent setup already exited.
+                }
+            }
+
+            var installRoot = ValidateExistingInstallForRemoval(installDirectory);
+            DeleteValidatedInstallationWithRetries(installRoot);
+            ScheduleMaintenanceSelfCleanup();
+            return new InstallerResult(true, 0, "SNAPVERE cleanup completed.");
+        }
+        catch (Exception exception)
+        {
+            return new InstallerResult(false, 1, silent ? exception.Message : "SNAPVERE could not complete uninstall cleanup.");
         }
     }
 
@@ -241,11 +285,23 @@ internal static class InstallerEngine
             return fullPath;
         }
 
+        var markerPath = Path.Combine(fullPath, InstallationMarkerName);
+        if (!File.Exists(markerPath))
+        {
+            throw new InvalidOperationException("The registered path has no SNAPVERE installation marker. Nothing was removed.");
+        }
+
+        var marker = File.ReadAllText(markerPath);
+        if (!marker.StartsWith(InstallationMarkerPrefix, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("The registered path has an invalid SNAPVERE installation marker. Nothing was removed.");
+        }
+
         var hasApp = File.Exists(Path.Combine(fullPath, AppExecutableName));
         var hasSetup = File.Exists(Path.Combine(fullPath, InstalledSetupName));
         if (!hasApp && !hasSetup)
         {
-            throw new InvalidOperationException("The registered SNAPVERE path does not look like a SNAPVERE installation. Nothing was removed.");
+            throw new InvalidOperationException("The registered SNAPVERE path does not contain SNAPVERE application files. Nothing was removed.");
         }
 
         return fullPath;
@@ -360,33 +416,81 @@ internal static class InstallerEngine
             Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
             "SNAPVERE.lnk");
 
-    private static void DeleteInstallContentsExcept(string installRoot, string fileToKeep)
+    private static void StartDeferredCleanup(string currentSetupPath, string installRoot)
     {
-        foreach (var file in Directory.EnumerateFiles(installRoot, "*", SearchOption.TopDirectoryOnly))
+        var maintenanceRoot = Path.Combine(
+            Path.GetTempPath(),
+            "SNAPVERE",
+            "Maintenance",
+            Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture));
+        Directory.CreateDirectory(maintenanceRoot);
+
+        var maintenanceSetup = Path.Combine(maintenanceRoot, InstalledSetupName);
+        File.Copy(currentSetupPath, maintenanceSetup, overwrite: false);
+
+        var startInfo = new ProcessStartInfo(maintenanceSetup)
         {
-            if (!string.Equals(Path.GetFullPath(file), Path.GetFullPath(fileToKeep), StringComparison.OrdinalIgnoreCase))
+            WorkingDirectory = maintenanceRoot,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden
+        };
+        startInfo.ArgumentList.Add("--cleanup-install");
+        startInfo.ArgumentList.Add(installRoot);
+        startInfo.ArgumentList.Add("--wait-pid");
+        startInfo.ArgumentList.Add(Environment.ProcessId.ToString(CultureInfo.InvariantCulture));
+        startInfo.ArgumentList.Add("--silent");
+
+        _ = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Windows could not start the SNAPVERE maintenance cleanup process.");
+    }
+
+    private static void DeleteValidatedInstallationWithRetries(string installRoot)
+    {
+        if (!Directory.Exists(installRoot))
+        {
+            return;
+        }
+
+        _ = ValidateExistingInstallForRemoval(installRoot);
+
+        Exception? lastError = null;
+        for (var attempt = 0; attempt < 12; attempt++)
+        {
+            try
             {
-                DeleteFileBestEffort(file);
+                Directory.Delete(installRoot, recursive: true);
+                return;
+            }
+            catch (IOException exception)
+            {
+                lastError = exception;
+                Thread.Sleep(250);
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                lastError = exception;
+                Thread.Sleep(250);
             }
         }
 
-        foreach (var directory in Directory.EnumerateDirectories(installRoot, "*", SearchOption.TopDirectoryOnly))
-        {
-            EmbeddedPayload.DeleteDirectoryBestEffort(directory);
-        }
+        throw new IOException("SNAPVERE application files remained locked after uninstall retries.", lastError);
     }
 
-    private static void ScheduleSelfDelete(string setupPath, string installRoot)
+    private static void ScheduleMaintenanceSelfCleanup()
     {
-        var command = $"timeout /t 2 /nobreak >nul & del /f /q \"{setupPath}\" & rmdir /s /q \"{installRoot}\"";
-        Process.Start(new ProcessStartInfo
+        var currentPath = Environment.ProcessPath;
+        if (string.IsNullOrWhiteSpace(currentPath))
         {
-            FileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe"),
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            WindowStyle = ProcessWindowStyle.Hidden,
-            ArgumentList = { "/d", "/s", "/c", command }
-        });
+            return;
+        }
+
+        _ = NativeMethods.MoveFileEx(currentPath, null, MoveFileDelayUntilReboot);
+        var directory = Path.GetDirectoryName(currentPath);
+        if (!string.IsNullOrWhiteSpace(directory))
+        {
+            _ = NativeMethods.MoveFileEx(directory, null, MoveFileDelayUntilReboot);
+        }
     }
 
     private static void DeleteFileBestEffort(string path)
@@ -451,5 +555,12 @@ internal static class InstallerEngine
                 }
             }
         }
+    }
+
+    private static class NativeMethods
+    {
+        [DllImport("kernel32.dll", EntryPoint = "MoveFileExW", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool MoveFileEx(string existingFileName, string? newFileName, uint flags);
     }
 }
