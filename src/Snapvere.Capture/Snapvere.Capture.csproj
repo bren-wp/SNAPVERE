@@ -7,4 +7,7 @@
     <ProjectReference Include="..\Snapvere.Domain\Snapvere.Domain.csproj" />
     <ProjectReference Include="..\Snapvere.Shared\Snapvere.Shared.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Graphics.Win2D" />
+  </ItemGroup>
 </Project>
