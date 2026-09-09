@@ -16,7 +16,7 @@ public partial class App : Microsoft.UI.Xaml.Application
     private const string StartupProbeMarkerFileName = "startup-probe.ready";
 
     private readonly ServiceProvider _services;
-    private MainWindow? _window;
+    private CaptureCenterWindow? _window;
     private IGlobalHotkeyService? _hotkeyService;
     private ITrayIconService? _trayIconService;
 
@@ -42,7 +42,7 @@ public partial class App : Microsoft.UI.Xaml.Application
             services.AddSingleton<IGlobalHotkeyService>(
                 _ => new Win32GlobalHotkeyService(DefaultCaptureHotkeys.ImplementedNow));
             services.AddSingleton<ITrayIconService, Win32TrayIconService>();
-            services.AddTransient<MainWindow>();
+            services.AddTransient<CaptureCenterWindow>();
 
             _services = services.BuildServiceProvider(validateScopes: true);
             StartupDiagnostics.WriteLine("Application services initialized.");
@@ -58,16 +58,10 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         try
         {
-            _window = _services.GetRequiredService<MainWindow>();
+            _window = _services.GetRequiredService<CaptureCenterWindow>();
             _window.Closed += OnMainWindowClosed;
 
-            // A solid application surface is already rendered by the Capture
-            // Center. Disable the optional backdrop before first activation so
-            // startup remains deterministic on Server, VM, RDP and other
-            // sessions where composition backdrops can fail asynchronously.
-            _window.SystemBackdrop = null;
-            StartupDiagnostics.WriteLine("Main window composition fallback selected.");
-
+            StartupDiagnostics.WriteLine("Stable Capture Center window created.");
             _window.Activate();
             StartupDiagnostics.WriteLine("Main window activated.");
 
