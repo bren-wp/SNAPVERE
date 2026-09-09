@@ -4,10 +4,15 @@ namespace Snapvere.Setup;
 
 internal sealed class SetupForm : Form
 {
-    private static readonly Color Surface = Color.FromArgb(18, 20, 26);
-    private static readonly Color Card = Color.FromArgb(29, 32, 41);
-    private static readonly Color Accent = Color.FromArgb(103, 80, 216);
-    private static readonly Color Muted = Color.FromArgb(168, 174, 189);
+    private static readonly Color Canvas = Color.FromArgb(12, 14, 19);
+    private static readonly Color Sidebar = Color.FromArgb(17, 19, 26);
+    private static readonly Color Surface = Color.FromArgb(24, 27, 36);
+    private static readonly Color SurfaceRaised = Color.FromArgb(31, 35, 46);
+    private static readonly Color Accent = Color.FromArgb(124, 108, 255);
+    private static readonly Color AccentHover = Color.FromArgb(139, 125, 255);
+    private static readonly Color Muted = Color.FromArgb(154, 162, 180);
+    private static readonly Color Border = Color.FromArgb(46, 52, 67);
+    private static readonly Color Success = Color.FromArgb(69, 214, 162);
 
     private readonly bool _uninstallMode;
     private readonly Label _titleLabel;
@@ -23,6 +28,8 @@ internal sealed class SetupForm : Form
     private readonly Button _primaryButton;
     private readonly Button _cancelButton;
     private readonly CheckBox _launchAfterInstall;
+    private readonly Label _licenseLabel;
+    private readonly Label _installLocationLabel;
     private bool _completed;
 
     public SetupForm(bool uninstallMode)
@@ -31,118 +38,136 @@ internal sealed class SetupForm : Form
 
         Text = uninstallMode ? "Remove SNAPVERE" : "SNAPVERE Setup";
         StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
+        FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
-        MinimizeBox = false;
+        MinimizeBox = true;
         ShowIcon = false;
-        ClientSize = new Size(760, 590);
-        BackColor = Surface;
+        ClientSize = new Size(920, 620);
+        MinimumSize = new Size(936, 659);
+        MaximumSize = new Size(936, 659);
+        AutoScaleMode = AutoScaleMode.Dpi;
+        BackColor = Canvas;
         ForeColor = Color.White;
         Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
 
-        var header = new Panel
-        {
-            Dock = DockStyle.Top,
-            Height = 108,
-            Padding = new Padding(28, 22, 28, 16),
-            BackColor = Color.FromArgb(22, 24, 31)
-        };
-        Controls.Add(header);
+        var sidebar = BuildSidebar(uninstallMode);
+        Controls.Add(sidebar);
 
-        var brand = new Label
+        var main = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Canvas
+        };
+        Controls.Add(main);
+        main.BringToFront();
+
+        var brandEyebrow = new Label
         {
             AutoSize = true,
-            Text = "SNAPVERE",
+            Text = uninstallMode ? "MAINTENANCE" : "INSTALLATION",
             ForeColor = Accent,
-            Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold),
-            Location = new Point(28, 20)
+            Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold),
+            Location = new Point(30, 28)
         };
-        header.Controls.Add(brand);
+        main.Controls.Add(brandEyebrow);
 
         _titleLabel = new Label
         {
             AutoSize = true,
             Text = uninstallMode ? "Remove SNAPVERE" : $"Install SNAPVERE {InstallerEngine.VersionText}",
             ForeColor = Color.White,
-            Font = new Font("Segoe UI Semibold", 22F, FontStyle.Bold),
-            Location = new Point(25, 42)
+            Font = new Font("Segoe UI Semibold", 24F, FontStyle.Bold),
+            Location = new Point(26, 48)
         };
-        header.Controls.Add(_titleLabel);
+        main.Controls.Add(_titleLabel);
 
         _subtitleLabel = new Label
         {
-            AutoSize = true,
+            AutoSize = false,
             Text = uninstallMode
-                ? "Remove the application and its Windows registration from this account."
-                : "Fast, private screen capture for Windows — installed per user, without administrator access.",
+                ? "Remove the application and Windows registration while keeping your screenshots."
+                : "A local-first, self-contained Windows install. No account, telemetry, or administrator access is required.",
             ForeColor = Muted,
-            Location = new Point(29, 80)
+            Location = new Point(30, 88),
+            Size = new Size(600, 34)
         };
-        header.Controls.Add(_subtitleLabel);
+        main.Controls.Add(_subtitleLabel);
 
         var card = new Panel
         {
-            Location = new Point(28, 128),
-            Size = new Size(704, 365),
-            BackColor = Card,
+            Location = new Point(28, 132),
+            Size = new Size(614, 360),
+            BackColor = Surface,
             Padding = new Padding(22)
         };
-        Controls.Add(card);
+        main.Controls.Add(card);
 
-        _licenseBox = new RichTextBox
-        {
-            Location = new Point(22, 38),
-            Size = new Size(660, 190),
-            ReadOnly = true,
-            BorderStyle = BorderStyle.FixedSingle,
-            BackColor = Color.FromArgb(14, 16, 21),
-            ForeColor = Color.FromArgb(218, 222, 232),
-            DetectUrls = true,
-            TabStop = false
-        };
-        card.Controls.Add(_licenseBox);
-
-        var licenseLabel = new Label
+        _licenseLabel = new Label
         {
             AutoSize = true,
             Text = "Mozilla Public License 2.0",
             ForeColor = Color.White,
             Font = new Font("Segoe UI Semibold", 11F, FontStyle.Bold),
-            Location = new Point(20, 14)
+            Location = new Point(22, 16)
         };
-        card.Controls.Add(licenseLabel);
+        card.Controls.Add(_licenseLabel);
+
+        var licenseHint = new Label
+        {
+            AutoSize = true,
+            Text = "Review the terms before continuing",
+            ForeColor = Muted,
+            Font = new Font("Segoe UI", 9F),
+            Location = new Point(22, 38)
+        };
+        card.Controls.Add(licenseHint);
+
+        _licenseBox = new RichTextBox
+        {
+            Location = new Point(22, 64),
+            Size = new Size(570, 154),
+            ReadOnly = true,
+            BorderStyle = BorderStyle.FixedSingle,
+            BackColor = Color.FromArgb(13, 15, 20),
+            ForeColor = Color.FromArgb(222, 225, 234),
+            DetectUrls = true,
+            TabStop = false,
+            Font = new Font("Segoe UI", 9F)
+        };
+        card.Controls.Add(_licenseBox);
 
         _acceptLicense = new CheckBox
         {
             AutoSize = true,
-            Text = "I accept the license terms",
+            Text = "I have read and accept the license terms",
             ForeColor = Color.White,
-            Location = new Point(22, 238)
+            Location = new Point(22, 230),
+            Cursor = Cursors.Hand
         };
         _acceptLicense.CheckedChanged += (_, _) => UpdatePrimaryButtonState();
         card.Controls.Add(_acceptLicense);
 
-        var installLocationLabel = new Label
+        _installLocationLabel = new Label
         {
             AutoSize = true,
             Text = "Install location",
             ForeColor = Muted,
-            Location = new Point(22, 278)
+            Location = new Point(22, 265)
         };
-        card.Controls.Add(installLocationLabel);
+        card.Controls.Add(_installLocationLabel);
 
         _installPath = new TextBox
         {
-            Location = new Point(22, 301),
-            Size = new Size(535, 28),
+            Location = new Point(22, 288),
+            Size = new Size(448, 29),
             Text = InstallerEngine.GetDefaultInstallDirectory(),
-            BackColor = Color.FromArgb(14, 16, 21),
+            BackColor = Color.FromArgb(14, 16, 22),
             ForeColor = Color.White,
             BorderStyle = BorderStyle.FixedSingle
         };
         card.Controls.Add(_installPath);
 
-        _browseButton = CreateSecondaryButton("Browse…", new Point(568, 299), new Size(114, 30));
+        _browseButton = CreateSecondaryButton("Browse", new Point(480, 286), new Size(112, 32));
         _browseButton.Click += BrowseButton_Click;
         card.Controls.Add(_browseButton);
 
@@ -152,7 +177,8 @@ internal sealed class SetupForm : Form
             Checked = true,
             Text = "Start menu shortcut",
             ForeColor = Color.White,
-            Location = new Point(22, 339)
+            Location = new Point(22, 329),
+            Cursor = Cursors.Hand
         };
         card.Controls.Add(_startMenuShortcut);
 
@@ -162,57 +188,62 @@ internal sealed class SetupForm : Form
             Checked = false,
             Text = "Desktop shortcut",
             ForeColor = Color.White,
-            Location = new Point(210, 339)
+            Location = new Point(208, 329),
+            Cursor = Cursors.Hand
         };
         card.Controls.Add(_desktopShortcut);
 
         _progressBar = new ProgressBar
         {
-            Location = new Point(28, 512),
-            Size = new Size(704, 8),
+            Location = new Point(28, 510),
+            Size = new Size(614, 7),
             Minimum = 0,
             Maximum = 100,
             Style = ProgressBarStyle.Continuous
         };
-        Controls.Add(_progressBar);
+        main.Controls.Add(_progressBar);
 
         _statusLabel = new Label
         {
             AutoEllipsis = true,
             Text = uninstallMode
-                ? "SNAPVERE can be removed without a separate uninstaller executable."
-                : "Setup is self-contained. No telemetry or network connection is required.",
+                ? "Same Setup executable removes SNAPVERE; there is no separate uninstall.exe."
+                : "Ready to install locally. Screenshots stay under Pictures\\SNAPVERE.",
             ForeColor = Muted,
             Location = new Point(28, 530),
-            Size = new Size(470, 28)
+            Size = new Size(390, 40)
         };
-        Controls.Add(_statusLabel);
+        main.Controls.Add(_statusLabel);
 
         _launchAfterInstall = new CheckBox
         {
             AutoSize = true,
             Checked = true,
-            Text = "Launch SNAPVERE",
+            Text = "Launch SNAPVERE now",
             ForeColor = Color.White,
-            Location = new Point(28, 558),
-            Visible = false
+            Location = new Point(28, 574),
+            Visible = false,
+            Cursor = Cursors.Hand
         };
-        Controls.Add(_launchAfterInstall);
+        main.Controls.Add(_launchAfterInstall);
 
-        _cancelButton = CreateSecondaryButton("Cancel", new Point(512, 542), new Size(100, 36));
+        _cancelButton = CreateSecondaryButton("Cancel", new Point(424, 554), new Size(100, 38));
         _cancelButton.Click += (_, _) => Close();
-        Controls.Add(_cancelButton);
+        main.Controls.Add(_cancelButton);
 
         _primaryButton = CreatePrimaryButton(
-            uninstallMode ? "Uninstall" : "Install",
-            new Point(622, 542),
-            new Size(110, 36));
+            uninstallMode ? "Remove" : "Install",
+            new Point(534, 554),
+            new Size(108, 38));
         _primaryButton.Click += PrimaryButton_Click;
-        Controls.Add(_primaryButton);
+        main.Controls.Add(_primaryButton);
+
+        AcceptButton = _primaryButton;
+        CancelButton = _cancelButton;
 
         if (uninstallMode)
         {
-            ConfigureUninstallMode(card);
+            ConfigureUninstallMode(card, licenseHint);
         }
         else
         {
@@ -222,33 +253,163 @@ internal sealed class SetupForm : Form
         UpdatePrimaryButtonState();
     }
 
-    private void ConfigureUninstallMode(Panel card)
+    private static Panel BuildSidebar(bool uninstallMode)
     {
+        var sidebar = new Panel
+        {
+            Dock = DockStyle.Left,
+            Width = 250,
+            BackColor = Sidebar
+        };
+
+        var accentBar = new Panel
+        {
+            Dock = DockStyle.Left,
+            Width = 4,
+            BackColor = Accent
+        };
+        sidebar.Controls.Add(accentBar);
+
+        var mark = new Label
+        {
+            AutoSize = false,
+            Text = "S",
+            TextAlign = ContentAlignment.MiddleCenter,
+            Location = new Point(28, 32),
+            Size = new Size(46, 46),
+            BackColor = Accent,
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI Semibold", 17F, FontStyle.Bold)
+        };
+        sidebar.Controls.Add(mark);
+
+        var brand = new Label
+        {
+            AutoSize = true,
+            Text = "SNAPVERE",
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI Semibold", 14F, FontStyle.Bold),
+            Location = new Point(28, 94)
+        };
+        sidebar.Controls.Add(brand);
+
+        var version = new Label
+        {
+            AutoSize = true,
+            Text = $"Version {InstallerEngine.VersionText}",
+            ForeColor = Muted,
+            Font = new Font("Segoe UI", 9F),
+            Location = new Point(29, 121)
+        };
+        sidebar.Controls.Add(version);
+
+        var tagline = new Label
+        {
+            AutoSize = false,
+            Text = uninstallMode
+                ? "Clean removal, without touching your captures."
+                : "Capture anything.\r\nPrivate by default.",
+            ForeColor = Color.FromArgb(214, 218, 229),
+            Font = new Font("Segoe UI Semibold", 12F, FontStyle.Bold),
+            Location = new Point(28, 174),
+            Size = new Size(190, 58)
+        };
+        sidebar.Controls.Add(tagline);
+
+        AddSidebarFeature(sidebar, 270, "SELF-CONTAINED", "Includes its required app runtime.");
+        AddSidebarFeature(sidebar, 340, "PER-USER", "No administrator elevation by default.");
+        AddSidebarFeature(sidebar, 410, "LOCAL-FIRST", "No account or telemetry required.");
+
+        var footerDot = new Label
+        {
+            AutoSize = true,
+            Text = "●",
+            ForeColor = Success,
+            Font = new Font("Segoe UI", 8F),
+            Location = new Point(28, 563)
+        };
+        sidebar.Controls.Add(footerDot);
+
+        var footer = new Label
+        {
+            AutoSize = true,
+            Text = "Brendigo · Windows",
+            ForeColor = Muted,
+            Font = new Font("Segoe UI", 8.5F),
+            Location = new Point(44, 564)
+        };
+        sidebar.Controls.Add(footer);
+
+        return sidebar;
+    }
+
+    private static void AddSidebarFeature(Panel sidebar, int top, string title, string description)
+    {
+        var titleLabel = new Label
+        {
+            AutoSize = true,
+            Text = title,
+            ForeColor = Accent,
+            Font = new Font("Segoe UI Semibold", 8F, FontStyle.Bold),
+            Location = new Point(28, top)
+        };
+        sidebar.Controls.Add(titleLabel);
+
+        var descriptionLabel = new Label
+        {
+            AutoSize = false,
+            Text = description,
+            ForeColor = Muted,
+            Font = new Font("Segoe UI", 9F),
+            Location = new Point(28, top + 21),
+            Size = new Size(188, 38)
+        };
+        sidebar.Controls.Add(descriptionLabel);
+    }
+
+    private void ConfigureUninstallMode(Panel card, Label licenseHint)
+    {
+        _licenseLabel.Visible = false;
+        licenseHint.Visible = false;
         _licenseBox.Visible = false;
         _acceptLicense.Visible = false;
+        _installLocationLabel.Visible = false;
         _installPath.Visible = false;
         _browseButton.Visible = false;
         _startMenuShortcut.Visible = false;
         _desktopShortcut.Visible = false;
 
-        foreach (Control control in card.Controls)
+        var removalTitle = new Label
         {
-            if (control is Label label && label.Text is "Mozilla Public License 2.0" or "Install location")
-            {
-                label.Visible = false;
-            }
-        }
+            AutoSize = true,
+            Text = "What will be removed",
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI Semibold", 16F, FontStyle.Bold),
+            Location = new Point(24, 28)
+        };
+        card.Controls.Add(removalTitle);
 
         var message = new Label
         {
             AutoSize = false,
-            Text = "This removes SNAPVERE application files, Start menu/Desktop shortcuts created by Setup, and the per-user Windows uninstall registration.\r\n\r\nYour screenshots in Pictures\\SNAPVERE are not deleted.",
+            Text = "SNAPVERE application files\r\nStart menu and Desktop shortcuts created by Setup\r\nWindows Installed apps registration\r\n\r\nYour screenshots in Pictures\\SNAPVERE are preserved.",
             ForeColor = Color.FromArgb(224, 227, 235),
-            Font = new Font("Segoe UI", 12F),
-            Location = new Point(22, 36),
-            Size = new Size(650, 130)
+            Font = new Font("Segoe UI", 11F),
+            Location = new Point(25, 82),
+            Size = new Size(550, 170)
         };
         card.Controls.Add(message);
+
+        var privacy = new Label
+        {
+            AutoSize = false,
+            Text = "✓  Capture files are not part of the uninstall cleanup.",
+            ForeColor = Success,
+            Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold),
+            Location = new Point(25, 278),
+            Size = new Size(540, 30)
+        };
+        card.Controls.Add(privacy);
     }
 
     private void LoadLicense()
@@ -271,7 +432,16 @@ internal sealed class SetupForm : Form
         {
             if (!_uninstallMode && _launchAfterInstall.Checked)
             {
-                _ = InstallerEngine.LaunchInstalledApplication(_installPath.Text);
+                if (!InstallerEngine.LaunchInstalledApplication(_installPath.Text))
+                {
+                    MessageBox.Show(
+                        this,
+                        "SNAPVERE was installed, but Windows could not start the application.\r\n\r\nTry launching SNAPVERE again from the Start menu. If it still fails, check %LOCALAPPDATA%\\SNAPVERE\\Logs\\startup.log.",
+                        "SNAPVERE startup",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
             }
 
             Close();
@@ -280,7 +450,7 @@ internal sealed class SetupForm : Form
 
         SetBusy(true);
         _progressBar.Value = 0;
-        _statusLabel.Text = _uninstallMode ? "Removing SNAPVERE…" : "Preparing installation…";
+        _statusLabel.Text = _uninstallMode ? "Removing SNAPVERE…" : "Preparing secure local installation…";
 
         InstallerResult result;
         if (_uninstallMode)
@@ -313,8 +483,8 @@ internal sealed class SetupForm : Form
         _completed = true;
         _titleLabel.Text = _uninstallMode ? "SNAPVERE removed" : "SNAPVERE is ready";
         _subtitleLabel.Text = _uninstallMode
-            ? "The application has been removed from this Windows account."
-            : "Installation completed successfully.";
+            ? "The application has been removed from this Windows account. Your screenshots remain untouched."
+            : "Installation completed successfully. SNAPVERE is ready to launch.";
         _primaryButton.Text = "Finish";
         _primaryButton.Enabled = true;
         _cancelButton.Visible = false;
@@ -354,7 +524,8 @@ internal sealed class SetupForm : Form
     }
 
     private static Button CreatePrimaryButton(string text, Point location, Size size)
-        => new()
+    {
+        var button = new Button
         {
             Text = text,
             Location = location,
@@ -363,19 +534,32 @@ internal sealed class SetupForm : Form
             ForeColor = Color.White,
             FlatStyle = FlatStyle.Flat,
             Cursor = Cursors.Hand,
-            UseVisualStyleBackColor = false
+            UseVisualStyleBackColor = false,
+            Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold)
         };
+        button.FlatAppearance.BorderSize = 0;
+        button.FlatAppearance.MouseOverBackColor = AccentHover;
+        button.FlatAppearance.MouseDownBackColor = Color.FromArgb(92, 78, 210);
+        return button;
+    }
 
     private static Button CreateSecondaryButton(string text, Point location, Size size)
-        => new()
+    {
+        var button = new Button
         {
             Text = text,
             Location = location,
             Size = size,
-            BackColor = Color.FromArgb(43, 47, 59),
+            BackColor = SurfaceRaised,
             ForeColor = Color.White,
             FlatStyle = FlatStyle.Flat,
             Cursor = Cursors.Hand,
-            UseVisualStyleBackColor = false
+            UseVisualStyleBackColor = false,
+            Font = new Font("Segoe UI", 9.5F)
         };
+        button.FlatAppearance.BorderColor = Border;
+        button.FlatAppearance.BorderSize = 1;
+        button.FlatAppearance.MouseOverBackColor = Color.FromArgb(39, 44, 57);
+        return button;
+    }
 }
