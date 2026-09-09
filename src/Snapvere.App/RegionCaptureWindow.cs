@@ -1224,7 +1224,7 @@ public sealed class RegionCaptureWindow : Window
             Child = child
         };
 
-    private static TextBlock Text(string value, double size, SolidColorBrush foreground, Microsoft.UI.Text.FontWeight? weight = null)
+    private static TextBlock Text(string value, double size, SolidColorBrush foreground, Windows.UI.Text.FontWeight? weight = null)
         => new()
         {
             Text = value,
