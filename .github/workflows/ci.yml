@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   build-test:
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 25
     steps:
       - name: Checkout
@@ -39,7 +39,7 @@ jobs:
         run: dotnet test tests/Snapvere.UnitTests/Snapvere.UnitTests.csproj --configuration Release --no-restore -p:Platform=x64 --logger "trx;LogFileName=snapvere-tests.trx"
 
   build-x86:
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 25
     steps:
       - name: Checkout
@@ -57,7 +57,7 @@ jobs:
         run: dotnet build src/Snapvere.App/Snapvere.App.csproj --configuration Release --runtime win-x86 --no-restore -p:Platform=x86
 
   package-smoke:
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 45
     strategy:
       fail-fast: false
