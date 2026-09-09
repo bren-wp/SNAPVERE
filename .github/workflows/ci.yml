@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  SNAPVERE_VERSION: 0.0.2
+
 permissions:
   contents: read
 
@@ -78,6 +81,7 @@ jobs:
             -p:PublishReadyToRun=true `
             -p:DebugType=None `
             -p:DebugSymbols=false `
+            -p:Version=$env:SNAPVERE_VERSION `
             --output "artifacts/app-${{ matrix.arch }}"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
@@ -98,7 +102,7 @@ jobs:
             --runtime "win-${{ matrix.arch }}" `
             -p:Platform=${{ matrix.arch }} `
             -p:SnapverePayloadPath="$payload" `
-            -p:Version=0.0.1 `
+            -p:Version=$env:SNAPVERE_VERSION `
             --output "artifacts/setup-${{ matrix.arch }}"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
@@ -111,7 +115,7 @@ jobs:
             --runtime "win-${{ matrix.arch }}" `
             -p:Platform=${{ matrix.arch }} `
             -p:SnapverePayloadPath="$payload" `
-            -p:Version=0.0.1 `
+            -p:Version=$env:SNAPVERE_VERSION `
             --output "artifacts/portable-${{ matrix.arch }}"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
@@ -125,10 +129,11 @@ jobs:
           if ((Get-Item $setup).Length -lt 1MB) { throw "Setup executable is unexpectedly small." }
           if ((Get-Item $portable).Length -lt 1MB) { throw "Portable executable is unexpectedly small." }
 
-      - name: Smoke test Setup install and uninstall
+      - name: Smoke test Setup, installed startup, uninstall and Portable startup
         shell: pwsh
         run: |
           $setup = (Resolve-Path "artifacts/setup-${{ matrix.arch }}/SNAPVERE-Setup.exe").Path
+          $portable = (Resolve-Path "artifacts/portable-${{ matrix.arch }}/SNAPVERE-Portable.exe").Path
           $install = Join-Path $env:LOCALAPPDATA "Programs/SNAPVERE"
 
           $licenseProbe = Start-Process -FilePath $setup -ArgumentList @("--silent") -Wait -PassThru
@@ -138,10 +143,18 @@ jobs:
 
           $installProcess = Start-Process -FilePath $setup -ArgumentList @("--silent", "--accept-license") -Wait -PassThru
           if ($installProcess.ExitCode -ne 0) { throw "Silent install failed with exit code $($installProcess.ExitCode)." }
-          if (-not (Test-Path (Join-Path $install "Snapvere.exe"))) { throw "Installed Snapvere.exe is missing." }
+          $installedApp = Join-Path $install "Snapvere.exe"
+          if (-not (Test-Path $installedApp)) { throw "Installed Snapvere.exe is missing." }
           if (-not (Test-Path (Join-Path $install "SNAPVERE-Setup.exe"))) { throw "Installed setup maintenance executable is missing." }
           if (Get-ChildItem $install -Filter "uninstall*.exe" -ErrorAction SilentlyContinue) {
             throw "A separate uninstall.exe-style executable must not be installed."
+          }
+
+          $appProbe = Start-Process -FilePath $installedApp -ArgumentList @("--startup-probe") -Wait -PassThru
+          if ($appProbe.ExitCode -ne 0) {
+            $log = Join-Path $env:LOCALAPPDATA "SNAPVERE/Logs/startup.log"
+            if (Test-Path $log) { Get-Content $log | Write-Host }
+            throw "Installed SNAPVERE startup probe failed with exit code $($appProbe.ExitCode)."
           }
 
           $installedSetup = Join-Path $install "SNAPVERE-Setup.exe"
@@ -149,10 +162,14 @@ jobs:
           if ($uninstallProcess.ExitCode -ne 0) { throw "Silent uninstall failed with exit code $($uninstallProcess.ExitCode)." }
 
           $deadline = (Get-Date).AddSeconds(15)
-          while ((Test-Path (Join-Path $install "Snapvere.exe")) -and (Get-Date) -lt $deadline) {
+          while ((Test-Path $installedApp) -and (Get-Date) -lt $deadline) {
             Start-Sleep -Milliseconds 250
           }
+          if (Test-Path $installedApp) { throw "Snapvere.exe remains after uninstall cleanup timeout." }
 
-          if (Test-Path (Join-Path $install "Snapvere.exe")) {
-            throw "Snapvere.exe remains after uninstall cleanup timeout."
+          $portableProbe = Start-Process -FilePath $portable -ArgumentList @("--startup-probe") -Wait -PassThru
+          if ($portableProbe.ExitCode -ne 0) {
+            $log = Join-Path $env:LOCALAPPDATA "SNAPVERE/Logs/startup.log"
+            if (Test-Path $log) { Get-Content $log | Write-Host }
+            throw "Portable SNAPVERE startup probe failed with exit code $($portableProbe.ExitCode)."
           }

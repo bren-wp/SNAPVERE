@@ -18,34 +18,74 @@ public partial class App : Microsoft.UI.Xaml.Application
 
     public App()
     {
-        InitializeComponent();
+        StartupDiagnostics.Initialize();
 
-        var services = new ServiceCollection();
-        services.AddSingleton<IDisplayDiscovery, Win32DisplayDiscovery>();
-        services.AddSingleton<IScreenCaptureService, GdiScreenCaptureService>();
-        services.AddSingleton<PngCaptureEncoder>();
-        services.AddSingleton(new CapturePathProvider());
-        services.AddSingleton(TimeProvider.System);
-        services.AddSingleton<CaptureFileWriter>();
-        services.AddSingleton<ScreenCaptureWorkflow>();
-        services.AddSingleton<RegionCaptureWorkflow>();
-        services.AddSingleton<CaptureHistoryService>();
-        services.AddSingleton<IGlobalHotkeyService>(
-            _ => new Win32GlobalHotkeyService(DefaultCaptureHotkeys.ImplementedNow));
-        services.AddSingleton<ITrayIconService, Win32TrayIconService>();
-        services.AddTransient<MainWindow>();
+        try
+        {
+            InitializeComponent();
+            UnhandledException += OnUnhandledException;
 
-        _services = services.BuildServiceProvider(validateScopes: true);
+            var services = new ServiceCollection();
+            services.AddSingleton<IDisplayDiscovery, Win32DisplayDiscovery>();
+            services.AddSingleton<IScreenCaptureService, GdiScreenCaptureService>();
+            services.AddSingleton<PngCaptureEncoder>();
+            services.AddSingleton(new CapturePathProvider());
+            services.AddSingleton(TimeProvider.System);
+            services.AddSingleton<CaptureFileWriter>();
+            services.AddSingleton<ScreenCaptureWorkflow>();
+            services.AddSingleton<RegionCaptureWorkflow>();
+            services.AddSingleton<CaptureHistoryService>();
+            services.AddSingleton<IGlobalHotkeyService>(
+                _ => new Win32GlobalHotkeyService(DefaultCaptureHotkeys.ImplementedNow));
+            services.AddSingleton<ITrayIconService, Win32TrayIconService>();
+            services.AddTransient<MainWindow>();
+
+            _services = services.BuildServiceProvider(validateScopes: true);
+            StartupDiagnostics.WriteLine("Application services initialized.");
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.ShowFatal("Application initialization", exception);
+            throw;
+        }
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        _window = _services.GetRequiredService<MainWindow>();
-        _window.Closed += OnMainWindowClosed;
-        _window.Activate();
+        try
+        {
+            _window = _services.GetRequiredService<MainWindow>();
+            _window.Closed += OnMainWindowClosed;
+            _window.Activate();
+            StartupDiagnostics.WriteLine("Main window activated.");
 
-        StartGlobalHotkeys();
-        StartTrayIcon();
+            if (IsStartupProbeRequested())
+            {
+                StartupDiagnostics.WriteLine("Startup probe succeeded; closing probe window.");
+                _ = _window.DispatcherQueue.TryEnqueue(() => _window?.Close());
+                return;
+            }
+
+            StartGlobalHotkeys();
+            StartTrayIcon();
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.ShowFatal("Application launch", exception);
+            throw;
+        }
+    }
+
+    private static bool IsStartupProbeRequested()
+        => Environment.GetCommandLineArgs().Any(
+            argument => string.Equals(argument, "--startup-probe", StringComparison.OrdinalIgnoreCase));
+
+    private void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
+    {
+        if (e.Exception is not null)
+        {
+            StartupDiagnostics.Record("XAML.UnhandledException", e.Exception);
+        }
     }
 
     private void StartGlobalHotkeys()
@@ -64,8 +104,9 @@ public partial class App : Microsoft.UI.Xaml.Application
             var report = _hotkeyService.Start();
             window.ApplyHotkeyRegistrationReport(report);
         }
-        catch
+        catch (Exception exception)
         {
+            StartupDiagnostics.Record("Global hotkey host", exception);
             window.ReportHotkeyHostFailure();
         }
     }
@@ -85,8 +126,9 @@ public partial class App : Microsoft.UI.Xaml.Application
         {
             _trayIconService.Start();
         }
-        catch
+        catch (Exception exception)
         {
+            StartupDiagnostics.Record("System tray host", exception);
             window.ReportTrayHostFailure();
         }
     }
@@ -146,6 +188,8 @@ public partial class App : Microsoft.UI.Xaml.Application
         _hotkeyService = null;
         _trayIconService = null;
         _window = null;
+        UnhandledException -= OnUnhandledException;
         _services.Dispose();
+        StartupDiagnostics.WriteLine("Application shutdown completed.");
     }
 }
