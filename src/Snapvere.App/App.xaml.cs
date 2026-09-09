@@ -31,12 +31,7 @@ public partial class App : Microsoft.UI.Xaml.Application
 
             var services = new ServiceCollection();
             services.AddSingleton<IDisplayDiscovery, Win32DisplayDiscovery>();
-            services.AddSingleton<WindowsGraphicsCaptureService>();
-            services.AddSingleton<GdiScreenCaptureService>();
-            services.AddSingleton<IScreenCaptureService>(provider =>
-                new FallbackScreenCaptureService(
-                    provider.GetRequiredService<WindowsGraphicsCaptureService>(),
-                    provider.GetRequiredService<GdiScreenCaptureService>()));
+            services.AddSingleton<IScreenCaptureService, GdiScreenCaptureService>();
             services.AddSingleton<PngCaptureEncoder>();
             services.AddSingleton(new CapturePathProvider());
             services.AddSingleton(TimeProvider.System);
