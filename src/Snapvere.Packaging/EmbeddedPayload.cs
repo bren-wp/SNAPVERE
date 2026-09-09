@@ -58,7 +58,7 @@ public static class EmbeddedPayload
             }
 
             if (entry.FullName.EndsWith('/', StringComparison.Ordinal) ||
-                entry.FullName.EndsWith('\\'))
+                entry.FullName.EndsWith("\\", StringComparison.Ordinal))
             {
                 Directory.CreateDirectory(targetPath);
                 continue;
