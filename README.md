@@ -10,24 +10,24 @@
 
 SNAPVERE is a local-first Windows capture application focused on fast region selection, physical-pixel precision, dependable local PNG output and a clean path toward professional annotation, OCR, pin-to-screen and scrolling capture.
 
-## Version 0.0.1
+## Version 0.0.2
 
-The first binary release provides the working capture core without presenting unfinished features as complete.
+Version 0.0.2 hardens real Windows startup and packaging while preserving the working capture core. The primary application now starts through a conservative WinUI Capture Center that avoids the fragile custom MainWindow XAML/composition path found during release QA.
 
 ### Release downloads
 
 GitHub Releases publish:
 
-- `SNAPVERE-0.0.1-Setup-x64.exe`
-- `SNAPVERE-0.0.1-Portable-x64.exe`
-- `SNAPVERE-0.0.1-Setup-x86.exe`
-- `SNAPVERE-0.0.1-Portable-x86.exe`
+- `SNAPVERE-0.0.2-Setup-x64.exe`
+- `SNAPVERE-0.0.2-Portable-x64.exe`
+- `SNAPVERE-0.0.2-Setup-x86.exe`
+- `SNAPVERE-0.0.2-Portable-x86.exe`
 - raw x64/x86 self-contained ZIP payloads
 - `SHA256SUMS.txt`
 
-`x86` is the 32-bit Windows architecture commonly called `x32`; it is one architecture, so duplicate x32 binaries are not published.
+`x86` is the 32-bit Windows architecture commonly called `x32`; duplicate x32 binaries are not published.
 
-See [`docs/INSTALLATION.md`](docs/INSTALLATION.md) for Setup, Portable and uninstall behavior.
+See [`docs/INSTALLATION.md`](docs/INSTALLATION.md) for Setup, Portable, platform and uninstall behavior.
 
 ## Technology
 
@@ -35,7 +35,8 @@ See [`docs/INSTALLATION.md`](docs/INSTALLATION.md) for Setup, Portable and unins
 - WinUI 3
 - Windows App SDK 1.8 stable line
 - x64 and x86/32-bit release targets; ARM64 remains a source/build target
-- Nullable reference types and strict .NET analyzers
+- Windows 10 version 1809 / build 17763 minimum platform target
+- nullable reference types and strict .NET analyzers
 - central NuGet package management
 - xUnit automated tests
 - GitHub Actions Windows CI and release packaging
@@ -43,7 +44,7 @@ See [`docs/INSTALLATION.md`](docs/INSTALLATION.md) for Setup, Portable and unins
 ## Architecture
 
 ```text
-WinUI / global hotkey / tray action
+WinUI Capture Center / global hotkey / tray action
     ↓
 Snapvere.Application workflow
     ↓
@@ -77,7 +78,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/REGION-CAPTURE.md`](d
 - native Win32 active-display discovery;
 - physical virtual-desktop coordinates, including negative origins;
 - 100/125/150/175/200% DPI conversion coverage;
-- sub-DIP XAML pointer conversion without premature rounding;
+- sub-DIP pointer conversion without premature rounding;
 - validated BGRA8 capture frames;
 - GDI monitor-capture compatibility backend with optional cursor rendering;
 - deterministic PNG encoder;
@@ -88,7 +89,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/REGION-CAPTURE.md`](d
 ### Screen Capture
 
 - primary-display screenshot;
-- main window hides before acquisition;
+- main Capture Center hides before acquisition;
 - local PNG save;
 - global `Ctrl+Shift+4` hotkey;
 - tray Screen action.
@@ -110,11 +111,14 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/REGION-CAPTURE.md`](d
 
 ### Desktop integration
 
+- stable programmatic WinUI Capture Center with standard Windows title bar;
 - conflict-aware native global hotkey host;
 - native system tray icon and menu;
 - tray recovery after Windows Explorer restarts;
-- recent local captures list;
-- version-aware v0.0.1 UI with unavailable future features visibly disabled.
+- recent local captures view;
+- startup diagnostics under `%LOCALAPPDATA%\SNAPVERE\Logs`;
+- explicit activated-window startup probe used by CI;
+- unavailable future features are not presented as working functionality.
 
 ### Setup and Portable
 
@@ -130,12 +134,26 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/REGION-CAPTURE.md`](d
 - single-file Portable launcher per architecture;
 - guarded payload extraction that blocks absolute paths and directory traversal;
 - bounded archive extraction and versioned portable cache;
-- x64/x86 installer lifecycle validation in GitHub Actions;
+- x64/x86 Setup, activated-window, normal-launch, uninstall and Portable lifecycle validation in GitHub Actions;
 - SHA-256 release checksums.
+
+## Release QA
+
+The v0.0.2 gate validates both x64 and x86 on the Windows Server 2022 GitHub runner used for WinUI CI. Each architecture must pass:
+
+1. self-contained app publish;
+2. Setup and Portable publish;
+3. explicit license-gated silent Setup install;
+4. activated WinUI `READY` probe;
+5. normal application launch remaining alive through the startup window;
+6. Setup-based uninstall and cleanup;
+7. Portable activated-window probe and normal launch.
+
+A failing runtime launch blocks release publication.
 
 ## Current limitations
 
-The following are intentionally disabled or deferred after 0.0.1:
+The following remain intentionally deferred after 0.0.2:
 
 - coordinated cross-monitor Region overlay;
 - Windows.Graphics.Capture/D3D primary acquisition backend;
@@ -164,17 +182,15 @@ dotnet restore src/Snapvere.App/Snapvere.App.csproj -r win-x86
 dotnet build src/Snapvere.App/Snapvere.App.csproj -c Release -r win-x86 -p:Platform=x86
 ```
 
-GitHub Actions performs self-contained package publishes and Setup install/uninstall lifecycle tests for both x64 and x86 before release publication.
-
 ## Privacy
 
-SNAPVERE capture workflows are local-first. Screenshot pixels, local capture history and user files are not sent to an analytics or telemetry service by the 0.0.1 application.
+SNAPVERE capture workflows are local-first. Screenshot pixels, local capture history and user files are not sent to an analytics or telemetry service by the 0.0.2 application.
 
 ## Security
 
 Release packaging validates extraction destinations, bounds embedded archives, uses staged writes and publishes SHA-256 checksums. Setup validates a SNAPVERE installation marker before destructive cleanup. Private signing keys, production credentials, user screenshots, dumps and runtime data must never be committed.
 
-The 0.0.1 executables are intentionally not Authenticode-signed. Signing is not a requirement for this release; use `SHA256SUMS.txt` for artifact integrity verification.
+The 0.0.2 executables are intentionally not Authenticode-signed. Use the published `SHA256SUMS.txt` for artifact integrity verification.
 
 ## Branding
 

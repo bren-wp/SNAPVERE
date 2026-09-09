@@ -2,12 +2,18 @@
 
 ## Supported release architectures
 
-SNAPVERE 0.0.1 publishes native Windows artifacts for:
+SNAPVERE 0.0.2 publishes native Windows artifacts for:
 
 - **x64** — normal 64-bit Windows systems;
-- **x86** — 32-bit Windows systems. `x32` is another informal name for the same 32-bit architecture.
+- **x86** — 32-bit Windows systems. `x32` is another informal name for the same architecture.
 
-ARM64 remains a source/build target but is not part of the first public binary release while release QA is focused on x64 and x86.
+ARM64 remains a source/build target but is not part of the 0.0.2 public binary release while release QA is focused on x64 and x86.
+
+## Platform target
+
+The application targets Windows 10 version 1809 / build 17763 or later. Windows 11 is supported through the same Windows App SDK application model.
+
+GitHub Actions runtime launch validation for v0.0.2 uses the `windows-2022` runner. The release gate does not use `windows-latest` because that label currently resolves to Windows Server 2025, which is outside the Windows App SDK 1.8 server support matrix used by this project.
 
 ## Setup
 
@@ -34,7 +40,7 @@ Uninstall removes application files, shortcuts and uninstall registration. It de
 Silent installation is explicit about license acceptance:
 
 ```text
-SNAPVERE-0.0.1-Setup-x64.exe --silent --accept-license
+SNAPVERE-0.0.2-Setup-x64.exe --silent --accept-license
 ```
 
 A silent install without `--accept-license` exits with code `2` without installing.
@@ -44,8 +50,6 @@ Silent uninstall:
 ```text
 SNAPVERE-Setup.exe --uninstall --silent
 ```
-
-The GitHub Actions release pipeline validates the license-gated silent install and the Setup-based uninstall lifecycle on clean Windows runners for both x64 and x86.
 
 ## Portable
 
@@ -63,8 +67,30 @@ The portable launcher:
 
 Screenshots are still saved to the normal `Pictures\SNAPVERE` capture folder.
 
+## Runtime validation
+
+For each x64 and x86 package, CI and release QA require all of the following:
+
+1. the Setup executable rejects silent installation without `--accept-license`;
+2. silent installation succeeds with explicit license acceptance;
+3. installed `Snapvere.exe` reaches an activated WinUI main window and emits `SNAPVERE 0.0.2 READY`;
+4. a normal installed launch remains alive through the startup validation window;
+5. Setup-based silent uninstall completes and removes the application payload;
+6. Portable reaches the same activated-window READY marker;
+7. Portable normal launch leaves a real `Snapvere.exe` process alive.
+
+A failure in any of these steps blocks release publication.
+
+Startup diagnostics are written to:
+
+```text
+%LOCALAPPDATA%\SNAPVERE\Logs\startup.log
+```
+
+The log records startup stages and exception metadata; screenshot pixels and capture content are not written to it.
+
 ## Integrity
 
 Every GitHub Release includes `SHA256SUMS.txt`. Compare downloaded files against those hashes before deployment when integrity verification is required.
 
-The 0.0.1 binaries are intentionally not Authenticode-signed. Signing is not required for this release; SHA-256 checksums are published for artifact integrity verification.
+The 0.0.2 binaries are intentionally not Authenticode-signed. SHA-256 checksums are published for artifact integrity verification.

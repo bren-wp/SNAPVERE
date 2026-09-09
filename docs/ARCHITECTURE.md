@@ -2,78 +2,123 @@
 
 ## Status
 
-Foundation implemented. Capture backends, editor, OCR, history and scrolling subsystems are progressively added behind explicit contracts; this document does not mark planned functionality as complete.
+The 0.0.2 capture foundation is implemented and release-gated. Screen Capture, primary-display Region Capture, local PNG persistence, recent capture discovery, global hotkeys, tray integration, Setup and Portable packaging are working. Planned features remain explicitly separated from implemented functionality.
 
 ## Design goals
 
-SNAPVERE prioritizes capture latency, pixel accuracy, mixed-DPI correctness, deterministic resource cleanup, local-first privacy and a small understandable dependency surface.
+SNAPVERE prioritizes capture latency, physical-pixel accuracy, mixed-DPI correctness, deterministic native resource cleanup, local-first privacy, predictable Windows startup and a small understandable dependency surface.
 
 ## Project boundaries
 
 ### Snapvere.App
-WinUI 3 composition root and presentation layer. It owns windows, navigation and view wiring, but must not own capture algorithms, image encoding or editor rasterization.
+WinUI 3 composition root and presentation layer. `CaptureCenterWindow` is the production startup shell. It uses a standard Windows title bar and programmatic WinUI controls to minimize startup resource/parser dependencies. Region selection remains isolated in `RegionCaptureWindow`.
+
+### Snapvere.Application
+Application workflows and persistence coordination. It connects capture acquisition, crop/encode operations, file naming, atomic writes and filesystem-backed capture history without depending on WinUI.
 
 ### Snapvere.Domain
 Stable value objects and product-domain types. Pixel geometry is represented explicitly to avoid accidental mixing of logical and physical coordinates.
 
 ### Snapvere.Capture
-Capture orchestration, display/window discovery, DPI transforms, Windows.Graphics.Capture integration, freeze frames and selection geometry.
+Display discovery, physical/logical DPI transforms, capture contracts, Region selection geometry, global hotkeys and the current Windows capture backend. The production 0.0.2 acquisition path is the GDI compatibility backend; Windows.Graphics.Capture/D3D remains the intended future primary backend.
 
 ### Snapvere.Imaging
-Encoding, cropping, pixel transforms, color-space handling and export pipeline. UI-independent by design.
+Deterministic PNG encoding, pixel-accurate cropping and image-pipeline primitives. UI-independent by design.
+
+### Snapvere.Packaging / Snapvere.Setup / Snapvere.Portable
+Embedded payload validation, per-user Setup lifecycle, uninstall maintenance mode and single-file Portable extraction/launch. Packaging code is isolated from capture/runtime logic.
 
 ### Snapvere.Shared
 Small cross-cutting primitives only. It must not become a dumping ground for unrelated helpers.
 
-## Capture pipeline
+## Current capture pipeline
 
 ```text
-Hotkey / UI command
+Capture Center / hotkey / tray command
         ↓
-Capture request
+Snapvere.Application workflow
         ↓
-Display/window discovery
+Win32 display discovery + physical pixel geometry
         ↓
-Windows capture backend
+GDI compatibility acquisition
         ↓
-CaptureFrame (BGRA8 + physical pixel geometry)
+CaptureFrame (validated BGRA8 + stride)
         ↓
-Image pipeline
-        ├── Clipboard
-        ├── Save
-        ├── Editor
-        ├── OCR
-        └── Pin
+optional exact Region crop
+        ↓
+deterministic PNG encoder
+        ↓
+CaptureFileWriter
+        ↓
+temporary file + atomic move
+        ↓
+Pictures\SNAPVERE
 ```
+
+## Region Capture pipeline
+
+```text
+prepare primary-display frozen frame
+        ↓
+hide Capture Center
+        ↓
+RegionCaptureWindow preview
+        ↓
+selection geometry in physical pixels
+        ↓
+move / resize / keyboard nudge
+        ↓
+commit exact rectangle
+        ↓
+crop the same frozen frame
+        ↓
+atomic PNG save
+```
+
+The selected output therefore comes from the exact frozen source shown during selection rather than a second screen acquisition.
 
 ## Coordinate systems
 
-All capture boundaries are ultimately expressed in physical pixels. Presentation may use logical pixels, but every boundary crossing must use an explicit DPI transform. Virtual desktop coordinates may be negative and no code may assume the primary monitor starts at the virtual origin.
+All capture boundaries are ultimately expressed in physical pixels. Presentation may use logical coordinates, but every boundary crossing uses an explicit DPI transform. Virtual desktop coordinates may be negative and no code assumes the primary monitor starts at the virtual origin.
 
-The initial `DpiCoordinateTransformer` has tests for 100%, 125%, 150%, 200%, mixed-axis DPI and negative coordinates. Native monitor discovery will attach per-monitor DPI to each `DisplayDescriptor`.
+`DpiCoordinateTransformer` and geometry tests cover 100%, 125%, 150%, 175%, 200%, mixed-axis DPI, negative coordinates, reverse drags, minimum Region sizes and physical-pixel keyboard movement.
 
 ## Capture frame contract
 
-`CaptureFrame` currently represents a validated BGRA8 buffer with dimensions, stride, timestamp and optional source id. Validation rejects empty dimensions, undersized stride and undersized buffers before the frame enters downstream processing.
+`CaptureFrame` represents a validated BGRA8 buffer with dimensions, stride, timestamp and optional source id. Validation rejects empty dimensions, undersized stride and undersized buffers before frames enter downstream processing.
 
 ## Resource lifetime
 
-Windows.Graphics.Capture, Direct3D devices, frame pools, textures, streams and temporary bitmaps must have deterministic ownership. Long-lived tray infrastructure may cache lightweight services but must not retain unnecessary full-resolution frames.
+Native GDI objects, monitor/device handles, hotkey windows, tray windows, icon resources, file streams and temporary files require deterministic ownership. Long-lived desktop integration services must not retain full-resolution capture frames.
+
+Future Windows.Graphics.Capture/Direct3D objects will follow the same deterministic ownership rule when that backend is introduced.
 
 ## Threading
 
-UI thread work is limited to presentation and Windows APIs that require it. Capture acquisition, encoding, OCR, history thumbnails and update operations must use asynchronous/cancellable boundaries where safe.
+UI-thread work is limited to WinUI presentation and APIs that require it. Native global hotkeys and tray integration use isolated message threads. Capture and persistence workflows expose asynchronous boundaries where useful without moving WinUI objects across apartments.
+
+## Startup architecture
+
+The application initializes diagnostics before WinUI composition, constructs dependency injection services, creates `CaptureCenterWindow`, activates it, then starts global hotkey and tray hosts.
+
+Release QA has two distinct startup checks:
+
+1. an activated-window READY probe, proving the WinUI main window was actually constructed and activated;
+2. a normal-launch survival gate, proving the process remains alive after deferred rendering and desktop-integration startup.
+
+This distinction prevents a package from being published merely because process creation succeeded.
 
 ## Security and privacy boundaries
 
-Screenshot pixels, OCR text, clipboard contents and file contents are sensitive. They are not valid structured-log payloads. Temporary files must be scoped and cleaned. Network operations for licensing/update services are architecturally separate from user image data.
+Screenshot pixels, clipboard contents, OCR text and file contents are sensitive. They are not valid structured-log payloads. Startup diagnostics record stage and exception metadata only. Temporary package extraction is path-constrained and size-bounded. Network functionality for future licensing/update services remains architecturally separate from user image data.
 
 ## Planned next implementation
 
-1. Native monitor enumeration with per-monitor DPI
-2. Virtual desktop coordinate map
-3. Windows.Graphics.Capture backend
-4. Full-screen/monitor capture command
-5. Freeze-frame region selection overlay
-6. Clipboard and PNG encoding
-7. Hotkey and tray integration
+1. Windows.Graphics.Capture/D3D primary acquisition backend with compatibility fallback
+2. coordinated multi-monitor Region Capture
+3. Window Capture and smart targeting
+4. clipboard Quick Actions
+5. annotation Editor
+6. scrolling capture
+7. OCR, Pin to Screen and expanded History management
+8. signed update pipeline

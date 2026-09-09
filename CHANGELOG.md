@@ -15,6 +15,38 @@ All notable SNAPVERE changes are documented here.
 - full History, Pin to Screen and OCR
 - automatic update mechanism
 
+## [0.0.2] - 2026-09-09
+
+### Added
+
+- stable programmatic `CaptureCenterWindow` used as the production startup window
+- startup diagnostics under `%LOCALAPPDATA%\SNAPVERE\Logs\startup.log`
+- activated-window `READY` probe for installed and Portable builds
+- explicit stage logging around window activation, global hotkey startup and tray startup
+- CI normal-launch gates that require the application to remain alive after activation
+- full x64/x86 Setup + launch + uninstall + Portable lifecycle validation on Windows Server 2022
+
+### Changed
+
+- application startup no longer instantiates the former complex `MainWindow` composition path
+- the primary window uses the standard Windows title bar and conservative WinUI controls for improved runtime compatibility
+- WinUI runtime validation now runs on `windows-2022`, a supported Windows App SDK 1.8 server target, instead of the unsupported Server 2025 image behind `windows-latest`
+- release metadata, documentation and package names advance to 0.0.2
+
+### Fixed
+
+- startup failure caused by the former `MainWindow.xaml` `Application.LoadComponent` path (`0x802B000A`)
+- subsequent deferred WinUI runtime termination (`0xC000027B`) observed on the unsupported Windows Server 2025 GitHub runner
+- release QA now distinguishes successful window activation from a process that crashes immediately after activation
+- x64 and x86 installed and Portable builds now pass the same normal-startup survival gate on the supported CI platform
+
+### Security
+
+- release still requires explicit silent license acceptance
+- installer cleanup remains constrained by the SNAPVERE installation marker
+- Portable extraction traversal and expanded-size protections remain enabled
+- release artifacts continue to publish SHA-256 checksums
+
 ## [0.0.1] - 2026-09-09
 
 ### Added
