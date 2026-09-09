@@ -16,7 +16,7 @@
             <SymbolIcon Symbol="Camera" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
-        <NavigationViewItem Content="History" Tag="history" IsEnabled="False" AutomationProperties.Name="History in development">
+        <NavigationViewItem Content="History" Tag="history" IsEnabled="False" AutomationProperties.Name="Full history in development">
           <NavigationViewItem.Icon>
             <SymbolIcon Symbol="Clock" />
           </NavigationViewItem.Icon>
@@ -101,11 +101,53 @@
           </Grid>
 
           <StackPanel Grid.Row="3" Margin="0,34,0,0" Spacing="10">
-            <TextBlock Text="Recent captures" FontSize="20" FontWeight="SemiBold" />
-            <Border Padding="24" CornerRadius="12" BorderThickness="1" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
+            <Grid>
+              <TextBlock Text="Recent captures" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
+              <Button
+                  HorizontalAlignment="Right"
+                  Content="Refresh"
+                  Click="RefreshHistoryButton_Click"
+                  AutomationProperties.Name="Refresh recent captures" />
+            </Grid>
+
+            <ListView
+                x:Name="RecentCapturesList"
+                SelectionMode="None"
+                MaxHeight="320"
+                Visibility="Collapsed">
+              <ListView.ItemTemplate>
+                <DataTemplate>
+                  <Grid Padding="4,10" MinWidth="420">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border
+                        Width="36"
+                        Height="36"
+                        CornerRadius="8"
+                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                        VerticalAlignment="Center">
+                      <SymbolIcon Symbol="Pictures" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0" Spacing="3">
+                      <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text="{Binding MetadataText}" Opacity="0.68" FontSize="12" />
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ListView.ItemTemplate>
+            </ListView>
+
+            <Border
+                x:Name="HistoryEmptyState"
+                Padding="24"
+                CornerRadius="12"
+                BorderThickness="1"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
               <StackPanel HorizontalAlignment="Center" Spacing="8">
-                <TextBlock Text="History UI not enabled yet." FontSize="17" FontWeight="SemiBold" HorizontalAlignment="Center" />
-                <TextBlock Text="Completed screen and region captures are saved locally. History will appear only after its storage workflow is implemented." TextWrapping="Wrap" TextAlignment="Center" Opacity="0.68" MaxWidth="480" />
+                <TextBlock x:Name="HistoryEmptyTitle" Text="No local captures yet." FontSize="17" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                <TextBlock x:Name="HistoryEmptyMessage" Text="Completed Screen and Region captures will appear here after they are saved locally." TextWrapping="Wrap" TextAlignment="Center" Opacity="0.68" MaxWidth="480" />
               </StackPanel>
             </Border>
           </StackPanel>

@@ -27,6 +27,7 @@ public partial class App : Microsoft.UI.Xaml.Application
         services.AddSingleton<CaptureFileWriter>();
         services.AddSingleton<ScreenCaptureWorkflow>();
         services.AddSingleton<RegionCaptureWorkflow>();
+        services.AddSingleton<CaptureHistoryService>();
         services.AddSingleton<IGlobalHotkeyService>(
             _ => new Win32GlobalHotkeyService(DefaultCaptureHotkeys.ImplementedNow));
         services.AddTransient<MainWindow>();

@@ -10,18 +10,22 @@ public sealed partial class MainWindow : Window
 {
     private readonly ScreenCaptureWorkflow _screenCaptureWorkflow;
     private readonly RegionCaptureWorkflow _regionCaptureWorkflow;
+    private readonly CaptureHistoryService _captureHistoryService;
     private RegionCaptureWindow? _regionCaptureWindow;
     private bool _captureInProgress;
 
     public MainWindow(
         ScreenCaptureWorkflow screenCaptureWorkflow,
-        RegionCaptureWorkflow regionCaptureWorkflow)
+        RegionCaptureWorkflow regionCaptureWorkflow,
+        CaptureHistoryService captureHistoryService)
     {
         _screenCaptureWorkflow = screenCaptureWorkflow ?? throw new ArgumentNullException(nameof(screenCaptureWorkflow));
         _regionCaptureWorkflow = regionCaptureWorkflow ?? throw new ArgumentNullException(nameof(regionCaptureWorkflow));
+        _captureHistoryService = captureHistoryService ?? throw new ArgumentNullException(nameof(captureHistoryService));
 
         InitializeComponent();
         RootNavigation.SelectedItem = RootNavigation.MenuItems[0];
+        RefreshRecentCaptures();
     }
 
     public void StartCaptureFromHotkey(CaptureMode mode)
@@ -72,6 +76,9 @@ public sealed partial class MainWindow : Window
     private async void ScreenCaptureButton_Click(object sender, RoutedEventArgs e)
         => await ExecuteScreenCaptureAsync();
 
+    private void RefreshHistoryButton_Click(object sender, RoutedEventArgs e)
+        => RefreshRecentCaptures();
+
     private async Task ExecuteRegionCaptureAsync()
     {
         if (!TryBeginCapture())
@@ -112,6 +119,7 @@ public sealed partial class MainWindow : Window
                 CaptureStatus.Title = "Region captured";
                 CaptureStatus.Message =
                     $"Saved {outcome.SaveResult.Width}×{outcome.SaveResult.Height} PNG to {outcome.SaveResult.FilePath}";
+                RefreshRecentCaptures();
             }
         }
         catch (Exception exception)
@@ -156,6 +164,7 @@ public sealed partial class MainWindow : Window
             CaptureStatus.Severity = InfoBarSeverity.Success;
             CaptureStatus.Title = "Screen captured";
             CaptureStatus.Message = $"Saved {result.Width}×{result.Height} PNG to {result.FilePath}";
+            RefreshRecentCaptures();
         }
         catch (Exception exception)
         {
@@ -197,6 +206,44 @@ public sealed partial class MainWindow : Window
 
         AppWindow.Show();
         Activate();
+    }
+
+    private void RefreshRecentCaptures()
+    {
+        try
+        {
+            var captures = _captureHistoryService.GetRecentCaptures();
+            RecentCapturesList.ItemsSource = captures;
+            RecentCapturesList.Visibility = captures.Count > 0
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            HistoryEmptyState.Visibility = captures.Count == 0
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+            if (captures.Count == 0)
+            {
+                HistoryEmptyTitle.Text = "No local captures yet.";
+                HistoryEmptyMessage.Text = "Completed Screen and Region captures will appear here after they are saved locally.";
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            ShowHistoryUnavailable("Windows denied access to the SNAPVERE capture folder.");
+        }
+        catch (IOException)
+        {
+            ShowHistoryUnavailable("SNAPVERE could not read the local capture folder.");
+        }
+    }
+
+    private void ShowHistoryUnavailable(string message)
+    {
+        RecentCapturesList.ItemsSource = null;
+        RecentCapturesList.Visibility = Visibility.Collapsed;
+        HistoryEmptyState.Visibility = Visibility.Visible;
+        HistoryEmptyTitle.Text = "Recent captures unavailable";
+        HistoryEmptyMessage.Text = message;
     }
 
     private void SetCaptureButtonsEnabled(bool isEnabled)
