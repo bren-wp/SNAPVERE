@@ -1,6 +1,8 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Snapvere.Application.Capture;
+using Snapvere.Capture.Hotkeys;
+using Snapvere.Domain.Capture;
 
 namespace Snapvere.App;
 
@@ -9,6 +11,7 @@ public sealed partial class MainWindow : Window
     private readonly ScreenCaptureWorkflow _screenCaptureWorkflow;
     private readonly RegionCaptureWorkflow _regionCaptureWorkflow;
     private RegionCaptureWindow? _regionCaptureWindow;
+    private bool _captureInProgress;
 
     public MainWindow(
         ScreenCaptureWorkflow screenCaptureWorkflow,
@@ -21,29 +24,75 @@ public sealed partial class MainWindow : Window
         RootNavigation.SelectedItem = RootNavigation.MenuItems[0];
     }
 
-    private async void RegionCaptureButton_Click(object sender, RoutedEventArgs e)
+    public void StartCaptureFromHotkey(CaptureMode mode)
     {
-        if (_regionCaptureWindow is not null)
+        switch (mode)
+        {
+            case CaptureMode.Region:
+                _ = ExecuteRegionCaptureAsync();
+                break;
+
+            case CaptureMode.FullScreen:
+            case CaptureMode.Monitor:
+                _ = ExecuteScreenCaptureAsync();
+                break;
+        }
+    }
+
+    public void ApplyHotkeyRegistrationReport(GlobalHotkeyRegistrationReport report)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+
+        if (!report.HasConflicts)
         {
             return;
         }
 
-        SetCaptureButtonsEnabled(false);
+        var gestures = string.Join(
+            ", ",
+            report.Conflicts.Select(conflict => conflict.Binding.GestureText));
+
+        CaptureStatus.IsOpen = true;
+        CaptureStatus.Severity = InfoBarSeverity.Warning;
+        CaptureStatus.Title = "Some global hotkeys are unavailable";
+        CaptureStatus.Message = $"Another application is already using: {gestures}. Capture buttons remain available.";
+    }
+
+    public void ReportHotkeyHostFailure()
+    {
+        CaptureStatus.IsOpen = true;
+        CaptureStatus.Severity = InfoBarSeverity.Warning;
+        CaptureStatus.Title = "Global hotkeys unavailable";
+        CaptureStatus.Message = "SNAPVERE could not start the Windows global-hotkey host. Capture buttons remain available.";
+    }
+
+    private async void RegionCaptureButton_Click(object sender, RoutedEventArgs e)
+        => await ExecuteRegionCaptureAsync();
+
+    private async void ScreenCaptureButton_Click(object sender, RoutedEventArgs e)
+        => await ExecuteScreenCaptureAsync();
+
+    private async Task ExecuteRegionCaptureAsync()
+    {
+        if (!TryBeginCapture())
+        {
+            return;
+        }
+
         CaptureStatus.IsOpen = true;
         CaptureStatus.Severity = InfoBarSeverity.Informational;
         CaptureStatus.Title = "Preparing region capture";
         CaptureStatus.Message = "Freezing the primary display before the selection overlay opens.";
 
-        var mainWindowHidden = false;
+        var restoreMainWindow = AppWindow.IsVisible;
 
         try
         {
-            AppWindow.Hide();
-            mainWindowHidden = true;
-
-            // Give Desktop Window Manager one short presentation interval to remove
-            // the SNAPVERE main window before freezing the display.
-            await Task.Delay(120);
+            if (restoreMainWindow)
+            {
+                AppWindow.Hide();
+                await Task.Delay(120);
+            }
 
             var session = await _regionCaptureWorkflow.PreparePrimaryDisplayAsync(includeCursor: false);
             var overlay = new RegionCaptureWindow(_regionCaptureWorkflow, session);
@@ -74,27 +123,33 @@ public sealed partial class MainWindow : Window
         finally
         {
             _regionCaptureWindow = null;
-
-            if (mainWindowHidden)
-            {
-                AppWindow.Show();
-                Activate();
-            }
-
-            SetCaptureButtonsEnabled(true);
+            RestoreMainWindowIfNeeded(restoreMainWindow);
+            EndCapture();
         }
     }
 
-    private async void ScreenCaptureButton_Click(object sender, RoutedEventArgs e)
+    private async Task ExecuteScreenCaptureAsync()
     {
-        SetCaptureButtonsEnabled(false);
+        if (!TryBeginCapture())
+        {
+            return;
+        }
+
         CaptureStatus.IsOpen = true;
         CaptureStatus.Severity = InfoBarSeverity.Informational;
         CaptureStatus.Title = "Capturing screen";
         CaptureStatus.Message = "SNAPVERE is capturing the primary display.";
 
+        var restoreMainWindow = AppWindow.IsVisible;
+
         try
         {
+            if (restoreMainWindow)
+            {
+                AppWindow.Hide();
+                await Task.Delay(120);
+            }
+
             var result = await _screenCaptureWorkflow.CapturePrimaryDisplayToDefaultFolderAsync(
                 includeCursor: false);
 
@@ -110,8 +165,38 @@ public sealed partial class MainWindow : Window
         }
         finally
         {
-            SetCaptureButtonsEnabled(true);
+            RestoreMainWindowIfNeeded(restoreMainWindow);
+            EndCapture();
         }
+    }
+
+    private bool TryBeginCapture()
+    {
+        if (_captureInProgress)
+        {
+            return false;
+        }
+
+        _captureInProgress = true;
+        SetCaptureButtonsEnabled(false);
+        return true;
+    }
+
+    private void EndCapture()
+    {
+        _captureInProgress = false;
+        SetCaptureButtonsEnabled(true);
+    }
+
+    private void RestoreMainWindowIfNeeded(bool restore)
+    {
+        if (!restore)
+        {
+            return;
+        }
+
+        AppWindow.Show();
+        Activate();
     }
 
     private void SetCaptureButtonsEnabled(bool isEnabled)
