@@ -37,8 +37,8 @@
 
       <Border
           x:Name="SelectionBadge"
-          Background="#EB17191F"
-          BorderBrush="#38FFFFFF"
+          Background="#F015171C"
+          BorderBrush="#40FFFFFF"
           BorderThickness="1"
           CornerRadius="7"
           Padding="9,5"
@@ -59,22 +59,79 @@
       <Ellipse x:Name="BottomHandle" Tag="Bottom" Width="10" Height="10" Fill="White" Stroke="{ThemeResource SnapvereAccentBrush}" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize bottom" />
       <Ellipse x:Name="BottomLeftHandle" Tag="BottomLeft" Width="10" Height="10" Fill="White" Stroke="{ThemeResource SnapvereAccentBrush}" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize bottom left" />
       <Ellipse x:Name="LeftHandle" Tag="Left" Width="10" Height="10" Fill="White" Stroke="{ThemeResource SnapvereAccentBrush}" StrokeThickness="2" Visibility="Collapsed" PointerPressed="Handle_PointerPressed" AutomationProperties.Name="Resize left" />
+
+      <Border
+          x:Name="ToolPalette"
+          Visibility="Collapsed"
+          Background="#F5111318"
+          BorderBrush="#45FFFFFF"
+          BorderThickness="1"
+          CornerRadius="10"
+          Padding="5">
+        <StackPanel Spacing="4">
+          <Button x:Name="MoveToolButton" Tag="None" Content="Move" MinWidth="58" Click="AnnotationToolButton_Click" ToolTipService.ToolTip="Move or resize selection" />
+          <Button x:Name="PenToolButton" Tag="Pen" Content="Pen" MinWidth="58" Click="AnnotationToolButton_Click" ToolTipService.ToolTip="Freehand pen" />
+          <Button x:Name="LineToolButton" Tag="Line" Content="Line" MinWidth="58" Click="AnnotationToolButton_Click" ToolTipService.ToolTip="Straight line" />
+          <Button x:Name="ArrowToolButton" Tag="Arrow" Content="Arrow" MinWidth="58" Click="AnnotationToolButton_Click" ToolTipService.ToolTip="Arrow" />
+          <Button x:Name="RectangleToolButton" Tag="Rectangle" Content="Box" MinWidth="58" Click="AnnotationToolButton_Click" ToolTipService.ToolTip="Rectangle" />
+          <Button x:Name="HighlightToolButton" Tag="Highlight" Content="Mark" MinWidth="58" Click="AnnotationToolButton_Click" ToolTipService.ToolTip="Highlighter" />
+          <Rectangle Height="1" Fill="#35FFFFFF" Margin="4,2" />
+          <StackPanel Orientation="Horizontal" Spacing="3" HorizontalAlignment="Center">
+            <Button Tag="Coral" Width="25" Height="25" Padding="0" Click="ColorButton_Click" ToolTipService.ToolTip="Coral">
+              <Ellipse Width="13" Height="13" Fill="#FF5A72" />
+            </Button>
+            <Button Tag="Amber" Width="25" Height="25" Padding="0" Click="ColorButton_Click" ToolTipService.ToolTip="Amber">
+              <Ellipse Width="13" Height="13" Fill="#FFC857" />
+            </Button>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="3" HorizontalAlignment="Center">
+            <Button Tag="Mint" Width="25" Height="25" Padding="0" Click="ColorButton_Click" ToolTipService.ToolTip="Mint">
+              <Ellipse Width="13" Height="13" Fill="#45D6A2" />
+            </Button>
+            <Button Tag="Indigo" Width="25" Height="25" Padding="0" Click="ColorButton_Click" ToolTipService.ToolTip="Indigo">
+              <Ellipse Width="13" Height="13" Fill="#7C6CFF" />
+            </Button>
+          </StackPanel>
+          <Rectangle Height="1" Fill="#35FFFFFF" Margin="4,2" />
+          <Button x:Name="UndoButton" Content="Undo" MinWidth="58" Click="UndoButton_Click" ToolTipService.ToolTip="Undo last annotation" />
+        </StackPanel>
+      </Border>
+
+      <Border
+          x:Name="ActionPalette"
+          Visibility="Collapsed"
+          Background="#F5111318"
+          BorderBrush="#45FFFFFF"
+          BorderThickness="1"
+          CornerRadius="10"
+          Padding="5">
+        <StackPanel Orientation="Horizontal" Spacing="5">
+          <Button Content="Copy" Click="CopyButton_Click" ToolTipService.ToolTip="Copy selection to clipboard" />
+          <Button Content="Save" Click="SaveButton_Click" ToolTipService.ToolTip="Save PNG" />
+          <Button Content="Close" Click="CancelButton_Click" ToolTipService.ToolTip="Cancel capture" />
+        </StackPanel>
+      </Border>
     </Canvas>
 
+    <Canvas
+        x:Name="AnnotationLayer"
+        IsHitTestVisible="False" />
+
     <Border
+        x:Name="CaptureHint"
         HorizontalAlignment="Center"
         VerticalAlignment="Top"
-        Margin="20"
-        Padding="15,10"
-        Background="#EB17191F"
-        BorderBrush="#28FFFFFF"
+        Margin="16"
+        Padding="12,8"
+        Background="#E8111318"
+        BorderBrush="#30FFFFFF"
         BorderThickness="1"
         CornerRadius="9"
         IsHitTestVisible="False">
-      <StackPanel Orientation="Horizontal" Spacing="10">
-        <TextBlock Text="Select a region" Foreground="White" FontWeight="SemiBold" />
-        <TextBlock Text="Enter save · Double-click save · Esc cancel · Arrows move · Shift 10 px" Foreground="#DFFFFFFF" />
-      </StackPanel>
+      <TextBlock
+          Text="Drag to select · choose a tool to annotate · Enter save · Esc cancel"
+          Foreground="#E8FFFFFF"
+          FontSize="12" />
     </Border>
 
     <Border
@@ -83,8 +140,8 @@
         VerticalAlignment="Bottom"
         Margin="20"
         Padding="14,9"
-        Background="#EB17191F"
-        BorderBrush="#28FFFFFF"
+        Background="#F015171C"
+        BorderBrush="#38FFFFFF"
         BorderThickness="1"
         CornerRadius="9"
         Visibility="Collapsed"

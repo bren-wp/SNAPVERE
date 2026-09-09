@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Media;
 using Snapvere.Application.Capture;
 using Snapvere.Capture.Hotkeys;
 using Snapvere.Domain.Capture;
+using Snapvere.Imaging;
 using System.Diagnostics;
 
 namespace Snapvere.App;
@@ -19,6 +20,7 @@ public sealed class CaptureCenterWindow : Window
     private readonly ScreenCaptureWorkflow _screenCaptureWorkflow;
     private readonly RegionCaptureWorkflow _regionCaptureWorkflow;
     private readonly CaptureHistoryService _captureHistoryService;
+    private readonly PngCaptureEncoder _pngEncoder;
 
     private readonly Button _regionCaptureButton;
     private readonly Button _screenCaptureButton;
@@ -34,18 +36,20 @@ public sealed class CaptureCenterWindow : Window
     public CaptureCenterWindow(
         ScreenCaptureWorkflow screenCaptureWorkflow,
         RegionCaptureWorkflow regionCaptureWorkflow,
-        CaptureHistoryService captureHistoryService)
+        CaptureHistoryService captureHistoryService,
+        PngCaptureEncoder pngEncoder)
     {
         _screenCaptureWorkflow = screenCaptureWorkflow ?? throw new ArgumentNullException(nameof(screenCaptureWorkflow));
         _regionCaptureWorkflow = regionCaptureWorkflow ?? throw new ArgumentNullException(nameof(regionCaptureWorkflow));
         _captureHistoryService = captureHistoryService ?? throw new ArgumentNullException(nameof(captureHistoryService));
+        _pngEncoder = pngEncoder ?? throw new ArgumentNullException(nameof(pngEncoder));
 
         Title = "SNAPVERE — Capture Center";
 
         _regionCaptureButton = CreatePrimaryButton("Select region", RegionCaptureButton_Click);
         _screenCaptureButton = CreateSecondaryButton("Capture screen", ScreenCaptureButton_Click);
         _statusTitle = CreateText("Ready", 13, Brush(0xFF, 0xFF, 0xFF));
-        _statusMessage = CreateText("Choose Region or Screen to capture locally.", 12, Brush(0xA9, 0xB2, 0xC3));
+        _statusMessage = CreateText("Press Ctrl + Shift + 1 or choose Select region to capture, annotate, copy or save.", 12, Brush(0xA9, 0xB2, 0xC3));
         _statusMessage.TextWrapping = TextWrapping.Wrap;
         _statusPanel = CreateStatusPanel();
         _recentSummary = CreateText("Local screenshots from Pictures\\SNAPVERE", 12, Brush(0x98, 0xA2, 0xB3));
@@ -149,9 +153,9 @@ public sealed class CaptureCenterWindow : Window
 
         var brand = new StackPanel { Spacing = 5 };
         brand.Children.Add(CreateText("SNAPVERE", 12, Brush(0xA8, 0x9E, 0xFF)));
-        brand.Children.Add(CreateText("Capture center", 30, Brush(0xFF, 0xFF, 0xFF)));
+        brand.Children.Add(CreateText("Capture anything", 30, Brush(0xFF, 0xFF, 0xFF)));
         brand.Children.Add(CreateText(
-            "Fast capture, precise selection, local PNG output.",
+            "Select, annotate, copy or save without leaving the capture overlay.",
             14,
             Brush(0xA9, 0xB2, 0xC3)));
         header.Children.Add(brand);
@@ -218,10 +222,10 @@ public sealed class CaptureCenterWindow : Window
     {
         var stack = new StackPanel { Spacing = 12 };
         stack.Children.Add(CreateShortcutRow("REGION", "Ctrl + Shift + 1"));
-        stack.Children.Add(CreateText("Capture a precise region", 22, Brush(0xFF, 0xFF, 0xFF)));
+        stack.Children.Add(CreateText("Select, edit, done", 22, Brush(0xFF, 0xFF, 0xFF)));
 
         var description = CreateText(
-            "Freeze the primary display, drag an exact area, fine-tune the selection, then save it locally as PNG.",
+            "Drag the exact area, then use the floating tools beside the selection for pen, line, arrow, box, highlight, copy and save.",
             12,
             Brush(0xD8, 0xD6, 0xF2));
         description.TextWrapping = TextWrapping.Wrap;
@@ -418,11 +422,18 @@ public sealed class CaptureCenterWindow : Window
             }
 
             var session = await _regionCaptureWorkflow.PreparePrimaryDisplayAsync(includeCursor: false);
-            var overlay = new RegionCaptureWindow(_regionCaptureWorkflow, session);
+            var overlay = new RegionCaptureWindow(_regionCaptureWorkflow, _pngEncoder, session);
             _regionCaptureWindow = overlay;
 
             var outcome = await overlay.ShowAsync();
-            if (outcome.IsCancelled || outcome.SaveResult is null)
+            if (outcome.CopiedToClipboard)
+            {
+                ShowStatus(
+                    "Region copied",
+                    "The selected image and annotations are now on the Windows clipboard.",
+                    StatusKind.Success);
+            }
+            else if (outcome.IsCancelled || outcome.SaveResult is null)
             {
                 ShowStatus("Region capture cancelled", "No file was created.", StatusKind.Information);
             }

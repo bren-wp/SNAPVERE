@@ -12,7 +12,7 @@ public sealed record RegionCaptureSession(
 /// <summary>
 /// Coordinates a freeze-frame region capture. UI owns only interaction and
 /// selection presentation; this workflow owns display selection, frame
-/// capture, pixel-space mapping, cropping and durable PNG persistence.
+/// capture, pixel-space mapping, cropping, annotations and durable PNG persistence.
 /// </summary>
 public sealed class RegionCaptureWorkflow
 {
@@ -51,13 +51,12 @@ public sealed class RegionCaptureWorkflow
         return new RegionCaptureSession(display, frame);
     }
 
-    public async Task<CaptureSaveResult> SaveSelectionAsync(
+    public CaptureFrame CreateSelectionFrame(
         RegionCaptureSession session,
         PixelRect desktopSelection,
-        CancellationToken cancellationToken = default)
+        IReadOnlyList<CaptureAnnotation>? annotations = null)
     {
         ArgumentNullException.ThrowIfNull(session);
-        cancellationToken.ThrowIfCancellationRequested();
 
         var displayBounds = session.Display.Bounds.Normalize();
         var selection = RegionSelectionGeometry.Clamp(desktopSelection, displayBounds);
@@ -73,7 +72,18 @@ public sealed class RegionCaptureWorkflow
             selection.Height);
 
         var cropped = CaptureFrameCropper.Crop(session.FrozenFrame, localRegion);
-        return await _fileWriter.SavePngAsync(cropped, cancellationToken).ConfigureAwait(false);
+        return CaptureFrameAnnotator.Apply(cropped, annotations);
+    }
+
+    public async Task<CaptureSaveResult> SaveSelectionAsync(
+        RegionCaptureSession session,
+        PixelRect desktopSelection,
+        IReadOnlyList<CaptureAnnotation>? annotations = null,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var frame = CreateSelectionFrame(session, desktopSelection, annotations);
+        return await _fileWriter.SavePngAsync(frame, cancellationToken).ConfigureAwait(false);
     }
 
     private DisplayDescriptor GetPrimaryDisplay()
