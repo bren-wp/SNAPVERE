@@ -13,7 +13,7 @@ All notable SNAPVERE changes are documented here.
 - clipboard Quick Actions
 - annotation Editor
 - full History, Pin to Screen and OCR
-- updater and Authenticode signing
+- automatic update mechanism
 
 ## [0.0.1] - 2026-09-09
 
@@ -48,6 +48,7 @@ All notable SNAPVERE changes are documented here.
 - single-file x64/x86 Portable launchers
 - guarded embedded ZIP extraction with directory-traversal protection
 - package extraction security unit tests
+- installer lifecycle smoke tests for both x64 and x86
 - release SHA-256 checksum generation
 - GitHub Actions release automation for v0.0.1
 - canonical SNAPVERE vector symbol and dark/light README assets
@@ -60,12 +61,15 @@ All notable SNAPVERE changes are documented here.
 - main capture UI exposes implemented hotkeys and release version information
 - Region overlay uses SNAPVERE branding and clearer keyboard guidance
 - unfinished History, Editor, Window and Scrolling workflows remain disabled instead of appearing functional
-- CI now validates x64 build/test, x86 build and x64/x86 release packaging
+- CI validates x64 build/test, x86 build, x64/x86 packaging, license-gated silent install and uninstall cleanup
+- v0.0.1 release artifacts are intentionally unsigned; integrity is provided through published SHA-256 checksums
 
 ### Security
 
 - installer/portable extraction rejects absolute paths and paths escaping the package destination
 - embedded extraction is size/entry bounded and uses temporary files before final replacement
+- installer writes and verifies a SNAPVERE installation marker before destructive uninstall cleanup
+- uninstall uses the installed Setup executable and a constrained maintenance process rather than a shell command
 - default installation is per-user and does not request elevation
 - silent installation requires explicit `--accept-license`
 - release workflow publishes SHA-256 checksums
@@ -76,3 +80,4 @@ All notable SNAPVERE changes are documented here.
 - xUnit global using required for test compilation
 - WinUI `Application` type ambiguity introduced by the `Snapvere.Application` namespace
 - payload directory-entry suffix handling in release packaging
+- GUI Setup lifecycle validation now waits for the process and checks the real exit code instead of relying on PowerShell `$LASTEXITCODE`

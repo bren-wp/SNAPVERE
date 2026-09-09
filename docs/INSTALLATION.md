@@ -25,6 +25,8 @@ Interactive Setup requires acceptance of the repository's Mozilla Public License
 
 Setup registers SNAPVERE under the current user's Windows Installed apps list. Windows invokes the installed `SNAPVERE-Setup.exe --uninstall` maintenance mode. There is no standalone `uninstall.exe` payload.
 
+Before destructive cleanup, the maintenance path must contain the SNAPVERE installation marker and expected application/Setup files. If the marker is missing or invalid, Setup refuses to remove the directory.
+
 Uninstall removes application files, shortcuts and uninstall registration. It deliberately does **not** remove screenshots in `Pictures\SNAPVERE`.
 
 ### Silent mode
@@ -35,13 +37,15 @@ Silent installation is explicit about license acceptance:
 SNAPVERE-0.0.1-Setup-x64.exe --silent --accept-license
 ```
 
-A silent install without `--accept-license` exits without installing.
+A silent install without `--accept-license` exits with code `2` without installing.
 
 Silent uninstall:
 
 ```text
 SNAPVERE-Setup.exe --uninstall --silent
 ```
+
+The GitHub Actions release pipeline validates the license-gated silent install and the Setup-based uninstall lifecycle on clean Windows runners for both x64 and x86.
 
 ## Portable
 
@@ -53,6 +57,7 @@ The portable launcher:
 - does not create Start menu or Desktop shortcuts;
 - does not require a separately installed .NET runtime or Windows App SDK runtime;
 - validates extraction paths before writing files;
+- bounds archive entry count and expanded size;
 - reuses the cache for the same SNAPVERE version and architecture;
 - removes stale SNAPVERE portable caches on later runs when possible.
 
@@ -62,4 +67,4 @@ Screenshots are still saved to the normal `Pictures\SNAPVERE` capture folder.
 
 Every GitHub Release includes `SHA256SUMS.txt`. Compare downloaded files against those hashes before deployment when integrity verification is required.
 
-The 0.0.1 binaries are not Authenticode-signed. Code signing is a separate release-hardening milestone and should not be simulated with an untrusted certificate.
+The 0.0.1 binaries are intentionally not Authenticode-signed. Signing is not required for this release; SHA-256 checksums are published for artifact integrity verification.

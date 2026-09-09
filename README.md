@@ -64,7 +64,7 @@ Release packaging is isolated from the application runtime:
 self-contained app publish
     ↓
 validated ZIP payload
-    ├── SNAPVERE Setup   → per-user install + Windows uninstall registration
+    ├── SNAPVERE Setup    → per-user install + Windows uninstall registration
     └── SNAPVERE Portable → private versioned temp cache + launch
 ```
 
@@ -125,10 +125,12 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/REGION-CAPTURE.md`](d
 - optional Start menu/Desktop shortcuts;
 - Windows Installed apps registration;
 - uninstall through installed `SNAPVERE-Setup.exe --uninstall`, without a separate `uninstall.exe`;
+- installation marker validation before destructive uninstall cleanup;
 - screenshots preserved when uninstalling;
 - single-file Portable launcher per architecture;
 - guarded payload extraction that blocks absolute paths and directory traversal;
-- versioned portable cache;
+- bounded archive extraction and versioned portable cache;
+- x64/x86 installer lifecycle validation in GitHub Actions;
 - SHA-256 release checksums.
 
 ## Current limitations
@@ -143,8 +145,7 @@ The following are intentionally disabled or deferred after 0.0.1:
 - full annotation Editor;
 - full History management and Pin to Screen;
 - OCR;
-- automatic updater;
-- Authenticode signing.
+- automatic updater.
 
 ## Build
 
@@ -163,7 +164,7 @@ dotnet restore src/Snapvere.App/Snapvere.App.csproj -r win-x86
 dotnet build src/Snapvere.App/Snapvere.App.csproj -c Release -r win-x86 -p:Platform=x86
 ```
 
-GitHub Actions performs self-contained package-smoke publishes for both x64 and x86 before the release workflow is allowed to publish 0.0.1.
+GitHub Actions performs self-contained package publishes and Setup install/uninstall lifecycle tests for both x64 and x86 before release publication.
 
 ## Privacy
 
@@ -171,9 +172,9 @@ SNAPVERE capture workflows are local-first. Screenshot pixels, local capture his
 
 ## Security
 
-Release packaging validates extraction destinations, uses staged writes and publishes SHA-256 checksums. Private signing keys, production credentials, user screenshots, dumps and runtime data must never be committed.
+Release packaging validates extraction destinations, bounds embedded archives, uses staged writes and publishes SHA-256 checksums. Setup validates a SNAPVERE installation marker before destructive cleanup. Private signing keys, production credentials, user screenshots, dumps and runtime data must never be committed.
 
-The 0.0.1 executables are not Authenticode-signed; code signing is a separate release-hardening milestone and is not simulated with an untrusted certificate.
+The 0.0.1 executables are intentionally not Authenticode-signed. Signing is not a requirement for this release; use `SHA256SUMS.txt` for artifact integrity verification.
 
 ## Branding
 
