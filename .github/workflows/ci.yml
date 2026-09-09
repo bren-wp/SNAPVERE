@@ -133,7 +133,7 @@ jobs:
           if ((Get-Item $setup).Length -lt 1MB) { throw "Setup executable is unexpectedly small." }
           if ((Get-Item $portable).Length -lt 1MB) { throw "Portable executable is unexpectedly small." }
 
-      - name: Smoke test Setup, activated WinUI startup, uninstall and Portable startup
+      - name: Smoke test Setup, activated WinUI startup, normal launch, uninstall and Portable startup
         shell: pwsh
         run: |
           function Write-StartupLogIfPresent {
@@ -183,6 +183,57 @@ jobs:
             }
           }
 
+          function Invoke-NormalAppLaunch([string]$FilePath, [string]$Name) {
+            Remove-Item Env:SNAPVERE_STARTUP_PROBE -ErrorAction SilentlyContinue
+            $process = Start-Process -FilePath $FilePath -PassThru
+            try {
+              if ($process.WaitForExit(5000)) {
+                Write-StartupLogIfPresent
+                throw "$Name exited during normal startup with code $($process.ExitCode)."
+              }
+              Write-Host "$Name remained alive through the normal startup window (PID $($process.Id))."
+            }
+            finally {
+              try {
+                if (-not $process.HasExited) {
+                  Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+                  $null = $process.WaitForExit(5000)
+                }
+              } catch {}
+              $process.Dispose()
+            }
+          }
+
+          function Invoke-NormalPortableLaunch([string]$FilePath) {
+            Remove-Item Env:SNAPVERE_STARTUP_PROBE -ErrorAction SilentlyContinue
+            $launcher = Start-Process -FilePath $FilePath -PassThru
+            try {
+              if (-not $launcher.WaitForExit(15000)) {
+                try { Stop-Process -Id $launcher.Id -Force -ErrorAction SilentlyContinue } catch {}
+                throw "Portable launcher did not return after its startup validation window."
+              }
+              if ($launcher.ExitCode -ne 0) {
+                Write-StartupLogIfPresent
+                throw "Portable launcher failed normal startup with code $($launcher.ExitCode)."
+              }
+
+              Start-Sleep -Milliseconds 500
+              $appProcesses = @(Get-Process -Name Snapvere -ErrorAction SilentlyContinue)
+              if ($appProcesses.Count -eq 0) {
+                Write-StartupLogIfPresent
+                throw "Portable launcher returned success but no SNAPVERE app process remained alive."
+              }
+
+              Write-Host "Portable normal startup left $($appProcesses.Count) SNAPVERE process(es) alive."
+              foreach ($app in $appProcesses) {
+                try { Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue } catch {}
+              }
+            }
+            finally {
+              $launcher.Dispose()
+            }
+          }
+
           $setup = (Resolve-Path "artifacts/setup-${{ matrix.arch }}/SNAPVERE-Setup.exe").Path
           $portable = (Resolve-Path "artifacts/portable-${{ matrix.arch }}/SNAPVERE-Portable.exe").Path
           $install = Join-Path $env:LOCALAPPDATA "Programs/SNAPVERE"
@@ -202,6 +253,7 @@ jobs:
           }
 
           Invoke-StartupProbe $installedApp "Installed SNAPVERE"
+          Invoke-NormalAppLaunch $installedApp "Installed SNAPVERE"
 
           $installedSetup = Join-Path $install "SNAPVERE-Setup.exe"
           $uninstallProcess = Start-Process -FilePath $installedSetup -ArgumentList @("--uninstall", "--silent") -Wait -PassThru
@@ -214,3 +266,4 @@ jobs:
           if (Test-Path $installedApp) { throw "Snapvere.exe remains after uninstall cleanup timeout." }
 
           Invoke-StartupProbe $portable "Portable SNAPVERE"
+          Invoke-NormalPortableLaunch $portable
