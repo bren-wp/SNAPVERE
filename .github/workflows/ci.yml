@@ -132,6 +132,29 @@ jobs:
       - name: Smoke test Setup, installed startup, uninstall and Portable startup
         shell: pwsh
         run: |
+          function Invoke-StartupProbe([string]$FilePath, [string]$Name) {
+            $process = Start-Process -FilePath $FilePath -ArgumentList @("--startup-probe") -PassThru
+            try {
+              if (-not $process.WaitForExit(20000)) {
+                try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
+                throw "$Name startup probe timed out after 20 seconds."
+              }
+              return $process.ExitCode
+            }
+            finally {
+              $process.Dispose()
+            }
+          }
+
+          function Write-StartupLogIfPresent {
+            $log = Join-Path $env:LOCALAPPDATA "SNAPVERE/Logs/startup.log"
+            if (Test-Path $log) {
+              Write-Host "----- SNAPVERE startup.log -----"
+              Get-Content $log | Write-Host
+              Write-Host "--------------------------------"
+            }
+          }
+
           $setup = (Resolve-Path "artifacts/setup-${{ matrix.arch }}/SNAPVERE-Setup.exe").Path
           $portable = (Resolve-Path "artifacts/portable-${{ matrix.arch }}/SNAPVERE-Portable.exe").Path
           $install = Join-Path $env:LOCALAPPDATA "Programs/SNAPVERE"
@@ -150,11 +173,10 @@ jobs:
             throw "A separate uninstall.exe-style executable must not be installed."
           }
 
-          $appProbe = Start-Process -FilePath $installedApp -ArgumentList @("--startup-probe") -Wait -PassThru
-          if ($appProbe.ExitCode -ne 0) {
-            $log = Join-Path $env:LOCALAPPDATA "SNAPVERE/Logs/startup.log"
-            if (Test-Path $log) { Get-Content $log | Write-Host }
-            throw "Installed SNAPVERE startup probe failed with exit code $($appProbe.ExitCode)."
+          $appExitCode = Invoke-StartupProbe $installedApp "Installed SNAPVERE"
+          if ($appExitCode -ne 0) {
+            Write-StartupLogIfPresent
+            throw "Installed SNAPVERE startup probe failed with exit code $appExitCode."
           }
 
           $installedSetup = Join-Path $install "SNAPVERE-Setup.exe"
@@ -167,9 +189,8 @@ jobs:
           }
           if (Test-Path $installedApp) { throw "Snapvere.exe remains after uninstall cleanup timeout." }
 
-          $portableProbe = Start-Process -FilePath $portable -ArgumentList @("--startup-probe") -Wait -PassThru
-          if ($portableProbe.ExitCode -ne 0) {
-            $log = Join-Path $env:LOCALAPPDATA "SNAPVERE/Logs/startup.log"
-            if (Test-Path $log) { Get-Content $log | Write-Host }
-            throw "Portable SNAPVERE startup probe failed with exit code $($portableProbe.ExitCode)."
+          $portableExitCode = Invoke-StartupProbe $portable "Portable SNAPVERE"
+          if ($portableExitCode -ne 0) {
+            Write-StartupLogIfPresent
+            throw "Portable SNAPVERE startup probe failed with exit code $portableExitCode."
           }
