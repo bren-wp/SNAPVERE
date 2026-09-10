@@ -44,6 +44,38 @@ public sealed class CaptureRelocationServiceTests
     }
 
     [Fact]
+    public async Task RelocateAsync_SameFileThroughHardLinkAliasDoesNotDeleteSelectedResult()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"snapvere-relocate-alias-{Guid.NewGuid():N}");
+        var sourcePath = Path.Combine(root, "SNAPVERE_source.png");
+        var aliasPath = Path.Combine(root, "same-capture-alias.png");
+        var expectedBytes = new byte[] { 137, 80, 78, 71, 13, 10, 26, 10, 5, 4, 3, 2, 1 };
+
+        try
+        {
+            Directory.CreateDirectory(root);
+            await File.WriteAllBytesAsync(sourcePath, expectedBytes);
+            _ = new FileInfo(aliasPath).CreateAsHardLink(sourcePath);
+
+            var capture = new CaptureSaveResult(sourcePath, 320, 200, DateTimeOffset.UtcNow);
+            var result = await new CaptureRelocationService().RelocateAsync(capture, aliasPath);
+
+            Assert.True(File.Exists(sourcePath));
+            Assert.True(File.Exists(aliasPath));
+            Assert.Equal(expectedBytes, await File.ReadAllBytesAsync(aliasPath));
+            Assert.Equal(Path.GetFullPath(aliasPath), result.FilePath);
+            Assert.Empty(Directory.EnumerateFiles(root, ".snapvere-*.tmp", SearchOption.TopDirectoryOnly));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task RelocateAsync_SupportsLongValidDestinationNameWithoutExpandingStagingName()
     {
         var root = Path.Combine(Path.GetTempPath(), $"snapvere-relocate-long-{Guid.NewGuid():N}");
