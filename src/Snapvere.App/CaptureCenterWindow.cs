@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Snapvere.App.Services;
 using Snapvere.Application.Capture;
 using Snapvere.Capture.Hotkeys;
 using Snapvere.Capture.Windows;
