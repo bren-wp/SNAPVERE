@@ -26,13 +26,19 @@ public sealed record RegionCaptureOutcome(
     bool CopiedToClipboard = false);
 
 /// <summary>
-/// Runtime-safe region selection and inline editor. The entire visual tree is
-/// constructed in C# so installed and portable builds do not depend on a
-/// secondary Window XAML resource being resolved by Application.LoadComponent.
+/// Frozen-frame Region Capture editor. The chrome intentionally follows the
+/// docs/images/region-editor.svg reference: a violet 3 px selection frame,
+/// eight physical resize handles, a vertical tool rail to the selection's
+/// right and a separate Copy/Save/Close action bar below it.
 /// </summary>
 public sealed class RegionCaptureWindow : Window
 {
-    private const double HandleRadius = 6d;
+    private const double CornerHandleRadius = 6d;
+    private const double EdgeHandleRadius = 5d;
+    private const double ToolPaletteWidth = 86d;
+    private const double ToolPaletteHeight = 327d;
+    private const double ActionPaletteWidth = 230d;
+    private const double ActionPaletteHeight = 48d;
 
     private readonly RegionCaptureWorkflow _workflow;
     private readonly PngCaptureEncoder _pngEncoder;
@@ -104,7 +110,7 @@ public sealed class RegionCaptureWindow : Window
             Stretch = Stretch.Fill,
             IsHitTestVisible = false
         };
-        _overlayCanvas = new Canvas { Background = Brush(0x00, 0x00, 0x00, 0x00) };
+        _overlayCanvas = new Canvas { Background = Transparent };
         _annotationLayer = new Canvas { IsHitTestVisible = false };
 
         _fullDim = CreateDimRectangle();
@@ -116,8 +122,8 @@ public sealed class RegionCaptureWindow : Window
         _selectionBorder = new Border
         {
             BorderBrush = Accent,
-            BorderThickness = new Thickness(2),
-            CornerRadius = new CornerRadius(6),
+            BorderThickness = new Thickness(3),
+            CornerRadius = new CornerRadius(0),
             IsHitTestVisible = false,
             Visibility = Visibility.Collapsed
         };
@@ -128,10 +134,10 @@ public sealed class RegionCaptureWindow : Window
             Microsoft.UI.Text.FontWeights.SemiBold);
         _selectionBadge = new Border
         {
-            Background = Brush(0xF4, 0x09, 0x0B, 0x11),
-            BorderBrush = Brush(0xA0, 0x8D, 0x79, 0xFF),
+            Background = PaletteSurface,
+            BorderBrush = Brush(0xFF, 0x50, 0x5D, 0x76),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(10),
+            CornerRadius = new CornerRadius(8),
             Padding = new Thickness(10, 6, 10, 6),
             IsHitTestVisible = false,
             Visibility = Visibility.Collapsed,
@@ -228,9 +234,9 @@ public sealed class RegionCaptureWindow : Window
     {
         var stack = new StackPanel
         {
-            Orientation = Orientation.Horizontal,
-            Spacing = 4,
-            VerticalAlignment = VerticalAlignment.Center
+            Orientation = Orientation.Vertical,
+            Spacing = 2,
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
         stack.Children.Add(_moveToolButton);
         stack.Children.Add(_penToolButton);
@@ -238,73 +244,109 @@ public sealed class RegionCaptureWindow : Window
         stack.Children.Add(_arrowToolButton);
         stack.Children.Add(_rectangleToolButton);
         stack.Children.Add(_highlightToolButton);
-        stack.Children.Add(VerticalSeparator());
-        stack.Children.Add(CreateColorButton("Coral", 0xFF, 0x5A, 0x72));
-        stack.Children.Add(CreateColorButton("Amber", 0xFF, 0xC8, 0x57));
-        stack.Children.Add(CreateColorButton("Mint", 0x45, 0xD6, 0xA2));
-        stack.Children.Add(CreateColorButton("Indigo", 0x7C, 0x6C, 0xFF));
-        stack.Children.Add(VerticalSeparator());
+        stack.Children.Add(HorizontalSeparator());
+        stack.Children.Add(BuildColorGrid());
+        stack.Children.Add(HorizontalSeparator());
         stack.Children.Add(_undoButton);
-        return Palette(stack);
+
+        return new Border
+        {
+            Width = ToolPaletteWidth,
+            Height = ToolPaletteHeight,
+            Visibility = Visibility.Collapsed,
+            Background = PaletteSurface,
+            BorderBrush = PaletteOutline,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(16),
+            Padding = new Thickness(5),
+            Child = stack
+        };
+    }
+
+    private FrameworkElement BuildColorGrid()
+    {
+        var grid = new Grid
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            RowSpacing = 2,
+            ColumnSpacing = 2,
+            Margin = new Thickness(0, 1, 0, 1)
+        };
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        AddColorButton(grid, CreateColorButton("Coral", 0xFF, 0x5A, 0x72), 0, 0);
+        AddColorButton(grid, CreateColorButton("Amber", 0xFF, 0xC8, 0x57), 0, 1);
+        AddColorButton(grid, CreateColorButton("Mint", 0x45, 0xD6, 0xA2), 1, 0);
+        AddColorButton(grid, CreateColorButton("Indigo", 0x7C, 0x6C, 0xFF), 1, 1);
+        return grid;
+    }
+
+    private static void AddColorButton(Grid grid, Button button, int row, int column)
+    {
+        Grid.SetRow(button, row);
+        Grid.SetColumn(button, column);
+        grid.Children.Add(button);
     }
 
     private Border BuildActionPalette()
     {
-        var stack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5 };
+        var stack = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 2,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
         var copy = CreateActionButton("Copy", "\uE8C8", "Copy selection to clipboard", primary: false);
         copy.Click += CopyButton_Click;
         var save = CreateActionButton("Save", "\uE74E", "Save PNG", primary: true);
         save.Click += SaveButton_Click;
-        var close = CreateActionButton("Close", "\uE711", "Cancel capture", primary: false, danger: true);
+        var close = CreateActionButton("Close", "\uE711", "Cancel capture", primary: false);
         close.Click += CancelButton_Click;
         stack.Children.Add(copy);
         stack.Children.Add(save);
         stack.Children.Add(close);
-        return Palette(stack);
-    }
-
-    private Border BuildCaptureHint()
-    {
-        var content = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 10,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        content.Children.Add(new Border
-        {
-            Width = 32,
-            Height = 32,
-            CornerRadius = new CornerRadius(10),
-            Background = Brush(0x5A, 0x67, 0x50, 0xD2),
-            BorderBrush = Brush(0x70, 0xA5, 0x8E, 0xFF),
-            BorderThickness = new Thickness(1),
-            Child = new FontIcon
-            {
-                Glyph = "\uE722",
-                FontFamily = new FontFamily("Segoe Fluent Icons"),
-                FontSize = 14,
-                Foreground = Strong
-            }
-        });
-
-        var copy = new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center };
-        copy.Children.Add(Text("Region Capture", 11, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
-        copy.Children.Add(Text("Drag to select  •  Enter saves  •  Esc cancels", 9.5, Muted));
-        content.Children.Add(copy);
 
         return new Border
         {
+            Width = ActionPaletteWidth,
+            Height = ActionPaletteHeight,
+            Visibility = Visibility.Collapsed,
+            Background = PaletteSurface,
+            BorderBrush = PaletteOutline,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(13),
+            Padding = new Thickness(4),
+            Child = stack
+        };
+    }
+
+    private static Border BuildCaptureHint()
+    {
+        var hint = Text(
+            "Drag to select · annotate inline · Enter save · Esc cancel",
+            10.5,
+            Strong,
+            Microsoft.UI.Text.FontWeights.SemiBold);
+        hint.HorizontalAlignment = HorizontalAlignment.Center;
+        hint.VerticalAlignment = VerticalAlignment.Center;
+
+        return new Border
+        {
+            Width = 460,
+            Height = 47,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Top,
-            Margin = new Thickness(16),
-            Padding = new Thickness(9, 8, 12, 8),
-            Background = Brush(0xF2, 0x09, 0x0B, 0x11),
-            BorderBrush = Brush(0x80, 0x45, 0x3D, 0x72),
+            Margin = new Thickness(0, 36, 0, 0),
+            Background = PaletteSurface,
+            BorderBrush = Brush(0xFF, 0x3D, 0x48, 0x5F),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(14),
+            CornerRadius = new CornerRadius(13),
             IsHitTestVisible = false,
-            Child = content
+            Child = hint
         };
     }
 
@@ -315,8 +357,8 @@ public sealed class RegionCaptureWindow : Window
             VerticalAlignment = VerticalAlignment.Bottom,
             Margin = new Thickness(20),
             Padding = new Thickness(14, 9, 14, 9),
-            Background = Brush(0xF2, 0x09, 0x0B, 0x11),
-            BorderBrush = Brush(0x80, 0x61, 0x52, 0xA8),
+            Background = PaletteSurface,
+            BorderBrush = PaletteOutline,
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(13),
             Visibility = Visibility.Collapsed,
@@ -762,15 +804,19 @@ public sealed class RegionCaptureWindow : Window
 
     private void UpdateToolButtonStates()
     {
-        var active = Brush(0x72, 0x65, 0x4C, 0xD3);
-        var inactive = Brush(0xFF, 0x15, 0x17, 0x20);
-        _moveToolButton.Background = _activeAnnotationTool is null ? active : inactive;
-        _penToolButton.Background = _activeAnnotationTool == CaptureAnnotationKind.Pen ? active : inactive;
-        _lineToolButton.Background = _activeAnnotationTool == CaptureAnnotationKind.Line ? active : inactive;
-        _arrowToolButton.Background = _activeAnnotationTool == CaptureAnnotationKind.Arrow ? active : inactive;
-        _rectangleToolButton.Background = _activeAnnotationTool == CaptureAnnotationKind.Rectangle ? active : inactive;
-        _highlightToolButton.Background = _activeAnnotationTool == CaptureAnnotationKind.Highlight ? active : inactive;
+        SetToolButtonState(_moveToolButton, _activeAnnotationTool is null);
+        SetToolButtonState(_penToolButton, _activeAnnotationTool == CaptureAnnotationKind.Pen);
+        SetToolButtonState(_lineToolButton, _activeAnnotationTool == CaptureAnnotationKind.Line);
+        SetToolButtonState(_arrowToolButton, _activeAnnotationTool == CaptureAnnotationKind.Arrow);
+        SetToolButtonState(_rectangleToolButton, _activeAnnotationTool == CaptureAnnotationKind.Rectangle);
+        SetToolButtonState(_highlightToolButton, _activeAnnotationTool == CaptureAnnotationKind.Highlight);
         _undoButton.IsEnabled = _annotations.Count > 0;
+    }
+
+    private static void SetToolButtonState(Button button, bool active)
+    {
+        button.Background = active ? Brush(0xFF, 0x38, 0x29, 0x75) : Transparent;
+        button.BorderBrush = active ? Brush(0xFF, 0x80, 0x66, 0xED) : Transparent;
     }
 
     private async Task CommitSelectionAsync()
@@ -849,7 +895,7 @@ public sealed class RegionCaptureWindow : Window
 
     private void ShowStatus(string message, bool isBusy)
     {
-        _overlayStatusText.Text = isBusy ? $"Working  •  {message}" : message;
+        _overlayStatusText.Text = isBusy ? $"Working  ·  {message}" : message;
         _overlayStatus.Visibility = Visibility.Visible;
     }
 
@@ -905,11 +951,12 @@ public sealed class RegionCaptureWindow : Window
         _selectionBadge.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
         var badgeWidth = _selectionBadge.DesiredSize.Width;
         var badgeHeight = _selectionBadge.DesiredSize.Height;
-        Canvas.SetLeft(_selectionBadge, Math.Clamp(x, 0d, Math.Max(0d, totalWidth - badgeWidth)));
-        var badgeY = y >= badgeHeight + 10d
-            ? y - badgeHeight - 10d
-            : Math.Min(totalHeight - badgeHeight, bottom + 10d);
-        Canvas.SetTop(_selectionBadge, Math.Max(0d, badgeY));
+        var badgeX = Math.Clamp(x, 8d, Math.Max(8d, totalWidth - badgeWidth - 8d));
+        var badgeY = bottom + badgeHeight + 8d <= totalHeight
+            ? bottom + 8d
+            : Math.Max(8d, y - badgeHeight - 8d);
+        Canvas.SetLeft(_selectionBadge, badgeX);
+        Canvas.SetTop(_selectionBadge, badgeY);
 
         PlaceHandle(_topLeftHandle, x, y);
         PlaceHandle(_topHandle, x + width / 2d, y);
@@ -920,7 +967,7 @@ public sealed class RegionCaptureWindow : Window
         PlaceHandle(_bottomLeftHandle, x, bottom);
         PlaceHandle(_leftHandle, x, y + height / 2d);
 
-        PositionFloatingPalettes(x, y, right, bottom, totalWidth, totalHeight);
+        PositionFloatingPalettes(x, y, right, bottom, totalWidth, totalHeight, badgeX, badgeWidth, badgeY, badgeHeight);
         RenderAnnotations();
         UpdateToolButtonStates();
     }
@@ -931,28 +978,53 @@ public sealed class RegionCaptureWindow : Window
         double right,
         double bottom,
         double totalWidth,
-        double totalHeight)
+        double totalHeight,
+        double badgeX,
+        double badgeWidth,
+        double badgeY,
+        double badgeHeight)
     {
-        _toolPalette.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
-        _actionPalette.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
-        var toolWidth = _toolPalette.DesiredSize.Width;
-        var toolHeight = _toolPalette.DesiredSize.Height;
-        var actionWidth = _actionPalette.DesiredSize.Width;
-        var actionHeight = _actionPalette.DesiredSize.Height;
-
-        var combinedWidth = toolWidth + 10d + actionWidth;
-        var rowX = Math.Clamp(
-            x + ((right - x) - combinedWidth) / 2d,
+        var toolX = right + 14d + ToolPaletteWidth <= totalWidth
+            ? right + 14d
+            : x - ToolPaletteWidth - 14d >= 8d
+                ? x - ToolPaletteWidth - 14d
+                : Math.Clamp(right - ToolPaletteWidth, 8d, Math.Max(8d, totalWidth - ToolPaletteWidth - 8d));
+        var toolY = Math.Clamp(
+            y + 15d,
             8d,
-            Math.Max(8d, totalWidth - combinedWidth - 8d));
-        var rowY = bottom + Math.Max(toolHeight, actionHeight) + 12d <= totalHeight
-            ? bottom + 10d
-            : Math.Max(8d, y - Math.Max(toolHeight, actionHeight) - 10d);
+            Math.Max(8d, totalHeight - ToolPaletteHeight - 8d));
 
-        Canvas.SetLeft(_toolPalette, rowX);
-        Canvas.SetTop(_toolPalette, rowY);
-        Canvas.SetLeft(_actionPalette, Math.Min(totalWidth - actionWidth - 8d, rowX + toolWidth + 10d));
-        Canvas.SetTop(_actionPalette, rowY);
+        var actionX = Math.Clamp(
+            right - ActionPaletteWidth,
+            8d,
+            Math.Max(8d, totalWidth - ActionPaletteWidth - 8d));
+        var actionY = bottom + ActionPaletteHeight + 14d <= totalHeight
+            ? bottom + 14d
+            : Math.Max(8d, y - ActionPaletteHeight - 14d);
+
+        var badgeRight = badgeX + badgeWidth;
+        var badgeBottom = badgeY + badgeHeight;
+        var actionOverlapsBadge = actionX < badgeRight + 8d &&
+                                  actionX + ActionPaletteWidth > badgeX - 8d &&
+                                  actionY < badgeBottom + 6d &&
+                                  actionY + ActionPaletteHeight > badgeY - 6d;
+        if (actionOverlapsBadge)
+        {
+            var belowBadge = badgeBottom + 6d;
+            if (belowBadge + ActionPaletteHeight <= totalHeight - 8d)
+            {
+                actionY = belowBadge;
+            }
+            else
+            {
+                actionY = Math.Max(8d, y - ActionPaletteHeight - 14d);
+            }
+        }
+
+        Canvas.SetLeft(_toolPalette, toolX);
+        Canvas.SetTop(_toolPalette, toolY);
+        Canvas.SetLeft(_actionPalette, actionX);
+        Canvas.SetTop(_actionPalette, actionY);
     }
 
     private void RenderAnnotations()
@@ -1191,18 +1263,22 @@ public sealed class RegionCaptureWindow : Window
     private static Rectangle CreateDimRectangle(Visibility visibility = Visibility.Visible)
         => new()
         {
-            Fill = Brush(0xB0, 0x03, 0x04, 0x08),
+            Fill = Brush(0x7A, 0x02, 0x04, 0x0A),
             IsHitTestVisible = false,
             Visibility = visibility
         };
 
     private Ellipse CreateResizeHandle(SelectionHandle handle, string automationName)
     {
+        var radius = handle is SelectionHandle.TopLeft or SelectionHandle.TopRight or
+            SelectionHandle.BottomRight or SelectionHandle.BottomLeft
+            ? CornerHandleRadius
+            : EdgeHandleRadius;
         var ellipse = new Ellipse
         {
             Tag = handle.ToString(),
-            Width = HandleRadius * 2,
-            Height = HandleRadius * 2,
+            Width = radius * 2,
+            Height = radius * 2,
             Fill = Strong,
             Stroke = Accent,
             StrokeThickness = 2,
@@ -1226,27 +1302,28 @@ public sealed class RegionCaptureWindow : Window
         var content = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 6,
+            Spacing = 5,
             VerticalAlignment = VerticalAlignment.Center
         };
         content.Children.Add(new FontIcon
         {
             Glyph = glyph,
             FontFamily = new FontFamily("Segoe Fluent Icons"),
-            FontSize = 12,
+            FontSize = 11,
             Foreground = Strong
         });
-        content.Children.Add(Text(text, 9.5, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        content.Children.Add(Text(text, 9.2, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
 
         var button = new Button
         {
             Content = content,
-            Padding = new Thickness(9, 7, 9, 7),
-            MinHeight = 34,
-            MinWidth = 54,
-            CornerRadius = new CornerRadius(9),
-            Background = Brush(0xFF, 0x15, 0x17, 0x20),
-            BorderBrush = Brush(0xFF, 0x2B, 0x2E, 0x3A),
+            Width = 74,
+            Height = 32,
+            Padding = new Thickness(7, 4, 7, 4),
+            CornerRadius = new CornerRadius(8),
+            HorizontalContentAlignment = HorizontalAlignment.Left,
+            Background = Transparent,
+            BorderBrush = Transparent,
             BorderThickness = new Thickness(1),
             Foreground = Strong
         };
@@ -1255,43 +1332,32 @@ public sealed class RegionCaptureWindow : Window
         return button;
     }
 
-    private static Button CreateActionButton(string text, string glyph, string tooltip, bool primary, bool danger = false)
+    private static Button CreateActionButton(string text, string glyph, string tooltip, bool primary)
     {
         var content = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 6,
+            Spacing = 5,
             VerticalAlignment = VerticalAlignment.Center
         };
         content.Children.Add(new FontIcon
         {
             Glyph = glyph,
             FontFamily = new FontFamily("Segoe Fluent Icons"),
-            FontSize = 12,
-            Foreground = danger ? Brush(0xFF, 0xFF, 0xB3, 0xBC) : Strong
+            FontSize = 11,
+            Foreground = Strong
         });
-        content.Children.Add(Text(
-            text,
-            9.5,
-            danger ? Brush(0xFF, 0xFF, 0xB3, 0xBC) : Strong,
-            Microsoft.UI.Text.FontWeights.SemiBold));
+        content.Children.Add(Text(text, 9.2, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
 
         var button = new Button
         {
             Content = content,
-            Padding = new Thickness(10, 7, 10, 7),
-            MinHeight = 34,
+            MinWidth = 68,
+            Height = 38,
+            Padding = new Thickness(7, 4, 7, 4),
             CornerRadius = new CornerRadius(9),
-            Background = primary
-                ? Brush(0xFF, 0x67, 0x50, 0xD2)
-                : danger
-                    ? Brush(0x28, 0xE9, 0x5F, 0x76)
-                    : Brush(0xFF, 0x15, 0x17, 0x20),
-            BorderBrush = primary
-                ? Brush(0xFF, 0x9D, 0x88, 0xFF)
-                : danger
-                    ? Brush(0x45, 0xE9, 0x5F, 0x76)
-                    : Brush(0xFF, 0x2B, 0x2E, 0x3A),
+            Background = primary ? Brush(0xFF, 0x65, 0x47, 0xD8) : Transparent,
+            BorderBrush = primary ? Brush(0xFF, 0x86, 0x67, 0xF4) : Transparent,
             BorderThickness = new Thickness(1)
         };
         AutomationProperties.SetName(button, tooltip);
@@ -1304,19 +1370,19 @@ public sealed class RegionCaptureWindow : Window
         var button = new Button
         {
             Tag = tag,
-            Width = 30,
-            Height = 30,
+            Width = 28,
+            Height = 28,
             Padding = new Thickness(0),
-            CornerRadius = new CornerRadius(9),
-            Background = Brush(0xFF, 0x15, 0x17, 0x20),
-            BorderBrush = Brush(0xFF, 0x2B, 0x2E, 0x3A),
+            CornerRadius = new CornerRadius(8),
+            Background = Transparent,
+            BorderBrush = Transparent,
             BorderThickness = new Thickness(1),
             Content = new Ellipse
             {
-                Width = 14,
-                Height = 14,
+                Width = 13,
+                Height = 13,
                 Fill = Brush(0xFF, red, green, blue),
-                Stroke = Brush(0x55, 0xFF, 0xFF, 0xFF),
+                Stroke = Brush(0x66, 0xFF, 0xFF, 0xFF),
                 StrokeThickness = 1
             }
         };
@@ -1326,25 +1392,14 @@ public sealed class RegionCaptureWindow : Window
         return button;
     }
 
-    private static Border VerticalSeparator()
+    private static Border HorizontalSeparator()
         => new()
         {
-            Width = 1,
-            Height = 22,
-            Margin = new Thickness(3, 4, 3, 4),
-            Background = Brush(0xFF, 0x2A, 0x2D, 0x38)
-        };
-
-    private static Border Palette(UIElement child)
-        => new()
-        {
-            Visibility = Visibility.Collapsed,
-            Background = Brush(0xF5, 0x09, 0x0B, 0x11),
-            BorderBrush = Brush(0x88, 0x4A, 0x41, 0x7A),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(13),
-            Padding = new Thickness(5),
-            Child = child
+            Height = 1,
+            Width = 64,
+            Margin = new Thickness(5, 2, 5, 2),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Background = Brush(0xFF, 0x3A, 0x46, 0x5C)
         };
 
     private static TextBlock Text(
@@ -1364,8 +1419,10 @@ public sealed class RegionCaptureWindow : Window
         => new(Windows.UI.Color.FromArgb(alpha, red, green, blue));
 
     private static SolidColorBrush Strong => Brush(0xFF, 0xF7, 0xF5, 0xFF);
-    private static SolidColorBrush Muted => Brush(0xFF, 0xB5, 0xB0, 0xC3);
-    private static SolidColorBrush Accent => Brush(0xFF, 0x8D, 0x79, 0xFF);
+    private static SolidColorBrush Accent => Brush(0xFF, 0xA7, 0x7C, 0xFF);
+    private static SolidColorBrush PaletteSurface => Brush(0xFF, 0x10, 0x16, 0x22);
+    private static SolidColorBrush PaletteOutline => Brush(0xFF, 0x4E, 0x59, 0x71);
+    private static SolidColorBrush Transparent => Brush(0x00, 0, 0, 0);
 
     private static void SetRectangle(
         Rectangle rectangle,
@@ -1382,8 +1439,8 @@ public sealed class RegionCaptureWindow : Window
 
     private static void PlaceHandle(Ellipse handle, double centerX, double centerY)
     {
-        Canvas.SetLeft(handle, centerX - HandleRadius);
-        Canvas.SetTop(handle, centerY - HandleRadius);
+        Canvas.SetLeft(handle, centerX - handle.Width / 2d);
+        Canvas.SetTop(handle, centerY - handle.Height / 2d);
     }
 
     private PixelPoint ToDesktopPixel(double xDip, double yDip)
