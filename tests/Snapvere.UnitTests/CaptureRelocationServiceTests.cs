@@ -44,6 +44,38 @@ public sealed class CaptureRelocationServiceTests
     }
 
     [Fact]
+    public void Relocate_SupportsLongValidDestinationNameWithoutExpandingStagingName()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"snapvere-relocate-long-{Guid.NewGuid():N}");
+        var sourceDirectory = Path.Combine(root, "source");
+        var destinationDirectory = Path.Combine(root, "chosen");
+        var sourcePath = Path.Combine(sourceDirectory, "SNAPVERE_source.png");
+        var destinationPath = Path.Combine(destinationDirectory, $"{new string('a', 230)}.png");
+        var expectedBytes = new byte[] { 137, 80, 78, 71, 13, 10, 26, 10, 7, 8, 9 };
+
+        try
+        {
+            Directory.CreateDirectory(sourceDirectory);
+            Directory.CreateDirectory(destinationDirectory);
+            File.WriteAllBytes(sourcePath, expectedBytes);
+
+            var capture = new CaptureSaveResult(sourcePath, 640, 360, DateTimeOffset.UtcNow);
+            var result = new CaptureRelocationService().Relocate(capture, destinationPath);
+
+            Assert.Equal(Path.GetFullPath(destinationPath), result.FilePath);
+            Assert.Equal(expectedBytes, File.ReadAllBytes(destinationPath));
+            Assert.Empty(Directory.EnumerateFiles(destinationDirectory, ".snapvere-*.tmp", SearchOption.TopDirectoryOnly));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public void Relocate_RejectsNonPngDestinationWithoutTouchingCompletedCapture()
     {
         var root = Path.Combine(Path.GetTempPath(), $"snapvere-relocate-invalid-{Guid.NewGuid():N}");
