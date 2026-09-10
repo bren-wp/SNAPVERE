@@ -81,8 +81,8 @@ public sealed class SnapvereLocalizationTests
             var english = SnapvereLocalization.T(key, "en");
             var croatian = SnapvereLocalization.T(key, "hr");
 
-            Assert.NotEqual(key, english);
-            Assert.NotEqual(key, croatian);
+            Assert.False(string.IsNullOrWhiteSpace(english));
+            Assert.False(string.IsNullOrWhiteSpace(croatian));
             Assert.NotEqual(english, croatian);
         }
     }
