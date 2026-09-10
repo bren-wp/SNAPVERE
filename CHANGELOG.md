@@ -4,6 +4,23 @@ All notable SNAPVERE changes are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- real rendered x64 WinUI visual-QA capture for Region, Window, Tray, Options, Language and About surfaces
+- GitHub Actions visual-QA artifact containing six PNGs plus a manifest with dimensions, byte sizes and SHA-256 digests
+- regression coverage for dedicated Croatian secondary-UI strings, canonical English fallback and formatted localization placeholders
+
+### Changed
+
+- remaining Options, Recent Captures, Language Picker and About user-facing copy now resolves through the shared `SnapvereLocalization` catalog
+- Croatian now has dedicated translations for the current secondary product surfaces while other incomplete languages retain canonical English fallback
+- living README, architecture, installation, settings, tray and branding documentation now describes the v0.0.8/post-release universal packaging and visual-QA contract
+
+### Fixed
+
+- localization tests no longer assume that a canonical English value must differ from its resource key (for example `Startup`)
+- stale documentation that still described `main` as a 0.0.4/0.0.7 development line or the package model as separate x64/x86 outputs
+
 ### Planned
 
 - coordinated cross-monitor Region Capture
@@ -13,6 +30,58 @@ All notable SNAPVERE changes are documented here.
 - expanded History, Pin to Screen and OCR
 - automatic update mechanism
 - Authenticode signing
+
+## [0.0.8] - 2026-09-10
+
+### Changed
+
+- Region Capture uses shared process-local language state for its title, tool names, tooltips, resize accessibility labels, annotation color labels, capture guidance, Copy / Save / Close actions and working-state text
+- Window Capture uses the same language state for its title, guidance and keyboard accessibility label
+- Croatian includes dedicated strings for the newly localized capture surfaces and generic Region Capture failure states
+- English remains the canonical fallback for capture-surface strings not yet translated in another selected language
+- historical v0.0.4 through v0.0.7 release workflow definitions are retained under `.github/release-archive/` instead of remaining active workflows
+- the v0.0.8 release workflow is scoped to its dedicated `.github/release-triggers/v0.0.8` path on `main`
+
+### Packaging
+
+- the release continues the v0.0.7 two-download contract with exactly `SNAPVERE-Setup.exe` and `SNAPVERE-Portable.exe`
+- each public executable embeds x86, x64 and ARM64 application payloads and selects a compatible native payload at runtime
+- Windows 10 version 1809 / build 17763 remains the application minimum; WGC-dependent paths require build 19041 or later
+
+### Reliability and privacy
+
+- capture-surface localization remains static, local and event-driven with no translation network service, polling worker, file watcher or telemetry
+- Region Capture geometry, annotation rendering, WGC/GDI capture engines and tray-first startup contract are unchanged by this release
+- release publication is gated by x64 build/tests, x86 build, ARM64 cross-build, payload validation, exact two-file packaging and x64/x86 Setup/Portable lifecycle probes
+- ARM64 validation on the hosted x64 runner is cross-build/package validation, not a real ARM64 hardware runtime test
+- release binaries are not represented as Authenticode-signed; SHA-256 values are integrity metadata only
+
+## [0.0.7] - 2026-09-10
+
+### Added
+
+- universal public Setup and Portable hosts that embed x86, x64 and ARM64 native application payloads
+- built-in language selector exposing 28 choices with English as the canonical default/fallback and Croatian among the supported selections
+- shared universal architecture resolver for x86/x32, x64/AMD64 and ARM64 payload selection
+- commercial SNAPVERE license contract for v0.0.7 and later
+
+### Changed
+
+- public GitHub releases contain exactly two user-facing downloads: `SNAPVERE-Setup.exe` and `SNAPVERE-Portable.exe`
+- users no longer choose architecture-specific x86/x64 downloads; the host selects a compatible embedded payload
+- Tray, Region, Options, Language, About and Setup surfaces use the graphite/violet/cyan SNAPVERE visual system
+- interactive Setup defaults Start menu shortcut, Desktop icon and Start-with-Windows to On while keeping them user-selectable
+- language preference is stored locally in `%LOCALAPPDATA%\SNAPVERE\settings.json`
+
+### Reliability, security and performance
+
+- obsolete Demo packaging branches and duplicate launcher behavior were removed
+- ZIP extraction retains path-traversal and bounded extraction protections
+- settings writes remain local and atomic
+- startup, shortcut and uninstall lifecycle is validated in CI
+- tray/hotkey idle behavior remains event-driven and localization adds no polling thread or network worker
+- capture/D3D resources remain lazy rather than initializing merely for tray residency
+- publication requires x64 build/test, x86 build, ARM64 cross-build, all three payloads, exact two-file output, x64/x86 universal lifecycle, commercial-license acceptance, startup/shortcut state and same-Setup uninstall validation
 
 ## [0.0.6] - 2026-09-10
 
