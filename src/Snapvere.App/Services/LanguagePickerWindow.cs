@@ -18,6 +18,8 @@ public sealed class LanguagePickerWindow : Window
     private const int WindowWidth = 560;
     private const int WindowHeight = 520;
 
+    private static LanguagePickerWindow? _standaloneWindow;
+
     private readonly CapturePreferencesService _preferences;
     private readonly ComboBox _languageCombo;
     private readonly TextBlock _status;
@@ -55,6 +57,26 @@ public sealed class LanguagePickerWindow : Window
         SelectCurrentLanguage();
         _initializing = false;
         Activated += LanguagePickerWindow_Activated;
+    }
+
+    public static void ShowStandalone()
+    {
+        if (_standaloneWindow is not null)
+        {
+            _standaloneWindow.Activate();
+            return;
+        }
+
+        var window = new LanguagePickerWindow(new CapturePreferencesService());
+        _standaloneWindow = window;
+        window.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_standaloneWindow, window))
+            {
+                _standaloneWindow = null;
+            }
+        };
+        window.Activate();
     }
 
     private FrameworkElement BuildContent()
