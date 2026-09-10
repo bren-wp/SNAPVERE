@@ -121,6 +121,7 @@ jobs:
           }
 
       - name: Capture real rendered UI snapshots
+        id: visual_capture
         shell: pwsh
         run: |
           & ./eng/Capture-SnapvereVisualQa.ps1 `
@@ -180,6 +181,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Upload rendered UI snapshots
+        if: ${{ !cancelled() && steps.visual_capture.outcome == 'success' }}
         uses: actions/upload-artifact@v4
         with:
           name: snapvere-visual-qa-${{ github.sha }}
