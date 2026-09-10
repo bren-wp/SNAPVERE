@@ -168,7 +168,7 @@ jobs:
           foreach ($name in $expected) {
             $file = Get-Item (Join-Path artifacts/universal $name)
             if ($file.Length -lt 50MB) { throw "$name is unexpectedly small." }
-            Write-Host "$name: $([Math]::Round($file.Length / 1MB, 1)) MB"
+            Write-Host "${name}: $([Math]::Round($file.Length / 1MB, 1)) MB"
           }
 
       - name: Validate universal Setup and Portable with x64 and x86 payloads
