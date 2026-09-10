@@ -9,7 +9,7 @@ SNAPVERE-Setup.exe
 SNAPVERE-Portable.exe
 ```
 
-There are no separate x86/x64 downloads, no public ZIP payloads and no Demo executable in the v0.0.7+ release contract.
+There are no separate x86/x64 downloads, no public ZIP payloads and no Demo executable in the v0.0.7+ release contract. The latest published release is **v0.0.8**; later `main` changes are unreleased until separately published.
 
 ## Architecture selection
 
@@ -136,12 +136,14 @@ CI and release QA require:
 7. silent Setup installs successfully with license acceptance;
 8. default Desktop shortcut and Start-with-Windows registration exist after install;
 9. Installed apps metadata points to the installed `SNAPVERE-Setup.exe`;
-10. tray, Region, Window, Options and About runtime probes materialize successfully;
-11. installed and Portable x64/x86 runtime lifecycle succeeds;
-12. same-Setup uninstall removes installed files, Desktop shortcut, startup registration and Installed apps metadata;
-13. user capture files remain outside uninstall scope.
+10. tray, Region, Window, Options, Language and About runtime probes materialize successfully;
+11. the x64 WinUI visual gate captures real rendered Region, Window, Tray, Options, Language and About PNG surfaces and rejects empty/unexpectedly small frames;
+12. the visual-QA manifest records dimensions, byte sizes and SHA-256 digests for those six surfaces and is uploaded as a GitHub Actions artifact;
+13. installed and Portable x64/x86 runtime lifecycle succeeds;
+14. same-Setup uninstall removes installed files, Desktop shortcut, startup registration and Installed apps metadata;
+15. user capture files remain outside uninstall scope.
 
-ARM64 is cross-built/package-validated on the hosted x64 Windows runner. That runner is not represented as a real ARM64 runtime device.
+ARM64 is cross-built/package-validated on the hosted x64 Windows runner. That runner is not represented as a real ARM64 runtime device. SHA-256 values are integrity metadata; they are not represented as Authenticode signatures.
 
 ## Diagnostics
 

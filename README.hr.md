@@ -12,7 +12,7 @@
 
 SNAPVERE je tray-first Windows aplikacija za brzo snimanje područja, prozora i zaslona, jednostavne anotacije i lokalno spremanje PNG datoteka. Primarni i zadani jezik je engleski, a hrvatski i više od 20 dodatnih jezika mogu se odabrati u aplikaciji.
 
-> Aktualna razvojna linija cilja **0.0.7**. Objavljeni tagovi i izdanja ostaju nepromjenjivi; `v0.0.6` se ne prepisuje.
+> Trenutačno objavljeno izdanje je **v0.0.8**. Promjene na `main` nakon izdanja v0.0.8 predstavljaju neobjavljeni hardening. Objavljeni tagovi, izdanja i asseti tretiraju se kao nepromjenjivi i kasniji razvoj ih ne prepisuje.
 
 ## Dizajn i UI
 
@@ -36,7 +36,7 @@ Editor radi izravno preko zamrznutog prikaza zaslona. Ima fizičku pixel selekci
 
 ![SNAPVERE Region editor](docs/images/region-editor.svg)
 
-SVG datoteke su održavane UI reference, a ne lažno predstavljeni Windows screenshotovi. Release QA pokreće stvarne Tray, Region, Window, Options i About WinUI površine. Stvarni PNG screenshotovi u dokumentaciju se dodaju samo kada su reproducibilno snimljeni iz stvarne aplikacije.
+SVG datoteke su održavane UI reference, a ne lažno predstavljeni Windows screenshotovi. Aktualni CI pokreće stvarnu x64 WinUI aplikaciju i prije prolaska universal pakiranja snima šest renderiranih PNG površina — Region, Window, Tray, Options, Language i About. PNG datoteke i manifest s dimenzijama, veličinom datoteke i SHA-256 sažetkom spremaju se kao kratkotrajni GitHub Actions visual-QA artefakt. Screenshotovi se u repozitorij dodaju samo kada nastanu reproducibilnim snimanjem stvarne aplikacije.
 
 ## Kontrole
 
@@ -53,7 +53,7 @@ SVG datoteke su održavane UI reference, a ne lažno predstavljeni Windows scree
 
 Implementirano je: zamrznuti frame, fizička pixel selekcija, pomicanje i resize, osam ručki, prikaz dimenzija, Pen, Line, Arrow, Box i Highlight alati, četiri boje, Undo, `Ctrl+Z`, `Ctrl+C`, Copy, Save, Enter/dvostruki klik za spremanje i Esc za odustajanje. Anotacije se renderiraju u konačni PNG.
 
-UI slijedi graphite/violet SNAPVERE referencu s vertikalnim toolbarom uz selekciju i zasebnim action barom ispod nje.
+UI slijedi graphite/violet SNAPVERE referencu s vertikalnim toolbarom uz selekciju i zasebnim action barom ispod nje. Text, blur/pixelate, ellipse i numbered-step alati ne prikazuju se kao gotove mogućnosti dok stvarno nisu implementirani i testirani.
 
 ## Window Capture
 
@@ -66,6 +66,8 @@ Windows.Graphics.Capture + Direct3D 11 je preferirani put gdje je podržan. Za o
 ## Jezici
 
 English (`en`) je canonical default i fallback. Ugrađeni katalog trenutačno nudi 28 jezika, uključujući Hrvatski (`hr`), Deutsch, Français, Español, Italiano, Português, Nederlands, Polski, Čeština, Slovenčina, Slovenščina, Magyar, Română, Български, Ελληνικά, Svenska, Dansk, Norsk, Suomi, Eesti, Latviešu, Lietuvių, Українська, Türkçe, 日本語, 한국어 i 简体中文.
+
+Hrvatski ima zasebne prijevode za aktualne capture i sekundarne korisničke površine. Ako odabrani jezik nema prijevod pojedinog stringa, koristi se canonical English fallback umjesto prikaza nepoznatog resource ključa.
 
 Odabrani jezik sprema se lokalno u:
 
@@ -143,14 +145,16 @@ GitHub Actions builda/testira x64 i x86 te cross-builda ARM64. Universal package
 - x64 i x86 Setup/Portable lifecycle;
 - eksplicitno prihvaćanje komercijalne licence za silent Setup;
 - zadani Desktop shortcut i startup registraciju;
-- uninstall istim Setupom;
+- uninstall istim Setupom i cleanup;
 - tray-first startup;
 - Region editor;
 - Window picker;
-- Tray / Options / About površine;
+- Tray / Options / Language / About površine;
+- šest stvarno renderiranih x64 WinUI PNG screenshotova: Region, Window, Tray, Options, Language i About;
+- visual-QA manifest s dimenzijama, veličinom datoteka i SHA-256 sažetkom svake površine;
 - unit testove za architecture selection, sigurnu ZIP ekstrakciju i language/settings fallback.
 
-ARM64 se cross-builda i strukturno provjerava na hosted x64 runneru; to se ne predstavlja kao stvarni ARM64 runtime test.
+Vizualno prazan ili neočekivano malen UI snapshot ruši CI. ARM64 se cross-builda i strukturno provjerava na hosted x64 runneru; to se ne predstavlja kao stvarni ARM64 runtime test.
 
 ## Arhitektura
 

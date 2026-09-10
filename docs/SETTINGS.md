@@ -2,7 +2,7 @@
 
 ## Status
 
-SNAPVERE 0.0.7 provides a real secondary **Options / Preferences** surface opened explicitly from the tray. It never reintroduces the former Capture Center as a normal startup window.
+The current post-v0.0.8 `main` line provides a real secondary **Options / Preferences** surface opened explicitly from the tray. It never reintroduces the former Capture Center as a normal startup window.
 
 Only implemented settings are shown. Placeholder toggles are intentionally absent.
 
@@ -36,6 +36,8 @@ Interactive Setup enables this option by default, but the user can clear the che
 English (`en`) is the canonical default and fallback. The in-app language picker currently exposes 28 built-in choices, including Croatian (`hr`) and more than 20 additional languages.
 
 Language selection is local-only. The localization system uses static in-process resources and does not call a translation API, run a polling worker or require network access.
+
+Current Region/Window capture surfaces and the Tray/Options/Language/About secondary UI resolve user-visible copy through the shared localization catalog. Croatian contains dedicated strings for the current localized product surfaces. When another selected language does not define a specific string, the catalog returns canonical English rather than an unresolved key.
 
 ## Local preference storage
 
@@ -74,7 +76,7 @@ There is no fake history database or remote index.
 - Options never opens automatically on startup.
 - Language is available from both Tray and Options.
 - Only functioning settings are exposed.
-- Registry/file failures are surfaced as status feedback.
+- Registry/file failures are surfaced as localized status feedback where a translation is available.
 - Settings changes do not add resident timers or background polling.
 - The graphite/violet/cyan visual system is shared with Tray, Region, About and Setup.
 
@@ -91,4 +93,6 @@ Not exposed until implemented and tested:
 
 ## QA
 
-Unit tests cover settings persistence, atomic temp-file cleanup, corrupt JSON fallback, supported language normalization and unsupported language fallback. Runtime QA materializes Options through the `SECONDARY_UI_READY` probe for installed and Portable x64/x86 package paths.
+Unit tests cover settings persistence, atomic temp-file cleanup, corrupt JSON fallback, supported language normalization, unsupported-language fallback, dedicated Croatian secondary-UI strings and formatted localization placeholders.
+
+Runtime QA materializes Tray, Options, Language and About through `SECONDARY_UI_READY` for installed and Portable x64/x86 package paths. The x64 visual-QA gate additionally captures real rendered Options, Language and About PNGs (along with Region, Window and Tray), rejects visually empty/unexpectedly small frames and uploads a manifest with dimensions, byte sizes and SHA-256 digests.
