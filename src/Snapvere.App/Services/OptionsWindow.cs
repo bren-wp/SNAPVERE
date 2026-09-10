@@ -1,5 +1,6 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Snapvere.Application.Capture;
@@ -15,9 +16,8 @@ public enum OptionsSection
 }
 
 /// <summary>
-/// Secondary SNAPVERE control surface. Capture actions intentionally stay in
-/// the tray, hotkeys and overlays; this window contains only real preferences
-/// and local recent-capture management.
+/// Premium secondary SNAPVERE surface for real local preferences and recent
+/// captures. Capture actions stay in tray/hotkeys/overlays.
 /// </summary>
 public sealed class OptionsWindow : Window
 {
@@ -26,13 +26,15 @@ public sealed class OptionsWindow : Window
     private readonly CaptureHistoryService _history;
     private readonly CapturePreferencesService _preferences;
     private readonly StartupRegistrationService _startupRegistration;
-    private readonly StackPanel _preferencesPanel;
-    private readonly StackPanel _recentPanel;
+    private readonly Grid _preferencesPanel;
+    private readonly Grid _recentPanel;
     private readonly StackPanel _recentItems;
     private readonly TextBlock _recentSummary;
     private readonly TextBlock _statusText;
     private readonly ToggleSwitch _startupToggle;
     private readonly ToggleSwitch _cursorToggle;
+    private readonly Button _preferencesTab;
+    private readonly Button _recentTab;
     private bool _sizeApplied;
     private bool _updatingControls;
 
@@ -46,36 +48,36 @@ public sealed class OptionsWindow : Window
         _startupRegistration = startupRegistration ?? throw new ArgumentNullException(nameof(startupRegistration));
 
         Title = "SNAPVERE Options";
-        _preferencesPanel = new StackPanel { Spacing = 10 };
-        _recentPanel = new StackPanel { Spacing = 10, Visibility = Visibility.Collapsed };
-        _recentItems = new StackPanel { Spacing = 6 };
-        _recentSummary = Text("Pictures\\SNAPVERE", 11, Brush(0x92, 0x9E, 0xB3));
-        _statusText = Text(string.Empty, 10, Brush(0xA8, 0xB5, 0xCC));
+        _preferencesPanel = new Grid();
+        _recentPanel = new Grid { Visibility = Visibility.Collapsed };
+        _recentItems = new StackPanel { Spacing = 8 };
+        _recentSummary = Text("Pictures\\SNAPVERE", 10, Subtle);
+        _statusText = Text("Preferences are local to this Windows account.", 10, Success);
         _statusText.TextWrapping = TextWrapping.Wrap;
 
-        _startupToggle = CreateToggle(
-            "Start SNAPVERE with Windows",
-            "Starts silently in the notification area for this Windows account.");
-        _cursorToggle = CreateToggle(
-            "Include cursor on capture",
-            "Applies to Region, Window and Screen Capture when the backend supports cursor capture.");
+        _startupToggle = CreateToggle("Start SNAPVERE with Windows");
+        _cursorToggle = CreateToggle("Include cursor on capture");
+        _startupToggle.Toggled += StartupToggle_Toggled;
+        _cursorToggle.Toggled += CursorToggle_Toggled;
+
+        _preferencesTab = CreateTabButton("Preferences", () => ShowSection(OptionsSection.Preferences));
+        _recentTab = CreateTabButton("Recent captures", () => ShowSection(OptionsSection.RecentCaptures));
 
         BuildPreferencesPanel();
         BuildRecentPanel();
         Content = BuildContent();
         LoadPreferences();
         RefreshRecentCaptures();
+        ShowSection(OptionsSection.Preferences);
         Activated += OptionsWindow_Activated;
     }
 
     public void ShowSection(OptionsSection section)
     {
-        _preferencesPanel.Visibility = section == OptionsSection.Preferences
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-        _recentPanel.Visibility = section == OptionsSection.RecentCaptures
-            ? Visibility.Visible
-            : Visibility.Collapsed;
+        _preferencesPanel.Visibility = section == OptionsSection.Preferences ? Visibility.Visible : Visibility.Collapsed;
+        _recentPanel.Visibility = section == OptionsSection.RecentCaptures ? Visibility.Visible : Visibility.Collapsed;
+        ApplyTabVisual(_preferencesTab, section == OptionsSection.Preferences);
+        ApplyTabVisual(_recentTab, section == OptionsSection.RecentCaptures);
 
         if (section == OptionsSection.RecentCaptures)
         {
@@ -87,13 +89,13 @@ public sealed class OptionsWindow : Window
         }
     }
 
-    private UIElement BuildContent()
+    private FrameworkElement BuildContent()
     {
         var root = new Grid
         {
             RequestedTheme = ElementTheme.Dark,
-            Background = Brush(0x0B, 0x0F, 0x19),
-            Padding = new Thickness(22)
+            Background = Brush(0xFF, 0x07, 0x08, 0x0D),
+            Padding = new Thickness(24)
         };
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -101,52 +103,61 @@ public sealed class OptionsWindow : Window
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
         var header = new Grid();
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-        var brand = new StackPanel { Spacing = 2 };
-        brand.Children.Add(Text("SNAPVERE", 11, Brush(0xA7, 0x91, 0xFF), Microsoft.UI.Text.FontWeights.SemiBold));
-        brand.Children.Add(Text("Options", 24, Brush(0xF7, 0xF5, 0xFF), Microsoft.UI.Text.FontWeights.SemiBold));
-        var subtitle = Text("Tray-first preferences and local capture history.", 11, Brush(0x9C, 0xA8, 0xBB));
-        subtitle.TextWrapping = TextWrapping.Wrap;
-        brand.Children.Add(subtitle);
-        header.Children.Add(brand);
+        header.Children.Add(BuildBrandMark());
+        var identity = new StackPanel { Spacing = 2, Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        var brand = Text("SNAPVERE", 11, AccentText, Microsoft.UI.Text.FontWeights.Bold);
+        brand.CharacterSpacing = 70;
+        identity.Children.Add(brand);
+        identity.Children.Add(Text("Options", 25, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        Grid.SetColumn(identity, 1);
+        header.Children.Add(identity);
 
         var version = typeof(OptionsWindow).Assembly.GetName().Version?.ToString(3) ?? "dev";
         var versionBadge = new Border
         {
-            Padding = new Thickness(9, 5, 9, 5),
-            CornerRadius = new CornerRadius(8),
-            Background = Brush(0x19, 0x20, 0x30),
-            BorderBrush = Brush(0x38, 0x46, 0x64),
+            Padding = new Thickness(10, 6, 10, 6),
+            CornerRadius = new CornerRadius(11),
+            Background = Brush(0xFF, 0x12, 0x14, 0x1D),
+            BorderBrush = Brush(0xFF, 0x2B, 0x2F, 0x3D),
             BorderThickness = new Thickness(1),
-            Child = Text($"v{version}", 10, Brush(0xC9, 0xD1, 0xDF))
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = Text($"v{version}", 10, Muted, Microsoft.UI.Text.FontWeights.SemiBold)
         };
-        Grid.SetColumn(versionBadge, 1);
+        Grid.SetColumn(versionBadge, 2);
         header.Children.Add(versionBadge);
         root.Children.Add(header);
 
-        var nav = new StackPanel
+        var tabs = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 8,
-            Margin = new Thickness(0, 18, 0, 14)
+            Margin = new Thickness(0, 22, 0, 16)
         };
-        nav.Children.Add(CreateNavButton("Preferences", () => ShowSection(OptionsSection.Preferences), primary: true));
-        nav.Children.Add(CreateNavButton("Recent captures", () => ShowSection(OptionsSection.RecentCaptures)));
-        Grid.SetRow(nav, 1);
-        root.Children.Add(nav);
+        tabs.Children.Add(_preferencesTab);
+        tabs.Children.Add(_recentTab);
+        Grid.SetRow(tabs, 1);
+        root.Children.Add(tabs);
 
+        var contentFrame = new Border
+        {
+            Padding = new Thickness(20),
+            CornerRadius = new CornerRadius(20),
+            Background = Brush(0xE8, 0x0D, 0x0F, 0x16),
+            BorderBrush = Brush(0xFF, 0x25, 0x29, 0x36),
+            BorderThickness = new Thickness(1)
+        };
         var contentHost = new Grid();
         contentHost.Children.Add(_preferencesPanel);
         contentHost.Children.Add(_recentPanel);
-        Grid.SetRow(contentHost, 2);
-        root.Children.Add(contentHost);
+        contentFrame.Child = contentHost;
+        Grid.SetRow(contentFrame, 2);
+        root.Children.Add(contentFrame);
 
-        var footer = new Grid
-        {
-            Margin = new Thickness(0, 14, 0, 0)
-        };
+        var footer = new Grid { Margin = new Thickness(2, 14, 2, 0) };
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         _statusText.VerticalAlignment = VerticalAlignment.Center;
@@ -156,8 +167,12 @@ public sealed class OptionsWindow : Window
         {
             Content = "Close",
             Padding = new Thickness(18, 8, 18, 8),
-            CornerRadius = new CornerRadius(8)
+            CornerRadius = new CornerRadius(10),
+            Background = Brush(0xFF, 0x18, 0x1B, 0x25),
+            BorderBrush = Brush(0xFF, 0x32, 0x36, 0x45),
+            BorderThickness = new Thickness(1)
         };
+        AutomationProperties.SetName(close, "Close SNAPVERE Options");
         close.Click += (_, _) => Close();
         Grid.SetColumn(close, 1);
         footer.Children.Add(close);
@@ -169,57 +184,141 @@ public sealed class OptionsWindow : Window
 
     private void BuildPreferencesPanel()
     {
-        _preferencesPanel.Children.Add(CreateSectionTitle(
-            "Preferences",
-            "Only settings that are fully implemented are shown here."));
-        _preferencesPanel.Children.Add(CreateSettingCard(_startupToggle));
-        _preferencesPanel.Children.Add(CreateSettingCard(_cursorToggle));
+        _preferencesPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        _preferencesPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        _preferencesPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        _preferencesPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-        var path = Text(
-            $"Settings are stored locally at {_preferences.SettingsPath}",
-            10,
-            Brush(0x7F, 0x8B, 0xA0));
+        var intro = new StackPanel { Spacing = 4 };
+        intro.Children.Add(Text("Preferences", 19, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        var description = Text("Only settings that are implemented and persisted locally are shown here.", 11, Muted);
+        description.TextWrapping = TextWrapping.Wrap;
+        intro.Children.Add(description);
+        _preferencesPanel.Children.Add(intro);
+
+        var startup = BuildSettingCard(
+            "STARTUP",
+            "Start SNAPVERE with Windows",
+            "Launch quietly into the notification area after sign-in. No large window is opened.",
+            "\uE7E7",
+            _startupToggle);
+        startup.Margin = new Thickness(0, 16, 0, 0);
+        Grid.SetRow(startup, 1);
+        _preferencesPanel.Children.Add(startup);
+
+        var cursor = BuildSettingCard(
+            "CAPTURE",
+            "Include cursor on capture",
+            "Include the pointer when the active capture backend supports cursor composition.",
+            "\uE7C9",
+            _cursorToggle);
+        cursor.Margin = new Thickness(0, 10, 0, 0);
+        Grid.SetRow(cursor, 2);
+        _preferencesPanel.Children.Add(cursor);
+
+        var local = new Border
+        {
+            Margin = new Thickness(0, 16, 0, 0),
+            Padding = new Thickness(14),
+            CornerRadius = new CornerRadius(14),
+            Background = Brush(0x38, 0x24, 0x4B, 0x42),
+            BorderBrush = Brush(0x55, 0x4A, 0xB8, 0x98),
+            BorderThickness = new Thickness(1)
+        };
+        var localCopy = new StackPanel { Spacing = 3 };
+        localCopy.Children.Add(Text("LOCAL-FIRST", 9, Success, Microsoft.UI.Text.FontWeights.Bold));
+        var path = Text($"Settings: {_preferences.SettingsPath}", 10, Muted);
         path.TextWrapping = TextWrapping.Wrap;
-        _preferencesPanel.Children.Add(path);
-
-        _startupToggle.Toggled += StartupToggle_Toggled;
-        _cursorToggle.Toggled += CursorToggle_Toggled;
+        localCopy.Children.Add(path);
+        local.Child = localCopy;
+        Grid.SetRow(local, 3);
+        _preferencesPanel.Children.Add(local);
     }
 
     private void BuildRecentPanel()
     {
-        var title = new Grid();
-        title.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        title.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        _recentPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        _recentPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        _recentPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-        var heading = new StackPanel { Spacing = 2 };
-        heading.Children.Add(Text("Recent captures", 16, Brush(0xF5, 0xF4, 0xFA), Microsoft.UI.Text.FontWeights.SemiBold));
-        heading.Children.Add(_recentSummary);
-        title.Children.Add(heading);
+        var header = new Grid();
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7 };
-        var folder = CreateCompactButton("Open folder", OpenCaptureFolder);
-        var refresh = CreateCompactButton("Refresh", RefreshRecentCaptures);
-        actions.Children.Add(folder);
-        actions.Children.Add(refresh);
-        Grid.SetColumn(actions, 1);
-        title.Children.Add(actions);
-        _recentPanel.Children.Add(title);
+        var copy = new StackPanel { Spacing = 3 };
+        copy.Children.Add(Text("Recent captures", 19, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        copy.Children.Add(_recentSummary);
+        header.Children.Add(copy);
 
-        _recentPanel.Children.Add(new Border
+        var refresh = CreateSmallAction("Refresh", "\uE72C", RefreshRecentCaptures);
+        Grid.SetColumn(refresh, 1);
+        header.Children.Add(refresh);
+        _recentPanel.Children.Add(header);
+
+        var scroller = new ScrollViewer
         {
-            Padding = new Thickness(12),
+            Margin = new Thickness(0, 15, 0, 0),
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Content = _recentItems
+        };
+        Grid.SetRow(scroller, 1);
+        _recentPanel.Children.Add(scroller);
+
+        var folder = CreateSmallAction("Open capture folder", "\uE838", OpenCaptureFolder);
+        folder.HorizontalAlignment = HorizontalAlignment.Left;
+        folder.Margin = new Thickness(0, 14, 0, 0);
+        Grid.SetRow(folder, 2);
+        _recentPanel.Children.Add(folder);
+    }
+
+    private static Border BuildSettingCard(string eyebrow, string title, string description, string glyph, ToggleSwitch toggle)
+    {
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(46) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var icon = new Border
+        {
+            Width = 36,
+            Height = 36,
             CornerRadius = new CornerRadius(11),
-            Background = Brush(0x11, 0x17, 0x24),
-            BorderBrush = Brush(0x2B, 0x37, 0x50),
+            Background = Brush(0x55, 0x61, 0x49, 0xC8),
+            BorderBrush = Brush(0x66, 0x91, 0x7A, 0xF4),
             BorderThickness = new Thickness(1),
-            Child = new ScrollViewer
+            Child = new FontIcon
             {
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                MaxHeight = 385,
-                Content = _recentItems
+                Glyph = glyph,
+                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontSize = 15,
+                Foreground = Strong
             }
-        });
+        };
+        grid.Children.Add(icon);
+
+        var copy = new StackPanel { Spacing = 3, Margin = new Thickness(8, 0, 20, 0), VerticalAlignment = VerticalAlignment.Center };
+        copy.Children.Add(Text(eyebrow, 9, AccentText, Microsoft.UI.Text.FontWeights.Bold));
+        copy.Children.Add(Text(title, 12, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        var detail = Text(description, 10, Muted);
+        detail.TextWrapping = TextWrapping.Wrap;
+        copy.Children.Add(detail);
+        Grid.SetColumn(copy, 1);
+        grid.Children.Add(copy);
+
+        toggle.Header = null;
+        toggle.VerticalAlignment = VerticalAlignment.Center;
+        Grid.SetColumn(toggle, 2);
+        grid.Children.Add(toggle);
+
+        return new Border
+        {
+            Padding = new Thickness(16),
+            CornerRadius = new CornerRadius(15),
+            Background = Brush(0xFF, 0x12, 0x14, 0x1D),
+            BorderBrush = Brush(0xFF, 0x2A, 0x2E, 0x3A),
+            BorderThickness = new Thickness(1),
+            Child = grid
+        };
     }
 
     private void LoadPreferences()
@@ -229,14 +328,12 @@ public sealed class OptionsWindow : Window
         {
             _cursorToggle.IsOn = _preferences.Current.IncludeCursorOnCapture;
             _startupToggle.IsOn = _startupRegistration.IsEnabled();
-            _statusText.Text = "Preferences are local to this Windows account.";
-            _statusText.Foreground = Brush(0x83, 0xC7, 0xA7);
+            SetStatus("Preferences are stored locally on this PC.", Success);
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
         {
-            _statusText.Text = $"Could not read one or more preferences: {exception.Message}";
-            _statusText.Foreground = Brush(0xE2, 0xA4, 0x73);
+            SetStatus($"Could not read one or more preferences: {exception.Message}", Warning);
         }
         finally
         {
@@ -254,10 +351,11 @@ public sealed class OptionsWindow : Window
         try
         {
             _startupRegistration.SetEnabled(_startupToggle.IsOn);
-            _statusText.Text = _startupToggle.IsOn
-                ? "SNAPVERE will start silently in the tray when you sign in."
-                : "Windows startup registration removed.";
-            _statusText.Foreground = Brush(0x83, 0xC7, 0xA7);
+            SetStatus(
+                _startupToggle.IsOn
+                    ? "Windows startup enabled — SNAPVERE will start quietly in the tray."
+                    : "Windows startup disabled.",
+                Success);
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
@@ -272,8 +370,7 @@ public sealed class OptionsWindow : Window
                 _updatingControls = false;
             }
 
-            _statusText.Text = $"Windows startup setting could not be changed: {exception.Message}";
-            _statusText.Foreground = Brush(0xE8, 0x8D, 0x8D);
+            SetStatus($"Windows startup setting could not be changed: {exception.Message}", Error);
         }
     }
 
@@ -287,10 +384,11 @@ public sealed class OptionsWindow : Window
         try
         {
             _preferences.SetIncludeCursorOnCapture(_cursorToggle.IsOn);
-            _statusText.Text = _cursorToggle.IsOn
-                ? "Cursor capture enabled for supported capture paths."
-                : "Cursor capture disabled.";
-            _statusText.Foreground = Brush(0x83, 0xC7, 0xA7);
+            SetStatus(
+                _cursorToggle.IsOn
+                    ? "Cursor capture enabled for supported capture paths."
+                    : "Cursor capture disabled.",
+                Success);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
@@ -304,8 +402,7 @@ public sealed class OptionsWindow : Window
                 _updatingControls = false;
             }
 
-            _statusText.Text = $"Cursor preference could not be saved: {exception.Message}";
-            _statusText.Foreground = Brush(0xE8, 0x8D, 0x8D);
+            SetStatus($"Cursor preference could not be saved: {exception.Message}", Error);
         }
     }
 
@@ -319,14 +416,31 @@ public sealed class OptionsWindow : Window
             _recentSummary.Text = captures.Count switch
             {
                 0 => "Pictures\\SNAPVERE",
-                1 => "1 recent local capture",
-                _ => $"{captures.Count} recent local captures"
+                1 => "1 local capture",
+                _ => $"{captures.Count} local captures"
             };
 
             if (captures.Count == 0)
             {
-                var empty = Text("No local captures yet.", 11, Brush(0x8F, 0x9A, 0xAF));
-                _recentItems.Children.Add(empty);
+                var empty = new StackPanel { Spacing = 4, HorizontalAlignment = HorizontalAlignment.Center };
+                empty.Children.Add(new FontIcon
+                {
+                    Glyph = "\uE91B",
+                    FontFamily = new FontFamily("Segoe Fluent Icons"),
+                    FontSize = 24,
+                    Foreground = AccentText
+                });
+                empty.Children.Add(Text("No captures yet", 12, Strong, Microsoft.UI.Text.FontWeights.SemiBold, HorizontalAlignment.Center));
+                empty.Children.Add(Text("Use Print Screen or the tray icon to create your first region capture.", 10, Subtle, null, HorizontalAlignment.Center));
+                _recentItems.Children.Add(new Border
+                {
+                    Padding = new Thickness(22),
+                    CornerRadius = new CornerRadius(15),
+                    Background = Brush(0xFF, 0x10, 0x12, 0x1A),
+                    BorderBrush = Brush(0xFF, 0x28, 0x2C, 0x38),
+                    BorderThickness = new Thickness(1),
+                    Child = empty
+                });
                 return;
             }
 
@@ -338,7 +452,7 @@ public sealed class OptionsWindow : Window
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             _recentSummary.Text = "Local history unavailable";
-            var error = Text(exception.Message, 11, Brush(0xE2, 0xA4, 0x73));
+            var error = Text(exception.Message, 10, Warning);
             error.TextWrapping = TextWrapping.Wrap;
             _recentItems.Children.Add(error);
         }
@@ -346,21 +460,57 @@ public sealed class OptionsWindow : Window
 
     private Button CreateRecentCaptureButton(CaptureHistoryItem capture)
     {
-        var text = new StackPanel { Spacing = 2 };
-        text.Children.Add(Text(capture.FileName, 11, Brush(0xF3, 0xF5, 0xF9), Microsoft.UI.Text.FontWeights.SemiBold));
-        text.Children.Add(Text(capture.MetadataText, 9, Brush(0x8F, 0x9A, 0xAF)));
+        var content = new Grid();
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(48) });
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        content.Children.Add(new Border
+        {
+            Width = 38,
+            Height = 38,
+            CornerRadius = new CornerRadius(11),
+            Background = Brush(0x55, 0x53, 0x45, 0x9D),
+            BorderBrush = Brush(0x55, 0x8D, 0x77, 0xE8),
+            BorderThickness = new Thickness(1),
+            Child = new FontIcon
+            {
+                Glyph = "\uE91B",
+                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontSize = 14,
+                Foreground = Strong
+            }
+        });
+
+        var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+        text.Children.Add(Text(capture.FileName, 11, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        text.Children.Add(Text(capture.MetadataText, 9, Subtle));
+        Grid.SetColumn(text, 1);
+        content.Children.Add(text);
+
+        var arrow = new FontIcon
+        {
+            Glyph = "\uE72A",
+            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontSize = 11,
+            Foreground = Subtle,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(arrow, 2);
+        content.Children.Add(arrow);
 
         var button = new Button
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Left,
-            Padding = new Thickness(10, 8, 10, 8),
-            CornerRadius = new CornerRadius(8),
-            Background = Brush(0x16, 0x1E, 0x2D),
-            BorderBrush = Brush(0x2C, 0x38, 0x51),
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            Padding = new Thickness(11, 9, 11, 9),
+            CornerRadius = new CornerRadius(13),
+            Background = Brush(0xFF, 0x12, 0x14, 0x1D),
+            BorderBrush = Brush(0xFF, 0x28, 0x2C, 0x38),
             BorderThickness = new Thickness(1),
-            Content = text
+            Content = content
         };
+        AutomationProperties.SetName(button, $"Open {capture.FileName}");
         button.Click += (_, _) => OpenCapture(capture);
         return button;
     }
@@ -372,8 +522,7 @@ public sealed class OptionsWindow : Window
             if (!File.Exists(capture.FilePath))
             {
                 RefreshRecentCaptures();
-                _statusText.Text = "That capture is no longer available at its original path.";
-                _statusText.Foreground = Brush(0xE2, 0xA4, 0x73);
+                SetStatus("That capture is no longer available at its original path.", Warning);
                 return;
             }
 
@@ -382,8 +531,7 @@ public sealed class OptionsWindow : Window
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
         {
-            _statusText.Text = $"Windows could not open that capture: {exception.Message}";
-            _statusText.Foreground = Brush(0xE8, 0x8D, 0x8D);
+            SetStatus($"Windows could not open that capture: {exception.Message}", Error);
         }
     }
 
@@ -398,8 +546,7 @@ public sealed class OptionsWindow : Window
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
         {
-            _statusText.Text = $"Windows could not open the capture folder: {exception.Message}";
-            _statusText.Foreground = Brush(0xE8, 0x8D, 0x8D);
+            SetStatus($"Windows could not open the capture folder: {exception.Message}", Error);
         }
     }
 
@@ -411,7 +558,7 @@ public sealed class OptionsWindow : Window
         }
 
         _sizeApplied = true;
-        AppWindow.Resize(new SizeInt32(680, 620));
+        AppWindow.Resize(new SizeInt32(720, 620));
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
             presenter.IsMaximizable = false;
@@ -419,91 +566,131 @@ public sealed class OptionsWindow : Window
         }
     }
 
-    private static ToggleSwitch CreateToggle(string header, string description)
+    private static ToggleSwitch CreateToggle(string accessibleName)
     {
         var toggle = new ToggleSwitch
         {
-            Header = header,
-            HorizontalAlignment = HorizontalAlignment.Stretch
+            OffContent = "Off",
+            OnContent = "On",
+            VerticalAlignment = VerticalAlignment.Center
         };
-        ToolTipService.SetToolTip(toggle, description);
+        AutomationProperties.SetName(toggle, accessibleName);
         return toggle;
     }
 
-    private static Border CreateSettingCard(ToggleSwitch toggle)
-    {
-        var description = toggle.Header?.ToString() switch
-        {
-            "Start SNAPVERE with Windows" => "Per-user startup registration. SNAPVERE starts tray-only; no Capture Center is opened.",
-            _ => "Saved locally and applied by the capture workflows."
-        };
-
-        var stack = new StackPanel { Spacing = 5 };
-        stack.Children.Add(toggle);
-        var detail = Text(description, 10, Brush(0x8F, 0x9A, 0xAF));
-        detail.TextWrapping = TextWrapping.Wrap;
-        stack.Children.Add(detail);
-        return new Border
-        {
-            Padding = new Thickness(14),
-            CornerRadius = new CornerRadius(11),
-            Background = Brush(0x12, 0x18, 0x26),
-            BorderBrush = Brush(0x2C, 0x38, 0x51),
-            BorderThickness = new Thickness(1),
-            Child = stack
-        };
-    }
-
-    private static StackPanel CreateSectionTitle(string title, string subtitle)
-    {
-        var stack = new StackPanel { Spacing = 2 };
-        stack.Children.Add(Text(title, 16, Brush(0xF5, 0xF4, 0xFA), Microsoft.UI.Text.FontWeights.SemiBold));
-        var detail = Text(subtitle, 10, Brush(0x8F, 0x9A, 0xAF));
-        detail.TextWrapping = TextWrapping.Wrap;
-        stack.Children.Add(detail);
-        return stack;
-    }
-
-    private static Button CreateNavButton(string label, Action action, bool primary = false)
+    private static Button CreateTabButton(string label, Action action)
     {
         var button = new Button
         {
             Content = label,
-            Padding = new Thickness(14, 7, 14, 7),
-            CornerRadius = new CornerRadius(8),
-            Background = primary ? Brush(0x43, 0x31, 0xA0) : Brush(0x16, 0x1E, 0x2D),
-            BorderBrush = primary ? Brush(0x86, 0x6D, 0xFF) : Brush(0x2C, 0x38, 0x51),
+            Padding = new Thickness(14, 8, 14, 8),
+            CornerRadius = new CornerRadius(10),
+            Background = Transparent,
+            BorderBrush = Transparent,
             BorderThickness = new Thickness(1)
         };
+        AutomationProperties.SetName(button, label);
         button.Click += (_, _) => action();
         return button;
     }
 
-    private static Button CreateCompactButton(string label, Action action)
+    private static void ApplyTabVisual(Button button, bool active)
     {
+        button.Background = active ? Brush(0x55, 0x5E, 0x48, 0xBD) : Transparent;
+        button.BorderBrush = active ? Brush(0x78, 0x9D, 0x86, 0xFF) : Brush(0x00, 0, 0, 0);
+        button.Foreground = active ? Strong : Muted;
+    }
+
+    private static Button CreateSmallAction(string label, string glyph, Action action)
+    {
+        var stack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7 };
+        stack.Children.Add(new FontIcon
+        {
+            Glyph = glyph,
+            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontSize = 12
+        });
+        stack.Children.Add(Text(label, 10, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+
         var button = new Button
         {
-            Content = label,
-            Padding = new Thickness(10, 6, 10, 6),
-            CornerRadius = new CornerRadius(7)
+            Content = stack,
+            Padding = new Thickness(11, 7, 11, 7),
+            CornerRadius = new CornerRadius(10),
+            Background = Brush(0xFF, 0x16, 0x18, 0x22),
+            BorderBrush = Brush(0xFF, 0x2C, 0x30, 0x3D),
+            BorderThickness = new Thickness(1)
         };
+        AutomationProperties.SetName(button, label);
         button.Click += (_, _) => action();
         return button;
+    }
+
+    private static FrameworkElement BuildBrandMark()
+    {
+        var mark = new Grid { Width = 44, Height = 44 };
+        mark.Children.Add(new Border
+        {
+            CornerRadius = new CornerRadius(14),
+            Background = AccentGradient(),
+            BorderBrush = Brush(0x66, 0xCA, 0xC1, 0xFF),
+            BorderThickness = new Thickness(1)
+        });
+        mark.Children.Add(new FontIcon
+        {
+            Glyph = "\uE722",
+            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontSize = 18,
+            Foreground = Strong,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        return mark;
+    }
+
+    private void SetStatus(string message, SolidColorBrush color)
+    {
+        _statusText.Text = message;
+        _statusText.Foreground = color;
     }
 
     private static TextBlock Text(
         string value,
         double size,
         SolidColorBrush foreground,
-        Windows.UI.Text.FontWeight? weight = null)
+        Windows.UI.Text.FontWeight? weight = null,
+        HorizontalAlignment horizontalAlignment = HorizontalAlignment.Left)
         => new()
         {
             Text = value,
             FontSize = size,
             Foreground = foreground,
-            FontWeight = weight ?? Microsoft.UI.Text.FontWeights.Normal
+            FontWeight = weight ?? Microsoft.UI.Text.FontWeights.Normal,
+            HorizontalAlignment = horizontalAlignment
         };
 
-    private static SolidColorBrush Brush(byte red, byte green, byte blue)
-        => new(Windows.UI.Color.FromArgb(0xFF, red, green, blue));
+    private static LinearGradientBrush AccentGradient()
+    {
+        var brush = new LinearGradientBrush
+        {
+            StartPoint = new Windows.Foundation.Point(0, 0),
+            EndPoint = new Windows.Foundation.Point(1, 1)
+        };
+        brush.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x61, 0x4A, 0xE8), Offset = 0 });
+        brush.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x8C, 0x5A, 0xF4), Offset = 0.62 });
+        brush.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x36, 0xB6, 0xD5), Offset = 1 });
+        return brush;
+    }
+
+    private static SolidColorBrush Brush(byte alpha, byte red, byte green, byte blue)
+        => new(Windows.UI.Color.FromArgb(alpha, red, green, blue));
+
+    private static SolidColorBrush Strong => Brush(0xFF, 0xF6, 0xF5, 0xFB);
+    private static SolidColorBrush Muted => Brush(0xFF, 0xAE, 0xAC, 0xBC);
+    private static SolidColorBrush Subtle => Brush(0xFF, 0x7D, 0x7C, 0x8D);
+    private static SolidColorBrush AccentText => Brush(0xFF, 0xAE, 0x9C, 0xFF);
+    private static SolidColorBrush Success => Brush(0xFF, 0x72, 0xD8, 0xB4);
+    private static SolidColorBrush Warning => Brush(0xFF, 0xE2, 0xB5, 0x72);
+    private static SolidColorBrush Error => Brush(0xFF, 0xF0, 0x8C, 0x9A);
+    private static SolidColorBrush Transparent => Brush(0x00, 0, 0, 0);
 }
