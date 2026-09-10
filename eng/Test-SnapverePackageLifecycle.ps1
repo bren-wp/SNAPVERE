@@ -186,11 +186,51 @@ function Invoke-WindowOverlayProbe([string] $FilePath, [string] $Name) {
     }
 }
 
+function Invoke-SecondaryUiProbe([string] $FilePath, [string] $Name) {
+    $marker = Join-Path $env:TEMP 'SNAPVERE/secondary-ui-probe.ready'
+    Remove-Item -LiteralPath $marker -Force -ErrorAction SilentlyContinue
+    $env:SNAPVERE_SECONDARY_UI_PROBE = '1'
+    $process = $null
+
+    try {
+        $process = Start-Process -FilePath $FilePath -ArgumentList @('--secondary-ui-probe') -PassThru
+        if (-not $process.WaitForExit(25000)) {
+            Write-StartupLogIfPresent
+            try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
+            throw "$Name secondary-UI probe timed out after 25 seconds."
+        }
+
+        if ($process.ExitCode -ne 0) {
+            Write-StartupLogIfPresent
+            throw "$Name secondary-UI probe failed with exit code $($process.ExitCode)."
+        }
+
+        if (-not (Test-Path -LiteralPath $marker)) {
+            Write-StartupLogIfPresent
+            throw "$Name exited successfully but did not materialize tray flyout, Options and About."
+        }
+
+        $markerText = Get-Content -LiteralPath $marker -Raw
+        $escapedVersion = [Regex]::Escape($Version)
+        if ($markerText -notmatch "SNAPVERE $escapedVersion SECONDARY_UI_READY") {
+            throw "$Name secondary-UI marker is invalid: $markerText"
+        }
+
+        Write-Host "$Name secondary-UI marker: $markerText"
+    }
+    finally {
+        Remove-Item Env:SNAPVERE_SECONDARY_UI_PROBE -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $marker -Force -ErrorAction SilentlyContinue
+        if ($null -ne $process) { $process.Dispose() }
+    }
+}
+
 function Clear-ProbeEnvironment {
     Remove-Item Env:SNAPVERE_STARTUP_PROBE -ErrorAction SilentlyContinue
     Remove-Item Env:SNAPVERE_TRAY_STARTUP_PROBE -ErrorAction SilentlyContinue
     Remove-Item Env:SNAPVERE_REGION_OVERLAY_PROBE -ErrorAction SilentlyContinue
     Remove-Item Env:SNAPVERE_WINDOW_OVERLAY_PROBE -ErrorAction SilentlyContinue
+    Remove-Item Env:SNAPVERE_SECONDARY_UI_PROBE -ErrorAction SilentlyContinue
 }
 
 function Invoke-NormalAppLaunch([string] $FilePath, [string] $Name) {
@@ -268,6 +308,7 @@ Invoke-StartupProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-TrayStartupProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-RegionOverlayProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-WindowOverlayProbe $installedApp "Installed SNAPVERE $Arch"
+Invoke-SecondaryUiProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-NormalAppLaunch $installedApp "Installed SNAPVERE $Arch"
 
 if (-not (Test-Path -LiteralPath $startupRunKey)) {
@@ -301,6 +342,7 @@ Invoke-StartupProbe $portable "Portable SNAPVERE $Arch"
 Invoke-TrayStartupProbe $portable "Portable SNAPVERE $Arch"
 Invoke-RegionOverlayProbe $portable "Portable SNAPVERE $Arch"
 Invoke-WindowOverlayProbe $portable "Portable SNAPVERE $Arch"
+Invoke-SecondaryUiProbe $portable "Portable SNAPVERE $Arch"
 Invoke-NormalPortableLaunch $portable "Portable SNAPVERE $Arch"
 
 Clear-ProbeEnvironment
