@@ -32,6 +32,7 @@ public partial class App : Microsoft.UI.Xaml.Application
     private WindowTargetOverlayWindow? _windowProbeWindow;
     private TrayMenuWindow? _trayMenuWindow;
     private OptionsWindow? _optionsWindow;
+    private LanguagePickerWindow? _languageWindow;
     private AboutWindow? _aboutWindow;
     private IGlobalHotkeyService? _hotkeyService;
     private ITrayIconService? _trayIconService;
@@ -285,7 +286,12 @@ public partial class App : Microsoft.UI.Xaml.Application
 
     private void StartTrayMenuSurfaceProbe()
     {
-        var menu = new TrayMenuWindow(_ => { }, () => { });
+        var preferences = _services.GetRequiredService<CapturePreferencesService>();
+        var menu = new TrayMenuWindow(
+            _ => { },
+            () => { },
+            () => { },
+            preferences.Current.LanguageCode);
         _trayMenuWindow = menu;
         if (menu.Content is not FrameworkElement root)
         {
@@ -346,11 +352,47 @@ public partial class App : Microsoft.UI.Xaml.Application
             _optionsWindow?.Close();
             _optionsWindow = null;
             StartupDiagnostics.WriteLine("Secondary UI probe loaded Options window.");
-            StartAboutSurfaceProbe();
+            StartLanguageSurfaceProbe();
         }
         catch (Exception exception)
         {
             FailSecondaryUiProbe("Options", exception);
+        }
+    }
+
+    private void StartLanguageSurfaceProbe()
+    {
+        var preferences = _services.GetRequiredService<CapturePreferencesService>();
+        var language = new LanguagePickerWindow(preferences);
+        _languageWindow = language;
+        if (language.Content is not FrameworkElement root)
+        {
+            throw new InvalidOperationException("Language probe could not resolve its root FrameworkElement.");
+        }
+
+        root.Loaded += LanguageProbeRoot_Loaded;
+        StartupDiagnostics.WriteLine("Secondary UI probe created Language window.");
+        language.Activate();
+    }
+
+    private async void LanguageProbeRoot_Loaded(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (sender is FrameworkElement root)
+            {
+                root.Loaded -= LanguageProbeRoot_Loaded;
+            }
+
+            await Task.Delay(180);
+            _languageWindow?.Close();
+            _languageWindow = null;
+            StartupDiagnostics.WriteLine("Secondary UI probe loaded Language window.");
+            StartAboutSurfaceProbe();
+        }
+        catch (Exception exception)
+        {
+            FailSecondaryUiProbe("Language", exception);
         }
     }
 
@@ -383,7 +425,7 @@ public partial class App : Microsoft.UI.Xaml.Application
             WriteProbeMarker(
                 SecondaryUiProbeMarkerFileName,
                 "SECONDARY_UI_READY",
-                "Secondary UI probe loaded tray flyout, Options and About surfaces.");
+                "Secondary UI probe loaded tray flyout, Options, Language and About surfaces.");
         }
         catch (Exception exception)
         {
@@ -598,6 +640,7 @@ public partial class App : Microsoft.UI.Xaml.Application
             case TrayCommand.Exit:
                 CloseTrayMenu();
                 _optionsWindow?.Close();
+                _languageWindow?.Close();
                 _aboutWindow?.Close();
                 window.Close();
                 break;
@@ -607,9 +650,12 @@ public partial class App : Microsoft.UI.Xaml.Application
     private void ShowTrayMenu()
     {
         CloseTrayMenu();
+        var preferences = _services.GetRequiredService<CapturePreferencesService>();
         var menu = new TrayMenuWindow(
             ExecuteTrayCommand,
-            () => ShowOptions(OptionsSection.RecentCaptures));
+            () => ShowOptions(OptionsSection.RecentCaptures),
+            ShowLanguage,
+            preferences.Current.LanguageCode);
         _trayMenuWindow = menu;
         menu.Closed += (_, _) =>
         {
@@ -625,10 +671,7 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         var menu = _trayMenuWindow;
         _trayMenuWindow = null;
-        if (menu is not null)
-        {
-            menu.Close();
-        }
+        menu?.Close();
     }
 
     private void ShowOptions(OptionsSection section)
@@ -651,6 +694,27 @@ public partial class App : Microsoft.UI.Xaml.Application
             }
         };
         options.Activate();
+    }
+
+    private void ShowLanguage()
+    {
+        if (_languageWindow is not null)
+        {
+            _languageWindow.Activate();
+            return;
+        }
+
+        var preferences = _services.GetRequiredService<CapturePreferencesService>();
+        var language = new LanguagePickerWindow(preferences);
+        _languageWindow = language;
+        language.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_languageWindow, language))
+            {
+                _languageWindow = null;
+            }
+        };
+        language.Activate();
     }
 
     private void ShowAbout()
@@ -694,6 +758,8 @@ public partial class App : Microsoft.UI.Xaml.Application
         CloseTrayMenu();
         _optionsWindow?.Close();
         _optionsWindow = null;
+        _languageWindow?.Close();
+        _languageWindow = null;
         _aboutWindow?.Close();
         _aboutWindow = null;
 
