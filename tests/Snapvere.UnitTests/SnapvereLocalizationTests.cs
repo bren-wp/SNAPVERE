@@ -37,7 +37,10 @@ public sealed class SnapvereLocalizationTests
         "AboutLocalFirstTitle",
         "AboutCaptureDescription",
         "AboutPrivacyDescription",
-        "CommercialSoftware"
+        "CommercialSoftware",
+        "Support",
+        "Privacy",
+        "Terms"
     ];
 
     [Fact]
