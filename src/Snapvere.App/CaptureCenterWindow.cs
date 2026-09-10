@@ -25,6 +25,7 @@ public sealed class CaptureCenterWindow : Window
     private readonly WindowCaptureWorkflow _windowCaptureWorkflow;
     private readonly WindowTargetPicker _windowTargetPicker;
     private readonly CapturePreferencesService _capturePreferencesService;
+    private readonly CaptureSaveLocationService _captureSaveLocationService;
     private readonly PngCaptureEncoder _pngEncoder;
 
     private RegionCaptureWindow? _regionCaptureWindow;
@@ -36,6 +37,7 @@ public sealed class CaptureCenterWindow : Window
         WindowCaptureWorkflow windowCaptureWorkflow,
         WindowTargetPicker windowTargetPicker,
         CapturePreferencesService capturePreferencesService,
+        CapturePathProvider capturePathProvider,
         PngCaptureEncoder pngEncoder)
     {
         _screenCaptureWorkflow = screenCaptureWorkflow ?? throw new ArgumentNullException(nameof(screenCaptureWorkflow));
@@ -43,6 +45,8 @@ public sealed class CaptureCenterWindow : Window
         _windowCaptureWorkflow = windowCaptureWorkflow ?? throw new ArgumentNullException(nameof(windowCaptureWorkflow));
         _windowTargetPicker = windowTargetPicker ?? throw new ArgumentNullException(nameof(windowTargetPicker));
         _capturePreferencesService = capturePreferencesService ?? throw new ArgumentNullException(nameof(capturePreferencesService));
+        _captureSaveLocationService = new CaptureSaveLocationService(
+            capturePathProvider ?? throw new ArgumentNullException(nameof(capturePathProvider)));
         _pngEncoder = pngEncoder ?? throw new ArgumentNullException(nameof(pngEncoder));
 
         Title = "SNAPVERE Runtime Host";
@@ -146,8 +150,9 @@ public sealed class CaptureCenterWindow : Window
             }
             else
             {
+                var result = await _captureSaveLocationService.ChooseFinalLocationAsync(this, outcome.SaveResult);
                 StartupDiagnostics.WriteLine(
-                    $"Region capture saved {outcome.SaveResult.Width}x{outcome.SaveResult.Height} PNG locally.");
+                    $"Region capture saved {result.Width}x{result.Height} PNG to '{result.FilePath}'.");
             }
         }
         catch (Exception exception)
@@ -185,11 +190,12 @@ public sealed class CaptureCenterWindow : Window
             }
 
             var includeCursor = _capturePreferencesService.Current.IncludeCursorOnCapture;
-            var result = await _windowCaptureWorkflow.CaptureWindowToDefaultFolderAsync(
+            var saved = await _windowCaptureWorkflow.CaptureWindowToDefaultFolderAsync(
                 target,
                 includeCursor);
+            var result = await _captureSaveLocationService.ChooseFinalLocationAsync(this, saved);
             StartupDiagnostics.WriteLine(
-                $"Window capture saved {result.Width}x{result.Height} PNG locally from '{target.Title}'.");
+                $"Window capture saved {result.Width}x{result.Height} PNG to '{result.FilePath}' from '{target.Title}'.");
         }
         catch (Exception exception)
         {
@@ -211,9 +217,10 @@ public sealed class CaptureCenterWindow : Window
         try
         {
             var includeCursor = _capturePreferencesService.Current.IncludeCursorOnCapture;
-            var result = await _screenCaptureWorkflow.CapturePrimaryDisplayToDefaultFolderAsync(includeCursor);
+            var saved = await _screenCaptureWorkflow.CapturePrimaryDisplayToDefaultFolderAsync(includeCursor);
+            var result = await _captureSaveLocationService.ChooseFinalLocationAsync(this, saved);
             StartupDiagnostics.WriteLine(
-                $"Screen capture saved {result.Width}x{result.Height} PNG locally.");
+                $"Screen capture saved {result.Width}x{result.Height} PNG to '{result.FilePath}'.");
         }
         catch (Exception exception)
         {
