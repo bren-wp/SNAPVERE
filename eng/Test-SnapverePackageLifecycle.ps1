@@ -67,6 +67,45 @@ function Invoke-StartupProbe([string] $FilePath, [string] $Name) {
     }
 }
 
+function Invoke-TrayStartupProbe([string] $FilePath, [string] $Name) {
+    $marker = Join-Path $env:TEMP 'SNAPVERE/tray-startup-probe.ready'
+    Remove-Item -LiteralPath $marker -Force -ErrorAction SilentlyContinue
+    $env:SNAPVERE_TRAY_STARTUP_PROBE = '1'
+    $process = $null
+
+    try {
+        $process = Start-Process -FilePath $FilePath -ArgumentList @('--tray-startup-probe') -PassThru
+        if (-not $process.WaitForExit(20000)) {
+            Write-StartupLogIfPresent
+            try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
+            throw "$Name tray-startup probe timed out after 20 seconds."
+        }
+
+        if ($process.ExitCode -ne 0) {
+            Write-StartupLogIfPresent
+            throw "$Name tray-startup probe failed with exit code $($process.ExitCode)."
+        }
+
+        if (-not (Test-Path -LiteralPath $marker)) {
+            Write-StartupLogIfPresent
+            throw "$Name exited successfully but never initialized the tray-first startup path."
+        }
+
+        $markerText = Get-Content -LiteralPath $marker -Raw
+        $escapedVersion = [Regex]::Escape($Version)
+        if ($markerText -notmatch "SNAPVERE $escapedVersion TRAY_READY") {
+            throw "$Name tray-startup marker is invalid: $markerText"
+        }
+
+        Write-Host "$Name tray-startup marker: $markerText"
+    }
+    finally {
+        Remove-Item Env:SNAPVERE_TRAY_STARTUP_PROBE -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $marker -Force -ErrorAction SilentlyContinue
+        if ($null -ne $process) { $process.Dispose() }
+    }
+}
+
 function Invoke-RegionOverlayProbe([string] $FilePath, [string] $Name) {
     $marker = Join-Path $env:TEMP 'SNAPVERE/region-overlay-probe.ready'
     Remove-Item -LiteralPath $marker -Force -ErrorAction SilentlyContinue
@@ -147,6 +186,7 @@ function Invoke-WindowOverlayProbe([string] $FilePath, [string] $Name) {
 
 function Clear-ProbeEnvironment {
     Remove-Item Env:SNAPVERE_STARTUP_PROBE -ErrorAction SilentlyContinue
+    Remove-Item Env:SNAPVERE_TRAY_STARTUP_PROBE -ErrorAction SilentlyContinue
     Remove-Item Env:SNAPVERE_REGION_OVERLAY_PROBE -ErrorAction SilentlyContinue
     Remove-Item Env:SNAPVERE_WINDOW_OVERLAY_PROBE -ErrorAction SilentlyContinue
 }
@@ -157,10 +197,10 @@ function Invoke-NormalAppLaunch([string] $FilePath, [string] $Name) {
     try {
         if ($process.WaitForExit(5000)) {
             Write-StartupLogIfPresent
-            throw "$Name exited during normal startup with code $($process.ExitCode)."
+            throw "$Name exited during normal tray-first startup with code $($process.ExitCode)."
         }
 
-        Write-Host "$Name remained alive through the normal startup window (PID $($process.Id))."
+        Write-Host "$Name remained alive through the normal tray-first startup window (PID $($process.Id))."
     }
     finally {
         try {
@@ -195,7 +235,7 @@ function Invoke-NormalPortableLaunch([string] $FilePath, [string] $Name) {
             throw "$Name launcher returned success but no SNAPVERE app process remained alive."
         }
 
-        Write-Host "$Name normal startup left $($appProcesses.Count) SNAPVERE process(es) alive."
+        Write-Host "$Name normal tray-first startup left $($appProcesses.Count) SNAPVERE process(es) alive."
         foreach ($app in $appProcesses) {
             try { Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue } catch {}
         }
@@ -223,6 +263,7 @@ if ($installProcess.ExitCode -ne 0) {
 $installedApp = Join-Path $install 'Snapvere.exe'
 $installedSetup = Join-Path $install 'SNAPVERE-Setup.exe'
 Invoke-StartupProbe $installedApp "Installed SNAPVERE $Arch"
+Invoke-TrayStartupProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-RegionOverlayProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-WindowOverlayProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-NormalAppLaunch $installedApp "Installed SNAPVERE $Arch"
@@ -240,6 +281,7 @@ while ((Test-Path -LiteralPath $installedApp) -and (Get-Date) -lt $deadline) {
 & $contractScript -State Removed -InstallDirectory $install -ExpectedVersion $Version
 
 Invoke-StartupProbe $portable "Portable SNAPVERE $Arch"
+Invoke-TrayStartupProbe $portable "Portable SNAPVERE $Arch"
 Invoke-RegionOverlayProbe $portable "Portable SNAPVERE $Arch"
 Invoke-WindowOverlayProbe $portable "Portable SNAPVERE $Arch"
 Invoke-NormalPortableLaunch $portable "Portable SNAPVERE $Arch"

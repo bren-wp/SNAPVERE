@@ -7,9 +7,12 @@ namespace Snapvere.App.Services;
 public enum TrayCommand
 {
     Show,
+    ShowMenu,
     RegionCapture,
     WindowCapture,
     ScreenCapture,
+    OpenCaptureFolder,
+    About,
     Exit
 }
 
@@ -26,15 +29,16 @@ public interface ITrayIconService : IDisposable
 }
 
 /// <summary>
-/// Native Windows notification-area integration. It runs on an isolated
-/// message thread, restores the icon after Explorer restarts, and exposes
-/// only capture commands that are implemented in the current product build.
+/// Native notification-area host. A normal left click starts Region Capture
+/// immediately; a right click delegates to the branded WinUI tray menu.
+/// SNAPVERE therefore stays capture-first without opening a dashboard.
 /// </summary>
 public sealed class Win32TrayIconService : ITrayIconService
 {
     private const uint CallbackMessage = 0x8000 + 0x53;
     private const uint WindowMessageClose = 0x0010;
     private const uint WindowMessageDestroy = 0x0002;
+    private const uint WindowMessageLeftButtonUp = 0x0202;
     private const uint WindowMessageLeftButtonDoubleClick = 0x0203;
     private const uint WindowMessageRightButtonUp = 0x0205;
 
@@ -43,20 +47,6 @@ public sealed class Win32TrayIconService : ITrayIconService
     private const uint NotifyIconMessage = 0x00000001;
     private const uint NotifyIconIcon = 0x00000002;
     private const uint NotifyIconTip = 0x00000004;
-
-    private const uint MenuString = 0x00000000;
-    private const uint MenuSeparator = 0x00000800;
-    private const uint TrackPopupLeftAlign = 0x0000;
-    private const uint TrackPopupBottomAlign = 0x0020;
-    private const uint TrackPopupRightButton = 0x0002;
-    private const uint TrackPopupReturnCommand = 0x0100;
-    private const uint TrackPopupNoNotify = 0x0080;
-
-    private const uint CommandShow = 1001;
-    private const uint CommandRegion = 1002;
-    private const uint CommandScreen = 1003;
-    private const uint CommandExit = 1004;
-    private const uint CommandWindow = 1005;
 
     private static readonly nint MessageOnlyWindowParent = new(-3);
 
@@ -71,6 +61,7 @@ public sealed class Win32TrayIconService : ITrayIconService
     private uint _taskbarCreatedMessage;
     private bool _started;
     private bool _disposed;
+    private long _lastRegionClickTicks;
 
     public Win32TrayIconService()
     {
@@ -260,7 +251,9 @@ public sealed class Win32TrayIconService : ITrayIconService
             Flags = NotifyIconMessage | NotifyIconIcon | NotifyIconTip,
             CallbackMessage = CallbackMessage,
             Icon = _iconHandle,
-            Tip = "SNAPVERE — Capture anything."
+            Tip = "SNAPVERE — left click to capture region",
+            Info = string.Empty,
+            InfoTitle = string.Empty
         };
 
     private nint WindowProcedure(nint window, uint message, nuint wParam, nint lParam)
@@ -273,8 +266,7 @@ public sealed class Win32TrayIconService : ITrayIconService
             }
             catch
             {
-                // Explorer recovery is best effort. Existing capture workflows
-                // and global hotkeys remain available even if tray recovery fails.
+                // Explorer recovery is best effort. Global hotkeys remain active.
             }
 
             return nint.Zero;
@@ -283,15 +275,15 @@ public sealed class Win32TrayIconService : ITrayIconService
         if (message == CallbackMessage)
         {
             var mouseMessage = unchecked((uint)lParam.ToInt64());
-            if (mouseMessage == WindowMessageLeftButtonDoubleClick)
+            if (mouseMessage is WindowMessageLeftButtonUp or WindowMessageLeftButtonDoubleClick)
             {
-                RaiseCommand(TrayCommand.Show);
+                RaiseRegionCaptureDebounced();
                 return nint.Zero;
             }
 
             if (mouseMessage == WindowMessageRightButtonUp)
             {
-                ShowContextMenu(window);
+                RaiseCommand(TrayCommand.ShowMenu);
                 return nint.Zero;
             }
         }
@@ -311,67 +303,16 @@ public sealed class Win32TrayIconService : ITrayIconService
         return NativeMethods.DefWindowProc(window, message, wParam, lParam);
     }
 
-    private void ShowContextMenu(nint ownerWindow)
+    private void RaiseRegionCaptureDebounced()
     {
-        var menu = NativeMethods.CreatePopupMenu();
-        if (menu == nint.Zero)
+        var now = Environment.TickCount64;
+        var previous = Interlocked.Exchange(ref _lastRegionClickTicks, now);
+        if (previous != 0 && now - previous < 350)
         {
             return;
         }
 
-        try
-        {
-            _ = NativeMethods.AppendMenu(menu, MenuString, CommandShow, "Open SNAPVERE");
-            _ = NativeMethods.AppendMenu(menu, MenuSeparator, 0, null);
-            _ = NativeMethods.AppendMenu(menu, MenuString, CommandRegion, "Region Capture    Ctrl+Shift+1");
-            _ = NativeMethods.AppendMenu(menu, MenuString, CommandWindow, "Window Capture    Ctrl+Shift+2");
-            _ = NativeMethods.AppendMenu(menu, MenuString, CommandScreen, "Screen Capture    Ctrl+Shift+4");
-            _ = NativeMethods.AppendMenu(menu, MenuSeparator, 0, null);
-            _ = NativeMethods.AppendMenu(menu, MenuString, CommandExit, "Exit");
-            _ = NativeMethods.SetMenuDefaultItem(menu, CommandRegion, false);
-
-            if (!NativeMethods.GetCursorPos(out var cursor))
-            {
-                return;
-            }
-
-            _ = NativeMethods.SetForegroundWindow(ownerWindow);
-            var command = NativeMethods.TrackPopupMenu(
-                menu,
-                TrackPopupLeftAlign |
-                TrackPopupBottomAlign |
-                TrackPopupRightButton |
-                TrackPopupReturnCommand |
-                TrackPopupNoNotify,
-                cursor.X,
-                cursor.Y,
-                0,
-                ownerWindow,
-                nint.Zero);
-
-            switch (command)
-            {
-                case CommandShow:
-                    RaiseCommand(TrayCommand.Show);
-                    break;
-                case CommandRegion:
-                    RaiseCommand(TrayCommand.RegionCapture);
-                    break;
-                case CommandWindow:
-                    RaiseCommand(TrayCommand.WindowCapture);
-                    break;
-                case CommandScreen:
-                    RaiseCommand(TrayCommand.ScreenCapture);
-                    break;
-                case CommandExit:
-                    RaiseCommand(TrayCommand.Exit);
-                    break;
-            }
-        }
-        finally
-        {
-            _ = NativeMethods.DestroyMenu(menu);
-        }
+        RaiseCommand(TrayCommand.RegionCapture);
     }
 
     private void RaiseCommand(TrayCommand command)
@@ -382,7 +323,7 @@ public sealed class Win32TrayIconService : ITrayIconService
         }
         catch
         {
-            // UI subscribers cannot be allowed to terminate the tray message loop.
+            // UI subscribers cannot terminate the native tray message loop.
         }
     }
 
@@ -486,33 +427,23 @@ public sealed class Win32TrayIconService : ITrayIconService
         {
             var pixels = new byte[IconSize * IconSize * 4];
 
-            for (var y = 0; y < IconSize; y++)
+            for (var y = 3; y < IconSize - 3; y++)
             {
-                for (var x = 0; x < IconSize; x++)
+                for (var x = 3; x < IconSize - 3; x++)
                 {
                     if (IsInsideRoundedSquare(x, y))
                     {
-                        SetPixel(pixels, x, y, 10, 132, 255, 255);
+                        SetPixel(pixels, x, y, 27, 20, 48, 245);
                     }
                 }
             }
 
-            DrawLine(pixels, 7, 11, 7, 7, 255, 255, 255, 255, 2);
-            DrawLine(pixels, 7, 7, 11, 7, 255, 255, 255, 255, 2);
-            DrawLine(pixels, 21, 7, 25, 7, 255, 255, 255, 255, 2);
-            DrawLine(pixels, 25, 7, 25, 11, 255, 255, 255, 255, 2);
-            DrawLine(pixels, 7, 21, 7, 25, 255, 255, 255, 255, 2);
-            DrawLine(pixels, 7, 25, 11, 25, 255, 255, 255, 255, 2);
-            DrawLine(pixels, 21, 25, 25, 25, 255, 255, 255, 255, 2);
-            DrawLine(pixels, 25, 21, 25, 25, 255, 255, 255, 255, 2);
-
-            DrawLine(pixels, 20, 11, 14, 11, 255, 255, 255, 255, 2);
-            DrawLine(pixels, 14, 11, 12, 13, 255, 255, 255, 255, 2);
-            DrawLine(pixels, 12, 13, 19, 18, 255, 255, 255, 255, 2);
-            DrawLine(pixels, 19, 18, 20, 20, 255, 255, 255, 255, 2);
-            DrawLine(pixels, 20, 20, 18, 22, 255, 255, 255, 255, 2);
-            DrawLine(pixels, 18, 22, 12, 22, 255, 255, 255, 255, 2);
-
+            DrawLine(pixels, 9, 24, 22, 7, 116, 75, 255, 255, 6);
+            DrawLine(pixels, 11, 24, 24, 10, 188, 130, 255, 255, 3);
+            DrawLine(pixels, 12, 21, 20, 17, 226, 202, 255, 235, 2);
+            DrawLine(pixels, 14, 18, 22, 13, 226, 202, 255, 220, 2);
+            SetPixel(pixels, 24, 8, 237, 222, 255, 255);
+            SetPixel(pixels, 25, 8, 192, 145, 255, 230);
             return pixels;
         }
 
@@ -520,12 +451,6 @@ public sealed class Win32TrayIconService : ITrayIconService
         {
             const int inset = 3;
             const int radius = 6;
-
-            if (x < inset || x >= IconSize - inset || y < inset || y >= IconSize - inset)
-            {
-                return false;
-            }
-
             var left = inset + radius;
             var right = IconSize - inset - radius - 1;
             var top = inset + radius;
@@ -591,14 +516,7 @@ public sealed class Win32TrayIconService : ITrayIconService
             }
         }
 
-        private static void SetPixel(
-            byte[] pixels,
-            int x,
-            int y,
-            byte red,
-            byte green,
-            byte blue,
-            byte alpha)
+        private static void SetPixel(byte[] pixels, int x, int y, byte red, byte green, byte blue, byte alpha)
         {
             if ((uint)x >= IconSize || (uint)y >= IconSize)
             {
@@ -767,39 +685,6 @@ public sealed class Win32TrayIconService : ITrayIconService
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool ShellNotifyIcon(uint message, ref NotifyIconData data);
 
-        [DllImport("user32.dll", SetLastError = true)]
-        internal static extern nint CreatePopupMenu();
-
-        [DllImport("user32.dll", EntryPoint = "AppendMenuW", CharSet = CharSet.Unicode, SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool AppendMenu(nint menu, uint flags, uint itemId, string? text);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool DestroyMenu(nint menu);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool GetCursorPos(out Point point);
-
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool SetForegroundWindow(nint window);
-
-        [DllImport("user32.dll", EntryPoint = "TrackPopupMenu", SetLastError = true)]
-        internal static extern uint TrackPopupMenu(
-            nint menu,
-            uint flags,
-            int x,
-            int y,
-            int reserved,
-            nint window,
-            nint rectangle);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool SetMenuDefaultItem(nint menu, uint item, [MarshalAs(UnmanagedType.Bool)] bool byPosition);
-
         [DllImport("gdi32.dll", SetLastError = true)]
         internal static extern nint CreateDIBSection(
             nint deviceContext,
@@ -810,12 +695,7 @@ public sealed class Win32TrayIconService : ITrayIconService
             uint offset);
 
         [DllImport("gdi32.dll", SetLastError = true)]
-        internal static extern nint CreateBitmap(
-            int width,
-            int height,
-            uint planes,
-            uint bitsPerPixel,
-            nint bits);
+        internal static extern nint CreateBitmap(int width, int height, uint planes, uint bitsPerPixel, nint bits);
 
         [DllImport("user32.dll", SetLastError = true)]
         internal static extern nint CreateIconIndirect(ref IconInfo iconInfo);

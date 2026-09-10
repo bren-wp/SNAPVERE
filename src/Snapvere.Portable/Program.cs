@@ -10,6 +10,7 @@ internal static class Program
     private const string PayloadResourceName = "Snapvere.Payload.zip";
     private const string AppExecutableName = "Snapvere.exe";
     private const string StartupProbeEnvironmentVariable = "SNAPVERE_STARTUP_PROBE";
+    private const string TrayStartupProbeEnvironmentVariable = "SNAPVERE_TRAY_STARTUP_PROBE";
     private const string RegionOverlayProbeEnvironmentVariable = "SNAPVERE_REGION_OVERLAY_PROBE";
     private const string WindowOverlayProbeEnvironmentVariable = "SNAPVERE_WINDOW_OVERLAY_PROBE";
 
@@ -139,6 +140,10 @@ internal static class Program
                 "1",
                 StringComparison.Ordinal) ||
             string.Equals(
+                Environment.GetEnvironmentVariable(TrayStartupProbeEnvironmentVariable),
+                "1",
+                StringComparison.Ordinal) ||
+            string.Equals(
                 Environment.GetEnvironmentVariable(RegionOverlayProbeEnvironmentVariable),
                 "1",
                 StringComparison.Ordinal) ||
@@ -152,6 +157,7 @@ internal static class Program
 
         return args.Any(argument =>
             string.Equals(argument, "--startup-probe", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(argument, "--tray-startup-probe", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(argument, "--region-overlay-probe", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(argument, "--window-overlay-probe", StringComparison.OrdinalIgnoreCase));
     }

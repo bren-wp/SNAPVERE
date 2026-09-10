@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Snapvere.App.Services;
 using Snapvere.Application.Capture;
@@ -7,6 +8,7 @@ using Snapvere.Capture.Hotkeys;
 using Snapvere.Capture.Windows;
 using Snapvere.Domain.Capture;
 using Snapvere.Imaging;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Snapvere.App;
@@ -15,6 +17,8 @@ public partial class App : Microsoft.UI.Xaml.Application
 {
     private const string StartupProbeEnvironmentVariable = "SNAPVERE_STARTUP_PROBE";
     private const string StartupProbeMarkerFileName = "startup-probe.ready";
+    private const string TrayStartupProbeEnvironmentVariable = "SNAPVERE_TRAY_STARTUP_PROBE";
+    private const string TrayStartupProbeMarkerFileName = "tray-startup-probe.ready";
     private const string RegionOverlayProbeEnvironmentVariable = "SNAPVERE_REGION_OVERLAY_PROBE";
     private const string RegionOverlayProbeMarkerFileName = "region-overlay-probe.ready";
     private const string WindowOverlayProbeEnvironmentVariable = "SNAPVERE_WINDOW_OVERLAY_PROBE";
@@ -24,8 +28,11 @@ public partial class App : Microsoft.UI.Xaml.Application
     private CaptureCenterWindow? _window;
     private RegionCaptureWindow? _regionProbeWindow;
     private WindowTargetOverlayWindow? _windowProbeWindow;
+    private TrayMenuWindow? _trayMenuWindow;
+    private AboutWindow? _aboutWindow;
     private IGlobalHotkeyService? _hotkeyService;
     private ITrayIconService? _trayIconService;
+    private DispatcherQueue? _dispatcherQueue;
 
     public App()
     {
@@ -75,6 +82,9 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         try
         {
+            _dispatcherQueue = DispatcherQueue.GetForCurrentThread()
+                ?? throw new InvalidOperationException("SNAPVERE could not acquire the WinUI dispatcher queue.");
+
             if (IsRegionOverlayProbeRequested())
             {
                 StartRegionOverlayProbe();
@@ -89,13 +99,12 @@ public partial class App : Microsoft.UI.Xaml.Application
 
             _window = _services.GetRequiredService<CaptureCenterWindow>();
             _window.Closed += OnMainWindowClosed;
-
-            StartupDiagnostics.WriteLine("Stable Capture Center window created.");
-            _window.Activate();
-            StartupDiagnostics.WriteLine("Main window activated.");
+            StartupDiagnostics.WriteLine("Capture coordinator created in tray-first hidden mode.");
 
             if (IsStartupProbeRequested())
             {
+                _window.Activate();
+                StartupDiagnostics.WriteLine("Main window activated for startup validation probe.");
                 CompleteStartupProbe();
                 return;
             }
@@ -106,7 +115,12 @@ public partial class App : Microsoft.UI.Xaml.Application
 
             StartupDiagnostics.WriteLine("Starting system tray host.");
             StartTrayIcon();
-            StartupDiagnostics.WriteLine("System tray host startup completed.");
+            StartupDiagnostics.WriteLine("System tray host startup completed. Capture Center remains hidden.");
+
+            if (IsTrayStartupProbeRequested())
+            {
+                CompleteTrayStartupProbe();
+            }
         }
         catch (Exception exception)
         {
@@ -117,10 +131,7 @@ public partial class App : Microsoft.UI.Xaml.Application
 
     private static bool IsStartupProbeRequested()
     {
-        if (string.Equals(
-                Environment.GetEnvironmentVariable(StartupProbeEnvironmentVariable),
-                "1",
-                StringComparison.Ordinal))
+        if (string.Equals(Environment.GetEnvironmentVariable(StartupProbeEnvironmentVariable), "1", StringComparison.Ordinal))
         {
             return true;
         }
@@ -129,12 +140,20 @@ public partial class App : Microsoft.UI.Xaml.Application
             argument => string.Equals(argument, "--startup-probe", StringComparison.OrdinalIgnoreCase));
     }
 
+    private static bool IsTrayStartupProbeRequested()
+    {
+        if (string.Equals(Environment.GetEnvironmentVariable(TrayStartupProbeEnvironmentVariable), "1", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return Environment.GetCommandLineArgs().Any(
+            argument => string.Equals(argument, "--tray-startup-probe", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static bool IsRegionOverlayProbeRequested()
     {
-        if (string.Equals(
-                Environment.GetEnvironmentVariable(RegionOverlayProbeEnvironmentVariable),
-                "1",
-                StringComparison.Ordinal))
+        if (string.Equals(Environment.GetEnvironmentVariable(RegionOverlayProbeEnvironmentVariable), "1", StringComparison.Ordinal))
         {
             return true;
         }
@@ -145,10 +164,7 @@ public partial class App : Microsoft.UI.Xaml.Application
 
     private static bool IsWindowOverlayProbeRequested()
     {
-        if (string.Equals(
-                Environment.GetEnvironmentVariable(WindowOverlayProbeEnvironmentVariable),
-                "1",
-                StringComparison.Ordinal))
+        if (string.Equals(Environment.GetEnvironmentVariable(WindowOverlayProbeEnvironmentVariable), "1", StringComparison.Ordinal))
         {
             return true;
         }
@@ -159,17 +175,18 @@ public partial class App : Microsoft.UI.Xaml.Application
 
     private static void CompleteStartupProbe()
     {
-        var probeDirectory = Path.Combine(Path.GetTempPath(), "SNAPVERE");
-        Directory.CreateDirectory(probeDirectory);
+        WriteProbeMarker(
+            StartupProbeMarkerFileName,
+            "READY",
+            "Startup probe reached activated Capture Center.");
+    }
 
-        var markerPath = Path.Combine(probeDirectory, StartupProbeMarkerFileName);
-        var version = typeof(App).Assembly.GetName().Version?.ToString(3) ?? "unknown";
-        File.WriteAllText(
-            markerPath,
-            $"SNAPVERE {version} READY | PID={Environment.ProcessId} | ARCH={RuntimeInformation.ProcessArchitecture} | {DateTimeOffset.UtcNow:O}");
-
-        StartupDiagnostics.WriteLine($"Startup probe reached activated main window. Marker={markerPath}");
-        Environment.Exit(0);
+    private static void CompleteTrayStartupProbe()
+    {
+        WriteProbeMarker(
+            TrayStartupProbeMarkerFileName,
+            "TRAY_READY",
+            "Tray-first startup probe initialized native tray and hotkey hosts without showing Capture Center.");
     }
 
     private void StartRegionOverlayProbe()
@@ -183,7 +200,6 @@ public partial class App : Microsoft.UI.Xaml.Application
 
         var probe = CreateProbeDesktop();
         var session = new RegionCaptureSession(probe.Display, probe.Frame);
-
         var workflow = _services.GetRequiredService<RegionCaptureWorkflow>();
         var encoder = _services.GetRequiredService<PngCaptureEncoder>();
         _regionProbeWindow = new RegionCaptureWindow(workflow, encoder, session);
@@ -374,49 +390,138 @@ public partial class App : Microsoft.UI.Xaml.Application
 
     private void OnGlobalHotkeyPressed(object? sender, CaptureHotkeyPressedEventArgs e)
     {
+        var queue = _dispatcherQueue;
         var window = _window;
-        if (window is null)
+        if (queue is null || window is null)
         {
             return;
         }
 
-        _ = window.DispatcherQueue.TryEnqueue(
-            () => window.StartCaptureFromHotkey(e.Binding.Mode));
+        _ = queue.TryEnqueue(() => window.StartCaptureFromHotkey(e.Binding.Mode));
     }
 
     private void OnTrayCommandInvoked(object? sender, TrayCommandEventArgs e)
     {
+        var queue = _dispatcherQueue;
+        if (queue is null)
+        {
+            return;
+        }
+
+        _ = queue.TryEnqueue(() => ExecuteTrayCommand(e.Command));
+    }
+
+    private void ExecuteTrayCommand(TrayCommand command)
+    {
         var window = _window;
         if (window is null)
         {
             return;
         }
 
-        _ = window.DispatcherQueue.TryEnqueue(() =>
+        switch (command)
         {
-            switch (e.Command)
+            case TrayCommand.ShowMenu:
+                ShowTrayMenu();
+                break;
+            case TrayCommand.Show:
+                window.ShowFromTray();
+                break;
+            case TrayCommand.RegionCapture:
+                CloseTrayMenu();
+                window.StartCaptureFromHotkey(CaptureMode.Region);
+                break;
+            case TrayCommand.WindowCapture:
+                CloseTrayMenu();
+                window.StartCaptureFromHotkey(CaptureMode.Window);
+                break;
+            case TrayCommand.ScreenCapture:
+                CloseTrayMenu();
+                window.StartCaptureFromHotkey(CaptureMode.FullScreen);
+                break;
+            case TrayCommand.OpenCaptureFolder:
+                CloseTrayMenu();
+                OpenCaptureFolder();
+                break;
+            case TrayCommand.About:
+                CloseTrayMenu();
+                ShowAbout();
+                break;
+            case TrayCommand.Exit:
+                CloseTrayMenu();
+                _aboutWindow?.Close();
+                window.Close();
+                break;
+        }
+    }
+
+    private void ShowTrayMenu()
+    {
+        CloseTrayMenu();
+        var menu = new TrayMenuWindow(ExecuteTrayCommand);
+        _trayMenuWindow = menu;
+        menu.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_trayMenuWindow, menu))
             {
-                case TrayCommand.Show:
-                    window.ShowFromTray();
-                    break;
-                case TrayCommand.RegionCapture:
-                    window.StartCaptureFromHotkey(CaptureMode.Region);
-                    break;
-                case TrayCommand.WindowCapture:
-                    window.StartCaptureFromHotkey(CaptureMode.Window);
-                    break;
-                case TrayCommand.ScreenCapture:
-                    window.StartCaptureFromHotkey(CaptureMode.FullScreen);
-                    break;
-                case TrayCommand.Exit:
-                    window.Close();
-                    break;
+                _trayMenuWindow = null;
             }
-        });
+        };
+        menu.ShowNearTray();
+    }
+
+    private void CloseTrayMenu()
+    {
+        var menu = _trayMenuWindow;
+        _trayMenuWindow = null;
+        if (menu is not null)
+        {
+            menu.Close();
+        }
+    }
+
+    private void ShowAbout()
+    {
+        if (_aboutWindow is not null)
+        {
+            _aboutWindow.Activate();
+            return;
+        }
+
+        var about = new AboutWindow();
+        _aboutWindow = about;
+        about.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_aboutWindow, about))
+            {
+                _aboutWindow = null;
+            }
+        };
+        about.Activate();
+    }
+
+    private void OpenCaptureFolder()
+    {
+        try
+        {
+            var history = _services.GetRequiredService<CaptureHistoryService>();
+            var directory = history.GetCaptureDirectory();
+            Directory.CreateDirectory(directory);
+            _ = Process.Start(new ProcessStartInfo(directory) { UseShellExecute = true });
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        {
+            StartupDiagnostics.Record("Open capture folder from tray", exception);
+        }
     }
 
     private void OnMainWindowClosed(object sender, WindowEventArgs args)
     {
+        CloseTrayMenu();
+        _aboutWindow?.Close();
+        _aboutWindow = null;
+
         if (_hotkeyService is not null)
         {
             _hotkeyService.HotkeyPressed -= OnGlobalHotkeyPressed;
@@ -430,6 +535,7 @@ public partial class App : Microsoft.UI.Xaml.Application
         _hotkeyService = null;
         _trayIconService = null;
         _window = null;
+        _dispatcherQueue = null;
         UnhandledException -= OnUnhandledException;
         _services.Dispose();
         StartupDiagnostics.WriteLine("Application shutdown completed.");
