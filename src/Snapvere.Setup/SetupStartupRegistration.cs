@@ -8,7 +8,23 @@ internal static class SetupStartupRegistration
     private const string RunValueName = "SNAPVERE";
     private const string AppExecutableName = "Snapvere.exe";
 
-    internal static void SetEnabled(string installDirectory, bool enabled)
+    internal static bool TrySetEnabled(string installDirectory, bool enabled, out string? warning)
+    {
+        try
+        {
+            SetEnabled(installDirectory, enabled);
+            warning = null;
+            return true;
+        }
+        catch (Exception exception) when (
+            exception is UnauthorizedAccessException or System.Security.SecurityException or IOException)
+        {
+            warning = "Windows did not allow SNAPVERE to update the current-user startup preference. You can retry from SNAPVERE Options.";
+            return false;
+        }
+    }
+
+    private static void SetEnabled(string installDirectory, bool enabled)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(installDirectory);
         var appPath = Path.GetFullPath(Path.Combine(installDirectory, AppExecutableName));
