@@ -15,6 +15,7 @@ env:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   build-test:
@@ -127,15 +128,66 @@ jobs:
             -OutputDirectory (Join-Path $PWD 'artifacts/visual-qa')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Download last successful main visual baseline
+        if: github.event_name == 'pull_request'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $repository = '${{ github.repository }}'
+          $runs = gh api "repos/$repository/actions/workflows/ci.yml/runs?branch=main&event=push&status=success&per_page=20" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          $baselineRun = $null
+          $baselineArtifact = $null
+          foreach ($run in $runs.workflow_runs) {
+            $artifacts = gh api "repos/$repository/actions/runs/$($run.id)/artifacts?per_page=100" | ConvertFrom-Json
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+            $expectedName = "snapvere-visual-qa-$($run.head_sha)"
+            $artifact = $artifacts.artifacts |
+              Where-Object { $_.name -eq $expectedName -and -not $_.expired } |
+              Select-Object -First 1
+            if ($null -ne $artifact) {
+              $baselineRun = $run
+              $baselineArtifact = $artifact
+              break
+            }
+          }
+
+          if ($null -eq $baselineRun -or $null -eq $baselineArtifact) {
+            throw 'No non-expired rendered UI artifact from a successful main CI run is available as the regression baseline.'
+          }
+
+          $baselineDirectory = Join-Path $PWD 'artifacts/visual-baseline'
+          New-Item -ItemType Directory -Force -Path $baselineDirectory | Out-Null
+          gh run download $baselineRun.id `
+            --repo $repository `
+            --name $baselineArtifact.name `
+            --dir $baselineDirectory
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          Write-Host "Visual regression baseline: run #$($baselineRun.run_number), $($baselineRun.head_sha), artifact $($baselineArtifact.name)"
+
+      - name: Compare rendered UI against main baseline
+        if: github.event_name == 'pull_request'
+        shell: pwsh
+        run: |
+          & ./eng/Compare-SnapvereVisualQa.ps1 `
+            -BaselineDirectory (Join-Path $PWD 'artifacts/visual-baseline') `
+            -CurrentDirectory (Join-Path $PWD 'artifacts/visual-qa') `
+            -OutputPath (Join-Path $PWD 'artifacts/visual-qa/comparison.json')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Upload rendered UI snapshots
         uses: actions/upload-artifact@v4
         with:
           name: snapvere-visual-qa-${{ github.sha }}
           path: |
             artifacts/visual-qa/*.png
-            artifacts/visual-qa/manifest.json
+            artifacts/visual-qa/*.json
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 90
 
       - name: Build two universal public executables
         shell: pwsh
