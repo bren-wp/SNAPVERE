@@ -34,6 +34,8 @@ public sealed class CapturePreferencesService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(settingsPath);
         _settingsPath = Path.GetFullPath(settingsPath);
+        _cached = LoadCore();
+        SnapvereLanguageState.SetCurrentLanguage(_cached.LanguageCode);
     }
 
     public CapturePreferences Current
@@ -75,6 +77,7 @@ public sealed class CapturePreferencesService
 
             SaveCore(updated);
             _cached = updated;
+            SnapvereLanguageState.SetCurrentLanguage(normalized);
         }
     }
 
