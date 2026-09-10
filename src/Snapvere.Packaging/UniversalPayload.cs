@@ -12,10 +12,10 @@ public enum SnapverePayloadArchitecture
 
 /// <summary>
 /// Resolves the native SNAPVERE application payload that is compatible with
-/// the current Windows installation. Universal hosts are intentionally built
-/// as x86 executables so the same Setup/Portable/Demo file can start on both
-/// 32-bit and 64-bit Windows; the child application then runs natively when a
-/// matching x64 or ARM64 payload is embedded.
+/// the current Windows installation. Universal public hosts are intentionally
+/// built as x86 executables so the same Setup or Portable file can start on
+/// 32-bit, x64 and ARM64 Windows; the child application then runs natively when
+/// a matching x64 or ARM64 payload is embedded.
 /// </summary>
 public static class UniversalPayload
 {
@@ -86,9 +86,9 @@ public static class UniversalPayload
             return stream;
         }
 
-        // Backward-compatible build path used while older CI workflows still
-        // produce one architecture-specific host at a time. Universal release
-        // validation requires all architecture-specific resources explicitly.
+        // Backward-compatible build path for architecture-specific developer
+        // builds. Public universal releases require all architecture-specific
+        // resources explicitly and CI verifies that contract.
         stream = hostAssembly.GetManifestResourceStream(LegacyPayloadResourceName);
         return stream ?? throw new InvalidOperationException(
             $"The SNAPVERE {GetToken(architecture)} application payload is missing from this package.");
