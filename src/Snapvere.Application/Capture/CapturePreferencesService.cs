@@ -1,13 +1,16 @@
+using Snapvere.Shared;
 using System.Text.Json;
 
 namespace Snapvere.Application.Capture;
 
-public sealed record CapturePreferences(bool IncludeCursorOnCapture = false);
+public sealed record CapturePreferences(
+    bool IncludeCursorOnCapture = false,
+    string LanguageCode = SnapvereLocalization.DefaultLanguageCode);
 
 /// <summary>
-/// Local-only capture preferences. The settings file is intentionally small,
-/// human-readable and written atomically so a process interruption cannot leave
-/// a partially-written configuration behind.
+/// Local-only capture and UI preferences. The settings file is intentionally
+/// small, human-readable and written atomically so a process interruption
+/// cannot leave a partially-written configuration behind.
 /// </summary>
 public sealed class CapturePreferencesService
 {
@@ -60,6 +63,21 @@ public sealed class CapturePreferencesService
         }
     }
 
+    public void SetLanguageCode(string languageCode)
+    {
+        var normalized = SnapvereLocalization.NormalizeLanguageCode(languageCode);
+        lock (_gate)
+        {
+            var updated = (_cached ??= LoadCore()) with
+            {
+                LanguageCode = normalized
+            };
+
+            SaveCore(updated);
+            _cached = updated;
+        }
+    }
+
     private CapturePreferences LoadCore()
     {
         if (!File.Exists(_settingsPath))
@@ -70,8 +88,12 @@ public sealed class CapturePreferencesService
         try
         {
             var json = File.ReadAllText(_settingsPath);
-            return JsonSerializer.Deserialize<CapturePreferences>(json, SerializerOptions)
+            var parsed = JsonSerializer.Deserialize<CapturePreferences>(json, SerializerOptions)
                 ?? new CapturePreferences();
+            return parsed with
+            {
+                LanguageCode = SnapvereLocalization.NormalizeLanguageCode(parsed.LanguageCode)
+            };
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or JsonException)
