@@ -13,6 +13,7 @@ internal static class Program
     private const string TrayStartupProbeEnvironmentVariable = "SNAPVERE_TRAY_STARTUP_PROBE";
     private const string RegionOverlayProbeEnvironmentVariable = "SNAPVERE_REGION_OVERLAY_PROBE";
     private const string WindowOverlayProbeEnvironmentVariable = "SNAPVERE_WINDOW_OVERLAY_PROBE";
+    private const string SecondaryUiProbeEnvironmentVariable = "SNAPVERE_SECONDARY_UI_PROBE";
     private const string PortableLauncherEnvironmentVariable = "SNAPVERE_PORTABLE_LAUNCHER_PATH";
 
     [STAThread]
@@ -116,10 +117,10 @@ internal static class Program
 
         if (IsValidationProbeRequested(args))
         {
-            if (!process.WaitForExit(20_000))
+            if (!process.WaitForExit(25_000))
             {
                 TryTerminate(process);
-                throw new TimeoutException("SNAPVERE did not complete its validation probe within 20 seconds.");
+                throw new TimeoutException("SNAPVERE did not complete its validation probe within 25 seconds.");
             }
 
             if (process.ExitCode != 0)
@@ -157,6 +158,10 @@ internal static class Program
             string.Equals(
                 Environment.GetEnvironmentVariable(WindowOverlayProbeEnvironmentVariable),
                 "1",
+                StringComparison.Ordinal) ||
+            string.Equals(
+                Environment.GetEnvironmentVariable(SecondaryUiProbeEnvironmentVariable),
+                "1",
                 StringComparison.Ordinal))
         {
             return true;
@@ -166,7 +171,8 @@ internal static class Program
             string.Equals(argument, "--startup-probe", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(argument, "--tray-startup-probe", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(argument, "--region-overlay-probe", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(argument, "--window-overlay-probe", StringComparison.OrdinalIgnoreCase));
+            string.Equals(argument, "--window-overlay-probe", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(argument, "--secondary-ui-probe", StringComparison.OrdinalIgnoreCase));
     }
 
     private static void TryTerminate(Process process)
