@@ -97,13 +97,10 @@ internal sealed class SetupForm : Form
         };
         main.Controls.Add(_subtitleLabel);
 
-        var card = new RoundedPanel
+        var card = new RoundedPanel(Surface, Border, 18)
         {
             Location = new Point(32, 139),
             Size = new Size(636, 374),
-            BackColor = Surface,
-            BorderColor = Border,
-            CornerRadius = 18,
             Padding = new Padding(22)
         };
         main.Controls.Add(card);
@@ -200,15 +197,10 @@ internal sealed class SetupForm : Form
         };
         card.Controls.Add(_desktopShortcut);
 
-        _progressBar = new PremiumProgressBar
+        _progressBar = new PremiumProgressBar(SurfaceRaised, Accent)
         {
             Location = new Point(32, 530),
-            Size = new Size(636, 7),
-            Minimum = 0,
-            Maximum = 100,
-            Value = 0,
-            TrackColor = SurfaceRaised,
-            ProgressColor = Accent
+            Size = new Size(636, 7)
         };
         main.Controls.Add(_progressBar);
 
@@ -264,12 +256,10 @@ internal sealed class SetupForm : Form
 
     private static Panel BuildSidebar(bool uninstallMode)
     {
-        var sidebar = new GradientPanel
+        var sidebar = new GradientPanel(Sidebar, Color.FromArgb(17, 14, 29))
         {
             Dock = DockStyle.Left,
-            Width = 280,
-            StartColor = Sidebar,
-            EndColor = Color.FromArgb(17, 14, 29)
+            Width = 280
         };
 
         var mark = new BrandMarkControl
@@ -414,13 +404,10 @@ internal sealed class SetupForm : Form
         };
         card.Controls.Add(message);
 
-        var privacy = new RoundedPanel
+        var privacy = new RoundedPanel(Color.FromArgb(17, 38, 34), Color.FromArgb(51, 109, 91), 12)
         {
             Location = new Point(24, 283),
-            Size = new Size(570, 56),
-            BackColor = Color.FromArgb(17, 38, 34),
-            BorderColor = Color.FromArgb(51, 109, 91),
-            CornerRadius = 12
+            Size = new Size(570, 56)
         };
         privacy.Controls.Add(new Label
         {
@@ -471,7 +458,7 @@ internal sealed class SetupForm : Form
         }
 
         SetBusy(true);
-        _progressBar.Value = 0;
+        _progressBar.SetValue(0);
         _statusLabel.Text = _uninstallMode ? "Removing SNAPVERE…" : "Preparing secure local installation…";
 
         InstallerResult result;
@@ -489,19 +476,19 @@ internal sealed class SetupForm : Form
                 startMenu,
                 desktop,
                 silent: false,
-                progress => BeginInvoke(() => _progressBar.Value = Math.Clamp(progress, 0, 100))));
+                progress => BeginInvoke(() => _progressBar.SetValue(Math.Clamp(progress, 0, 100)))));
         }
 
         _statusLabel.Text = result.Message;
         if (!result.Succeeded)
         {
-            _progressBar.Value = 0;
+            _progressBar.SetValue(0);
             SetBusy(false);
             MessageBox.Show(this, result.Message, "SNAPVERE Setup", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return;
         }
 
-        _progressBar.Value = 100;
+        _progressBar.SetValue(100);
         _completed = true;
         _titleLabel.Text = _uninstallMode ? "SNAPVERE removed" : "SNAPVERE is ready";
         _subtitleLabel.Text = _uninstallMode
@@ -586,22 +573,53 @@ internal sealed class SetupForm : Form
         return button;
     }
 
+    private static GraphicsPath CreateRoundedRectangle(Rectangle rectangle, int radius)
+    {
+        var path = new GraphicsPath();
+        var diameter = Math.Max(2, Math.Min(radius * 2, Math.Min(rectangle.Width, rectangle.Height)));
+        var arc = new Rectangle(rectangle.X, rectangle.Y, diameter, diameter);
+        path.AddArc(arc, 180, 90);
+        arc.X = rectangle.Right - diameter;
+        path.AddArc(arc, 270, 90);
+        arc.Y = rectangle.Bottom - diameter;
+        path.AddArc(arc, 0, 90);
+        arc.X = rectangle.Left;
+        path.AddArc(arc, 90, 90);
+        path.CloseFigure();
+        return path;
+    }
+
     private sealed class GradientPanel : Panel
     {
-        public Color StartColor { get; init; } = Sidebar;
-        public Color EndColor { get; init; } = Surface;
+        private readonly Color _startColor;
+        private readonly Color _endColor;
+
+        internal GradientPanel(Color startColor, Color endColor)
+        {
+            _startColor = startColor;
+            _endColor = endColor;
+            DoubleBuffered = true;
+        }
 
         protected override void OnPaintBackground(PaintEventArgs e)
         {
-            using var brush = new LinearGradientBrush(ClientRectangle, StartColor, EndColor, 45F);
+            using var brush = new LinearGradientBrush(ClientRectangle, _startColor, _endColor, 45F);
             e.Graphics.FillRectangle(brush, ClientRectangle);
         }
     }
 
     private sealed class RoundedPanel : Panel
     {
-        public int CornerRadius { get; init; } = 16;
-        public Color BorderColor { get; init; } = Border;
+        private readonly int _cornerRadius;
+        private readonly Color _borderColor;
+
+        internal RoundedPanel(Color backColor, Color borderColor, int cornerRadius)
+        {
+            BackColor = backColor;
+            _borderColor = borderColor;
+            _cornerRadius = cornerRadius;
+            DoubleBuffered = true;
+        }
 
         protected override void OnPaint(PaintEventArgs e)
         {
@@ -610,48 +628,34 @@ internal sealed class SetupForm : Form
             var rect = ClientRectangle;
             rect.Width -= 1;
             rect.Height -= 1;
-            using var path = CreateRoundedRectangle(rect, CornerRadius);
-            using var pen = new Pen(BorderColor, 1F);
+            using var path = CreateRoundedRectangle(rect, _cornerRadius);
+            using var pen = new Pen(_borderColor, 1F);
             e.Graphics.DrawPath(pen, path);
         }
 
         protected override void OnResize(EventArgs eventargs)
         {
             base.OnResize(eventargs);
-            using var path = CreateRoundedRectangle(ClientRectangle, CornerRadius);
+            using var path = CreateRoundedRectangle(ClientRectangle, _cornerRadius);
+            var oldRegion = Region;
             Region = new Region(path);
-        }
-
-        private static GraphicsPath CreateRoundedRectangle(Rectangle rectangle, int radius)
-        {
-            var path = new GraphicsPath();
-            var diameter = Math.Max(2, radius * 2);
-            var arc = new Rectangle(rectangle.X, rectangle.Y, diameter, diameter);
-            path.AddArc(arc, 180, 90);
-            arc.X = rectangle.Right - diameter;
-            path.AddArc(arc, 270, 90);
-            arc.Y = rectangle.Bottom - diameter;
-            path.AddArc(arc, 0, 90);
-            arc.X = rectangle.Left;
-            path.AddArc(arc, 90, 90);
-            path.CloseFigure();
-            return path;
+            oldRegion?.Dispose();
         }
     }
 
     private sealed class BrandMarkControl : Control
     {
-        public BrandMarkControl()
+        internal BrandMarkControl()
         {
             DoubleBuffered = true;
-            BackColor = Color.Transparent;
+            BackColor = Sidebar;
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            var rect = new Rectangle(1, 1, Width - 3, Height - 3);
-            using var path = RoundedPanel.CreateRoundedRectangle(rect, 14);
+            var rect = new Rectangle(1, 1, Math.Max(1, Width - 3), Math.Max(1, Height - 3));
+            using var path = CreateRoundedRectangle(rect, 14);
             using var gradient = new LinearGradientBrush(
                 rect,
                 Color.FromArgb(97, 74, 232),
@@ -679,60 +683,35 @@ internal sealed class SetupForm : Form
 
     private sealed class PremiumProgressBar : Control
     {
-        private int _minimum;
-        private int _maximum = 100;
+        private const int MinimumValue = 0;
+        private const int MaximumValue = 100;
+        private readonly Color _trackColor;
+        private readonly Color _progressColor;
         private int _value;
 
-        public int Minimum
+        internal PremiumProgressBar(Color trackColor, Color progressColor)
         {
-            get => _minimum;
-            set
-            {
-                _minimum = value;
-                _value = Math.Max(_value, _minimum);
-                Invalidate();
-            }
-        }
-
-        public int Maximum
-        {
-            get => _maximum;
-            set
-            {
-                _maximum = Math.Max(value, _minimum + 1);
-                _value = Math.Min(_value, _maximum);
-                Invalidate();
-            }
-        }
-
-        public int Value
-        {
-            get => _value;
-            set
-            {
-                _value = Math.Clamp(value, _minimum, _maximum);
-                Invalidate();
-            }
-        }
-
-        public Color TrackColor { get; init; } = SurfaceRaised;
-        public Color ProgressColor { get; init; } = Accent;
-
-        public PremiumProgressBar()
-        {
+            _trackColor = trackColor;
+            _progressColor = progressColor;
             DoubleBuffered = true;
             SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
+        }
+
+        internal void SetValue(int value)
+        {
+            _value = Math.Clamp(value, MinimumValue, MaximumValue);
+            Invalidate();
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
             var rect = new Rectangle(0, 0, Math.Max(1, Width - 1), Math.Max(1, Height - 1));
-            using var trackPath = RoundedPanel.CreateRoundedRectangle(rect, Math.Max(2, Height / 2));
-            using var trackBrush = new SolidBrush(TrackColor);
+            using var trackPath = CreateRoundedRectangle(rect, Math.Max(2, Height / 2));
+            using var trackBrush = new SolidBrush(_trackColor);
             e.Graphics.FillPath(trackBrush, trackPath);
 
-            var ratio = (_value - _minimum) / (double)(_maximum - _minimum);
+            var ratio = _value / (double)MaximumValue;
             var progressWidth = (int)Math.Round(rect.Width * ratio);
             if (progressWidth <= 0)
             {
@@ -740,10 +719,10 @@ internal sealed class SetupForm : Form
             }
 
             var progressRect = new Rectangle(rect.X, rect.Y, Math.Max(1, progressWidth), rect.Height);
-            using var progressPath = RoundedPanel.CreateRoundedRectangle(progressRect, Math.Max(2, Height / 2));
+            using var progressPath = CreateRoundedRectangle(progressRect, Math.Max(2, Height / 2));
             using var gradient = new LinearGradientBrush(
                 progressRect,
-                ProgressColor,
+                _progressColor,
                 Cyan,
                 LinearGradientMode.Horizontal);
             e.Graphics.FillPath(gradient, progressPath);
