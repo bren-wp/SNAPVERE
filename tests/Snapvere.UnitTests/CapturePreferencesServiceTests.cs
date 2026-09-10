@@ -38,14 +38,19 @@ public sealed class CapturePreferencesServiceTests
     }
 
     [Fact]
-    public void SetLanguageCode_NormalizesPersistsAndUpdatesProcessState()
+    public void SetLanguageCode_NormalizesPersistsUpdatesProcessStateAndNotifiesOnce()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"snapvere-language-{Guid.NewGuid():N}");
         var settingsPath = Path.Combine(directory, "settings.json");
         var previousLanguage = SnapvereLanguageState.CurrentLanguageCode;
+        var notifications = 0;
+        EventHandler handler = (_, _) => notifications++;
 
         try
         {
+            SnapvereLanguageState.SetCurrentLanguage("en");
+            SnapvereLanguageState.CurrentLanguageChanged += handler;
+
             var service = new CapturePreferencesService(settingsPath);
             service.SetLanguageCode("hr-HR");
 
@@ -55,12 +60,14 @@ public sealed class CapturePreferencesServiceTests
             var reloaded = new CapturePreferencesService(settingsPath);
             Assert.Equal("hr", reloaded.Current.LanguageCode);
             Assert.Equal("hr", SnapvereLanguageState.CurrentLanguageCode);
+            Assert.Equal(1, notifications);
 
             using var document = JsonDocument.Parse(File.ReadAllText(settingsPath));
             Assert.Equal("hr", document.RootElement.GetProperty("LanguageCode").GetString());
         }
         finally
         {
+            SnapvereLanguageState.CurrentLanguageChanged -= handler;
             SnapvereLanguageState.SetCurrentLanguage(previousLanguage);
             if (Directory.Exists(directory))
             {
