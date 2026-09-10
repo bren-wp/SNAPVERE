@@ -36,8 +36,8 @@ public sealed class TrayMenuWindow : Window
     {
         _commandHandler = commandHandler ?? throw new ArgumentNullException(nameof(commandHandler));
         _recentCapturesHandler = recentCapturesHandler ?? throw new ArgumentNullException(nameof(recentCapturesHandler));
-        _languageHandler = languageHandler ?? (() => { });
-        _languageCode = SnapvereLocalization.NormalizeLanguageCode(languageCode);
+        _languageHandler = languageHandler ?? LanguagePickerWindow.ShowStandalone;
+        _languageCode = SnapvereLocalization.NormalizeLanguageCode(languageCode ?? SnapvereLanguageState.CurrentLanguageCode);
         Title = "SNAPVERE";
         Content = BuildContent();
         ConfigureWindow();
