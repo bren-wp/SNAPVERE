@@ -9,10 +9,14 @@ namespace Snapvere.Application.Capture;
 /// </summary>
 public sealed class CaptureRelocationService
 {
-    public CaptureSaveResult Relocate(CaptureSaveResult capture, string destinationPath)
+    public async Task<CaptureSaveResult> RelocateAsync(
+        CaptureSaveResult capture,
+        string destinationPath,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(capture);
         ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
+        cancellationToken.ThrowIfCancellationRequested();
 
         var sourcePath = Path.GetFullPath(capture.FilePath);
         var finalPath = Path.GetFullPath(destinationPath);
@@ -42,7 +46,12 @@ public sealed class CaptureRelocationService
 
         try
         {
-            File.Copy(sourcePath, temporaryPath, overwrite: false);
+            await CopyToTemporaryFileAsync(
+                sourcePath,
+                temporaryPath,
+                cancellationToken).ConfigureAwait(false);
+
+            cancellationToken.ThrowIfCancellationRequested();
             File.Move(temporaryPath, finalPath, overwrite: true);
 
             try
@@ -67,6 +76,30 @@ public sealed class CaptureRelocationService
         }
 
         return capture with { FilePath = finalPath };
+    }
+
+    private static async Task CopyToTemporaryFileAsync(
+        string sourcePath,
+        string temporaryPath,
+        CancellationToken cancellationToken)
+    {
+        await using var source = new FileStream(
+            sourcePath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            bufferSize: 64 * 1024,
+            useAsync: true);
+        await using var destination = new FileStream(
+            temporaryPath,
+            FileMode.CreateNew,
+            FileAccess.Write,
+            FileShare.None,
+            bufferSize: 64 * 1024,
+            useAsync: true);
+
+        await source.CopyToAsync(destination, 64 * 1024, cancellationToken).ConfigureAwait(false);
+        await destination.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static void TryDeleteTemporaryFile(string path)
