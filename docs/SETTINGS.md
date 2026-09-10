@@ -2,7 +2,7 @@
 
 ## Status
 
-SNAPVERE 0.0.4 introduces a real secondary **Options / Preferences** surface. It is opened explicitly from the tray right-click menu and does not appear during normal startup.
+SNAPVERE 0.0.6 provides a real secondary **Options / Preferences** surface. It is opened explicitly from the tray right-click menu and does not appear during normal startup.
 
 Only implemented settings are shown. Unimplemented toggles are intentionally absent.
 
@@ -29,7 +29,7 @@ Portable behavior:
 
 The extracted child does not register its temporary-cache `Snapvere.exe`. `Snapvere.Portable` passes its stable original launcher path through the process environment, and `StartupRegistrationService` registers that original Portable EXE instead.
 
-On Windows sign-in, startup follows the same tray-first contract as a manual launch: hotkeys/tray initialize and no Capture Center should be shown.
+On Windows sign-in, startup follows the same tray-first contract as a manual launch: hotkeys/tray initialize and no Capture Center is shown. No separate `--background` launch command is required.
 
 Setup uninstall removes the SNAPVERE `Run` value only when it exactly matches the validated installed `Snapvere.exe`. A different Portable or unrelated command is preserved.
 
@@ -43,7 +43,7 @@ When enabled, `CapturePreferencesService` records:
 }
 ```
 
-The preference is applied to the final Region, Window and Screen capture workflows.
+The hidden runtime/capture coordinator resolves the current preference when each capture begins, and the preference is applied to the final Region, Window and Screen capture workflows.
 
 - WGC applies cursor state through the capture session where supported.
 - GDI monitor fallback draws the Windows cursor only when visible and inside the captured display.
@@ -111,4 +111,4 @@ Unit tests cover `CapturePreferencesService` persistence, atomic temporary-file 
 
 The strict package lifecycle validates Setup/Portable startup and uninstall behavior. Installer QA additionally establishes an installed `Run\SNAPVERE` registration before uninstall and requires the same Setup executable to remove that installed startup entry.
 
-Future UI-specific automation may add an explicit Options-window runtime probe if needed, but the current window remains compile-gated on x64/x86 and uses only programmatic WinUI controls already used by release-tested product surfaces.
+For both installed and Portable x64/x86 packages, the `SECONDARY_UI_READY` runtime probe now constructs and loads the tray flyout, Options and About surfaces in sequence. A compile-successful but non-renderable Options surface therefore blocks CI and release publication.

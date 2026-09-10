@@ -2,20 +2,20 @@
 
 ## Product contract
 
-SNAPVERE is tray-first. The notification-area icon is the default persistent user surface; the hidden WinUI capture coordinator is an implementation detail and is not activated during normal startup.
+SNAPVERE is tray-first. The notification-area icon is the default persistent user surface; the hidden WinUI runtime/capture coordinator is an implementation detail and is not activated during normal startup.
 
 Normal launch:
 
 ```text
 Snapvere.exe
   → initialize services
-  → create hidden capture coordinator
+  → create hidden runtime/capture coordinator
   → start global hotkeys
   → start tray host
   → remain alive with no Capture Center visible
 ```
 
-This same behavior applies to installed and Portable packages.
+This same behavior applies to installed and Portable packages and to optional Windows sign-in startup. No separate background-only command line is required.
 
 ## Left click
 
@@ -86,7 +86,7 @@ Opens the Recent Captures section of `OptionsWindow`. The list is local filesyst
 
 Opens the factual SNAPVERE About surface. No fake updater, licensing or account controls are exposed.
 
-## Startup probe
+## Startup probes
 
 `SNAPVERE_TRAY_STARTUP_PROBE=1` or `--tray-startup-probe` exercises the tray-first initialization path and writes a marker containing:
 
@@ -94,9 +94,20 @@ Opens the factual SNAPVERE About surface. No fake updater, licensing or account 
 SNAPVERE 0.0.X TRAY_READY
 ```
 
-The probe is reached only after global hotkeys and tray host startup completes while the Capture Center remains hidden.
+The probe is reached only after global hotkeys and tray host startup completes while the runtime coordinator remains hidden.
 
-The legacy `READY` activated-window probe remains a separate technical construction check. It is not the expected normal-launch behavior.
+`SNAPVERE_SECONDARY_UI_PROBE=1` or `--secondary-ui-probe` runs a real WinUI materialization sequence:
+
+```text
+tray flyout loaded
+  → Options / Preferences loaded
+  → About loaded
+  → SECONDARY_UI_READY
+```
+
+This probe is executed against both installed and Portable x64/x86 release candidates. It prevents a compile-successful change to any of those three secondary surfaces from shipping if the actual WinUI tree cannot load on the release runner.
+
+The legacy `READY` activated-window probe remains only a hidden runtime-host construction check. It is not the expected normal-launch behavior.
 
 ## Stability rules
 
@@ -105,10 +116,11 @@ The legacy `READY` activated-window probe remains a separate technical construct
 - do not use decorative templated controls known to destabilize packaged runtime probes;
 - do not expose commands for unimplemented standalone editor/update/licensing features;
 - do not make double-click behavior interfere with single-click Region Capture;
-- keep tray icon/native handles deterministically owned and recover after Explorer restarts.
+- keep tray icon/native handles deterministically owned and recover after Explorer restarts;
+- keep manual launch and Windows startup on the same tray-first executable contract.
 
 ## Visual direction
 
-The flyout uses the SNAPVERE graphite/navy and violet/indigo identity, compact rounded Windows 11-style spacing, local Fluent-style icons and concise shortcut metadata. Emoji are not used as product icons.
+The flyout uses the SNAPVERE graphite/navy and violet/indigo/cyan identity, compact rounded Windows 11-style spacing, local Fluent-style icons and concise shortcut metadata. Emoji are not used as product icons.
 
 Brand specifics are documented in `docs/BRANDING.md`.
