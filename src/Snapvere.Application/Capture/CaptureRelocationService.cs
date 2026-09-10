@@ -35,7 +35,12 @@ public sealed class CaptureRelocationService
             throw new FileNotFoundException("The completed SNAPVERE capture could not be found.", sourcePath);
         }
 
-        if (string.Equals(sourcePath, finalPath, StringComparison.OrdinalIgnoreCase))
+        // Exact normalized paths are unambiguously the same destination. Do
+        // not use an ordinal-ignore-case shortcut here: Windows supports
+        // case-sensitive directories where names differing only by case can
+        // identify different files. Case variants therefore go through the
+        // actual file-identity check below.
+        if (string.Equals(sourcePath, finalPath, StringComparison.Ordinal))
         {
             return capture with { FilePath = finalPath };
         }
@@ -86,11 +91,14 @@ public sealed class CaptureRelocationService
         string temporaryPath,
         CancellationToken cancellationToken)
     {
+        // The completed capture is treated as an immutable snapshot while it
+        // is copied. Other readers may inspect it, but writes, truncation and
+        // deletion are denied until this stream is disposed.
         await using var source = new FileStream(
             sourcePath,
             FileMode.Open,
             FileAccess.Read,
-            FileShare.ReadWrite | FileShare.Delete,
+            FileShare.Read,
             bufferSize: 64 * 1024,
             useAsync: true);
         await using var destination = new FileStream(
