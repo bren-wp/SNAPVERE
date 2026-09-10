@@ -70,9 +70,18 @@ internal static class Program
                     : InstallerEngine.Install(
                         InstallerEngine.GetDefaultInstallDirectory(),
                         createStartMenuShortcut: true,
-                        createDesktopShortcut: false,
+                        createDesktopShortcut: true,
                         silent: true,
                         progress: null);
+
+                if (!uninstall && result.Succeeded)
+                {
+                    _ = SetupStartupRegistration.TrySetEnabled(
+                        InstallerEngine.GetDefaultInstallDirectory(),
+                        enabled: true,
+                        out _);
+                }
+
                 Environment.ExitCode = result.ExitCode;
                 return;
             }
