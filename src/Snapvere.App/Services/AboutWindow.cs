@@ -129,7 +129,15 @@ public sealed class AboutWindow : Window
         links.Children.Add(legalLinks);
         content.Children.Add(links);
 
-        card.Child = content;
+        card.Child = new ScrollViewer
+        {
+            Content = content,
+            HorizontalScrollMode = ScrollMode.Disabled,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            VerticalScrollMode = ScrollMode.Auto,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            IsTabStop = false
+        };
         Grid.SetRow(card, 1);
         root.Children.Add(card);
 
