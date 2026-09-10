@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  SNAPVERE_VERSION: 0.0.7
+  SNAPVERE_VERSION: 0.0.8
 
 permissions:
   contents: read
