@@ -2,9 +2,11 @@
 
 ## Status
 
-The current `main` line targets SNAPVERE 0.0.4. Normal launch is tray-first: the application creates its WinUI capture coordinator without showing it, starts the global-hotkey and notification-area hosts, and remains available in the background. Region, Window and Screen Capture are implemented; Options/Recent Captures and About are secondary surfaces opened only on request.
+The current `main` line is post-**v0.0.8** hardening. The latest published release is v0.0.8; later commits on `main` are not a new release until a separately validated release workflow publishes a new tag and assets.
 
-The 0.0.4 line is not considered released until the release workflow completes the x64/x86 package lifecycle and publishes the immutable `v0.0.4` tag and assets.
+Normal launch is tray-first: the application creates its WinUI capture coordinator without showing it, starts the global-hotkey and notification-area hosts, and remains available in the background. Region, Window and Screen Capture are implemented. Tray, Options/Recent Captures, Language and About are user-facing secondary surfaces created only when needed.
+
+Published release tags and assets are treated as immutable. Development after v0.0.8 does not rewrite the v0.0.8 release.
 
 ## Design goals
 
@@ -16,10 +18,11 @@ SNAPVERE prioritizes capture latency, physical-pixel accuracy, mixed-DPI correct
 
 WinUI 3 composition root and presentation layer.
 
-- `App` owns dependency injection, UI-thread command routing, probes and window lifetime.
+- `App` owns dependency injection, UI-thread command routing, runtime/visual probes and window lifetime.
 - `CaptureCenterWindow` is retained as a hidden capture coordinator. It is not the normal-launch user experience.
 - `TrayMenuWindow` is the compact branded right-click command surface.
 - `OptionsWindow` exposes only implemented local preferences and recent captures.
+- `LanguagePickerWindow` persists the selected built-in language locally.
 - `AboutWindow` is a factual secondary product-information surface.
 - `RegionCaptureWindow` owns interactive Region selection and inline annotations.
 - `WindowTargetPicker` coordinates one frozen picker overlay per monitor.
@@ -60,11 +63,11 @@ Deterministic image operations: BGRA8 crop, annotation rendering and PNG encodin
 
 ### Snapvere.Packaging / Snapvere.Setup / Snapvere.Portable
 
-Guarded embedded-payload handling, per-user Setup lifecycle, Installed apps registration, same-Setup uninstall maintenance mode and single-file Portable extraction/launch.
+Guarded embedded-payload handling, universal architecture selection, per-user Setup lifecycle, Installed apps registration, same-Setup uninstall maintenance mode and single-file Portable extraction/launch.
 
 ### Snapvere.Shared
 
-Small cross-cutting primitives only. Product workflows and platform behavior should remain in their owning layers.
+Small cross-cutting primitives including the built-in localization catalog and process-local language state. Product workflows and platform behavior remain in their owning layers.
 
 ## Tray-first startup architecture
 
@@ -179,15 +182,17 @@ Window picker overlays use each monitor's own transform. Region Capture remains 
 
 `CaptureFrame` is a validated BGRA8 buffer containing physical width/height, explicit stride, UTC timestamp and source identifier. Empty dimensions, invalid stride and undersized buffers are rejected before downstream work.
 
-## Local settings architecture
+## Local settings and localization architecture
 
-`CapturePreferencesService` stores implemented capture preferences under:
+`CapturePreferencesService` stores implemented preferences under:
 
 ```text
 %LOCALAPPDATA%\SNAPVERE\settings.json
 ```
 
-Writes use a temporary file followed by an atomic replacement/move. Malformed or unreadable settings fall back to safe defaults.
+Current persisted state includes cursor composition preference and language code. Writes use a temporary file followed by an atomic replacement/move. Malformed or unreadable settings fall back to safe defaults.
+
+`SnapvereLocalization` uses a built-in static catalog with English as the canonical fallback. Croatian contains dedicated strings for the current capture and secondary UI surfaces. Localization performs no network translation calls, file watching or background polling.
 
 `StartupRegistrationService` owns the per-user Windows `Run` registration. Installed builds register the installed `Snapvere.exe`; Portable builds receive the stable Portable launcher path from the launcher so a startup entry never points at the temporary extraction cache.
 
@@ -195,25 +200,48 @@ Writes use a temporary file followed by an atomic replacement/move. Malformed or
 
 Native GDI objects, HWND/message hosts, tray icons, D3D devices/textures/frame pools, capture frames, file streams and temporary files require deterministic ownership. Long-lived tray/hotkey services must not retain full-resolution capture frames.
 
-## Startup and runtime probes
+## Startup, runtime and visual probes
 
 Package QA separates technical probes from the real normal-launch contract:
 
-1. `READY` — explicitly activates the hidden coordinator only for a legacy WinUI construction probe.
+1. `READY` — explicitly activates the hidden coordinator only for a technical WinUI construction probe.
 2. `TRAY_READY` — proves services, hotkey host and tray host initialized while the Capture Center remained hidden.
 3. `REGION_OVERLAY_READY` — proves the Region editor materialized.
 4. `WINDOW_OVERLAY_READY` — proves the Window picker materialized.
-5. normal-launch survival — proves installed and Portable tray-first processes remain alive rather than crashing immediately.
+5. `SECONDARY_UI_READY` — sequentially materializes Tray, Options, Language and About surfaces.
+6. normal-launch survival — proves installed and Portable tray-first processes remain alive rather than crashing immediately.
 
-The tray-only probe is the authoritative normal-startup model; visible-main-window activation is not a normal-launch requirement.
+In addition to marker-based materialization, `eng/Capture-SnapvereVisualQa.ps1` launches the real x64 application and captures six rendered PNGs:
 
-## Packaging architecture
+```text
+region-capture.png
+window-capture.png
+tray-menu.png
+options.png
+language.png
+about.png
+```
 
-Setup and Portable are built independently for x64 and x86 from the same self-contained application payload.
+The visual gate rejects a visually empty frame and unexpectedly small PNG output. It also writes a manifest containing surface title, pixel dimensions, byte size and SHA-256 digest. GitHub Actions uploads those files as a short-lived CI artifact.
+
+The tray-only probe is the authoritative normal-startup model; visible-main-window activation is not a normal-launch requirement. A rendered-UI snapshot proves the surface actually painted on the hosted Windows runner, but it is not a substitute for end-user hardware testing or protected-content capture testing.
+
+## Universal packaging architecture
+
+Starting with v0.0.7, the public release contract contains exactly two user-facing executables:
+
+```text
+SNAPVERE-Setup.exe
+SNAPVERE-Portable.exe
+```
+
+Each host is built as an x86-compatible Windows executable and embeds native application payloads for x86, x64 and ARM64. At runtime the shared architecture resolver selects the compatible native payload; users do not choose an architecture-specific download.
 
 Setup is per-user and owns install/update/repair-style replacement and uninstall through the same installed `SNAPVERE-Setup.exe`. Uninstall validates the installation marker before destructive removal and removes a Windows startup registration only when that registration points exactly to the validated installed `Snapvere.exe`.
 
 Portable is a single-file launcher with a versioned temporary cache, bounded/path-safe extraction, mutex protection, stale-cache cleanup and child-startup validation. The launcher does not report normal-startup success if the child exits immediately.
+
+CI cross-builds all three application payload architectures. Hosted x64 runners execute the universal Setup/Portable lifecycle with x64 and x86 payload selection. ARM64 is package/cross-build validated there but is not represented as a real ARM64 hardware runtime test.
 
 ## Security and privacy boundaries
 
