@@ -23,7 +23,6 @@ public partial class App : Microsoft.UI.Xaml.Application
     private const string RegionOverlayProbeMarkerFileName = "region-overlay-probe.ready";
     private const string WindowOverlayProbeEnvironmentVariable = "SNAPVERE_WINDOW_OVERLAY_PROBE";
     private const string WindowOverlayProbeMarkerFileName = "window-overlay-probe.ready";
-    private const string BackgroundStartupArgument = "--background";
 
     private readonly ServiceProvider _services;
     private CaptureCenterWindow? _window;
@@ -104,7 +103,7 @@ public partial class App : Microsoft.UI.Xaml.Application
 
             _window = _services.GetRequiredService<CaptureCenterWindow>();
             _window.Closed += OnMainWindowClosed;
-            StartupDiagnostics.WriteLine("Capture coordinator created.");
+            StartupDiagnostics.WriteLine("Capture coordinator created in tray-first hidden mode.");
 
             if (IsStartupProbeRequested())
             {
@@ -120,22 +119,12 @@ public partial class App : Microsoft.UI.Xaml.Application
 
             StartupDiagnostics.WriteLine("Starting system tray host.");
             StartTrayIcon();
-            StartupDiagnostics.WriteLine("System tray host startup completed.");
+            StartupDiagnostics.WriteLine("System tray host startup completed. Capture coordinator remains hidden.");
 
             if (IsTrayStartupProbeRequested())
             {
                 CompleteTrayStartupProbe();
-                return;
             }
-
-            if (IsBackgroundStartupRequested())
-            {
-                StartupDiagnostics.WriteLine("Background startup requested. Capture Center remains hidden in the tray.");
-                return;
-            }
-
-            _window.ShowFromTray();
-            StartupDiagnostics.WriteLine("Manual launch detected. Capture Center shown to the user.");
         }
         catch (Exception exception)
         {
@@ -187,10 +176,6 @@ public partial class App : Microsoft.UI.Xaml.Application
         return Environment.GetCommandLineArgs().Any(
             argument => string.Equals(argument, "--window-overlay-probe", StringComparison.OrdinalIgnoreCase));
     }
-
-    private static bool IsBackgroundStartupRequested()
-        => Environment.GetCommandLineArgs().Any(
-            argument => string.Equals(argument, BackgroundStartupArgument, StringComparison.OrdinalIgnoreCase));
 
     private static void CompleteStartupProbe()
     {
