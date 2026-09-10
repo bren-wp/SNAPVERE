@@ -1,135 +1,111 @@
 # SNAPVERE Branding
 
-## Brand purpose
+## Product identity
 
-SNAPVERE is a premium Windows capture utility built around speed, precision and local-first privacy. The identity should feel immediate, technical and calm: the product stays in the tray until the user needs it, then gets out of the way again.
+SNAPVERE is a commercial Windows capture utility built around speed, precision and local-first privacy.
 
-## Brand line
+- Product: **SNAPVERE**
+- Brand line: **Capture. Edit. Done.**
+- Developer / publisher: **Brendigo**
+- Official product website: **https://snapvere.com**
+- Developer website: **https://brendigo.com**
 
-**Capture. Edit. Done.**
-
-This line mirrors the actual interaction model: start a capture from the tray/hotkey, annotate in place when needed, then Copy or Save.
+The product should feel immediate, technical and calm: it remains in the notification area until needed, presents compact task-focused surfaces, then gets out of the way again.
 
 ## Canonical symbol
 
-The canonical vector symbol is:
+Canonical vector symbol:
 
 ```text
 assets/branding/symbol/snapvere-symbol.svg
 ```
 
-The current mark is the violet SNAPVERE capture shard/feather. It represents speed and a precise directional stroke rather than a generic camera glyph. The silhouette is intentionally simple enough to remain recognizable in notification-area sizes.
+The current mark is the SNAPVERE violet/cyan capture shard. It is intentionally simple enough to remain recognizable at notification-area sizes. Do not reintroduce older capture-corner/S logo families into new surfaces.
 
-Do not reintroduce the former capture-corners + S family in new product surfaces.
-
-## Logo variants
+README wordmarks:
 
 - `assets/branding/readme/snapvere-logo-dark.svg`
 - `assets/branding/readme/snapvere-logo-light.svg`
 
-Both use the canonical shard geometry and violet identity. Small contexts use the standalone symbol.
-
-## Palette
+## Product palette
 
 | Token | Value | Use |
 | --- | --- | --- |
-| Night 950 | `#0D1220` | tray flyout / darkest product surfaces |
-| Night 900 | `#101622` | editor palettes and cards |
-| Violet 650 | `#6547F6` | primary brand stroke |
-| Violet 550 | `#8C5CFF` | primary interaction accent |
-| Violet 400 | `#C18BFF` | highlight / wordmark detail |
-| Lavender 100 | `#F5EFFF` | high-contrast mark detail |
-| Neutral 50 | `#F7F7FB` | primary text on dark surfaces |
-| Neutral 400 | `#A8B0C1` | secondary dark-theme text |
-| Ink 900 | `#171A24` | primary light-theme text |
+| Graphite 950 | `#0D1321` | tray / dark product canvas |
+| Graphite 900 | `#101622` | editor palettes / cards |
+| Outline | `#52617F` | strong flyout outline |
+| Violet 650 | `#6547D8` | primary control fill |
+| Violet 550 | `#8667F4` | active border / focus |
+| Violet 400 | `#A77CFF` | text/accent highlight |
+| Cyan 500 | `#37B6D4` | secondary brand accent |
+| Strong text | `#F7F5FF` | primary dark-theme text |
+| Muted text | `#AFB6C8` | secondary text |
 
-Violet identifies primary capture/focus/active states. It should not turn every product surface into a heavy full-screen glow.
+Violet identifies primary capture/focus/active states. Cyan is a restrained secondary accent rather than a competing primary color.
 
 ## Typography and iconography
 
-Use Windows-native Segoe UI/system typography. Do not bundle a custom font solely for branding.
+Use Windows-native Segoe UI/system typography. Do not bundle a custom font only for branding.
 
-Use clean local Windows/Fluent-style iconography for product actions. Do not use emoji as icons. Product mark, tray icon, executable/installer icon and documentation assets should converge on the same SNAPVERE identity.
+Use Segoe Fluent / Windows-native icons for product actions where appropriate. Do not use emoji as action icons. Tray icon, executable/installer icon, README wordmark and in-app brand mark should use one recognizable SNAPVERE identity.
 
-## Tray-first product hierarchy
+## Surface hierarchy
 
-The notification-area icon is the primary persistent SNAPVERE surface.
+### Tray
 
-- **Left click:** Region Capture immediately.
-- **Right click:** branded compact command flyout.
-- **Print Screen:** Region Capture when available.
-- **Options / Preferences:** secondary real settings window.
-- **Recent captures:** secondary local history view.
-- **About:** secondary factual product window.
+Tray is the primary persistent surface.
 
-Normal startup must not show a large capture dashboard or flash the hidden coordinator.
+- left-click → Region Capture;
+- right-click → compact command flyout;
+- Print Screen → Region Capture where available;
+- Language / Options / About are explicit secondary surfaces.
 
-## Branded tray flyout
+The flyout reference is `docs/images/tray-menu.svg`, with a 418×540 graphite/violet visual contract.
 
-The implemented flyout uses a compact graphite/navy surface, rounded treatment, violet/indigo accenting, the SNAPVERE brand mark and shortcut hints. It is a quick-action surface rather than a dashboard.
+### Region editor
 
-Implemented menu groups:
+The Region editor reference is `docs/images/region-editor.svg`: violet 3 px selection frame, eight handles, physical dimensions badge, vertical tool rail and separate Copy / Save / Close bar. The application should follow this layout rather than the old horizontal toolbar design.
 
-1. Capture Region / Capture Window / Capture Screen
-2. Open Capture Folder / Recent captures / Options / Preferences / About SNAPVERE
-3. Exit SNAPVERE
+### Window picker
 
-Unavailable features must not be inserted merely to make the menu appear fuller.
+Window picker uses the same graphite/violet/cyan hierarchy, high-contrast target outline and concise focus/title feedback. It must remain capture-oriented rather than becoming another settings/dashboard surface.
 
-## Options surface
+### Options and Language
 
-Options follows the same graphite/navy/violet language but remains restrained. Only implemented settings are visible:
+Options and Language use the same cards, outlines, radii and accent hierarchy as Tray/Region. Language is a real persisted setting, not a mock control. English is the canonical default; Croatian and more than 20 additional built-in languages are selectable.
 
-- Start SNAPVERE with Windows;
-- Include cursor on capture.
+### About
 
-The same window can show Recent Captures as a separate section. Capture launch buttons do not belong in this secondary settings surface.
+About must identify SNAPVERE as commercial software, Brendigo as developer/publisher, `snapvere.com` as the product site and `brendigo.com` as the developer site. New v0.0.7 surfaces must not show legacy MPL product-license copy.
 
-## Capture overlay
+### Setup
 
-Region Capture uses frozen-screen dimming, a high-contrast SNAPVERE selection treatment, compact tool/action palettes and physical-pixel dimensions. Annotation colors may vary for utility while selection/focus styling remains tied to the core violet identity.
+Setup uses the same dark brand system and canonical mark. Default Start menu, Desktop icon and Start-with-Windows options are visible user choices; Desktop and startup are checked by default but remain opt-out.
 
-The current editor intentionally favors stable programmatic WinUI surfaces over decorative templated controls that have caused runtime instability in previous QA.
+## Documentation images
 
-## Tray icon requirements
-
-The runtime tray icon must remain readable on light and dark taskbars and in the hidden-icons panel. The smallest practical notification-area sizes must prioritize silhouette/contrast over internal detail.
-
-Canonical vector branding is the source of truth. Binary icon exports should be validated visually at native Windows sizes before replacing working executable/tray resources.
-
-## Documentation visuals
-
-Repository-maintained workflow illustrations live under `docs/images/`:
+Repository UI references live under `docs/images/`:
 
 - `tray-first-region.svg`
 - `tray-menu.svg`
 - `region-editor.svg`
 
-They document implemented product flow but are **not** represented as pixel-identical runtime screenshots. Real product screenshots may be added only when they can be reproducibly captured from the actual implemented UI and kept synchronized with the release.
+These are design/reference assets and must not be mislabeled as real Windows screenshots. A real product screenshot may be committed only when produced from an actual executing SNAPVERE build through a reproducible capture path.
+
+The reason for this rule is product integrity: README imagery must never promise a UI the executable does not render.
 
 ## Accessibility
 
-- brand color must not be the only state indicator;
-- keyboard capture shortcuts remain independent from tray/pointer input;
-- readable contrast takes priority over subtle decoration;
-- tooltip/focus behavior should accompany compact icon actions where implemented;
-- high-contrast/system accessibility behavior takes precedence over visual branding.
+- color is not the only state indicator;
+- keyboard capture shortcuts remain independent of pointer/tray input;
+- readable contrast wins over subtle decoration;
+- compact icon actions need automation names/tooltips where applicable;
+- Windows high-contrast/accessibility behavior takes precedence over decoration.
+
+## Commercial identity
+
+SNAPVERE 0.0.7 and later are distributed under the SNAPVERE Commercial Software License Agreement in the repository root `LICENSE` file. Branding, artwork, logos and product identity remain proprietary to Brendigo. Historical releases retain the license terms that accompanied those releases.
 
 ## Misuse
 
-Do not use stock camera imagery as the product mark, rotate the shard arbitrarily, stretch it non-proportionally, mix old/new symbol families, add random multicolor segments, use emoji for product commands, or present concept art as a real application screenshot.
-
-## Asset production status
-
-Implemented:
-
-- canonical shard symbol SVG;
-- README dark/light wordmarks;
-- branded runtime notification-area icon;
-- branded WinUI tray flyout mark;
-- README tray-first/Region workflow SVG illustrations.
-
-Future work:
-
-- reproducible real product screenshots after an actual Windows UI capture pipeline is trustworthy;
-- audited ICO/PNG export matrix derived from the canonical symbol where binary resource replacement is justified.
+Do not mix old and current symbol families, distort the canonical mark, introduce random multicolor segments, use stock camera art as the main product identity, use emoji for product commands, or present concept/reference artwork as a real application screenshot.
