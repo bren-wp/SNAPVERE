@@ -69,15 +69,15 @@ User captures under `Pictures\SNAPVERE` are outside the install directory and ar
 
 ## Release integrity
 
-The 0.0.4 release workflow builds x64/x86 self-contained application, Setup and Portable artifacts from the release commit, runs the strict package lifecycle, creates `SHA256SUMS.txt`, and only then may publish the `v0.0.4` tag/release.
+The 0.0.6 release workflow builds x64/x86 self-contained application, Setup and Portable artifacts from the release commit, runs the strict package lifecycle plus tray-first and secondary-UI runtime gates, creates `SHA256SUMS.txt`, and only then may publish the immutable `v0.0.6` tag/release.
 
-0.0.4 binaries are not Authenticode-signed. Consumers should verify the published SHA-256 checksums when integrity assurance is required.
+0.0.6 binaries are not Authenticode-signed. Consumers should verify the published SHA-256 checksums when integrity assurance is required.
 
-The release tag must identify exactly the validated release commit; published assets must not be substituted with artifacts from a different tree.
+The release tag must identify exactly the validated release commit; published assets must not be substituted with artifacts from a different tree. Existing release assets are treated as immutable by the workflow.
 
 ## Update security
 
-SNAPVERE 0.0.4 does **not** include an automatic updater or licensing network feature. A future updater must verify signed metadata plus artifact hash, architecture, expected origin and version direction before applying an update. TLS transport alone is not sufficient authenticity.
+SNAPVERE 0.0.6 does **not** include an automatic updater or licensing network feature. A future updater must verify signed metadata plus artifact hash, architecture, expected origin and version direction before applying an update. TLS transport alone is not sufficient authenticity.
 
 ## Repository hygiene
 
