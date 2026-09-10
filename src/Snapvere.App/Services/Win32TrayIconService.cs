@@ -1,3 +1,4 @@
+using Snapvere.Shared;
 using System.ComponentModel;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
@@ -36,6 +37,7 @@ public interface ITrayIconService : IDisposable
 public sealed class Win32TrayIconService : ITrayIconService
 {
     private const uint CallbackMessage = 0x8000 + 0x53;
+    private const uint WindowMessageRefreshTooltip = 0x8000 + 0x54;
     private const uint WindowMessageClose = 0x0010;
     private const uint WindowMessageDestroy = 0x0002;
     private const uint WindowMessageLeftButtonUp = 0x0202;
@@ -43,6 +45,7 @@ public sealed class Win32TrayIconService : ITrayIconService
     private const uint WindowMessageRightButtonUp = 0x0205;
 
     private const uint NotifyIconAdd = 0x00000000;
+    private const uint NotifyIconModify = 0x00000001;
     private const uint NotifyIconDelete = 0x00000002;
     private const uint NotifyIconMessage = 0x00000001;
     private const uint NotifyIconIcon = 0x00000002;
@@ -66,6 +69,7 @@ public sealed class Win32TrayIconService : ITrayIconService
     public Win32TrayIconService()
     {
         _windowProcedure = WindowProcedure;
+        SnapvereLanguageState.CurrentLanguageChanged += OnCurrentLanguageChanged;
     }
 
     public event EventHandler<TrayCommandEventArgs>? CommandInvoked;
@@ -104,6 +108,8 @@ public sealed class Win32TrayIconService : ITrayIconService
 
     public void Dispose()
     {
+        SnapvereLanguageState.CurrentLanguageChanged -= OnCurrentLanguageChanged;
+
         Thread? thread;
         nint windowHandle;
 
@@ -231,6 +237,17 @@ public sealed class Win32TrayIconService : ITrayIconService
         }
     }
 
+    private void RefreshNotificationIcon()
+    {
+        if (_windowHandle == nint.Zero)
+        {
+            return;
+        }
+
+        var data = CreateNotifyIconData();
+        _ = NativeMethods.ShellNotifyIcon(NotifyIconModify, ref data);
+    }
+
     private void DeleteNotificationIcon()
     {
         if (_windowHandle == nint.Zero)
@@ -251,7 +268,7 @@ public sealed class Win32TrayIconService : ITrayIconService
             Flags = NotifyIconMessage | NotifyIconIcon | NotifyIconTip,
             CallbackMessage = CallbackMessage,
             Icon = _iconHandle,
-            Tip = "SNAPVERE — left click to capture region",
+            Tip = $"SNAPVERE — {SnapvereLocalization.T("CaptureRegion", SnapvereLanguageState.CurrentLanguageCode)}",
             Info = string.Empty,
             InfoTitle = string.Empty
         };
@@ -269,6 +286,12 @@ public sealed class Win32TrayIconService : ITrayIconService
                 // Explorer recovery is best effort. Global hotkeys remain active.
             }
 
+            return nint.Zero;
+        }
+
+        if (message == WindowMessageRefreshTooltip)
+        {
+            RefreshNotificationIcon();
             return nint.Zero;
         }
 
@@ -301,6 +324,25 @@ public sealed class Win32TrayIconService : ITrayIconService
         }
 
         return NativeMethods.DefWindowProc(window, message, wParam, lParam);
+    }
+
+    private void OnCurrentLanguageChanged(object? sender, EventArgs e)
+    {
+        nint windowHandle;
+        lock (_gate)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            windowHandle = _windowHandle;
+        }
+
+        if (windowHandle != nint.Zero)
+        {
+            _ = NativeMethods.PostMessage(windowHandle, WindowMessageRefreshTooltip, nuint.Zero, nint.Zero);
+        }
     }
 
     private void RaiseRegionCaptureDebounced()
