@@ -326,6 +326,15 @@ public sealed class TrayMenuWindow : Window
             return;
         }
 
+        if (!_hasActivated)
+        {
+            // The first activation occurs after the flyout has been moved toward
+            // the tray monitor. Re-resolve that monitor's DPI so mixed-DPI
+            // multi-monitor setups do not keep the primary monitor's scale.
+            AppWindow.Resize(DpiAwareWindowSizing.ScaleSize(this, FlyoutWidth, FlyoutHeight));
+            PositionNearCursor();
+        }
+
         _hasActivated = true;
     }
 
@@ -340,7 +349,7 @@ public sealed class TrayMenuWindow : Window
             presenter.IsAlwaysOnTop = true;
         }
 
-        AppWindow.Resize(new SizeInt32(FlyoutWidth, FlyoutHeight));
+        AppWindow.Resize(DpiAwareWindowSizing.ScaleSize(this, FlyoutWidth, FlyoutHeight));
     }
 
     private void PositionNearCursor()
@@ -350,6 +359,8 @@ public sealed class TrayMenuWindow : Window
             return;
         }
 
+        var flyoutWidth = AppWindow.Size.Width;
+        var flyoutHeight = AppWindow.Size.Height;
         var monitor = NativeMethods.MonitorFromPoint(cursor, 2);
         var info = new NativeMethods.MonitorInfo
         {
@@ -358,16 +369,16 @@ public sealed class TrayMenuWindow : Window
 
         if (monitor == nint.Zero || !NativeMethods.GetMonitorInfo(monitor, ref info))
         {
-            AppWindow.Move(new PointInt32(cursor.X - FlyoutWidth + 24, cursor.Y - FlyoutHeight - 12));
+            AppWindow.Move(new PointInt32(cursor.X - flyoutWidth + 24, cursor.Y - flyoutHeight - 12));
             return;
         }
 
         var minX = info.WorkArea.Left + 8;
-        var maxX = Math.Max(minX, info.WorkArea.Right - FlyoutWidth - 8);
+        var maxX = Math.Max(minX, info.WorkArea.Right - flyoutWidth - 8);
         var minY = info.WorkArea.Top + 8;
-        var maxY = Math.Max(minY, info.WorkArea.Bottom - FlyoutHeight - 8);
-        var x = Math.Clamp(cursor.X - FlyoutWidth + 24, minX, maxX);
-        var y = Math.Clamp(cursor.Y - FlyoutHeight - 12, minY, maxY);
+        var maxY = Math.Max(minY, info.WorkArea.Bottom - flyoutHeight - 8);
+        var x = Math.Clamp(cursor.X - flyoutWidth + 24, minX, maxX);
+        var y = Math.Clamp(cursor.Y - flyoutHeight - 12, minY, maxY);
         AppWindow.Move(new PointInt32(x, y));
     }
 
