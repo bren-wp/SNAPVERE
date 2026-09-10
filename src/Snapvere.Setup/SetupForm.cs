@@ -27,6 +27,7 @@ internal sealed class SetupForm : Form
     private readonly Button _browseButton;
     private readonly CheckBox _startMenuShortcut;
     private readonly CheckBox _desktopShortcut;
+    private readonly CheckBox _startupWithWindows;
     private readonly PremiumProgressBar _progressBar;
     private readonly Label _statusLabel;
     private readonly Button _primaryButton;
@@ -90,7 +91,7 @@ internal sealed class SetupForm : Form
             AutoSize = false,
             Text = uninstallMode
                 ? "Remove the application and Windows registration while preserving your local captures."
-                : "Fast, private Windows capture. Self-contained, per-user and ready for tray-first use after installation.",
+                : "Fast, private Windows capture by Brendigo. Universal, self-contained and ready for tray-first use.",
             ForeColor = Muted,
             Location = new Point(34, 91),
             Size = new Size(620, 38)
@@ -108,7 +109,7 @@ internal sealed class SetupForm : Form
         _licenseLabel = new Label
         {
             AutoSize = true,
-            Text = "Mozilla Public License 2.0",
+            Text = "SNAPVERE Commercial Software License",
             ForeColor = Color.FromArgb(247, 245, 255),
             Font = new Font("Segoe UI Semibold", 11F, FontStyle.Bold),
             Location = new Point(22, 18)
@@ -118,7 +119,7 @@ internal sealed class SetupForm : Form
         var licenseHint = new Label
         {
             AutoSize = true,
-            Text = "Review the license terms before continuing",
+            Text = "Review the commercial license terms before continuing",
             ForeColor = Subtle,
             Font = new Font("Segoe UI", 9F),
             Location = new Point(22, 42)
@@ -142,7 +143,7 @@ internal sealed class SetupForm : Form
         _acceptLicense = new CheckBox
         {
             AutoSize = true,
-            Text = "I have read and accept the license terms",
+            Text = "I have read and accept the commercial license terms",
             ForeColor = Color.FromArgb(240, 238, 247),
             Location = new Point(22, 232),
             Cursor = Cursors.Hand
@@ -179,7 +180,7 @@ internal sealed class SetupForm : Form
         {
             AutoSize = true,
             Checked = true,
-            Text = "Start menu shortcut",
+            Text = "Start menu",
             ForeColor = Color.FromArgb(235, 233, 242),
             Location = new Point(22, 337),
             Cursor = Cursors.Hand
@@ -189,13 +190,24 @@ internal sealed class SetupForm : Form
         _desktopShortcut = new CheckBox
         {
             AutoSize = true,
-            Checked = false,
-            Text = "Desktop shortcut",
+            Checked = true,
+            Text = "Desktop icon",
             ForeColor = Color.FromArgb(235, 233, 242),
-            Location = new Point(210, 337),
+            Location = new Point(150, 337),
             Cursor = Cursors.Hand
         };
         card.Controls.Add(_desktopShortcut);
+
+        _startupWithWindows = new CheckBox
+        {
+            AutoSize = true,
+            Checked = true,
+            Text = "Start with Windows",
+            ForeColor = Color.FromArgb(235, 233, 242),
+            Location = new Point(296, 337),
+            Cursor = Cursors.Hand
+        };
+        card.Controls.Add(_startupWithWindows);
 
         _progressBar = new PremiumProgressBar(SurfaceRaised, Accent)
         {
@@ -209,7 +221,7 @@ internal sealed class SetupForm : Form
             AutoEllipsis = true,
             Text = uninstallMode
                 ? "The same Setup executable removes SNAPVERE. Your captures remain untouched."
-                : "Ready to install. Normal launch stays quietly in the notification area.",
+                : "Desktop icon and Windows startup are enabled by default; you can turn either off before installing.",
             ForeColor = Muted,
             Location = new Point(32, 550),
             Size = new Size(430, 42)
@@ -314,7 +326,7 @@ internal sealed class SetupForm : Form
 
         AddSidebarFeature(sidebar, 323, "TRAY-FIRST", "Starts quietly. Print Screen opens Region Capture.", Accent);
         AddSidebarFeature(sidebar, 403, "LOCAL-FIRST", "No account, telemetry or cloud upload required.", Cyan);
-        AddSidebarFeature(sidebar, 483, "SELF-CONTAINED", "Per-user install with its required app runtime.", Accent);
+        AddSidebarFeature(sidebar, 483, "UNIVERSAL", "One Setup chooses the compatible x86, x64 or ARM64 app payload.", Accent);
 
         var footerDot = new Label
         {
@@ -329,7 +341,7 @@ internal sealed class SetupForm : Form
         var footer = new Label
         {
             AutoSize = true,
-            Text = "Brendigo  •  Windows",
+            Text = "Brendigo  •  snapvere.com",
             ForeColor = Muted,
             Font = new Font("Segoe UI", 8.5F),
             Location = new Point(47, 608)
@@ -382,6 +394,7 @@ internal sealed class SetupForm : Form
         _browseButton.Visible = false;
         _startMenuShortcut.Visible = false;
         _desktopShortcut.Visible = false;
+        _startupWithWindows.Visible = false;
 
         var removalTitle = new Label
         {
@@ -431,7 +444,7 @@ internal sealed class SetupForm : Form
         {
             _licenseBox.Text = exception.Message;
             _acceptLicense.Enabled = false;
-            _statusLabel.Text = "Setup cannot continue because the license resource is unavailable.";
+            _statusLabel.Text = "Setup cannot continue because the commercial license resource is unavailable.";
         }
     }
 
@@ -471,12 +484,18 @@ internal sealed class SetupForm : Form
             var installPath = _installPath.Text;
             var startMenu = _startMenuShortcut.Checked;
             var desktop = _desktopShortcut.Checked;
+            var startWithWindows = _startupWithWindows.Checked;
             result = await Task.Run(() => InstallerEngine.Install(
                 installPath,
                 startMenu,
                 desktop,
                 silent: false,
                 progress => BeginInvoke(() => _progressBar.SetValue(Math.Clamp(progress, 0, 100)))));
+
+            if (result.Succeeded && !SetupStartupRegistration.TrySetEnabled(installPath, startWithWindows, out var startupWarning))
+            {
+                result = result with { Message = $"{result.Message} {startupWarning}" };
+            }
         }
 
         _statusLabel.Text = result.Message;
@@ -493,7 +512,7 @@ internal sealed class SetupForm : Form
         _titleLabel.Text = _uninstallMode ? "SNAPVERE removed" : "SNAPVERE is ready";
         _subtitleLabel.Text = _uninstallMode
             ? "The application has been removed from this Windows account. Your screenshots remain untouched."
-            : "Installation completed successfully. SNAPVERE can now stay ready in your notification area.";
+            : "Installation completed successfully. SNAPVERE is ready in your notification area.";
         _primaryButton.Text = "Finish";
         _primaryButton.Enabled = true;
         _cancelButton.Visible = false;
@@ -524,6 +543,7 @@ internal sealed class SetupForm : Form
         _browseButton.Enabled = !busy;
         _startMenuShortcut.Enabled = !busy;
         _desktopShortcut.Enabled = !busy;
+        _startupWithWindows.Enabled = !busy;
         UseWaitCursor = busy;
     }
 
