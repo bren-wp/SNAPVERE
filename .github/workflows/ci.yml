@@ -44,15 +44,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
-
       - name: Restore x86 app
         run: dotnet restore src/Snapvere.App/Snapvere.App.csproj --runtime win-x86
-
       - name: Build x86 app
         run: dotnet build src/Snapvere.App/Snapvere.App.csproj --configuration Release --runtime win-x86 --no-restore -p:Platform=x86
 
@@ -62,15 +59,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
-
       - name: Restore ARM64 app
         run: dotnet restore src/Snapvere.App/Snapvere.App.csproj --runtime win-arm64
-
       - name: Build ARM64 app
         run: dotnet build src/Snapvere.App/Snapvere.App.csproj --configuration Release --runtime win-arm64 --no-restore -p:Platform=ARM64
 
@@ -89,12 +83,7 @@ jobs:
       - name: Build x86 x64 and ARM64 application payloads
         shell: pwsh
         run: |
-          $platforms = @{
-            'x86' = 'x86'
-            'x64' = 'x64'
-            'arm64' = 'ARM64'
-          }
-
+          $platforms = @{ 'x86' = 'x86'; 'x64' = 'x64'; 'arm64' = 'ARM64' }
           foreach ($arch in @('x86', 'x64', 'arm64')) {
             $rid = "win-$arch"
             $output = "artifacts/app-$arch"
@@ -111,10 +100,7 @@ jobs:
               --output $output
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-            Compress-Archive `
-              -Path "$output/*" `
-              -DestinationPath "artifacts/SNAPVERE-payload-$arch.zip" `
-              -CompressionLevel Optimal
+            Compress-Archive -Path "$output/*" -DestinationPath "artifacts/SNAPVERE-payload-$arch.zip" -CompressionLevel Optimal
           }
 
       - name: Validate native payload structure
@@ -130,48 +116,51 @@ jobs:
               }
               Write-Host "$arch payload validated: $([Math]::Round((Get-Item $zipPath).Length / 1MB, 1)) MB"
             }
-            finally {
-              $archive.Dispose()
-            }
+            finally { $archive.Dispose() }
           }
 
-      - name: Build three universal public executables
+      - name: Build two universal public executables
         shell: pwsh
         run: |
           $x86 = (Resolve-Path 'artifacts/SNAPVERE-payload-x86.zip').Path
           $x64 = (Resolve-Path 'artifacts/SNAPVERE-payload-x64.zip').Path
           $arm64 = (Resolve-Path 'artifacts/SNAPVERE-payload-arm64.zip').Path
 
-          $common = @(
-            '--configuration', 'Release',
-            '--runtime', 'win-x86',
-            '-p:Platform=x86',
-            '-p:SelfContained=true',
-            '-p:Version=' + $env:SNAPVERE_VERSION,
-            '-p:SnapverePayloadX86Path=' + $x86,
-            '-p:SnapverePayloadX64Path=' + $x64,
-            '-p:SnapverePayloadArm64Path=' + $arm64
-          )
+          dotnet publish src/Snapvere.Setup/Snapvere.Setup.csproj `
+            --configuration Release `
+            --runtime win-x86 `
+            -p:Platform=x86 `
+            -p:SelfContained=true `
+            "-p:Version=$env:SNAPVERE_VERSION" `
+            "-p:SnapverePayloadX86Path=$x86" `
+            "-p:SnapverePayloadX64Path=$x64" `
+            "-p:SnapverePayloadArm64Path=$arm64" `
+            --output artifacts/setup-universal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-          dotnet publish src/Snapvere.Setup/Snapvere.Setup.csproj @common --output artifacts/setup-universal
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet publish src/Snapvere.Portable/Snapvere.Portable.csproj @common --output artifacts/portable-universal
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet publish src/Snapvere.Demo/Snapvere.Demo.csproj @common --output artifacts/demo-universal
+          dotnet publish src/Snapvere.Portable/Snapvere.Portable.csproj `
+            --configuration Release `
+            --runtime win-x86 `
+            -p:Platform=x86 `
+            -p:SelfContained=true `
+            "-p:Version=$env:SNAPVERE_VERSION" `
+            "-p:SnapverePayloadX86Path=$x86" `
+            "-p:SnapverePayloadX64Path=$x64" `
+            "-p:SnapverePayloadArm64Path=$arm64" `
+            --output artifacts/portable-universal
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
           New-Item -ItemType Directory -Force -Path artifacts/universal | Out-Null
           Copy-Item artifacts/setup-universal/SNAPVERE-Setup.exe artifacts/universal/SNAPVERE-Setup.exe
           Copy-Item artifacts/portable-universal/SNAPVERE-Portable.exe artifacts/universal/SNAPVERE-Portable.exe
-          Copy-Item artifacts/demo-universal/SNAPVERE-Demo.exe artifacts/universal/SNAPVERE-Demo.exe
 
-      - name: Enforce three-file public package contract
+      - name: Enforce two-file public package contract
         shell: pwsh
         run: |
-          $expected = @('SNAPVERE-Demo.exe', 'SNAPVERE-Portable.exe', 'SNAPVERE-Setup.exe')
+          $expected = @('SNAPVERE-Portable.exe', 'SNAPVERE-Setup.exe')
           $actual = @(Get-ChildItem artifacts/universal -File | Select-Object -ExpandProperty Name | Sort-Object)
           if ($actual.Count -ne $expected.Count) {
-            throw "Universal public package must contain exactly three files. Actual: $($actual -join ', ')"
+            throw "Universal public package must contain exactly two files. Actual: $($actual -join ', ')"
           }
           if (@(Compare-Object $expected $actual).Count -ne 0) {
             throw "Universal public package names do not match the contract. Actual: $($actual -join ', ')"
@@ -190,51 +179,10 @@ jobs:
           try {
             foreach ($arch in @('x64', 'x86')) {
               $env:SNAPVERE_PAYLOAD_ARCH = $arch
-              & ./eng/Test-SnapverePackageLifecycle.ps1 `
-                -SetupPath $setup `
-                -PortablePath $portable `
-                -Version $env:SNAPVERE_VERSION `
-                -Arch $arch
+              & ./eng/Test-SnapverePackageLifecycle.ps1 -SetupPath $setup -PortablePath $portable -Version $env:SNAPVERE_VERSION -Arch $arch
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-              & ./eng/Test-SnapvereTrayFirstLaunch.ps1 `
-                -SetupPath $setup `
-                -PortablePath $portable `
-                -Version $env:SNAPVERE_VERSION `
-                -Arch $arch
+              & ./eng/Test-SnapvereTrayFirstLaunch.ps1 -SetupPath $setup -PortablePath $portable -Version $env:SNAPVERE_VERSION -Arch $arch
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             }
           }
-          finally {
-            Remove-Item Env:SNAPVERE_PAYLOAD_ARCH -ErrorAction SilentlyContinue
-          }
-
-      - name: Validate Demo is portable and non-installing
-        shell: pwsh
-        run: |
-          $demo = (Resolve-Path 'artifacts/universal/SNAPVERE-Demo.exe').Path
-          $install = Join-Path $env:LOCALAPPDATA 'Programs/SNAPVERE'
-          $uninstallKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\SNAPVERE'
-          try {
-            foreach ($arch in @('x64', 'x86')) {
-              $env:SNAPVERE_PAYLOAD_ARCH = $arch
-              foreach ($probe in @('--startup-probe', '--tray-startup-probe', '--secondary-ui-probe')) {
-                $process = Start-Process -FilePath $demo -ArgumentList @($probe) -Wait -PassThru
-                if ($process.ExitCode -ne 0) {
-                  throw "Demo $arch $probe failed with exit code $($process.ExitCode)."
-                }
-                $process.Dispose()
-              }
-            }
-          }
-          finally {
-            Remove-Item Env:SNAPVERE_PAYLOAD_ARCH -ErrorAction SilentlyContinue
-          }
-
-          if (Test-Path -LiteralPath $install) {
-            throw 'Demo created an installed application directory.'
-          }
-          if (Test-Path -LiteralPath $uninstallKey) {
-            throw 'Demo created a Windows uninstall registration.'
-          }
-          Write-Host 'Demo completed x64/x86 runtime probes without installing SNAPVERE.'
+          finally { Remove-Item Env:SNAPVERE_PAYLOAD_ARCH -ErrorAction SilentlyContinue }
