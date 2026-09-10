@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Snapvere.Shared;
 using System.Diagnostics;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
 
 namespace Snapvere.App.Services;
@@ -119,7 +120,10 @@ public sealed class AboutWindow : Window
         var links = new StackPanel { Spacing = 8 };
         var contactLinks = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         contactLinks.Children.Add(CreateLinkButton("snapvere.com", ProductWebsiteUrl));
-        contactLinks.Children.Add(CreateLinkButton($"{L("Support")} · {SupportEmailAddress}", SupportEmailUri));
+        contactLinks.Children.Add(CreateLinkButton(
+            $"{L("Support")} · {SupportEmailAddress}",
+            SupportEmailUri,
+            SupportEmailAddress));
         links.Children.Add(contactLinks);
 
         var legalLinks = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
@@ -159,7 +163,10 @@ public sealed class AboutWindow : Window
         return root;
     }
 
-    private static Button CreateLinkButton(string text, string url)
+    private static Button CreateLinkButton(
+        string text,
+        string url,
+        string? clipboardFallbackText = null)
     {
         var button = new Button
         {
@@ -181,6 +188,27 @@ public sealed class AboutWindow : Window
             catch (Exception exception) when (exception is System.ComponentModel.Win32Exception or InvalidOperationException)
             {
                 StartupDiagnostics.Record($"Open {url}", exception);
+                if (clipboardFallbackText is null)
+                {
+                    return;
+                }
+
+                try
+                {
+                    var package = new DataPackage();
+                    package.SetText(clipboardFallbackText);
+                    Clipboard.SetContent(package);
+                    Clipboard.Flush();
+                    button.Content = $"✓ {clipboardFallbackText}";
+                    AutomationProperties.SetName(button, clipboardFallbackText);
+                }
+                catch (Exception clipboardException) when (
+                    clipboardException is System.Runtime.InteropServices.COMException or InvalidOperationException)
+                {
+                    StartupDiagnostics.Record("Copy support email fallback", clipboardException);
+                    button.Content = clipboardFallbackText;
+                    AutomationProperties.SetName(button, clipboardFallbackText);
+                }
             }
         };
         return button;
