@@ -119,6 +119,24 @@ jobs:
             finally { $archive.Dispose() }
           }
 
+      - name: Capture real rendered UI snapshots
+        shell: pwsh
+        run: |
+          & ./eng/Capture-SnapvereVisualQa.ps1 `
+            -AppPath (Resolve-Path 'artifacts/app-x64/Snapvere.exe').Path `
+            -OutputDirectory (Join-Path $PWD 'artifacts/visual-qa')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload rendered UI snapshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapvere-visual-qa-${{ github.sha }}
+          path: |
+            artifacts/visual-qa/*.png
+            artifacts/visual-qa/manifest.json
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Build two universal public executables
         shell: pwsh
         run: |
