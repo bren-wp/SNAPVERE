@@ -119,12 +119,12 @@ public sealed class AboutWindow : Window
         var links = new StackPanel { Spacing = 8 };
         var contactLinks = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         contactLinks.Children.Add(CreateLinkButton("snapvere.com", ProductWebsiteUrl));
-        contactLinks.Children.Add(CreateLinkButton($"Support · {SupportEmailAddress}", SupportEmailUri));
+        contactLinks.Children.Add(CreateLinkButton($"{L("Support")} · {SupportEmailAddress}", SupportEmailUri));
         links.Children.Add(contactLinks);
 
         var legalLinks = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        legalLinks.Children.Add(CreateLinkButton("Privacy", PrivacyUrl));
-        legalLinks.Children.Add(CreateLinkButton("Terms", TermsUrl));
+        legalLinks.Children.Add(CreateLinkButton(L("Privacy"), PrivacyUrl));
+        legalLinks.Children.Add(CreateLinkButton(L("Terms"), TermsUrl));
         legalLinks.Children.Add(CreateLinkButton("brendigo.com", DeveloperWebsiteUrl));
         links.Children.Add(legalLinks);
         content.Children.Add(links);
