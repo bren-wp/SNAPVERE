@@ -23,6 +23,8 @@ public partial class App : Microsoft.UI.Xaml.Application
     private const string RegionOverlayProbeMarkerFileName = "region-overlay-probe.ready";
     private const string WindowOverlayProbeEnvironmentVariable = "SNAPVERE_WINDOW_OVERLAY_PROBE";
     private const string WindowOverlayProbeMarkerFileName = "window-overlay-probe.ready";
+    private const string SecondaryUiProbeEnvironmentVariable = "SNAPVERE_SECONDARY_UI_PROBE";
+    private const string SecondaryUiProbeMarkerFileName = "secondary-ui-probe.ready";
 
     private readonly ServiceProvider _services;
     private CaptureCenterWindow? _window;
@@ -98,6 +100,12 @@ public partial class App : Microsoft.UI.Xaml.Application
             if (IsWindowOverlayProbeRequested())
             {
                 StartWindowOverlayProbe();
+                return;
+            }
+
+            if (IsSecondaryUiProbeRequested())
+            {
+                StartSecondaryUiProbe();
                 return;
             }
 
@@ -177,6 +185,17 @@ public partial class App : Microsoft.UI.Xaml.Application
             argument => string.Equals(argument, "--window-overlay-probe", StringComparison.OrdinalIgnoreCase));
     }
 
+    private static bool IsSecondaryUiProbeRequested()
+    {
+        if (string.Equals(Environment.GetEnvironmentVariable(SecondaryUiProbeEnvironmentVariable), "1", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return Environment.GetCommandLineArgs().Any(
+            argument => string.Equals(argument, "--secondary-ui-probe", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static void CompleteStartupProbe()
     {
         WriteProbeMarker(
@@ -252,6 +271,130 @@ public partial class App : Microsoft.UI.Xaml.Application
         StartupDiagnostics.WriteLine("Window overlay probe window created.");
         _windowProbeWindow.Show();
         StartupDiagnostics.WriteLine("Window overlay probe activation requested.");
+    }
+
+    private void StartSecondaryUiProbe()
+    {
+        _window = _services.GetRequiredService<CaptureCenterWindow>();
+        _window.Closed += OnMainWindowClosed;
+        _window.Activate();
+        _window.AppWindow.Hide();
+        StartupDiagnostics.WriteLine("Secondary UI probe host initialized and hidden.");
+        StartTrayMenuSurfaceProbe();
+    }
+
+    private void StartTrayMenuSurfaceProbe()
+    {
+        var menu = new TrayMenuWindow(_ => { }, () => { });
+        _trayMenuWindow = menu;
+        if (menu.Content is not FrameworkElement root)
+        {
+            throw new InvalidOperationException("Tray flyout probe could not resolve its root FrameworkElement.");
+        }
+
+        root.Loaded += TrayMenuProbeRoot_Loaded;
+        StartupDiagnostics.WriteLine("Secondary UI probe created tray flyout.");
+        menu.ShowNearTray();
+    }
+
+    private async void TrayMenuProbeRoot_Loaded(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (sender is FrameworkElement root)
+            {
+                root.Loaded -= TrayMenuProbeRoot_Loaded;
+            }
+
+            await Task.Delay(180);
+            _trayMenuWindow?.Close();
+            _trayMenuWindow = null;
+            StartupDiagnostics.WriteLine("Secondary UI probe loaded tray flyout.");
+            StartOptionsSurfaceProbe();
+        }
+        catch (Exception exception)
+        {
+            FailSecondaryUiProbe("Tray flyout", exception);
+        }
+    }
+
+    private void StartOptionsSurfaceProbe()
+    {
+        var options = _services.GetRequiredService<OptionsWindow>();
+        _optionsWindow = options;
+        options.ShowSection(OptionsSection.Preferences);
+        if (options.Content is not FrameworkElement root)
+        {
+            throw new InvalidOperationException("Options probe could not resolve its root FrameworkElement.");
+        }
+
+        root.Loaded += OptionsProbeRoot_Loaded;
+        StartupDiagnostics.WriteLine("Secondary UI probe created Options window.");
+        options.Activate();
+    }
+
+    private async void OptionsProbeRoot_Loaded(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (sender is FrameworkElement root)
+            {
+                root.Loaded -= OptionsProbeRoot_Loaded;
+            }
+
+            await Task.Delay(180);
+            _optionsWindow?.Close();
+            _optionsWindow = null;
+            StartupDiagnostics.WriteLine("Secondary UI probe loaded Options window.");
+            StartAboutSurfaceProbe();
+        }
+        catch (Exception exception)
+        {
+            FailSecondaryUiProbe("Options", exception);
+        }
+    }
+
+    private void StartAboutSurfaceProbe()
+    {
+        var about = new AboutWindow();
+        _aboutWindow = about;
+        if (about.Content is not FrameworkElement root)
+        {
+            throw new InvalidOperationException("About probe could not resolve its root FrameworkElement.");
+        }
+
+        root.Loaded += AboutProbeRoot_Loaded;
+        StartupDiagnostics.WriteLine("Secondary UI probe created About window.");
+        about.Activate();
+    }
+
+    private async void AboutProbeRoot_Loaded(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (sender is FrameworkElement root)
+            {
+                root.Loaded -= AboutProbeRoot_Loaded;
+            }
+
+            await Task.Delay(180);
+            _aboutWindow?.Close();
+            _aboutWindow = null;
+            WriteProbeMarker(
+                SecondaryUiProbeMarkerFileName,
+                "SECONDARY_UI_READY",
+                "Secondary UI probe loaded tray flyout, Options and About surfaces.");
+        }
+        catch (Exception exception)
+        {
+            FailSecondaryUiProbe("About", exception);
+        }
+    }
+
+    private static void FailSecondaryUiProbe(string surface, Exception exception)
+    {
+        StartupDiagnostics.ShowFatal($"Secondary UI probe: {surface}", exception);
+        Environment.Exit(1);
     }
 
     private static (DisplayDescriptor Display, CaptureFrame Frame) CreateProbeDesktop()
