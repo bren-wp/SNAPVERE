@@ -32,7 +32,7 @@ public sealed record RegionCaptureOutcome(
 /// </summary>
 public sealed class RegionCaptureWindow : Window
 {
-    private const double HandleRadius = 5d;
+    private const double HandleRadius = 6d;
 
     private readonly RegionCaptureWorkflow _workflow;
     private readonly PngCaptureEncoder _pngEncoder;
@@ -115,24 +115,24 @@ public sealed class RegionCaptureWindow : Window
 
         _selectionBorder = new Border
         {
-            BorderBrush = Brush(0xFF, 0x7C, 0x6C, 0xFF),
+            BorderBrush = Accent,
             BorderThickness = new Thickness(2),
-            CornerRadius = new CornerRadius(2),
+            CornerRadius = new CornerRadius(6),
             IsHitTestVisible = false,
             Visibility = Visibility.Collapsed
         };
         _selectionSizeText = Text(
             string.Empty,
-            12,
-            Brush(0xFF, 0xFF, 0xFF, 0xFF),
+            11,
+            Strong,
             Microsoft.UI.Text.FontWeights.SemiBold);
         _selectionBadge = new Border
         {
-            Background = Brush(0xF0, 0x15, 0x17, 0x1C),
-            BorderBrush = Brush(0x40, 0xFF, 0xFF, 0xFF),
+            Background = Brush(0xF4, 0x09, 0x0B, 0x11),
+            BorderBrush = Brush(0xA0, 0x8D, 0x79, 0xFF),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(7),
-            Padding = new Thickness(9, 5, 9, 5),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(10, 6, 10, 6),
             IsHitTestVisible = false,
             Visibility = Visibility.Collapsed,
             Child = _selectionSizeText
@@ -147,20 +147,20 @@ public sealed class RegionCaptureWindow : Window
         _bottomLeftHandle = CreateResizeHandle(SelectionHandle.BottomLeft, "Resize bottom left");
         _leftHandle = CreateResizeHandle(SelectionHandle.Left, "Resize left");
 
-        _moveToolButton = CreateToolButton("Move", "None", "Move or resize selection");
-        _penToolButton = CreateToolButton("Pen", nameof(CaptureAnnotationKind.Pen), "Freehand pen");
-        _lineToolButton = CreateToolButton("Line", nameof(CaptureAnnotationKind.Line), "Straight line");
-        _arrowToolButton = CreateToolButton("Arrow", nameof(CaptureAnnotationKind.Arrow), "Arrow");
-        _rectangleToolButton = CreateToolButton("Box", nameof(CaptureAnnotationKind.Rectangle), "Rectangle");
-        _highlightToolButton = CreateToolButton("Mark", nameof(CaptureAnnotationKind.Highlight), "Highlighter");
-        _undoButton = CreatePaletteButton("Undo", "Undo last annotation");
+        _moveToolButton = CreateToolButton("Move", "\uE7C2", "None", "Move or resize selection");
+        _penToolButton = CreateToolButton("Pen", "\uE70F", nameof(CaptureAnnotationKind.Pen), "Freehand pen");
+        _lineToolButton = CreateToolButton("Line", "\uE738", nameof(CaptureAnnotationKind.Line), "Straight line");
+        _arrowToolButton = CreateToolButton("Arrow", "\uE72A", nameof(CaptureAnnotationKind.Arrow), "Arrow");
+        _rectangleToolButton = CreateToolButton("Box", "\uE7FB", nameof(CaptureAnnotationKind.Rectangle), "Rectangle");
+        _highlightToolButton = CreateToolButton("Mark", "\uE7E6", nameof(CaptureAnnotationKind.Highlight), "Highlighter");
+        _undoButton = CreatePaletteButton("Undo", "\uE7A7", "Undo last annotation");
         _undoButton.Click += UndoButton_Click;
 
         _toolPalette = BuildToolPalette();
         _actionPalette = BuildActionPalette();
         _captureHint = BuildCaptureHint();
 
-        _overlayStatusText = Text(string.Empty, 12, Brush(0xFF, 0xFF, 0xFF, 0xFF));
+        _overlayStatusText = Text(string.Empty, 11, Strong, Microsoft.UI.Text.FontWeights.SemiBold);
         _overlayStatusText.TextWrapping = TextWrapping.Wrap;
         _overlayStatusText.MaxWidth = 620;
         _overlayStatus = BuildStatusPanel();
@@ -226,48 +226,36 @@ public sealed class RegionCaptureWindow : Window
 
     private Border BuildToolPalette()
     {
-        var stack = new StackPanel { Spacing = 4 };
+        var stack = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 4,
+            VerticalAlignment = VerticalAlignment.Center
+        };
         stack.Children.Add(_moveToolButton);
         stack.Children.Add(_penToolButton);
         stack.Children.Add(_lineToolButton);
         stack.Children.Add(_arrowToolButton);
         stack.Children.Add(_rectangleToolButton);
         stack.Children.Add(_highlightToolButton);
-        stack.Children.Add(Separator());
-
-        var firstColors = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 3,
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
-        firstColors.Children.Add(CreateColorButton("Coral", 0xFF, 0x5A, 0x72));
-        firstColors.Children.Add(CreateColorButton("Amber", 0xFF, 0xC8, 0x57));
-        stack.Children.Add(firstColors);
-
-        var secondColors = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 3,
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
-        secondColors.Children.Add(CreateColorButton("Mint", 0x45, 0xD6, 0xA2));
-        secondColors.Children.Add(CreateColorButton("Indigo", 0x7C, 0x6C, 0xFF));
-        stack.Children.Add(secondColors);
-        stack.Children.Add(Separator());
+        stack.Children.Add(VerticalSeparator());
+        stack.Children.Add(CreateColorButton("Coral", 0xFF, 0x5A, 0x72));
+        stack.Children.Add(CreateColorButton("Amber", 0xFF, 0xC8, 0x57));
+        stack.Children.Add(CreateColorButton("Mint", 0x45, 0xD6, 0xA2));
+        stack.Children.Add(CreateColorButton("Indigo", 0x7C, 0x6C, 0xFF));
+        stack.Children.Add(VerticalSeparator());
         stack.Children.Add(_undoButton);
-
         return Palette(stack);
     }
 
     private Border BuildActionPalette()
     {
         var stack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5 };
-        var copy = CreatePaletteButton("Copy", "Copy selection to clipboard");
+        var copy = CreateActionButton("Copy", "\uE8C8", "Copy selection to clipboard", primary: false);
         copy.Click += CopyButton_Click;
-        var save = CreatePaletteButton("Save", "Save PNG");
+        var save = CreateActionButton("Save", "\uE74E", "Save PNG", primary: true);
         save.Click += SaveButton_Click;
-        var close = CreatePaletteButton("Close", "Cancel capture");
+        var close = CreateActionButton("Close", "\uE711", "Cancel capture", primary: false, danger: true);
         close.Click += CancelButton_Click;
         stack.Children.Add(copy);
         stack.Children.Add(save);
@@ -277,22 +265,46 @@ public sealed class RegionCaptureWindow : Window
 
     private Border BuildCaptureHint()
     {
-        var hint = Text(
-            "Drag to select · choose a tool to annotate · Enter save · Esc cancel",
-            12,
-            Brush(0xE8, 0xFF, 0xFF, 0xFF));
+        var content = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 10,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        content.Children.Add(new Border
+        {
+            Width = 32,
+            Height = 32,
+            CornerRadius = new CornerRadius(10),
+            Background = Brush(0x5A, 0x67, 0x50, 0xD2),
+            BorderBrush = Brush(0x70, 0xA5, 0x8E, 0xFF),
+            BorderThickness = new Thickness(1),
+            Child = new FontIcon
+            {
+                Glyph = "\uE722",
+                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontSize = 14,
+                Foreground = Strong
+            }
+        });
+
+        var copy = new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center };
+        copy.Children.Add(Text("Region Capture", 11, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        copy.Children.Add(Text("Drag to select  •  Enter saves  •  Esc cancels", 9.5, Muted));
+        content.Children.Add(copy);
+
         return new Border
         {
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Top,
             Margin = new Thickness(16),
-            Padding = new Thickness(12, 8, 12, 8),
-            Background = Brush(0xE8, 0x11, 0x13, 0x18),
-            BorderBrush = Brush(0x30, 0xFF, 0xFF, 0xFF),
+            Padding = new Thickness(9, 8, 12, 8),
+            Background = Brush(0xF2, 0x09, 0x0B, 0x11),
+            BorderBrush = Brush(0x80, 0x45, 0x3D, 0x72),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(9),
+            CornerRadius = new CornerRadius(14),
             IsHitTestVisible = false,
-            Child = hint
+            Child = content
         };
     }
 
@@ -303,10 +315,10 @@ public sealed class RegionCaptureWindow : Window
             VerticalAlignment = VerticalAlignment.Bottom,
             Margin = new Thickness(20),
             Padding = new Thickness(14, 9, 14, 9),
-            Background = Brush(0xF0, 0x15, 0x17, 0x1C),
-            BorderBrush = Brush(0x38, 0xFF, 0xFF, 0xFF),
+            Background = Brush(0xF2, 0x09, 0x0B, 0x11),
+            BorderBrush = Brush(0x80, 0x61, 0x52, 0xA8),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(9),
+            CornerRadius = new CornerRadius(13),
             Visibility = Visibility.Collapsed,
             IsHitTestVisible = false,
             Child = _overlayStatusText
@@ -750,8 +762,8 @@ public sealed class RegionCaptureWindow : Window
 
     private void UpdateToolButtonStates()
     {
-        var active = Brush(0xFF, 0x5D, 0x52, 0xD9);
-        var inactive = Brush(0xFF, 0x21, 0x25, 0x2E);
+        var active = Brush(0x72, 0x65, 0x4C, 0xD3);
+        var inactive = Brush(0xFF, 0x15, 0x17, 0x20);
         _moveToolButton.Background = _activeAnnotationTool is null ? active : inactive;
         _penToolButton.Background = _activeAnnotationTool == CaptureAnnotationKind.Pen ? active : inactive;
         _lineToolButton.Background = _activeAnnotationTool == CaptureAnnotationKind.Line ? active : inactive;
@@ -837,7 +849,7 @@ public sealed class RegionCaptureWindow : Window
 
     private void ShowStatus(string message, bool isBusy)
     {
-        _overlayStatusText.Text = isBusy ? $"Working · {message}" : message;
+        _overlayStatusText.Text = isBusy ? $"Working  •  {message}" : message;
         _overlayStatus.Visibility = Visibility.Visible;
     }
 
@@ -894,9 +906,9 @@ public sealed class RegionCaptureWindow : Window
         var badgeWidth = _selectionBadge.DesiredSize.Width;
         var badgeHeight = _selectionBadge.DesiredSize.Height;
         Canvas.SetLeft(_selectionBadge, Math.Clamp(x, 0d, Math.Max(0d, totalWidth - badgeWidth)));
-        var badgeY = y >= badgeHeight + 8d
-            ? y - badgeHeight - 8d
-            : Math.Min(totalHeight - badgeHeight, bottom + 8d);
+        var badgeY = y >= badgeHeight + 10d
+            ? y - badgeHeight - 10d
+            : Math.Min(totalHeight - badgeHeight, bottom + 10d);
         Canvas.SetTop(_selectionBadge, Math.Max(0d, badgeY));
 
         PlaceHandle(_topLeftHandle, x, y);
@@ -928,22 +940,19 @@ public sealed class RegionCaptureWindow : Window
         var actionWidth = _actionPalette.DesiredSize.Width;
         var actionHeight = _actionPalette.DesiredSize.Height;
 
-        var toolX = right + 8d + toolWidth <= totalWidth
-            ? right + 8d
-            : x >= toolWidth + 8d
-                ? x - toolWidth - 8d
-                : Math.Clamp(right - toolWidth - 8d, 0d, Math.Max(0d, totalWidth - toolWidth));
-        Canvas.SetLeft(_toolPalette, toolX);
-        Canvas.SetTop(_toolPalette, Math.Clamp(y, 0d, Math.Max(0d, totalHeight - toolHeight)));
+        var combinedWidth = toolWidth + 10d + actionWidth;
+        var rowX = Math.Clamp(
+            x + ((right - x) - combinedWidth) / 2d,
+            8d,
+            Math.Max(8d, totalWidth - combinedWidth - 8d));
+        var rowY = bottom + Math.Max(toolHeight, actionHeight) + 12d <= totalHeight
+            ? bottom + 10d
+            : Math.Max(8d, y - Math.Max(toolHeight, actionHeight) - 10d);
 
-        Canvas.SetLeft(
-            _actionPalette,
-            Math.Clamp(right - actionWidth, 0d, Math.Max(0d, totalWidth - actionWidth)));
-        Canvas.SetTop(
-            _actionPalette,
-            bottom + 8d + actionHeight <= totalHeight
-                ? bottom + 8d
-                : Math.Max(0d, y - actionHeight - 8d));
+        Canvas.SetLeft(_toolPalette, rowX);
+        Canvas.SetTop(_toolPalette, rowY);
+        Canvas.SetLeft(_actionPalette, Math.Min(totalWidth - actionWidth - 8d, rowX + toolWidth + 10d));
+        Canvas.SetTop(_actionPalette, rowY);
     }
 
     private void RenderAnnotations()
@@ -1182,7 +1191,7 @@ public sealed class RegionCaptureWindow : Window
     private static Rectangle CreateDimRectangle(Visibility visibility = Visibility.Visible)
         => new()
         {
-            Fill = Brush(0xA0, 0x00, 0x00, 0x00),
+            Fill = Brush(0xB0, 0x03, 0x04, 0x08),
             IsHitTestVisible = false,
             Visibility = visibility
         };
@@ -1192,10 +1201,10 @@ public sealed class RegionCaptureWindow : Window
         var ellipse = new Ellipse
         {
             Tag = handle.ToString(),
-            Width = 10,
-            Height = 10,
-            Fill = Brush(0xFF, 0xFF, 0xFF, 0xFF),
-            Stroke = Brush(0xFF, 0x7C, 0x6C, 0xFF),
+            Width = HandleRadius * 2,
+            Height = HandleRadius * 2,
+            Fill = Strong,
+            Stroke = Accent,
             StrokeThickness = 2,
             Visibility = Visibility.Collapsed
         };
@@ -1204,24 +1213,88 @@ public sealed class RegionCaptureWindow : Window
         return ellipse;
     }
 
-    private Button CreateToolButton(string text, string tag, string tooltip)
+    private Button CreateToolButton(string text, string glyph, string tag, string tooltip)
     {
-        var button = CreatePaletteButton(text, tooltip);
+        var button = CreatePaletteButton(text, glyph, tooltip);
         button.Tag = tag;
-        button.MinWidth = 58;
         button.Click += AnnotationToolButton_Click;
         return button;
     }
 
-    private static Button CreatePaletteButton(string text, string tooltip)
+    private static Button CreatePaletteButton(string text, string glyph, string tooltip)
     {
+        var content = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 6,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        content.Children.Add(new FontIcon
+        {
+            Glyph = glyph,
+            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontSize = 12,
+            Foreground = Strong
+        });
+        content.Children.Add(Text(text, 9.5, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+
         var button = new Button
         {
-            Content = text,
-            Padding = new Thickness(8, 5, 8, 5),
-            MinHeight = 30,
-            Foreground = Brush(0xFF, 0xFF, 0xFF, 0xFF)
+            Content = content,
+            Padding = new Thickness(9, 7, 9, 7),
+            MinHeight = 34,
+            MinWidth = 54,
+            CornerRadius = new CornerRadius(9),
+            Background = Brush(0xFF, 0x15, 0x17, 0x20),
+            BorderBrush = Brush(0xFF, 0x2B, 0x2E, 0x3A),
+            BorderThickness = new Thickness(1),
+            Foreground = Strong
         };
+        AutomationProperties.SetName(button, tooltip);
+        ToolTipService.SetToolTip(button, tooltip);
+        return button;
+    }
+
+    private static Button CreateActionButton(string text, string glyph, string tooltip, bool primary, bool danger = false)
+    {
+        var content = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 6,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        content.Children.Add(new FontIcon
+        {
+            Glyph = glyph,
+            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontSize = 12,
+            Foreground = danger ? Brush(0xFF, 0xFF, 0xB3, 0xBC) : Strong
+        });
+        content.Children.Add(Text(
+            text,
+            9.5,
+            danger ? Brush(0xFF, 0xFF, 0xB3, 0xBC) : Strong,
+            Microsoft.UI.Text.FontWeights.SemiBold));
+
+        var button = new Button
+        {
+            Content = content,
+            Padding = new Thickness(10, 7, 10, 7),
+            MinHeight = 34,
+            CornerRadius = new CornerRadius(9),
+            Background = primary
+                ? Brush(0xFF, 0x67, 0x50, 0xD2)
+                : danger
+                    ? Brush(0x28, 0xE9, 0x5F, 0x76)
+                    : Brush(0xFF, 0x15, 0x17, 0x20),
+            BorderBrush = primary
+                ? Brush(0xFF, 0x9D, 0x88, 0xFF)
+                : danger
+                    ? Brush(0x45, 0xE9, 0x5F, 0x76)
+                    : Brush(0xFF, 0x2B, 0x2E, 0x3A),
+            BorderThickness = new Thickness(1)
+        };
+        AutomationProperties.SetName(button, tooltip);
         ToolTipService.SetToolTip(button, tooltip);
         return button;
     }
@@ -1231,37 +1304,45 @@ public sealed class RegionCaptureWindow : Window
         var button = new Button
         {
             Tag = tag,
-            Width = 25,
-            Height = 25,
+            Width = 30,
+            Height = 30,
             Padding = new Thickness(0),
+            CornerRadius = new CornerRadius(9),
+            Background = Brush(0xFF, 0x15, 0x17, 0x20),
+            BorderBrush = Brush(0xFF, 0x2B, 0x2E, 0x3A),
+            BorderThickness = new Thickness(1),
             Content = new Ellipse
             {
-                Width = 13,
-                Height = 13,
-                Fill = Brush(0xFF, red, green, blue)
+                Width = 14,
+                Height = 14,
+                Fill = Brush(0xFF, red, green, blue),
+                Stroke = Brush(0x55, 0xFF, 0xFF, 0xFF),
+                StrokeThickness = 1
             }
         };
+        AutomationProperties.SetName(button, $"{tag} annotation color");
         ToolTipService.SetToolTip(button, tag);
         button.Click += ColorButton_Click;
         return button;
     }
 
-    private static Rectangle Separator()
+    private static Border VerticalSeparator()
         => new()
         {
-            Height = 1,
-            Fill = Brush(0x35, 0xFF, 0xFF, 0xFF),
-            Margin = new Thickness(4, 2, 4, 2)
+            Width = 1,
+            Height = 22,
+            Margin = new Thickness(3, 4, 3, 4),
+            Background = Brush(0xFF, 0x2A, 0x2D, 0x38)
         };
 
     private static Border Palette(UIElement child)
         => new()
         {
             Visibility = Visibility.Collapsed,
-            Background = Brush(0xF5, 0x11, 0x13, 0x18),
-            BorderBrush = Brush(0x45, 0xFF, 0xFF, 0xFF),
+            Background = Brush(0xF5, 0x09, 0x0B, 0x11),
+            BorderBrush = Brush(0x88, 0x4A, 0x41, 0x7A),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(10),
+            CornerRadius = new CornerRadius(13),
             Padding = new Thickness(5),
             Child = child
         };
@@ -1281,6 +1362,10 @@ public sealed class RegionCaptureWindow : Window
 
     private static SolidColorBrush Brush(byte alpha, byte red, byte green, byte blue)
         => new(Windows.UI.Color.FromArgb(alpha, red, green, blue));
+
+    private static SolidColorBrush Strong => Brush(0xFF, 0xF7, 0xF5, 0xFF);
+    private static SolidColorBrush Muted => Brush(0xFF, 0xB5, 0xB0, 0xC3);
+    private static SolidColorBrush Accent => Brush(0xFF, 0x8D, 0x79, 0xFF);
 
     private static void SetRectangle(
         Rectangle rectangle,
