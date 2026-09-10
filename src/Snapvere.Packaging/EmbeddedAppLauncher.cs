@@ -3,33 +3,24 @@ using System.Reflection;
 
 namespace Snapvere.Packaging;
 
-public enum SnapvereLauncherMode
-{
-    Portable,
-    Demo
-}
-
 /// <summary>
-/// Shared lifecycle for self-extracting Portable and Demo hosts. Keeping this
-/// in one place prevents cache, probe, process and architecture behavior from
-/// drifting between public executables.
+/// Shared lifecycle for the self-extracting Portable host. Cache, validation,
+/// process and architecture behavior live here so the public launcher stays
+/// small and deterministic.
 /// </summary>
 public static class EmbeddedAppLauncher
 {
     public const string PortableLauncherEnvironmentVariable = "SNAPVERE_PORTABLE_LAUNCHER_PATH";
-    public const string DemoModeEnvironmentVariable = "SNAPVERE_DEMO_MODE";
 
     private const string AppExecutableName = "Snapvere.exe";
+    private const string LauncherToken = "Portable";
     private const string StartupProbeEnvironmentVariable = "SNAPVERE_STARTUP_PROBE";
     private const string TrayStartupProbeEnvironmentVariable = "SNAPVERE_TRAY_STARTUP_PROBE";
     private const string RegionOverlayProbeEnvironmentVariable = "SNAPVERE_REGION_OVERLAY_PROBE";
     private const string WindowOverlayProbeEnvironmentVariable = "SNAPVERE_WINDOW_OVERLAY_PROBE";
     private const string SecondaryUiProbeEnvironmentVariable = "SNAPVERE_SECONDARY_UI_PROBE";
 
-    public static int Launch(
-        Assembly hostAssembly,
-        IReadOnlyList<string> args,
-        SnapvereLauncherMode mode)
+    public static int Launch(Assembly hostAssembly, IReadOnlyList<string> args)
     {
         ArgumentNullException.ThrowIfNull(hostAssembly);
         ArgumentNullException.ThrowIfNull(args);
@@ -37,11 +28,10 @@ public static class EmbeddedAppLauncher
         var version = hostAssembly.GetName().Version?.ToString(3) ?? "0.0.0";
         var architecture = UniversalPayload.ResolveCurrentArchitecture();
         var architectureToken = UniversalPayload.GetToken(architecture);
-        var modeToken = mode.ToString();
 
         using var launchMutex = new Mutex(
             initiallyOwned: false,
-            $@"Local\Brendigo.SNAPVERE.{modeToken}.{version}.{architectureToken}");
+            $@"Local\Brendigo.SNAPVERE.{LauncherToken}.{version}.{architectureToken}");
 
         var ownsMutex = false;
         try
@@ -58,13 +48,13 @@ public static class EmbeddedAppLauncher
             if (!ownsMutex)
             {
                 throw new TimeoutException(
-                    $"Another SNAPVERE {modeToken} launch is still preparing its application files.");
+                    "Another SNAPVERE Portable launch is still preparing its application files.");
             }
 
             var cacheRoot = Path.Combine(
                 Path.GetTempPath(),
                 "SNAPVERE",
-                modeToken,
+                LauncherToken,
                 $"{version}-{architectureToken}");
             var readyMarker = Path.Combine(cacheRoot, ".ready");
             var executable = Path.Combine(cacheRoot, AppExecutableName);
@@ -80,16 +70,16 @@ public static class EmbeddedAppLauncher
                 if (!File.Exists(executable))
                 {
                     throw new InvalidDataException(
-                        $"The {modeToken} package does not contain Snapvere.exe in its {architectureToken} payload.");
+                        $"The Portable package does not contain Snapvere.exe in its {architectureToken} payload.");
                 }
 
                 File.WriteAllText(
                     readyMarker,
-                    $"SNAPVERE {version} {modeToken} {architectureToken}{Environment.NewLine}");
+                    $"SNAPVERE {version} {LauncherToken} {architectureToken}{Environment.NewLine}");
             }
 
             CleanupOldCaches(Path.GetDirectoryName(cacheRoot)!, cacheRoot);
-            LaunchApplication(executable, cacheRoot, args, mode);
+            LaunchApplication(executable, cacheRoot, args);
             return 0;
         }
         finally
@@ -111,8 +101,7 @@ public static class EmbeddedAppLauncher
     private static void LaunchApplication(
         string executable,
         string workingDirectory,
-        IReadOnlyList<string> args,
-        SnapvereLauncherMode mode)
+        IReadOnlyList<string> args)
     {
         var startInfo = new ProcessStartInfo(executable)
         {
@@ -129,11 +118,6 @@ public static class EmbeddedAppLauncher
         if (!string.IsNullOrWhiteSpace(launcherPath))
         {
             startInfo.Environment[PortableLauncherEnvironmentVariable] = Path.GetFullPath(launcherPath);
-        }
-
-        if (mode == SnapvereLauncherMode.Demo)
-        {
-            startInfo.Environment[DemoModeEnvironmentVariable] = "1";
         }
 
         using var process = Process.Start(startInfo)
