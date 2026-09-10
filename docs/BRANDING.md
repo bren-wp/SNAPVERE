@@ -76,13 +76,13 @@ Options and Language use the same cards, outlines, radii and accent hierarchy as
 
 ### About
 
-About must identify SNAPVERE as commercial software, Brendigo as developer/publisher, `snapvere.com` as the product site and `brendigo.com` as the developer site. New v0.0.7 surfaces must not show legacy MPL product-license copy.
+About must identify SNAPVERE as commercial software, Brendigo as developer/publisher, `snapvere.com` as the product site and `brendigo.com` as the developer site. Current surfaces must not show legacy MPL product-license copy.
 
 ### Setup
 
 Setup uses the same dark brand system and canonical mark. Default Start menu, Desktop icon and Start-with-Windows options are visible user choices; Desktop and startup are checked by default but remain opt-out.
 
-## Documentation images
+## Documentation images and visual QA
 
 Repository UI references live under `docs/images/`:
 
@@ -90,7 +90,11 @@ Repository UI references live under `docs/images/`:
 - `tray-menu.svg`
 - `region-editor.svg`
 
-These are design/reference assets and must not be mislabeled as real Windows screenshots. A real product screenshot may be committed only when produced from an actual executing SNAPVERE build through a reproducible capture path.
+These are design/reference assets and must not be mislabeled as real Windows screenshots.
+
+CI separately runs the actual x64 WinUI application and captures six rendered PNG surfaces — Region, Window, Tray, Options, Language and About. A visually empty or unexpectedly small frame fails the visual gate. The six PNGs and a manifest containing dimensions, byte sizes and SHA-256 digests are uploaded as a short-lived GitHub Actions artifact.
+
+A real product screenshot may be committed to documentation only when produced from an actual executing SNAPVERE build through a reproducible capture path. CI visual-QA artifacts may be used to validate parity, but their existence does not convert the maintained SVG references into runtime screenshots.
 
 The reason for this rule is product integrity: README imagery must never promise a UI the executable does not render.
 
