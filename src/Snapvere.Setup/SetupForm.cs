@@ -1,18 +1,22 @@
 using System.Drawing;
+using System.Drawing.Drawing2D;
 
 namespace Snapvere.Setup;
 
 internal sealed class SetupForm : Form
 {
-    private static readonly Color Canvas = Color.FromArgb(12, 14, 19);
-    private static readonly Color Sidebar = Color.FromArgb(17, 19, 26);
-    private static readonly Color Surface = Color.FromArgb(24, 27, 36);
-    private static readonly Color SurfaceRaised = Color.FromArgb(31, 35, 46);
-    private static readonly Color Accent = Color.FromArgb(124, 108, 255);
-    private static readonly Color AccentHover = Color.FromArgb(139, 125, 255);
-    private static readonly Color Muted = Color.FromArgb(154, 162, 180);
-    private static readonly Color Border = Color.FromArgb(46, 52, 67);
-    private static readonly Color Success = Color.FromArgb(69, 214, 162);
+    private static readonly Color Canvas = Color.FromArgb(7, 8, 13);
+    private static readonly Color Sidebar = Color.FromArgb(10, 11, 17);
+    private static readonly Color Surface = Color.FromArgb(15, 17, 25);
+    private static readonly Color SurfaceRaised = Color.FromArgb(22, 24, 34);
+    private static readonly Color Accent = Color.FromArgb(141, 121, 255);
+    private static readonly Color AccentStrong = Color.FromArgb(103, 80, 210);
+    private static readonly Color AccentHover = Color.FromArgb(154, 137, 255);
+    private static readonly Color Cyan = Color.FromArgb(54, 182, 213);
+    private static readonly Color Muted = Color.FromArgb(174, 172, 188);
+    private static readonly Color Subtle = Color.FromArgb(125, 124, 141);
+    private static readonly Color Border = Color.FromArgb(42, 46, 58);
+    private static readonly Color Success = Color.FromArgb(114, 216, 180);
 
     private readonly bool _uninstallMode;
     private readonly Label _titleLabel;
@@ -23,7 +27,7 @@ internal sealed class SetupForm : Form
     private readonly Button _browseButton;
     private readonly CheckBox _startMenuShortcut;
     private readonly CheckBox _desktopShortcut;
-    private readonly ProgressBar _progressBar;
+    private readonly PremiumProgressBar _progressBar;
     private readonly Label _statusLabel;
     private readonly Button _primaryButton;
     private readonly Button _cancelButton;
@@ -42,9 +46,9 @@ internal sealed class SetupForm : Form
         MaximizeBox = false;
         MinimizeBox = true;
         ShowIcon = false;
-        ClientSize = new Size(920, 620);
-        MinimumSize = new Size(936, 659);
-        MaximumSize = new Size(936, 659);
+        ClientSize = new Size(980, 650);
+        MinimumSize = new Size(996, 689);
+        MaximumSize = new Size(996, 689);
         AutoScaleMode = AutoScaleMode.Dpi;
         BackColor = Canvas;
         ForeColor = Color.White;
@@ -61,23 +65,23 @@ internal sealed class SetupForm : Form
         Controls.Add(main);
         main.BringToFront();
 
-        var brandEyebrow = new Label
+        var eyebrow = new Label
         {
             AutoSize = true,
             Text = uninstallMode ? "MAINTENANCE" : "INSTALLATION",
             ForeColor = Accent,
-            Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold),
-            Location = new Point(30, 28)
+            Font = new Font("Segoe UI Semibold", 8.5F, FontStyle.Bold),
+            Location = new Point(34, 30)
         };
-        main.Controls.Add(brandEyebrow);
+        main.Controls.Add(eyebrow);
 
         _titleLabel = new Label
         {
             AutoSize = true,
             Text = uninstallMode ? "Remove SNAPVERE" : $"Install SNAPVERE {InstallerEngine.VersionText}",
-            ForeColor = Color.White,
+            ForeColor = Color.FromArgb(247, 245, 255),
             Font = new Font("Segoe UI Semibold", 24F, FontStyle.Bold),
-            Location = new Point(26, 48)
+            Location = new Point(30, 49)
         };
         main.Controls.Add(_titleLabel);
 
@@ -85,19 +89,18 @@ internal sealed class SetupForm : Form
         {
             AutoSize = false,
             Text = uninstallMode
-                ? "Remove the application and Windows registration while keeping your screenshots."
-                : "A local-first, self-contained Windows install. No account, telemetry, or administrator access is required.",
+                ? "Remove the application and Windows registration while preserving your local captures."
+                : "Fast, private Windows capture. Self-contained, per-user and ready for tray-first use after installation.",
             ForeColor = Muted,
-            Location = new Point(30, 88),
-            Size = new Size(600, 34)
+            Location = new Point(34, 91),
+            Size = new Size(620, 38)
         };
         main.Controls.Add(_subtitleLabel);
 
-        var card = new Panel
+        var card = new RoundedPanel(Surface, Border, 18)
         {
-            Location = new Point(28, 132),
-            Size = new Size(614, 360),
-            BackColor = Surface,
+            Location = new Point(32, 139),
+            Size = new Size(636, 374),
             Padding = new Padding(22)
         };
         main.Controls.Add(card);
@@ -106,30 +109,30 @@ internal sealed class SetupForm : Form
         {
             AutoSize = true,
             Text = "Mozilla Public License 2.0",
-            ForeColor = Color.White,
+            ForeColor = Color.FromArgb(247, 245, 255),
             Font = new Font("Segoe UI Semibold", 11F, FontStyle.Bold),
-            Location = new Point(22, 16)
+            Location = new Point(22, 18)
         };
         card.Controls.Add(_licenseLabel);
 
         var licenseHint = new Label
         {
             AutoSize = true,
-            Text = "Review the terms before continuing",
-            ForeColor = Muted,
+            Text = "Review the license terms before continuing",
+            ForeColor = Subtle,
             Font = new Font("Segoe UI", 9F),
-            Location = new Point(22, 38)
+            Location = new Point(22, 42)
         };
         card.Controls.Add(licenseHint);
 
         _licenseBox = new RichTextBox
         {
-            Location = new Point(22, 64),
-            Size = new Size(570, 154),
+            Location = new Point(22, 69),
+            Size = new Size(592, 151),
             ReadOnly = true,
             BorderStyle = BorderStyle.FixedSingle,
-            BackColor = Color.FromArgb(13, 15, 20),
-            ForeColor = Color.FromArgb(222, 225, 234),
+            BackColor = Color.FromArgb(9, 11, 17),
+            ForeColor = Color.FromArgb(222, 221, 230),
             DetectUrls = true,
             TabStop = false,
             Font = new Font("Segoe UI", 9F)
@@ -140,8 +143,8 @@ internal sealed class SetupForm : Form
         {
             AutoSize = true,
             Text = "I have read and accept the license terms",
-            ForeColor = Color.White,
-            Location = new Point(22, 230),
+            ForeColor = Color.FromArgb(240, 238, 247),
+            Location = new Point(22, 232),
             Cursor = Cursors.Hand
         };
         _acceptLicense.CheckedChanged += (_, _) => UpdatePrimaryButtonState();
@@ -152,22 +155,23 @@ internal sealed class SetupForm : Form
             AutoSize = true,
             Text = "Install location",
             ForeColor = Muted,
-            Location = new Point(22, 265)
+            Font = new Font("Segoe UI Semibold", 9F),
+            Location = new Point(22, 267)
         };
         card.Controls.Add(_installLocationLabel);
 
         _installPath = new TextBox
         {
-            Location = new Point(22, 288),
-            Size = new Size(448, 29),
+            Location = new Point(22, 291),
+            Size = new Size(463, 29),
             Text = InstallerEngine.GetDefaultInstallDirectory(),
-            BackColor = Color.FromArgb(14, 16, 22),
+            BackColor = Color.FromArgb(9, 11, 17),
             ForeColor = Color.White,
             BorderStyle = BorderStyle.FixedSingle
         };
         card.Controls.Add(_installPath);
 
-        _browseButton = CreateSecondaryButton("Browse", new Point(480, 286), new Size(112, 32));
+        _browseButton = CreateSecondaryButton("Browse", new Point(496, 289), new Size(118, 34));
         _browseButton.Click += BrowseButton_Click;
         card.Controls.Add(_browseButton);
 
@@ -176,8 +180,8 @@ internal sealed class SetupForm : Form
             AutoSize = true,
             Checked = true,
             Text = "Start menu shortcut",
-            ForeColor = Color.White,
-            Location = new Point(22, 329),
+            ForeColor = Color.FromArgb(235, 233, 242),
+            Location = new Point(22, 337),
             Cursor = Cursors.Hand
         };
         card.Controls.Add(_startMenuShortcut);
@@ -187,19 +191,16 @@ internal sealed class SetupForm : Form
             AutoSize = true,
             Checked = false,
             Text = "Desktop shortcut",
-            ForeColor = Color.White,
-            Location = new Point(208, 329),
+            ForeColor = Color.FromArgb(235, 233, 242),
+            Location = new Point(210, 337),
             Cursor = Cursors.Hand
         };
         card.Controls.Add(_desktopShortcut);
 
-        _progressBar = new ProgressBar
+        _progressBar = new PremiumProgressBar(SurfaceRaised, Accent)
         {
-            Location = new Point(28, 510),
-            Size = new Size(614, 7),
-            Minimum = 0,
-            Maximum = 100,
-            Style = ProgressBarStyle.Continuous
+            Location = new Point(32, 530),
+            Size = new Size(636, 7)
         };
         main.Controls.Add(_progressBar);
 
@@ -207,11 +208,11 @@ internal sealed class SetupForm : Form
         {
             AutoEllipsis = true,
             Text = uninstallMode
-                ? "Same Setup executable removes SNAPVERE; there is no separate uninstall.exe."
-                : "Ready to install locally. Screenshots stay under Pictures\\SNAPVERE.",
+                ? "The same Setup executable removes SNAPVERE. Your captures remain untouched."
+                : "Ready to install. Normal launch stays quietly in the notification area.",
             ForeColor = Muted,
-            Location = new Point(28, 530),
-            Size = new Size(390, 40)
+            Location = new Point(32, 550),
+            Size = new Size(430, 42)
         };
         main.Controls.Add(_statusLabel);
 
@@ -219,22 +220,22 @@ internal sealed class SetupForm : Form
         {
             AutoSize = true,
             Checked = true,
-            Text = "Launch SNAPVERE now",
-            ForeColor = Color.White,
-            Location = new Point(28, 574),
+            Text = "Launch SNAPVERE in the tray now",
+            ForeColor = Color.FromArgb(235, 233, 242),
+            Location = new Point(32, 605),
             Visible = false,
             Cursor = Cursors.Hand
         };
         main.Controls.Add(_launchAfterInstall);
 
-        _cancelButton = CreateSecondaryButton("Cancel", new Point(424, 554), new Size(100, 38));
+        _cancelButton = CreateSecondaryButton("Cancel", new Point(448, 592), new Size(102, 40));
         _cancelButton.Click += (_, _) => Close();
         main.Controls.Add(_cancelButton);
 
         _primaryButton = CreatePrimaryButton(
             uninstallMode ? "Remove" : "Install",
-            new Point(534, 554),
-            new Size(108, 38));
+            new Point(560, 592),
+            new Size(108, 40));
         _primaryButton.Click += PrimaryButton_Click;
         main.Controls.Add(_primaryButton);
 
@@ -255,31 +256,16 @@ internal sealed class SetupForm : Form
 
     private static Panel BuildSidebar(bool uninstallMode)
     {
-        var sidebar = new Panel
+        var sidebar = new GradientPanel(Sidebar, Color.FromArgb(17, 14, 29))
         {
             Dock = DockStyle.Left,
-            Width = 250,
-            BackColor = Sidebar
+            Width = 280
         };
 
-        var accentBar = new Panel
+        var mark = new BrandMarkControl
         {
-            Dock = DockStyle.Left,
-            Width = 4,
-            BackColor = Accent
-        };
-        sidebar.Controls.Add(accentBar);
-
-        var mark = new Label
-        {
-            AutoSize = false,
-            Text = "S",
-            TextAlign = ContentAlignment.MiddleCenter,
-            Location = new Point(28, 32),
-            Size = new Size(46, 46),
-            BackColor = Accent,
-            ForeColor = Color.White,
-            Font = new Font("Segoe UI Semibold", 17F, FontStyle.Bold)
+            Location = new Point(30, 34),
+            Size = new Size(54, 54)
         };
         sidebar.Controls.Add(mark);
 
@@ -287,38 +273,48 @@ internal sealed class SetupForm : Form
         {
             AutoSize = true,
             Text = "SNAPVERE",
-            ForeColor = Color.White,
-            Font = new Font("Segoe UI Semibold", 14F, FontStyle.Bold),
-            Location = new Point(28, 94)
+            ForeColor = Color.FromArgb(247, 245, 255),
+            Font = new Font("Segoe UI Semibold", 15F, FontStyle.Bold),
+            Location = new Point(30, 104)
         };
         sidebar.Controls.Add(brand);
+
+        var tagline = new Label
+        {
+            AutoSize = true,
+            Text = "Capture. Edit. Done.",
+            ForeColor = Accent,
+            Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold),
+            Location = new Point(31, 135)
+        };
+        sidebar.Controls.Add(tagline);
 
         var version = new Label
         {
             AutoSize = true,
             Text = $"Version {InstallerEngine.VersionText}",
-            ForeColor = Muted,
-            Font = new Font("Segoe UI", 9F),
-            Location = new Point(29, 121)
+            ForeColor = Subtle,
+            Font = new Font("Segoe UI", 8.5F),
+            Location = new Point(31, 160)
         };
         sidebar.Controls.Add(version);
 
-        var tagline = new Label
+        var statement = new Label
         {
             AutoSize = false,
             Text = uninstallMode
-                ? "Clean removal, without touching your captures."
-                : "Capture anything.\r\nPrivate by default.",
-            ForeColor = Color.FromArgb(214, 218, 229),
-            Font = new Font("Segoe UI Semibold", 12F, FontStyle.Bold),
-            Location = new Point(28, 174),
-            Size = new Size(190, 58)
+                ? "Clean removal.\r\nCaptures stay yours."
+                : "Private capture,\r\nready when you are.",
+            ForeColor = Color.FromArgb(235, 232, 244),
+            Font = new Font("Segoe UI Semibold", 16F, FontStyle.Bold),
+            Location = new Point(30, 213),
+            Size = new Size(210, 68)
         };
-        sidebar.Controls.Add(tagline);
+        sidebar.Controls.Add(statement);
 
-        AddSidebarFeature(sidebar, 270, "SELF-CONTAINED", "Includes its required app runtime.");
-        AddSidebarFeature(sidebar, 340, "PER-USER", "No administrator elevation by default.");
-        AddSidebarFeature(sidebar, 410, "LOCAL-FIRST", "No account or telemetry required.");
+        AddSidebarFeature(sidebar, 323, "TRAY-FIRST", "Starts quietly. Print Screen opens Region Capture.", Accent);
+        AddSidebarFeature(sidebar, 403, "LOCAL-FIRST", "No account, telemetry or cloud upload required.", Cyan);
+        AddSidebarFeature(sidebar, 483, "SELF-CONTAINED", "Per-user install with its required app runtime.", Accent);
 
         var footerDot = new Label
         {
@@ -326,32 +322,40 @@ internal sealed class SetupForm : Form
             Text = "●",
             ForeColor = Success,
             Font = new Font("Segoe UI", 8F),
-            Location = new Point(28, 563)
+            Location = new Point(30, 607)
         };
         sidebar.Controls.Add(footerDot);
 
         var footer = new Label
         {
             AutoSize = true,
-            Text = "Brendigo · Windows",
+            Text = "Brendigo  •  Windows",
             ForeColor = Muted,
             Font = new Font("Segoe UI", 8.5F),
-            Location = new Point(44, 564)
+            Location = new Point(47, 608)
         };
         sidebar.Controls.Add(footer);
 
         return sidebar;
     }
 
-    private static void AddSidebarFeature(Panel sidebar, int top, string title, string description)
+    private static void AddSidebarFeature(Panel sidebar, int top, string title, string description, Color accentColor)
     {
+        var indicator = new Panel
+        {
+            Location = new Point(30, top + 2),
+            Size = new Size(3, 45),
+            BackColor = accentColor
+        };
+        sidebar.Controls.Add(indicator);
+
         var titleLabel = new Label
         {
             AutoSize = true,
             Text = title,
-            ForeColor = Accent,
+            ForeColor = accentColor,
             Font = new Font("Segoe UI Semibold", 8F, FontStyle.Bold),
-            Location = new Point(28, top)
+            Location = new Point(44, top)
         };
         sidebar.Controls.Add(titleLabel);
 
@@ -360,9 +364,9 @@ internal sealed class SetupForm : Form
             AutoSize = false,
             Text = description,
             ForeColor = Muted,
-            Font = new Font("Segoe UI", 9F),
-            Location = new Point(28, top + 21),
-            Size = new Size(188, 38)
+            Font = new Font("Segoe UI", 8.8F),
+            Location = new Point(44, top + 21),
+            Size = new Size(200, 43)
         };
         sidebar.Controls.Add(descriptionLabel);
     }
@@ -383,7 +387,7 @@ internal sealed class SetupForm : Form
         {
             AutoSize = true,
             Text = "What will be removed",
-            ForeColor = Color.White,
+            ForeColor = Color.FromArgb(247, 245, 255),
             Font = new Font("Segoe UI Semibold", 16F, FontStyle.Bold),
             Location = new Point(24, 28)
         };
@@ -392,23 +396,28 @@ internal sealed class SetupForm : Form
         var message = new Label
         {
             AutoSize = false,
-            Text = "SNAPVERE application files\r\nStart menu and Desktop shortcuts created by Setup\r\nWindows Installed apps registration\r\n\r\nYour screenshots in Pictures\\SNAPVERE are preserved.",
-            ForeColor = Color.FromArgb(224, 227, 235),
+            Text = "SNAPVERE application files\r\nStart menu and Desktop shortcuts created by Setup\r\nWindows Installed apps registration\r\nWindows startup registration owned by this installation\r\n\r\nYour screenshots in Pictures\\SNAPVERE are preserved.",
+            ForeColor = Color.FromArgb(224, 222, 232),
             Font = new Font("Segoe UI", 11F),
             Location = new Point(25, 82),
-            Size = new Size(550, 170)
+            Size = new Size(570, 182)
         };
         card.Controls.Add(message);
 
-        var privacy = new Label
+        var privacy = new RoundedPanel(Color.FromArgb(17, 38, 34), Color.FromArgb(51, 109, 91), 12)
+        {
+            Location = new Point(24, 283),
+            Size = new Size(570, 56)
+        };
+        privacy.Controls.Add(new Label
         {
             AutoSize = false,
-            Text = "✓  Capture files are not part of the uninstall cleanup.",
+            Text = "●   Capture files are not part of uninstall cleanup.",
             ForeColor = Success,
-            Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold),
-            Location = new Point(25, 278),
-            Size = new Size(540, 30)
-        };
+            Font = new Font("Segoe UI Semibold", 9.5F, FontStyle.Bold),
+            Location = new Point(14, 17),
+            Size = new Size(530, 24)
+        });
         card.Controls.Add(privacy);
     }
 
@@ -449,7 +458,7 @@ internal sealed class SetupForm : Form
         }
 
         SetBusy(true);
-        _progressBar.Value = 0;
+        _progressBar.SetValue(0);
         _statusLabel.Text = _uninstallMode ? "Removing SNAPVERE…" : "Preparing secure local installation…";
 
         InstallerResult result;
@@ -467,24 +476,24 @@ internal sealed class SetupForm : Form
                 startMenu,
                 desktop,
                 silent: false,
-                progress => BeginInvoke(() => _progressBar.Value = Math.Clamp(progress, 0, 100))));
+                progress => BeginInvoke(() => _progressBar.SetValue(Math.Clamp(progress, 0, 100)))));
         }
 
         _statusLabel.Text = result.Message;
         if (!result.Succeeded)
         {
-            _progressBar.Value = 0;
+            _progressBar.SetValue(0);
             SetBusy(false);
             MessageBox.Show(this, result.Message, "SNAPVERE Setup", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return;
         }
 
-        _progressBar.Value = 100;
+        _progressBar.SetValue(100);
         _completed = true;
         _titleLabel.Text = _uninstallMode ? "SNAPVERE removed" : "SNAPVERE is ready";
         _subtitleLabel.Text = _uninstallMode
             ? "The application has been removed from this Windows account. Your screenshots remain untouched."
-            : "Installation completed successfully. SNAPVERE is ready to launch.";
+            : "Installation completed successfully. SNAPVERE can now stay ready in your notification area.";
         _primaryButton.Text = "Finish";
         _primaryButton.Enabled = true;
         _cancelButton.Visible = false;
@@ -530,16 +539,17 @@ internal sealed class SetupForm : Form
             Text = text,
             Location = location,
             Size = size,
-            BackColor = Accent,
+            BackColor = AccentStrong,
             ForeColor = Color.White,
             FlatStyle = FlatStyle.Flat,
             Cursor = Cursors.Hand,
             UseVisualStyleBackColor = false,
             Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold)
         };
-        button.FlatAppearance.BorderSize = 0;
+        button.FlatAppearance.BorderColor = Accent;
+        button.FlatAppearance.BorderSize = 1;
         button.FlatAppearance.MouseOverBackColor = AccentHover;
-        button.FlatAppearance.MouseDownBackColor = Color.FromArgb(92, 78, 210);
+        button.FlatAppearance.MouseDownBackColor = Color.FromArgb(92, 72, 190);
         return button;
     }
 
@@ -551,15 +561,171 @@ internal sealed class SetupForm : Form
             Location = location,
             Size = size,
             BackColor = SurfaceRaised,
-            ForeColor = Color.White,
+            ForeColor = Color.FromArgb(241, 239, 248),
             FlatStyle = FlatStyle.Flat,
             Cursor = Cursors.Hand,
             UseVisualStyleBackColor = false,
-            Font = new Font("Segoe UI", 9.5F)
+            Font = new Font("Segoe UI Semibold", 9.5F)
         };
         button.FlatAppearance.BorderColor = Border;
         button.FlatAppearance.BorderSize = 1;
-        button.FlatAppearance.MouseOverBackColor = Color.FromArgb(39, 44, 57);
+        button.FlatAppearance.MouseOverBackColor = Color.FromArgb(33, 36, 49);
         return button;
+    }
+
+    private static GraphicsPath CreateRoundedRectangle(Rectangle rectangle, int radius)
+    {
+        var path = new GraphicsPath();
+        var diameter = Math.Max(2, Math.Min(radius * 2, Math.Min(rectangle.Width, rectangle.Height)));
+        var arc = new Rectangle(rectangle.X, rectangle.Y, diameter, diameter);
+        path.AddArc(arc, 180, 90);
+        arc.X = rectangle.Right - diameter;
+        path.AddArc(arc, 270, 90);
+        arc.Y = rectangle.Bottom - diameter;
+        path.AddArc(arc, 0, 90);
+        arc.X = rectangle.Left;
+        path.AddArc(arc, 90, 90);
+        path.CloseFigure();
+        return path;
+    }
+
+    private sealed class GradientPanel : Panel
+    {
+        private readonly Color _startColor;
+        private readonly Color _endColor;
+
+        internal GradientPanel(Color startColor, Color endColor)
+        {
+            _startColor = startColor;
+            _endColor = endColor;
+            DoubleBuffered = true;
+        }
+
+        protected override void OnPaintBackground(PaintEventArgs e)
+        {
+            using var brush = new LinearGradientBrush(ClientRectangle, _startColor, _endColor, 45F);
+            e.Graphics.FillRectangle(brush, ClientRectangle);
+        }
+    }
+
+    private sealed class RoundedPanel : Panel
+    {
+        private readonly int _cornerRadius;
+        private readonly Color _borderColor;
+
+        internal RoundedPanel(Color backColor, Color borderColor, int cornerRadius)
+        {
+            BackColor = backColor;
+            _borderColor = borderColor;
+            _cornerRadius = cornerRadius;
+            DoubleBuffered = true;
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            var rect = ClientRectangle;
+            rect.Width -= 1;
+            rect.Height -= 1;
+            using var path = CreateRoundedRectangle(rect, _cornerRadius);
+            using var pen = new Pen(_borderColor, 1F);
+            e.Graphics.DrawPath(pen, path);
+        }
+
+        protected override void OnResize(EventArgs eventargs)
+        {
+            base.OnResize(eventargs);
+            using var path = CreateRoundedRectangle(ClientRectangle, _cornerRadius);
+            var oldRegion = Region;
+            Region = new Region(path);
+            oldRegion?.Dispose();
+        }
+    }
+
+    private sealed class BrandMarkControl : Control
+    {
+        internal BrandMarkControl()
+        {
+            DoubleBuffered = true;
+            BackColor = Sidebar;
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            var rect = new Rectangle(1, 1, Math.Max(1, Width - 3), Math.Max(1, Height - 3));
+            using var path = CreateRoundedRectangle(rect, 14);
+            using var gradient = new LinearGradientBrush(
+                rect,
+                Color.FromArgb(97, 74, 232),
+                Color.FromArgb(54, 182, 213),
+                45F);
+            e.Graphics.FillPath(gradient, path);
+            using var borderPen = new Pen(Color.FromArgb(165, 155, 255), 1F);
+            e.Graphics.DrawPath(borderPen, path);
+
+            using var shardPen = new Pen(Color.FromArgb(247, 245, 255), 6F)
+            {
+                StartCap = LineCap.Round,
+                EndCap = LineCap.Round
+            };
+            e.Graphics.DrawLine(shardPen, 18, 38, 35, 15);
+
+            using var highlightPen = new Pen(Color.FromArgb(210, 205, 255), 3F)
+            {
+                StartCap = LineCap.Round,
+                EndCap = LineCap.Round
+            };
+            e.Graphics.DrawLine(highlightPen, 27, 35, 39, 20);
+        }
+    }
+
+    private sealed class PremiumProgressBar : Control
+    {
+        private const int MinimumValue = 0;
+        private const int MaximumValue = 100;
+        private readonly Color _trackColor;
+        private readonly Color _progressColor;
+        private int _value;
+
+        internal PremiumProgressBar(Color trackColor, Color progressColor)
+        {
+            _trackColor = trackColor;
+            _progressColor = progressColor;
+            DoubleBuffered = true;
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
+        }
+
+        internal void SetValue(int value)
+        {
+            _value = Math.Clamp(value, MinimumValue, MaximumValue);
+            Invalidate();
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            var rect = new Rectangle(0, 0, Math.Max(1, Width - 1), Math.Max(1, Height - 1));
+            using var trackPath = CreateRoundedRectangle(rect, Math.Max(2, Height / 2));
+            using var trackBrush = new SolidBrush(_trackColor);
+            e.Graphics.FillPath(trackBrush, trackPath);
+
+            var ratio = _value / (double)MaximumValue;
+            var progressWidth = (int)Math.Round(rect.Width * ratio);
+            if (progressWidth <= 0)
+            {
+                return;
+            }
+
+            var progressRect = new Rectangle(rect.X, rect.Y, Math.Max(1, progressWidth), rect.Height);
+            using var progressPath = CreateRoundedRectangle(progressRect, Math.Max(2, Height / 2));
+            using var gradient = new LinearGradientBrush(
+                progressRect,
+                _progressColor,
+                Cyan,
+                LinearGradientMode.Horizontal);
+            e.Graphics.FillPath(gradient, progressPath);
+        }
     }
 }

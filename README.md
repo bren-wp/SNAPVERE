@@ -10,7 +10,7 @@
 
 SNAPVERE is designed to stay out of the way. Start it once and it lives in the Windows notification area instead of keeping a launcher window open.
 
-> Current `main` targets **0.0.4**. The release is not considered published until GitHub Actions completes the release workflow and creates the immutable `v0.0.4` release assets.
+> Current release source targets **0.0.6**. GitHub Releases and the immutable `v0.0.6` tag are the source of truth for published binaries.
 
 ## How SNAPVERE works
 
@@ -45,7 +45,7 @@ The implemented menu exposes:
 
 ### Region editor
 
-The editor exists only while Region Capture is active. Selection, annotation, Copy and Save happen directly over the frozen screen.
+The editor exists only while Region Capture is active. Selection, annotation, Copy and Save happen directly over the frozen screen through the compact floating editor toolbar.
 
 ![SNAPVERE Region Capture editor workflow illustration](docs/images/region-editor.svg)
 
@@ -66,19 +66,22 @@ The editor exists only while Region Capture is active. Selection, annotation, Co
 
 If Windows or another application owns Print Screen, the independent `Ctrl+Shift+1` shortcut keeps Region Capture available.
 
-## What's in the 0.0.4 line
+## What's in the 0.0.6 line
 
-The current development line builds on v0.0.3 with a tray-first product architecture:
+The 0.0.6 line keeps the tray-first architecture introduced in v0.0.4 and supersedes v0.0.5, whose manual-launch behavior reopened the legacy Capture Center.
 
-- normal startup stays hidden in the notification area;
+- normal installed and Portable startup stays hidden in the notification area;
 - tray single left-click starts Region Capture immediately;
-- right-click opens a branded programmatic WinUI quick-action flyout;
+- right-click opens the redesigned compact graphite + violet/indigo/cyan quick-action flyout;
 - Print Screen maps to Region Capture with `Ctrl+Shift+1` fallback;
-- separate real Options / Preferences and Recent Captures surfaces replace the old visible capture dashboard path;
+- Region Capture uses refreshed selection chrome and a horizontal floating annotation/action toolbar;
+- Window Capture picker, Options / Recent Captures, About and Setup/Uninstall use one consistent SNAPVERE visual system;
+- the former Capture Center is now only a hidden runtime/capture coordinator and is not a normal user surface;
 - implemented preferences include **Start SNAPVERE with Windows** and **Include cursor on capture**;
+- the cursor preference is consumed by the real Region, Window and Screen workflows;
 - installed and Portable startup registration resolves to stable executables rather than temporary cache paths;
-- refreshed violet SNAPVERE shard/feather identity for tray and repository surfaces;
-- explicit tray-only startup probes validate installed and Portable packages;
+- startup and uninstall use the same deterministic tray-first executable command contract;
+- installed and Portable packages must pass tray, Region, Window and secondary-UI runtime materialization probes;
 - strict x64/x86 package lifecycle verifies Setup, Portable and same-Setup uninstall behavior.
 
 ## Region Capture
@@ -91,6 +94,7 @@ Implemented today:
 - live `W × H` physical-pixel badge;
 - Arrow 1 px / Shift+Arrow 10 px movement;
 - Move, Pen, Line, Arrow, Box and Highlight tools;
+- horizontal floating annotation/action toolbar;
 - annotation colors and Undo;
 - `Ctrl+Z` Undo and `Ctrl+C` Copy;
 - Copy to Windows clipboard;
@@ -113,7 +117,7 @@ Implemented today:
 - one frozen DPI-aware picker surface per monitor;
 - negative virtual-desktop coordinate support;
 - coordinated highlight for windows spanning monitors;
-- hover title and physical-size feedback;
+- redesigned hover title, focus chrome and physical-size feedback;
 - left-click capture / Esc cancel;
 - Windows.Graphics.Capture `CreateForWindow` acquisition;
 - atomic local PNG save and Recent Captures integration.
@@ -157,6 +161,8 @@ See [`docs/SETTINGS.md`](docs/SETTINGS.md).
 ```text
 Tray left-click / Print Screen / capture hotkeys / branded tray menu
     ↓
+Hidden WinUI runtime/capture coordinator
+    ↓
 Snapvere.Application workflows
     ├── Region / Screen → ResilientScreenCaptureService
     │                    ├── preferred: WindowsGraphicsCaptureService
@@ -190,16 +196,16 @@ Read more:
 
 ## Packaging
 
-Public 0.0.4 release builds are native self-contained x64 and x86/32-bit packages.
+Public 0.0.6 release builds are native self-contained x64 and x86/32-bit packages.
 
-The release workflow is expected to publish exactly:
+The release workflow publishes exactly:
 
-- `SNAPVERE-0.0.4-Setup-x64.exe`
-- `SNAPVERE-0.0.4-Portable-x64.exe`
-- `SNAPVERE-0.0.4-Setup-x86.exe`
-- `SNAPVERE-0.0.4-Portable-x86.exe`
-- `SNAPVERE-0.0.4-x64.zip`
-- `SNAPVERE-0.0.4-x86.zip`
+- `SNAPVERE-0.0.6-Setup-x64.exe`
+- `SNAPVERE-0.0.6-Portable-x64.exe`
+- `SNAPVERE-0.0.6-Setup-x86.exe`
+- `SNAPVERE-0.0.6-Portable-x86.exe`
+- `SNAPVERE-0.0.6-x64.zip`
+- `SNAPVERE-0.0.6-x86.zip`
 - `SHA256SUMS.txt`
 
 ### Same-Setup uninstall contract
@@ -228,13 +234,15 @@ GitHub Actions validates x64 and x86 on `windows-2022`. The package lifecycle ga
 - explicit license acceptance for silent Setup;
 - Installed apps uninstall registration;
 - no standalone uninstaller payload;
-- separate activated-window construction probe;
-- **tray-only startup probe with the Capture Center hidden**;
+- separate activated-window construction probe for the hidden runtime host;
+- **tray-only startup probe with the runtime host hidden**;
 - Region-editor runtime materialization;
 - Window-picker runtime materialization;
+- **tray flyout + Options + About runtime materialization**;
 - normal installed and Portable tray-first process survival;
 - installed Windows startup registration cleanup on uninstall;
-- same-Setup uninstall cleanup.
+- same-Setup uninstall cleanup;
+- exact seven-file release asset contract and SHA-256 manifest validation.
 
 Hosted CI is not treated as proof of capturing arbitrary protected end-user desktop content. WGC/native capture is production-wired while package/runtime surfaces are validated independently.
 

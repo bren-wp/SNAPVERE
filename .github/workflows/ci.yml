@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  SNAPVERE_VERSION: 0.0.5
+  SNAPVERE_VERSION: 0.0.6
 
 permissions:
   contents: read
@@ -143,10 +143,10 @@ jobs:
             -Arch "${{ matrix.arch }}"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Verify double-click EXE visibility
+      - name: Verify tray-first EXE startup
         shell: pwsh
         run: |
-          & ./eng/Test-SnapvereInteractiveLaunch.ps1 `
+          & ./eng/Test-SnapvereTrayFirstLaunch.ps1 `
             -SetupPath "artifacts/setup-${{ matrix.arch }}/SNAPVERE-Setup.exe" `
             -PortablePath "artifacts/portable-${{ matrix.arch }}/SNAPVERE-Portable.exe" `
             -Version $env:SNAPVERE_VERSION `

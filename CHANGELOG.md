@@ -14,6 +14,54 @@ All notable SNAPVERE changes are documented here.
 - automatic update mechanism
 - Authenticode signing
 
+## [0.0.6] - 2026-09-10
+
+### Added
+
+- redesigned premium tray quick-action flyout using the graphite + violet/indigo/cyan SNAPVERE identity
+- redesigned Region Capture selection chrome and horizontal floating annotation/action toolbar
+- redesigned Window Capture target highlight/title surface
+- redesigned Options / Recent Captures and About secondary windows
+- redesigned Setup/Uninstall interface while preserving the existing installer contract
+- installed and Portable `SECONDARY_UI_READY` runtime probe that materializes tray flyout, Options and About
+- dedicated v0.0.6 release workflow using the current package and tray-first QA scripts
+
+### Changed
+
+- normal manual launch is tray-first again and no longer activates the legacy Capture Center
+- the former `CaptureCenterWindow` is reduced to a hidden runtime/capture coordinator rather than a product dashboard
+- Windows startup uses the same plain installed/Portable executable command as normal tray-first launch
+- Region, Window and Screen capture resolve the persisted `Include cursor on capture` preference at execution time
+- setup branding, spacing, progress treatment and product messaging now match the rest of the v0.0.6 UI
+- release QA now gates secondary product surfaces in addition to startup, Region and Window probes
+
+### Fixed
+
+- v0.0.5 manual-launch behavior that reopened the Capture Center contrary to the intended tray-first UX
+- `Include cursor on capture` being persisted by the settings surface but ignored by the hidden capture coordinator
+- Setup custom-control compile failures caused by WinForms analyzer serialization requirements and inaccessible rounded-path helpers
+- startup/uninstall command mismatch introduced by the temporary `--background` startup path
+- release automation dependency on the removed `Test-SnapvereInteractiveLaunch.ps1` script
+
+### Security
+
+- no telemetry, account, cloud-upload or network dependency was introduced by the redesign
+- same-Setup uninstall validation and constrained install-directory cleanup remain mandatory
+- uninstall still removes `Run\SNAPVERE` only when it exactly matches the validated installed executable
+- x64/x86 publication is gated by build/test, Setup/Portable lifecycle, tray-first, Region, Window, secondary-UI and uninstall validation
+- release assets are constrained to the expected seven-file set and publish SHA-256 checksums
+
+## [0.0.5] - 2026-09-10
+
+### Changed
+
+- manual application launches activated the Capture Center while Windows startup used a separate `--background` tray-only path
+- Setup received an automated UI materialization probe
+
+### Superseded
+
+- v0.0.6 restores one consistent tray-first launch contract for normal, startup and Portable execution and supersedes v0.0.5 for normal downloads
+
 ## [0.0.4] - 2026-09-10
 
 ### Added

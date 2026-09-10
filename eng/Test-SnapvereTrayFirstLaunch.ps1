@@ -19,6 +19,7 @@ $portable = (Resolve-Path -LiteralPath $PortablePath).Path
 $install = Join-Path $env:LOCALAPPDATA 'Programs/SNAPVERE'
 $startupLog = Join-Path $env:LOCALAPPDATA 'SNAPVERE/Logs/startup.log'
 $setupUiMarker = Join-Path $env:TEMP 'SNAPVERE/setup-ui-probe.ready'
+$trayMarker = Join-Path $env:TEMP 'SNAPVERE/tray-startup-probe.ready'
 
 function Write-StartupLogIfPresent {
     if (Test-Path -LiteralPath $startupLog) {
@@ -32,43 +33,22 @@ function Stop-SnapvereProcesses {
     Get-Process -Name Snapvere -ErrorAction SilentlyContinue | ForEach-Object {
         try { Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue } catch {}
     }
-    Start-Sleep -Milliseconds 300
+    Start-Sleep -Milliseconds 350
 }
 
-function Wait-ForVisibleMainWindow([System.Diagnostics.Process] $Process, [string] $Name) {
-    $deadline = (Get-Date).AddSeconds(12)
-    while ((Get-Date) -lt $deadline) {
-        if ($Process.HasExited) {
-            Write-StartupLogIfPresent
-            throw "$Name exited before showing a window. Exit code: $($Process.ExitCode)."
-        }
-
-        $Process.Refresh()
-        if ($Process.MainWindowHandle -ne 0) {
-            Write-Host "$Name showed a visible top-level window. PID=$($Process.Id), HWND=$($Process.MainWindowHandle)."
-            return
-        }
-
-        Start-Sleep -Milliseconds 250
-    }
-
-    Write-StartupLogIfPresent
-    throw "$Name stayed alive but never showed a visible top-level window."
-}
-
-function Assert-BackgroundOnly([System.Diagnostics.Process] $Process, [string] $Name) {
+function Assert-TrayOnlyProcess([System.Diagnostics.Process] $Process, [string] $Name) {
     Start-Sleep -Seconds 3
     if ($Process.HasExited) {
         Write-StartupLogIfPresent
-        throw "$Name exited during background startup. Exit code: $($Process.ExitCode)."
+        throw "$Name exited during tray-first startup. Exit code: $($Process.ExitCode)."
     }
 
     $Process.Refresh()
     if ($Process.MainWindowHandle -ne 0) {
-        throw "$Name unexpectedly showed a window during --background startup."
+        throw "$Name opened a top-level main window during normal tray-first startup. HWND=$($Process.MainWindowHandle)."
     }
 
-    Write-Host "$Name remained alive without a visible main window during --background startup."
+    Write-Host "$Name stayed alive without a visible main window. PID=$($Process.Id)."
 }
 
 function Get-SingleSnapvereProcess([string] $Name) {
@@ -88,6 +68,39 @@ function Get-SingleSnapvereProcess([string] $Name) {
     throw "$Name did not leave a SNAPVERE app process running."
 }
 
+function Invoke-TrayProbe([string] $FilePath, [string] $Name) {
+    Remove-Item -LiteralPath $trayMarker -Force -ErrorAction SilentlyContinue
+    $env:SNAPVERE_TRAY_STARTUP_PROBE = '1'
+    $process = $null
+    try {
+        $process = Start-Process -FilePath $FilePath -ArgumentList @('--tray-startup-probe') -PassThru
+        if (-not $process.WaitForExit(20000)) {
+            try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
+            Write-StartupLogIfPresent
+            throw "$Name tray startup probe timed out."
+        }
+        if ($process.ExitCode -ne 0) {
+            Write-StartupLogIfPresent
+            throw "$Name tray startup probe failed with exit code $($process.ExitCode)."
+        }
+        if (-not (Test-Path -LiteralPath $trayMarker)) {
+            Write-StartupLogIfPresent
+            throw "$Name did not confirm that its native tray host initialized."
+        }
+        $markerText = Get-Content -LiteralPath $trayMarker -Raw
+        $escapedVersion = [Regex]::Escape($Version)
+        if ($markerText -notmatch "SNAPVERE $escapedVersion TRAY_READY") {
+            throw "$Name tray startup marker is invalid: $markerText"
+        }
+        Write-Host "$Name tray startup probe: $markerText"
+    }
+    finally {
+        Remove-Item Env:SNAPVERE_TRAY_STARTUP_PROBE -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $trayMarker -Force -ErrorAction SilentlyContinue
+        if ($null -ne $process) { $process.Dispose() }
+    }
+}
+
 Stop-SnapvereProcesses
 Remove-Item -LiteralPath $setupUiMarker -Force -ErrorAction SilentlyContinue
 
@@ -100,15 +113,15 @@ if ($setupProbe.ExitCode -ne 0) {
     throw "$Arch Setup UI probe failed with exit code $($setupProbe.ExitCode)."
 }
 if (-not (Test-Path -LiteralPath $setupUiMarker)) {
-    throw "$Arch Setup exited without showing its UI probe form."
+    throw "$Arch Setup exited without materializing its UI probe form."
 }
-Write-Host "$Arch Setup UI opened successfully."
+Write-Host "$Arch Setup UI materialized successfully."
 Remove-Item -LiteralPath $setupUiMarker -Force -ErrorAction SilentlyContinue
 $setupProbe.Dispose()
 
 $installProcess = Start-Process -FilePath $setup -ArgumentList @('--silent', '--accept-license') -Wait -PassThru
 if ($installProcess.ExitCode -ne 0) {
-    throw "$Arch Setup failed to install for interactive launch validation: $($installProcess.ExitCode)."
+    throw "$Arch Setup failed to install for tray-first validation: $($installProcess.ExitCode)."
 }
 $installProcess.Dispose()
 
@@ -118,45 +131,42 @@ if (-not (Test-Path -LiteralPath $installedApp -PathType Leaf)) {
     throw "$Arch installed application is missing: $installedApp"
 }
 
-$manual = Start-Process -FilePath $installedApp -PassThru
-try {
-    Wait-ForVisibleMainWindow $manual "Installed SNAPVERE $Arch manual launch"
-}
-finally {
-    try { if (-not $manual.HasExited) { Stop-Process -Id $manual.Id -Force -ErrorAction SilentlyContinue } } catch {}
-    $manual.Dispose()
-}
+Invoke-TrayProbe $installedApp "Installed SNAPVERE $Arch"
 Stop-SnapvereProcesses
 
-$background = Start-Process -FilePath $installedApp -ArgumentList @('--background') -PassThru
+$installed = Start-Process -FilePath $installedApp -PassThru
 try {
-    Assert-BackgroundOnly $background "Installed SNAPVERE $Arch"
+    Assert-TrayOnlyProcess $installed "Installed SNAPVERE $Arch normal launch"
 }
 finally {
-    try { if (-not $background.HasExited) { Stop-Process -Id $background.Id -Force -ErrorAction SilentlyContinue } } catch {}
-    $background.Dispose()
+    try { if (-not $installed.HasExited) { Stop-Process -Id $installed.Id -Force -ErrorAction SilentlyContinue } } catch {}
+    $installed.Dispose()
 }
 Stop-SnapvereProcesses
 
 $uninstallProcess = Start-Process -FilePath $installedSetup -ArgumentList @('--uninstall', '--silent') -Wait -PassThru
 if ($uninstallProcess.ExitCode -ne 0) {
-    throw "$Arch Setup failed to uninstall after interactive launch validation: $($uninstallProcess.ExitCode)."
+    throw "$Arch Setup failed to uninstall after tray-first validation: $($uninstallProcess.ExitCode)."
 }
 $uninstallProcess.Dispose()
+
+Invoke-TrayProbe $portable "Portable SNAPVERE $Arch"
+Stop-SnapvereProcesses
 
 $portableLauncher = Start-Process -FilePath $portable -PassThru
 if (-not $portableLauncher.WaitForExit(15000)) {
     try { Stop-Process -Id $portableLauncher.Id -Force -ErrorAction SilentlyContinue } catch {}
-    throw "$Arch Portable launcher did not return after manual startup."
+    throw "$Arch Portable launcher did not return after starting the tray-only app."
 }
 if ($portableLauncher.ExitCode -ne 0) {
     Write-StartupLogIfPresent
-    throw "$Arch Portable launcher failed manual startup: $($portableLauncher.ExitCode)."
+    throw "$Arch Portable launcher failed normal startup: $($portableLauncher.ExitCode)."
 }
 $portableLauncher.Dispose()
-$portableApp = Get-SingleSnapvereProcess "Portable SNAPVERE $Arch manual launch"
+
+$portableApp = Get-SingleSnapvereProcess "Portable SNAPVERE $Arch normal launch"
 try {
-    Wait-ForVisibleMainWindow $portableApp "Portable SNAPVERE $Arch manual launch"
+    Assert-TrayOnlyProcess $portableApp "Portable SNAPVERE $Arch normal launch"
 }
 finally {
     try { if (-not $portableApp.HasExited) { Stop-Process -Id $portableApp.Id -Force -ErrorAction SilentlyContinue } } catch {}
@@ -164,24 +174,4 @@ finally {
 }
 Stop-SnapvereProcesses
 
-$portableBackgroundLauncher = Start-Process -FilePath $portable -ArgumentList @('--background') -PassThru
-if (-not $portableBackgroundLauncher.WaitForExit(15000)) {
-    try { Stop-Process -Id $portableBackgroundLauncher.Id -Force -ErrorAction SilentlyContinue } catch {}
-    throw "$Arch Portable launcher did not return after background startup."
-}
-if ($portableBackgroundLauncher.ExitCode -ne 0) {
-    Write-StartupLogIfPresent
-    throw "$Arch Portable launcher failed background startup: $($portableBackgroundLauncher.ExitCode)."
-}
-$portableBackgroundLauncher.Dispose()
-$portableBackgroundApp = Get-SingleSnapvereProcess "Portable SNAPVERE $Arch background launch"
-try {
-    Assert-BackgroundOnly $portableBackgroundApp "Portable SNAPVERE $Arch"
-}
-finally {
-    try { if (-not $portableBackgroundApp.HasExited) { Stop-Process -Id $portableBackgroundApp.Id -Force -ErrorAction SilentlyContinue } } catch {}
-    $portableBackgroundApp.Dispose()
-}
-Stop-SnapvereProcesses
-
-Write-Host "SNAPVERE $Version $Arch interactive EXE launch validation passed."
+Write-Host "SNAPVERE $Version $Arch tray-first EXE startup validation passed."

@@ -80,27 +80,28 @@ public sealed class WindowTargetOverlayWindow : Window
 
         _targetBorder = new Border
         {
-            BorderBrush = Brush(0xFF, 0x7C, 0x6C, 0xFF),
+            BorderBrush = AccentBrush,
             BorderThickness = new Thickness(3),
-            CornerRadius = new CornerRadius(3),
+            CornerRadius = new CornerRadius(7),
             IsHitTestVisible = false,
             Visibility = Visibility.Collapsed
         };
 
         _targetText = new TextBlock
         {
-            FontSize = 12,
-            Foreground = Brush(0xFF, 0xFF, 0xFF, 0xFF),
+            FontSize = 11.5,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = Strong,
             TextTrimming = TextTrimming.CharacterEllipsis,
             MaxWidth = 460
         };
         _targetLabel = new Border
         {
-            Padding = new Thickness(10, 6, 10, 6),
-            Background = Brush(0xF2, 0x11, 0x13, 0x18),
-            BorderBrush = Brush(0x50, 0xFF, 0xFF, 0xFF),
+            Padding = new Thickness(11, 7, 11, 7),
+            Background = Brush(0xF4, 0x0C, 0x0E, 0x15),
+            BorderBrush = Brush(0xA0, 0x8D, 0x79, 0xFF),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(7),
+            CornerRadius = new CornerRadius(11),
             Child = _targetText,
             Visibility = Visibility.Collapsed,
             IsHitTestVisible = false
@@ -162,28 +163,54 @@ public sealed class WindowTargetOverlayWindow : Window
         _chrome.Children.Add(_targetLabel);
         root.Children.Add(_chrome);
         root.Children.Add(_inputLayer);
+        root.Children.Add(BuildHint());
+        root.Children.Add(_focusTarget);
+        return root;
+    }
 
-        var hint = new Border
+    private static Border BuildHint()
+    {
+        var content = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 9,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        content.Children.Add(new Border
+        {
+            Width = 30,
+            Height = 30,
+            CornerRadius = new CornerRadius(9),
+            Background = Brush(0x5A, 0x67, 0x50, 0xD2),
+            BorderBrush = Brush(0x70, 0xA5, 0x8E, 0xFF),
+            BorderThickness = new Thickness(1),
+            Child = new FontIcon
+            {
+                Glyph = "\uE7F4",
+                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontSize = 13,
+                Foreground = Strong
+            }
+        });
+
+        var copy = new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center };
+        copy.Children.Add(Text("Window Capture", 11, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        copy.Children.Add(Text("Point to a window · click to capture · Esc to cancel", 9.5, Muted));
+        content.Children.Add(copy);
+
+        return new Border
         {
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Top,
             Margin = new Thickness(16),
-            Padding = new Thickness(12, 8, 12, 8),
-            Background = Brush(0xEE, 0x11, 0x13, 0x18),
-            BorderBrush = Brush(0x40, 0xFF, 0xFF, 0xFF),
+            Padding = new Thickness(9, 8, 12, 8),
+            Background = Brush(0xF2, 0x09, 0x0B, 0x11),
+            BorderBrush = Brush(0x80, 0x45, 0x3D, 0x72),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(9),
+            CornerRadius = new CornerRadius(14),
             IsHitTestVisible = false,
-            Child = new TextBlock
-            {
-                Text = "Move over a window · click to capture · Esc to cancel",
-                FontSize = 12,
-                Foreground = Brush(0xFF, 0xFF, 0xFF, 0xFF)
-            }
+            Child = content
         };
-        root.Children.Add(hint);
-        root.Children.Add(_focusTarget);
-        return root;
     }
 
     private void ConfigureWindow()
@@ -331,7 +358,7 @@ public sealed class WindowTargetOverlayWindow : Window
             targetBounds.Top >= displayBounds.Top && targetBounds.Top < displayBounds.Bottom;
         if (targetStartsOnThisDisplay)
         {
-            _targetText.Text = $"{target.Title}   ·   {targetBounds.Width} × {targetBounds.Height}";
+            _targetText.Text = $"{target.Title}   •   {targetBounds.Width} × {targetBounds.Height}";
             _targetLabel.Visibility = Visibility.Visible;
             _targetLabel.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
             var labelWidth = _targetLabel.DesiredSize.Width;
@@ -339,9 +366,9 @@ public sealed class WindowTargetOverlayWindow : Window
             Canvas.SetLeft(_targetLabel, Math.Clamp(x, 0d, Math.Max(0d, totalWidth - labelWidth)));
             Canvas.SetTop(
                 _targetLabel,
-                y >= labelHeight + 8d
-                    ? y - labelHeight - 8d
-                    : Math.Min(Math.Max(0d, totalHeight - labelHeight), bottom + 8d));
+                y >= labelHeight + 10d
+                    ? y - labelHeight - 10d
+                    : Math.Min(Math.Max(0d, totalHeight - labelHeight), bottom + 10d));
         }
         else
         {
@@ -391,7 +418,7 @@ public sealed class WindowTargetOverlayWindow : Window
     private static Rectangle CreateDimRectangle(Visibility visibility = Visibility.Visible)
         => new()
         {
-            Fill = Brush(0xA4, 0x00, 0x00, 0x00),
+            Fill = Brush(0xB2, 0x03, 0x04, 0x08),
             IsHitTestVisible = false,
             Visibility = visibility
         };
@@ -409,8 +436,25 @@ public sealed class WindowTargetOverlayWindow : Window
         rectangle.Height = Math.Max(0d, height);
     }
 
+    private static TextBlock Text(
+        string value,
+        double size,
+        SolidColorBrush foreground,
+        Windows.UI.Text.FontWeight? weight = null)
+        => new()
+        {
+            Text = value,
+            FontSize = size,
+            Foreground = foreground,
+            FontWeight = weight ?? Microsoft.UI.Text.FontWeights.Normal
+        };
+
     private static SolidColorBrush Brush(byte alpha, byte red, byte green, byte blue)
         => new(Windows.UI.Color.FromArgb(alpha, red, green, blue));
+
+    private static SolidColorBrush Strong => Brush(0xFF, 0xF7, 0xF5, 0xFF);
+    private static SolidColorBrush Muted => Brush(0xFF, 0xB5, 0xB0, 0xC3);
+    private static SolidColorBrush AccentBrush => Brush(0xFF, 0x8D, 0x79, 0xFF);
 
     private static async Task<WriteableBitmap> CreateFrozenBitmapAsync(CaptureFrame frame)
     {

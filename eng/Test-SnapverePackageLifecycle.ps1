@@ -30,7 +30,11 @@ function Write-StartupLogIfPresent {
     }
 }
 
-function Invoke-StartupProbe([string] $FilePath, [string] $Name) {
+function Invoke-StartupProbe(
+    [string] $FilePath,
+    [string] $Name,
+    [int] $TimeoutMilliseconds = 20000
+) {
     $marker = Join-Path $env:TEMP 'SNAPVERE/startup-probe.ready'
     Remove-Item -LiteralPath $marker -Force -ErrorAction SilentlyContinue
     $env:SNAPVERE_STARTUP_PROBE = '1'
@@ -38,10 +42,11 @@ function Invoke-StartupProbe([string] $FilePath, [string] $Name) {
 
     try {
         $process = Start-Process -FilePath $FilePath -ArgumentList @('--startup-probe') -PassThru
-        if (-not $process.WaitForExit(20000)) {
+        if (-not $process.WaitForExit($TimeoutMilliseconds)) {
             Write-StartupLogIfPresent
             try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
-            throw "$Name startup probe timed out after 20 seconds."
+            $timeoutSeconds = [Math]::Ceiling($TimeoutMilliseconds / 1000.0)
+            throw "$Name startup probe timed out after $timeoutSeconds seconds."
         }
 
         if ($process.ExitCode -ne 0) {
@@ -186,11 +191,51 @@ function Invoke-WindowOverlayProbe([string] $FilePath, [string] $Name) {
     }
 }
 
+function Invoke-SecondaryUiProbe([string] $FilePath, [string] $Name) {
+    $marker = Join-Path $env:TEMP 'SNAPVERE/secondary-ui-probe.ready'
+    Remove-Item -LiteralPath $marker -Force -ErrorAction SilentlyContinue
+    $env:SNAPVERE_SECONDARY_UI_PROBE = '1'
+    $process = $null
+
+    try {
+        $process = Start-Process -FilePath $FilePath -ArgumentList @('--secondary-ui-probe') -PassThru
+        if (-not $process.WaitForExit(25000)) {
+            Write-StartupLogIfPresent
+            try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
+            throw "$Name secondary-UI probe timed out after 25 seconds."
+        }
+
+        if ($process.ExitCode -ne 0) {
+            Write-StartupLogIfPresent
+            throw "$Name secondary-UI probe failed with exit code $($process.ExitCode)."
+        }
+
+        if (-not (Test-Path -LiteralPath $marker)) {
+            Write-StartupLogIfPresent
+            throw "$Name exited successfully but did not materialize tray flyout, Options and About."
+        }
+
+        $markerText = Get-Content -LiteralPath $marker -Raw
+        $escapedVersion = [Regex]::Escape($Version)
+        if ($markerText -notmatch "SNAPVERE $escapedVersion SECONDARY_UI_READY") {
+            throw "$Name secondary-UI marker is invalid: $markerText"
+        }
+
+        Write-Host "$Name secondary-UI marker: $markerText"
+    }
+    finally {
+        Remove-Item Env:SNAPVERE_SECONDARY_UI_PROBE -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $marker -Force -ErrorAction SilentlyContinue
+        if ($null -ne $process) { $process.Dispose() }
+    }
+}
+
 function Clear-ProbeEnvironment {
     Remove-Item Env:SNAPVERE_STARTUP_PROBE -ErrorAction SilentlyContinue
     Remove-Item Env:SNAPVERE_TRAY_STARTUP_PROBE -ErrorAction SilentlyContinue
     Remove-Item Env:SNAPVERE_REGION_OVERLAY_PROBE -ErrorAction SilentlyContinue
     Remove-Item Env:SNAPVERE_WINDOW_OVERLAY_PROBE -ErrorAction SilentlyContinue
+    Remove-Item Env:SNAPVERE_SECONDARY_UI_PROBE -ErrorAction SilentlyContinue
 }
 
 function Invoke-NormalAppLaunch([string] $FilePath, [string] $Name) {
@@ -268,6 +313,7 @@ Invoke-StartupProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-TrayStartupProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-RegionOverlayProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-WindowOverlayProbe $installedApp "Installed SNAPVERE $Arch"
+Invoke-SecondaryUiProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-NormalAppLaunch $installedApp "Installed SNAPVERE $Arch"
 
 if (-not (Test-Path -LiteralPath $startupRunKey)) {
@@ -297,10 +343,14 @@ if ($null -ne $startupAfterUninstall -and $null -ne $startupAfterUninstall.$star
     throw "$Arch uninstall left the installed SNAPVERE startup registration behind."
 }
 
-Invoke-StartupProbe $portable "Portable SNAPVERE $Arch"
+# The first Portable probe includes cold embedded-payload extraction before the
+# child WinUI probe can start. Keep installed probes strict at 20 seconds, but
+# allow a realistic cold-start budget for the Portable wrapper on hosted CI.
+Invoke-StartupProbe $portable "Portable SNAPVERE $Arch" 60000
 Invoke-TrayStartupProbe $portable "Portable SNAPVERE $Arch"
 Invoke-RegionOverlayProbe $portable "Portable SNAPVERE $Arch"
 Invoke-WindowOverlayProbe $portable "Portable SNAPVERE $Arch"
+Invoke-SecondaryUiProbe $portable "Portable SNAPVERE $Arch"
 Invoke-NormalPortableLaunch $portable "Portable SNAPVERE $Arch"
 
 Clear-ProbeEnvironment
