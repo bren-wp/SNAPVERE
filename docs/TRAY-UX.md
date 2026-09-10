@@ -34,7 +34,7 @@ No menu or large window is opened first. Double-click handling is debounced so i
 
 Right-click opens the branded programmatic WinUI flyout near the tray/cursor area. The native tray message thread raises `TrayCommand.ShowMenu`; WinUI window creation occurs only after routing through the application UI `DispatcherQueue`.
 
-The v0.0.7 flyout follows the maintained `docs/images/tray-menu.svg` product reference: **418×540**, graphite `#0D1321`, strong `#52617F` outline, violet primary capture treatment, restrained cyan accents and the canonical SNAPVERE mark.
+The current flyout follows the maintained `docs/images/tray-menu.svg` product reference: **418×540**, graphite `#0D1321`, strong `#52617F` outline, violet primary capture treatment, restrained cyan accents and the canonical SNAPVERE mark.
 
 Current user actions:
 
@@ -93,7 +93,7 @@ Uses local filesystem-backed history and provides real open/refresh/folder actio
 
 Opens the factual commercial SNAPVERE About surface with Brendigo developer/publisher identity and the official `snapvere.com` / `brendigo.com` links.
 
-## Startup and UI probes
+## Startup, runtime and visual probes
 
 `SNAPVERE_TRAY_STARTUP_PROBE=1` or `--tray-startup-probe` exercises tray-first initialization and emits:
 
@@ -103,7 +103,7 @@ SNAPVERE 0.0.X TRAY_READY
 
 The marker is reached only after global hotkeys and the tray host initialize while the runtime coordinator remains hidden.
 
-`SNAPVERE_SECONDARY_UI_PROBE=1` or `--secondary-ui-probe` now runs the actual WinUI materialization sequence:
+`SNAPVERE_SECONDARY_UI_PROBE=1` or `--secondary-ui-probe` runs the actual WinUI materialization sequence:
 
 ```text
 tray flyout loaded
@@ -113,7 +113,9 @@ tray flyout loaded
   → SECONDARY_UI_READY
 ```
 
-This probe is executed against installed and Portable x64/x86 release candidates. A compile-successful but non-renderable Tray, Options, Language or About surface therefore blocks release publication.
+This marker probe is executed against installed and Portable x64/x86 package candidates. A compile-successful but non-materializable Tray, Options, Language or About surface therefore blocks package validation.
+
+CI now adds a stronger x64 visual check with `eng/Capture-SnapvereVisualQa.ps1`. It launches the actual application probe paths, captures a rendered `tray-menu.png` plus Region, Window, Options, Language and About PNGs, rejects empty/unexpectedly small frames, records dimensions/size/SHA-256 in `manifest.json` and uploads the result as a short-lived GitHub Actions artifact.
 
 The legacy `READY` activated-window probe remains only a hidden runtime-host construction check. It is not expected normal-launch behavior.
 
