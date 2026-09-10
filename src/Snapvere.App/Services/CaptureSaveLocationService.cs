@@ -59,6 +59,9 @@ public sealed class CaptureSaveLocationService
             return capture;
         }
 
-        return _relocationService.Relocate(capture, selection.Path);
+        return await _relocationService.RelocateAsync(
+            capture,
+            selection.Path,
+            cancellationToken);
     }
 }
