@@ -7,7 +7,6 @@ internal static class SetupStartupRegistration
     private const string RunRegistryPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string RunValueName = "SNAPVERE";
     private const string AppExecutableName = "Snapvere.exe";
-    private const string BackgroundArgument = "--background";
 
     internal static bool TrySetEnabled(string installDirectory, bool enabled, out string? warning)
     {
@@ -39,7 +38,7 @@ internal static class SetupStartupRegistration
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(installDirectory);
         var appPath = Path.GetFullPath(Path.Combine(installDirectory, AppExecutableName));
-        return $"\"{appPath}\" {BackgroundArgument}";
+        return $"\"{appPath}\"";
     }
 
     private static void Enable(string installDirectory)
