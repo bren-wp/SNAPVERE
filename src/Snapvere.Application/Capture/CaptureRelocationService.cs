@@ -49,7 +49,12 @@ public sealed class CaptureRelocationService
             {
                 File.Delete(sourcePath);
             }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            catch (IOException)
+            {
+                // Destination is already complete. Keep the source as a safe
+                // recovery copy rather than risking loss of the capture.
+            }
+            catch (UnauthorizedAccessException)
             {
                 // Destination is already complete. Keep the source as a safe
                 // recovery copy rather than risking loss of the capture.
