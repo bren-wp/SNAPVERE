@@ -12,7 +12,7 @@
 
 SNAPVERE is a tray-first Windows screenshot application focused on fast Region, Window and Screen capture, lightweight annotation and local PNG output. English is the default product language; Croatian and more than 20 additional languages are available from the in-app Language picker.
 
-> The current development line targets **0.0.7**. Published tags/releases remain immutable. `v0.0.6` is not rewritten by this work.
+> The current published release is **v0.0.8**. Changes on `main` after the v0.0.8 release are unreleased hardening work. Published tags, releases and assets are treated as immutable and are not rewritten by later development.
 
 ## Product UI
 
@@ -36,7 +36,7 @@ The editor works directly over the frozen capture frame with physical-pixel sele
 
 ![SNAPVERE Region editor UI reference](docs/images/region-editor.svg)
 
-The SVG files above are maintained UI reference artwork, not synthetic claims of a Windows screenshot. Release QA also materializes the real Tray, Region, Window, Options and About WinUI surfaces. Real PNG screenshots are committed only from the actual application capture workflow so documentation cannot drift into fake mockups.
+The SVG files above are maintained UI reference artwork, not synthetic claims of a Windows screenshot. Current CI also launches the real x64 WinUI application and captures six rendered PNG surfaces — Region, Window, Tray, Options, Language and About — before universal packaging is allowed to pass. Those PNGs plus a manifest containing dimensions, byte sizes and SHA-256 digests are uploaded as a short-lived GitHub Actions visual-QA artifact. Repository screenshots are committed only when they come from a reproducible real application capture path.
 
 ## Capture controls
 
@@ -66,6 +66,8 @@ Windows.Graphics.Capture + Direct3D 11 is preferred where supported. Expected mo
 ## Languages
 
 English (`en`) is the canonical default and fallback. The built-in language catalog currently exposes 28 language choices, including Croatian (`hr`), German, French, Spanish, Italian, Portuguese, Dutch, Polish, Czech, Slovak, Slovenian, Hungarian, Romanian, Bulgarian, Greek, Swedish, Danish, Norwegian, Finnish, Estonian, Latvian, Lithuanian, Ukrainian, Turkish, Japanese, Korean and Simplified Chinese.
+
+Croatian includes dedicated text for current capture and secondary product surfaces. Languages without a dedicated translation for a particular string fall back to canonical English instead of displaying an unknown resource key.
 
 Language preference is stored locally in:
 
@@ -147,10 +149,12 @@ GitHub Actions builds/tests x64 and x86 and cross-builds ARM64. The universal pa
 - tray-first startup;
 - Region editor materialization;
 - Window picker materialization;
-- Tray / Options / About materialization;
+- Tray / Options / Language / About materialization;
+- six real rendered x64 WinUI PNG snapshots: Region, Window, Tray, Options, Language and About;
+- a visual-QA manifest containing each captured surface's dimensions, byte size and SHA-256 digest;
 - unit tests for payload architecture selection, safe ZIP extraction and language/settings fallback.
 
-ARM64 is cross-built and package-validated on the hosted x64 runner; that runner is not treated as a real ARM64 runtime device.
+A visually empty or unexpectedly small rendered UI snapshot fails CI. ARM64 is cross-built and package-validated on the hosted x64 runner; that runner is not treated as a real ARM64 runtime device.
 
 ## Architecture
 
