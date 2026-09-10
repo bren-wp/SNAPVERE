@@ -13,7 +13,6 @@ public sealed class Win32WindowDiscovery : IWindowDiscovery
 {
     private const int DwmExtendedFrameBounds = 9;
     private const int DwmCloaked = 14;
-    private const uint GetAncestorRoot = 2;
 
     private readonly uint _currentProcessId = unchecked((uint)Environment.ProcessId);
 
@@ -45,16 +44,7 @@ public sealed class Win32WindowDiscovery : IWindowDiscovery
     }
 
     public WindowDescriptor? TryGetWindowAtPoint(PixelPoint point)
-    {
-        var window = NativeMethods.WindowFromPoint(new NativeMethods.Point(point.X, point.Y));
-        if (window == nint.Zero)
-        {
-            return null;
-        }
-
-        var root = NativeMethods.GetAncestor(window, GetAncestorRoot);
-        return TryDescribe(root == nint.Zero ? window : root);
-    }
+        => WindowHitTesting.FindTopmostAtPoint(GetWindows(), point);
 
     private WindowDescriptor? TryDescribe(nint window)
     {
@@ -156,13 +146,6 @@ public sealed class Win32WindowDiscovery : IWindowDiscovery
         internal delegate bool EnumWindowsProc(nint window, nint parameter);
 
         [StructLayout(LayoutKind.Sequential)]
-        internal readonly struct Point(int x, int y)
-        {
-            internal readonly int X = x;
-            internal readonly int Y = y;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
         internal struct Rect
         {
             internal int Left;
@@ -194,12 +177,6 @@ public sealed class Win32WindowDiscovery : IWindowDiscovery
 
         [DllImport("user32.dll")]
         internal static extern uint GetWindowThreadProcessId(nint window, out uint processId);
-
-        [DllImport("user32.dll")]
-        internal static extern nint WindowFromPoint(Point point);
-
-        [DllImport("user32.dll")]
-        internal static extern nint GetAncestor(nint window, uint flags);
 
         [DllImport("dwmapi.dll")]
         internal static extern int DwmGetWindowAttribute(

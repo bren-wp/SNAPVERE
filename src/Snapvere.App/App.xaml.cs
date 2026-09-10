@@ -35,6 +35,7 @@ public partial class App : Microsoft.UI.Xaml.Application
 
             var services = new ServiceCollection();
             services.AddSingleton<IDisplayDiscovery, Win32DisplayDiscovery>();
+            services.AddSingleton<IWindowDiscovery, Win32WindowDiscovery>();
             services.AddSingleton(TimeProvider.System);
             services.AddSingleton<GdiScreenCaptureService>();
             services.AddSingleton<WindowsGraphicsCaptureService>();
@@ -42,11 +43,15 @@ public partial class App : Microsoft.UI.Xaml.Application
                 new ResilientScreenCaptureService(
                     provider.GetRequiredService<WindowsGraphicsCaptureService>(),
                     provider.GetRequiredService<GdiScreenCaptureService>()));
+            services.AddSingleton<IWindowCaptureService>(provider =>
+                provider.GetRequiredService<WindowsGraphicsCaptureService>());
             services.AddSingleton<PngCaptureEncoder>();
             services.AddSingleton(new CapturePathProvider());
             services.AddSingleton<CaptureFileWriter>();
             services.AddSingleton<ScreenCaptureWorkflow>();
             services.AddSingleton<RegionCaptureWorkflow>();
+            services.AddSingleton<WindowCaptureWorkflow>();
+            services.AddSingleton<WindowTargetPicker>();
             services.AddSingleton<CaptureHistoryService>();
             services.AddSingleton<IGlobalHotkeyService>(
                 _ => new Win32GlobalHotkeyService(DefaultCaptureHotkeys.ImplementedNow));
