@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace Snapvere.UnitTests;
 
-public sealed partial class CaptureRelocationServiceTests
+public sealed class CaptureRelocationServiceTests
 {
     [Fact]
     public async Task RelocateAsync_MovesCompletedCaptureToSelectedDestinationAndOverwritesExistingFile()
@@ -184,9 +184,9 @@ public sealed partial class CaptureRelocationServiceTests
         }
     }
 
-    [LibraryImport("kernel32.dll", EntryPoint = "CreateHardLinkW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+    [DllImport("kernel32.dll", EntryPoint = "CreateHardLinkW", CharSet = CharSet.Unicode, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool CreateHardLinkNative(
+    private static extern bool CreateHardLinkNative(
         string fileName,
         string existingFileName,
         nint securityAttributes);
