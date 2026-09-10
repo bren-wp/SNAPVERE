@@ -11,6 +11,7 @@ using Snapvere.Capture;
 using Snapvere.Capture.Geometry;
 using Snapvere.Capture.Windows;
 using Snapvere.Domain.Capture;
+using Snapvere.Shared;
 using Windows.Graphics;
 using Windows.System;
 
@@ -62,7 +63,7 @@ public sealed class WindowTargetOverlayWindow : Window
         _targetSelected = targetSelected ?? throw new ArgumentNullException(nameof(targetSelected));
         _cancelled = cancelled ?? throw new ArgumentNullException(nameof(cancelled));
 
-        Title = "SNAPVERE — Window Capture";
+        Title = L("WindowCaptureTitle");
 
         _frozenImage = new Image
         {
@@ -116,7 +117,7 @@ public sealed class WindowTargetOverlayWindow : Window
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Top
         };
-        AutomationProperties.SetName(_focusTarget, "Window capture keyboard input");
+        AutomationProperties.SetName(_focusTarget, L("WindowKeyboardInput"));
 
         _root = BuildRoot();
         Content = _root;
@@ -194,8 +195,8 @@ public sealed class WindowTargetOverlayWindow : Window
         });
 
         var copy = new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center };
-        copy.Children.Add(Text("Window Capture", 11, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
-        copy.Children.Add(Text("Point to a window · click to capture · Esc to cancel", 9.5, Muted));
+        copy.Children.Add(Text(L("WindowHintTitle"), 11, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        copy.Children.Add(Text(L("WindowHint"), 9.5, Muted));
         content.Children.Add(copy);
 
         return new Border
@@ -435,6 +436,9 @@ public sealed class WindowTargetOverlayWindow : Window
         rectangle.Width = Math.Max(0d, width);
         rectangle.Height = Math.Max(0d, height);
     }
+
+    private static string L(string key)
+        => SnapvereLocalization.T(key, SnapvereLanguageState.CurrentLanguageCode);
 
     private static TextBlock Text(
         string value,
