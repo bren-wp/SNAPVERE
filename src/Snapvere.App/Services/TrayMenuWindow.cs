@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Snapvere.Shared;
 using Windows.Graphics;
 using Windows.System;
 
@@ -22,13 +23,21 @@ public sealed class TrayMenuWindow : Window
 
     private readonly Action<TrayCommand> _commandHandler;
     private readonly Action _recentCapturesHandler;
+    private readonly Action _languageHandler;
+    private readonly string _languageCode;
     private bool _hasActivated;
     private bool _closingForCommand;
 
-    public TrayMenuWindow(Action<TrayCommand> commandHandler, Action recentCapturesHandler)
+    public TrayMenuWindow(
+        Action<TrayCommand> commandHandler,
+        Action recentCapturesHandler,
+        Action? languageHandler = null,
+        string? languageCode = null)
     {
         _commandHandler = commandHandler ?? throw new ArgumentNullException(nameof(commandHandler));
         _recentCapturesHandler = recentCapturesHandler ?? throw new ArgumentNullException(nameof(recentCapturesHandler));
+        _languageHandler = languageHandler ?? (() => { });
+        _languageCode = SnapvereLocalization.NormalizeLanguageCode(languageCode);
         Title = "SNAPVERE";
         Content = BuildContent();
         ConfigureWindow();
@@ -40,6 +49,8 @@ public sealed class TrayMenuWindow : Window
         PositionNearCursor();
         Activate();
     }
+
+    private string L(string key) => SnapvereLocalization.T(key, _languageCode);
 
     private FrameworkElement BuildContent()
     {
@@ -61,15 +72,15 @@ public sealed class TrayMenuWindow : Window
             Spacing = 4,
             Margin = new Thickness(0, 14, 0, 0)
         };
-        actions.Children.Add(CreateMenuButton("\uE722", "Capture region", "Print Screen", TrayCommand.RegionCapture, primary: true));
-        actions.Children.Add(CreateMenuButton("\uE7F4", "Capture window", "Ctrl + Shift + 2", TrayCommand.WindowCapture));
-        actions.Children.Add(CreateMenuButton("\uE7F8", "Capture screen", "Ctrl + Shift + 4", TrayCommand.ScreenCapture));
+        actions.Children.Add(CreateMenuButton("\uE722", L("CaptureRegion"), "Print Screen", TrayCommand.RegionCapture, primary: true));
+        actions.Children.Add(CreateMenuButton("\uE7F4", L("CaptureWindow"), "Ctrl + Shift + 2", TrayCommand.WindowCapture));
+        actions.Children.Add(CreateMenuButton("\uE7F8", L("CaptureScreen"), "Ctrl + Shift + 4", TrayCommand.ScreenCapture));
         actions.Children.Add(CreateSeparator());
-        actions.Children.Add(CreateMenuButton("\uE838", "Open capture folder", string.Empty, TrayCommand.OpenCaptureFolder));
-        actions.Children.Add(CreateActionButton("\uE713", "Options & recent captures", string.Empty, _recentCapturesHandler));
-        actions.Children.Add(CreateMenuButton("\uE946", "About SNAPVERE", string.Empty, TrayCommand.About));
+        actions.Children.Add(CreateMenuButton("\uE838", L("OpenCaptureFolder"), string.Empty, TrayCommand.OpenCaptureFolder));
+        actions.Children.Add(CreateActionButton("\uE713", L("OptionsRecent"), string.Empty, _recentCapturesHandler));
+        actions.Children.Add(CreateMenuButton("\uE946", L("About"), string.Empty, TrayCommand.About));
         actions.Children.Add(CreateSeparator());
-        actions.Children.Add(CreateMenuButton("\uE7E8", "Exit SNAPVERE", string.Empty, TrayCommand.Exit, danger: true));
+        actions.Children.Add(CreateMenuButton("\uE7E8", L("Exit"), string.Empty, TrayCommand.Exit, danger: true));
         Grid.SetRow(actions, 1);
         root.Children.Add(actions);
 
@@ -90,7 +101,7 @@ public sealed class TrayMenuWindow : Window
             CornerRadius = new CornerRadius(4),
             Background = Brush(0xFF, 0x56, 0xD6, 0xAE)
         });
-        ready.Children.Add(Text("Ready in tray", 10, Muted));
+        ready.Children.Add(Text(L("Ready"), 10, Muted));
         footer.Children.Add(ready);
 
         var version = typeof(TrayMenuWindow).Assembly.GetName().Version?.ToString(3) ?? "dev";
@@ -115,6 +126,7 @@ public sealed class TrayMenuWindow : Window
         var header = new Grid { Height = 58 };
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         header.Children.Add(BuildBrandMark());
 
@@ -137,6 +149,30 @@ public sealed class TrayMenuWindow : Window
         identity.Children.Add(Text("Capture. Edit. Done.", 10.5, Muted));
         Grid.SetColumn(identity, 1);
         header.Children.Add(identity);
+
+        var languageButton = new Button
+        {
+            Width = 38,
+            Height = 38,
+            Padding = new Thickness(0),
+            CornerRadius = new CornerRadius(12),
+            Background = Brush(0xFF, 0x14, 0x1A, 0x28),
+            BorderBrush = Brush(0xFF, 0x2B, 0x36, 0x4B),
+            BorderThickness = new Thickness(1),
+            Content = new FontIcon
+            {
+                Glyph = "\uE774",
+                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontSize = 15,
+                Foreground = Accent
+            },
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        AutomationProperties.SetName(languageButton, L("Language"));
+        ToolTipService.SetToolTip(languageButton, L("ChooseLanguage"));
+        languageButton.Click += (_, _) => InvokeAction(_languageHandler);
+        Grid.SetColumn(languageButton, 2);
+        header.Children.Add(languageButton);
         return header;
     }
 
