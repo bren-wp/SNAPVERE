@@ -1,3 +1,4 @@
+using Snapvere.Shared;
 using System.ComponentModel;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
@@ -251,7 +252,7 @@ public sealed class Win32TrayIconService : ITrayIconService
             Flags = NotifyIconMessage | NotifyIconIcon | NotifyIconTip,
             CallbackMessage = CallbackMessage,
             Icon = _iconHandle,
-            Tip = "SNAPVERE — left click to capture region",
+            Tip = $"SNAPVERE — {SnapvereLocalization.T("CaptureRegion", SnapvereLanguageState.CurrentLanguageCode)}",
             Info = string.Empty,
             InfoTitle = string.Empty
         };
