@@ -17,10 +17,13 @@ public partial class App : Microsoft.UI.Xaml.Application
     private const string StartupProbeMarkerFileName = "startup-probe.ready";
     private const string RegionOverlayProbeEnvironmentVariable = "SNAPVERE_REGION_OVERLAY_PROBE";
     private const string RegionOverlayProbeMarkerFileName = "region-overlay-probe.ready";
+    private const string WindowOverlayProbeEnvironmentVariable = "SNAPVERE_WINDOW_OVERLAY_PROBE";
+    private const string WindowOverlayProbeMarkerFileName = "window-overlay-probe.ready";
 
     private readonly ServiceProvider _services;
     private CaptureCenterWindow? _window;
     private RegionCaptureWindow? _regionProbeWindow;
+    private WindowTargetOverlayWindow? _windowProbeWindow;
     private IGlobalHotkeyService? _hotkeyService;
     private ITrayIconService? _trayIconService;
 
@@ -59,7 +62,7 @@ public partial class App : Microsoft.UI.Xaml.Application
             services.AddTransient<CaptureCenterWindow>();
 
             _services = services.BuildServiceProvider(validateScopes: true);
-            StartupDiagnostics.WriteLine("Application services initialized. WGC is preferred with GDI fallback.");
+            StartupDiagnostics.WriteLine("Application services initialized. WGC is preferred with GDI fallback for monitor acquisition.");
         }
         catch (Exception exception)
         {
@@ -75,6 +78,12 @@ public partial class App : Microsoft.UI.Xaml.Application
             if (IsRegionOverlayProbeRequested())
             {
                 StartRegionOverlayProbe();
+                return;
+            }
+
+            if (IsWindowOverlayProbeRequested())
+            {
+                StartWindowOverlayProbe();
                 return;
             }
 
@@ -134,6 +143,20 @@ public partial class App : Microsoft.UI.Xaml.Application
             argument => string.Equals(argument, "--region-overlay-probe", StringComparison.OrdinalIgnoreCase));
     }
 
+    private static bool IsWindowOverlayProbeRequested()
+    {
+        if (string.Equals(
+                Environment.GetEnvironmentVariable(WindowOverlayProbeEnvironmentVariable),
+                "1",
+                StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return Environment.GetCommandLineArgs().Any(
+            argument => string.Equals(argument, "--window-overlay-probe", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static void CompleteStartupProbe()
     {
         var probeDirectory = Path.Combine(Path.GetTempPath(), "SNAPVERE");
@@ -158,6 +181,61 @@ public partial class App : Microsoft.UI.Xaml.Application
         _window.AppWindow.Hide();
         StartupDiagnostics.WriteLine("Region overlay probe host window hidden.");
 
+        var probe = CreateProbeDesktop();
+        var session = new RegionCaptureSession(probe.Display, probe.Frame);
+
+        var workflow = _services.GetRequiredService<RegionCaptureWorkflow>();
+        var encoder = _services.GetRequiredService<PngCaptureEncoder>();
+        _regionProbeWindow = new RegionCaptureWindow(workflow, encoder, session);
+
+        if (_regionProbeWindow.Content is FrameworkElement root)
+        {
+            root.Loaded += RegionOverlayProbeRoot_Loaded;
+        }
+
+        StartupDiagnostics.WriteLine("Region overlay probe window created.");
+        _ = _regionProbeWindow.ShowAsync();
+        StartupDiagnostics.WriteLine("Region overlay probe activation requested.");
+    }
+
+    private void StartWindowOverlayProbe()
+    {
+        _window = _services.GetRequiredService<CaptureCenterWindow>();
+        _window.Closed += OnMainWindowClosed;
+        _window.Activate();
+        StartupDiagnostics.WriteLine("Window overlay probe host window activated.");
+        _window.AppWindow.Hide();
+        StartupDiagnostics.WriteLine("Window overlay probe host window hidden.");
+
+        var probe = CreateProbeDesktop();
+        var target = new WindowDescriptor(
+            new nint(1),
+            "SNAPVERE Window Capture CI probe",
+            new PixelRect(80, 60, 420, 220),
+            4242,
+            "SNAPVERE.ProbeWindow");
+
+        _windowProbeWindow = new WindowTargetOverlayWindow(
+            probe.Display,
+            probe.Frame,
+            [target],
+            _ => { },
+            _ => { },
+            () => { });
+        _windowProbeWindow.SetTarget(target);
+
+        if (_windowProbeWindow.Content is FrameworkElement root)
+        {
+            root.Loaded += WindowOverlayProbeRoot_Loaded;
+        }
+
+        StartupDiagnostics.WriteLine("Window overlay probe window created.");
+        _windowProbeWindow.Show();
+        StartupDiagnostics.WriteLine("Window overlay probe activation requested.");
+    }
+
+    private static (DisplayDescriptor Display, CaptureFrame Frame) CreateProbeDesktop()
+    {
         const int width = 640;
         const int height = 360;
         var stride = checked(width * 4);
@@ -190,20 +268,7 @@ public partial class App : Microsoft.UI.Xaml.Application
             pixels,
             DateTimeOffset.UtcNow,
             "probe");
-        var session = new RegionCaptureSession(display, frame);
-
-        var workflow = _services.GetRequiredService<RegionCaptureWorkflow>();
-        var encoder = _services.GetRequiredService<PngCaptureEncoder>();
-        _regionProbeWindow = new RegionCaptureWindow(workflow, encoder, session);
-
-        if (_regionProbeWindow.Content is FrameworkElement root)
-        {
-            root.Loaded += RegionOverlayProbeRoot_Loaded;
-        }
-
-        StartupDiagnostics.WriteLine("Region overlay probe window created.");
-        _ = _regionProbeWindow.ShowAsync();
-        StartupDiagnostics.WriteLine("Region overlay probe activation requested.");
+        return (display, frame);
     }
 
     private async void RegionOverlayProbeRoot_Loaded(object sender, RoutedEventArgs e)
@@ -211,23 +276,47 @@ public partial class App : Microsoft.UI.Xaml.Application
         try
         {
             await Task.Delay(250);
-
-            var probeDirectory = Path.Combine(Path.GetTempPath(), "SNAPVERE");
-            Directory.CreateDirectory(probeDirectory);
-            var markerPath = Path.Combine(probeDirectory, RegionOverlayProbeMarkerFileName);
-            var version = typeof(App).Assembly.GetName().Version?.ToString(3) ?? "unknown";
-            File.WriteAllText(
-                markerPath,
-                $"SNAPVERE {version} REGION_OVERLAY_READY | PID={Environment.ProcessId} | ARCH={RuntimeInformation.ProcessArchitecture} | {DateTimeOffset.UtcNow:O}");
-
-            StartupDiagnostics.WriteLine($"Region overlay probe loaded editor surface. Marker={markerPath}");
-            Environment.Exit(0);
+            WriteProbeMarker(
+                RegionOverlayProbeMarkerFileName,
+                "REGION_OVERLAY_READY",
+                "Region overlay probe loaded editor surface.");
         }
         catch (Exception exception)
         {
             StartupDiagnostics.ShowFatal("Region overlay probe", exception);
             Environment.Exit(1);
         }
+    }
+
+    private async void WindowOverlayProbeRoot_Loaded(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await Task.Delay(250);
+            WriteProbeMarker(
+                WindowOverlayProbeMarkerFileName,
+                "WINDOW_OVERLAY_READY",
+                "Window overlay probe loaded target-selection surface.");
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.ShowFatal("Window overlay probe", exception);
+            Environment.Exit(1);
+        }
+    }
+
+    private static void WriteProbeMarker(string fileName, string state, string logMessage)
+    {
+        var probeDirectory = Path.Combine(Path.GetTempPath(), "SNAPVERE");
+        Directory.CreateDirectory(probeDirectory);
+        var markerPath = Path.Combine(probeDirectory, fileName);
+        var version = typeof(App).Assembly.GetName().Version?.ToString(3) ?? "unknown";
+        File.WriteAllText(
+            markerPath,
+            $"SNAPVERE {version} {state} | PID={Environment.ProcessId} | ARCH={RuntimeInformation.ProcessArchitecture} | {DateTimeOffset.UtcNow:O}");
+
+        StartupDiagnostics.WriteLine($"{logMessage} Marker={markerPath}");
+        Environment.Exit(0);
     }
 
     private void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
@@ -311,10 +400,13 @@ public partial class App : Microsoft.UI.Xaml.Application
                     window.ShowFromTray();
                     break;
                 case TrayCommand.RegionCapture:
-                    window.StartCaptureFromHotkey(Snapvere.Domain.Capture.CaptureMode.Region);
+                    window.StartCaptureFromHotkey(CaptureMode.Region);
+                    break;
+                case TrayCommand.WindowCapture:
+                    window.StartCaptureFromHotkey(CaptureMode.Window);
                     break;
                 case TrayCommand.ScreenCapture:
-                    window.StartCaptureFromHotkey(Snapvere.Domain.Capture.CaptureMode.FullScreen);
+                    window.StartCaptureFromHotkey(CaptureMode.FullScreen);
                     break;
                 case TrayCommand.Exit:
                     window.Close();

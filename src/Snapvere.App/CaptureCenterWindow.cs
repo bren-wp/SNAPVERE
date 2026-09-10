@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Snapvere.Application.Capture;
 using Snapvere.Capture.Hotkeys;
+using Snapvere.Capture.Windows;
 using Snapvere.Domain.Capture;
 using Snapvere.Imaging;
 using System.Diagnostics;
@@ -12,8 +13,8 @@ namespace Snapvere.App;
 /// <summary>
 /// Compact production launcher for SNAPVERE. The application is intentionally
 /// capture-first and tray-friendly: Region Capture is the primary action,
-/// Screen Capture remains directly available, and local recent captures stay
-/// visible without turning startup into a large dashboard.
+/// Window and Screen Capture remain directly available, and local recent
+/// captures stay visible without turning startup into a large dashboard.
 /// </summary>
 public sealed class CaptureCenterWindow : Window
 {
@@ -21,10 +22,13 @@ public sealed class CaptureCenterWindow : Window
 
     private readonly ScreenCaptureWorkflow _screenCaptureWorkflow;
     private readonly RegionCaptureWorkflow _regionCaptureWorkflow;
+    private readonly WindowCaptureWorkflow _windowCaptureWorkflow;
+    private readonly WindowTargetPicker _windowTargetPicker;
     private readonly CaptureHistoryService _captureHistoryService;
     private readonly PngCaptureEncoder _pngEncoder;
 
     private readonly Button _regionCaptureButton;
+    private readonly Button _windowCaptureButton;
     private readonly Button _screenCaptureButton;
     private readonly TextBlock _statusTitle;
     private readonly TextBlock _statusMessage;
@@ -39,21 +43,26 @@ public sealed class CaptureCenterWindow : Window
     public CaptureCenterWindow(
         ScreenCaptureWorkflow screenCaptureWorkflow,
         RegionCaptureWorkflow regionCaptureWorkflow,
+        WindowCaptureWorkflow windowCaptureWorkflow,
+        WindowTargetPicker windowTargetPicker,
         CaptureHistoryService captureHistoryService,
         PngCaptureEncoder pngEncoder)
     {
         _screenCaptureWorkflow = screenCaptureWorkflow ?? throw new ArgumentNullException(nameof(screenCaptureWorkflow));
         _regionCaptureWorkflow = regionCaptureWorkflow ?? throw new ArgumentNullException(nameof(regionCaptureWorkflow));
+        _windowCaptureWorkflow = windowCaptureWorkflow ?? throw new ArgumentNullException(nameof(windowCaptureWorkflow));
+        _windowTargetPicker = windowTargetPicker ?? throw new ArgumentNullException(nameof(windowTargetPicker));
         _captureHistoryService = captureHistoryService ?? throw new ArgumentNullException(nameof(captureHistoryService));
         _pngEncoder = pngEncoder ?? throw new ArgumentNullException(nameof(pngEncoder));
 
         Title = "SNAPVERE";
 
         _regionCaptureButton = CreatePrimaryButton("Region capture", RegionCaptureButton_Click);
+        _windowCaptureButton = CreateSecondaryButton("Window capture", WindowCaptureButton_Click);
         _screenCaptureButton = CreateSecondaryButton("Screen capture", ScreenCaptureButton_Click);
         _statusTitle = CreateText("Ready", 12, Brush(0xFF, 0xFF, 0xFF));
         _statusMessage = CreateText(
-            "Press Print Screen for Region Capture. Ctrl + Shift + 1 remains the fallback.",
+            "Press Print Screen for Region Capture. Ctrl + Shift + 2 starts Window Capture.",
             11,
             Brush(0xA9, 0xB2, 0xC3));
         _statusMessage.TextWrapping = TextWrapping.Wrap;
@@ -72,6 +81,9 @@ public sealed class CaptureCenterWindow : Window
         {
             case CaptureMode.Region:
                 _ = ExecuteRegionCaptureAsync();
+                break;
+            case CaptureMode.Window:
+                _ = ExecuteWindowCaptureAsync();
                 break;
             case CaptureMode.FullScreen:
             case CaptureMode.Monitor:
@@ -97,8 +109,8 @@ public sealed class CaptureCenterWindow : Window
         if (!report.HasConflicts)
         {
             ShowStatus(
-                "Print Screen is ready",
-                "Region Capture is available from Print Screen, Ctrl + Shift + 1, the launcher and the tray icon.",
+                "Capture hotkeys are ready",
+                "Print Screen starts Region Capture, Ctrl + Shift + 2 starts Window Capture and Ctrl + Shift + 4 captures the screen.",
                 StatusKind.Success);
             return;
         }
@@ -112,7 +124,7 @@ public sealed class CaptureCenterWindow : Window
         {
             ShowStatus(
                 "Print Screen is already in use",
-                "Windows or another application owns Print Screen. Ctrl + Shift + 1 still starts Region Capture.",
+                "Windows or another application owns Print Screen. Ctrl + Shift + 1 still starts Region Capture; other registered SNAPVERE shortcuts remain available.",
                 StatusKind.Warning);
             return;
         }
@@ -197,14 +209,14 @@ public sealed class CaptureCenterWindow : Window
         brand.Children.Add(CreateText("SNAPVERE", 11, Brush(0xA8, 0x9E, 0xFF)));
         brand.Children.Add(CreateText("Capture. Edit. Done.", 24, Brush(0xFF, 0xFF, 0xFF)));
         var subtitle = CreateText(
-            "Fast region capture with inline annotation, copy and save.",
+            "Fast region, window and screen capture with local-first output.",
             12,
             Brush(0xA9, 0xB2, 0xC3));
         subtitle.TextWrapping = TextWrapping.Wrap;
         brand.Children.Add(subtitle);
         header.Children.Add(brand);
 
-        var version = typeof(CaptureCenterWindow).Assembly.GetName().Version?.ToString(3) ?? "0.0.2";
+        var version = typeof(CaptureCenterWindow).Assembly.GetName().Version?.ToString(3) ?? "0.0.3";
         var versionBadge = new Border
         {
             Padding = new Thickness(8, 5, 8, 5),
@@ -255,7 +267,7 @@ public sealed class CaptureCenterWindow : Window
         stack.Children.Add(shortcut);
 
         var description = CreateText(
-            "Select the exact area, then annotate with Pen, Line, Arrow, Box or Highlight and finish with Copy or Save.",
+            "Select a region and annotate it, target a desktop window, or save the primary screen directly to PNG.",
             12,
             Brush(0xE1, 0xDF, 0xF6));
         description.TextWrapping = TextWrapping.Wrap;
@@ -267,11 +279,12 @@ public sealed class CaptureCenterWindow : Window
             Spacing = 8
         };
         buttons.Children.Add(_regionCaptureButton);
+        buttons.Children.Add(_windowCaptureButton);
         buttons.Children.Add(_screenCaptureButton);
         stack.Children.Add(buttons);
 
         var fallback = CreateText(
-            "Fallback: Ctrl + Shift + 1   ·   Full screen: Ctrl + Shift + 4",
+            "Region fallback: Ctrl + Shift + 1   ·   Window: Ctrl + Shift + 2   ·   Screen: Ctrl + Shift + 4",
             10,
             Brush(0xA9, 0xB2, 0xC3));
         fallback.TextWrapping = TextWrapping.Wrap;
@@ -337,7 +350,7 @@ public sealed class CaptureCenterWindow : Window
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var hint = CreateText(
-            "Tray-first: hide this launcher and keep hotkeys ready.",
+            "Tray-first: hide this launcher and keep capture hotkeys ready.",
             10,
             Brush(0x7F, 0xC9, 0xA5));
         hint.VerticalAlignment = VerticalAlignment.Center;
@@ -393,6 +406,9 @@ public sealed class CaptureCenterWindow : Window
 
     private async void RegionCaptureButton_Click(object sender, RoutedEventArgs e)
         => await ExecuteRegionCaptureAsync();
+
+    private async void WindowCaptureButton_Click(object sender, RoutedEventArgs e)
+        => await ExecuteWindowCaptureAsync();
 
     private async void ScreenCaptureButton_Click(object sender, RoutedEventArgs e)
         => await ExecuteScreenCaptureAsync();
@@ -488,6 +504,66 @@ public sealed class CaptureCenterWindow : Window
         }
     }
 
+    private async Task ExecuteWindowCaptureAsync()
+    {
+        if (!WindowsGraphicsCaptureService.IsSupported())
+        {
+            ShowStatus(
+                "Window Capture is unavailable",
+                "Window Capture requires Windows.Graphics.Capture support on Windows 10 version 2004 / build 19041 or later.",
+                StatusKind.Warning);
+            return;
+        }
+
+        if (!TryBeginCapture())
+        {
+            return;
+        }
+
+        ShowStatus(
+            "Preparing Window Capture",
+            "Freezing the desktop and discovering visible windows before the target picker opens.",
+            StatusKind.Information);
+
+        var restoreMainWindow = AppWindow.IsVisible;
+        try
+        {
+            if (restoreMainWindow)
+            {
+                AppWindow.Hide();
+                await Task.Delay(120);
+            }
+
+            var target = await _windowTargetPicker.PickAsync();
+            if (target is null)
+            {
+                ShowStatus("Window capture cancelled", "No file was created.", StatusKind.Information);
+                return;
+            }
+
+            var result = await _windowCaptureWorkflow.CaptureWindowToDefaultFolderAsync(
+                target,
+                includeCursor: false);
+            ShowStatus(
+                "Window captured",
+                $"Saved {result.Width}×{result.Height} PNG from “{target.Title}” to {result.FilePath}",
+                StatusKind.Success);
+            RefreshRecentCaptures();
+        }
+        catch (Exception exception)
+        {
+            ShowStatus(
+                "SNAPVERE couldn't capture the window",
+                GetUserFacingCaptureError(exception),
+                StatusKind.Error);
+        }
+        finally
+        {
+            RestoreMainWindowIfNeeded(restoreMainWindow);
+            EndCapture();
+        }
+    }
+
     private async Task ExecuteScreenCaptureAsync()
     {
         if (!TryBeginCapture())
@@ -573,7 +649,7 @@ public sealed class CaptureCenterWindow : Window
             if (captures.Count == 0)
             {
                 var empty = CreateText(
-                    "No local captures yet. Region and Screen captures will appear here.",
+                    "No local captures yet. Region, Window and Screen captures will appear here.",
                     11,
                     Brush(0x98, 0xA2, 0xB3));
                 empty.TextWrapping = TextWrapping.Wrap;
@@ -647,6 +723,7 @@ public sealed class CaptureCenterWindow : Window
     private void SetCaptureButtonsEnabled(bool isEnabled)
     {
         _regionCaptureButton.IsEnabled = isEnabled;
+        _windowCaptureButton.IsEnabled = isEnabled;
         _screenCaptureButton.IsEnabled = isEnabled;
     }
 
@@ -668,8 +745,10 @@ public sealed class CaptureCenterWindow : Window
         {
             UnauthorizedAccessException => "Windows denied access to the selected save location.",
             IOException => "The screenshot was captured, but SNAPVERE could not save the PNG file.",
+            TimeoutException => "Windows did not provide the requested capture frame in time. Try the capture again.",
+            PlatformNotSupportedException => exception.Message,
             InvalidOperationException => exception.Message,
-            _ => "The display configuration may have changed, or Windows may have blocked this capture. Try again."
+            _ => "The display or window configuration may have changed, or Windows may have blocked this capture. Try again."
         };
 
     private enum StatusKind

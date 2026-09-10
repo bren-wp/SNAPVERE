@@ -8,6 +8,7 @@ public enum TrayCommand
 {
     Show,
     RegionCapture,
+    WindowCapture,
     ScreenCapture,
     Exit
 }
@@ -55,6 +56,7 @@ public sealed class Win32TrayIconService : ITrayIconService
     private const uint CommandRegion = 1002;
     private const uint CommandScreen = 1003;
     private const uint CommandExit = 1004;
+    private const uint CommandWindow = 1005;
 
     private static readonly nint MessageOnlyWindowParent = new(-3);
 
@@ -322,6 +324,7 @@ public sealed class Win32TrayIconService : ITrayIconService
             _ = NativeMethods.AppendMenu(menu, MenuString, CommandShow, "Open SNAPVERE");
             _ = NativeMethods.AppendMenu(menu, MenuSeparator, 0, null);
             _ = NativeMethods.AppendMenu(menu, MenuString, CommandRegion, "Region Capture    Ctrl+Shift+1");
+            _ = NativeMethods.AppendMenu(menu, MenuString, CommandWindow, "Window Capture    Ctrl+Shift+2");
             _ = NativeMethods.AppendMenu(menu, MenuString, CommandScreen, "Screen Capture    Ctrl+Shift+4");
             _ = NativeMethods.AppendMenu(menu, MenuSeparator, 0, null);
             _ = NativeMethods.AppendMenu(menu, MenuString, CommandExit, "Exit");
@@ -353,6 +356,9 @@ public sealed class Win32TrayIconService : ITrayIconService
                     break;
                 case CommandRegion:
                     RaiseCommand(TrayCommand.RegionCapture);
+                    break;
+                case CommandWindow:
+                    RaiseCommand(TrayCommand.WindowCapture);
                     break;
                 case CommandScreen:
                     RaiseCommand(TrayCommand.ScreenCapture);

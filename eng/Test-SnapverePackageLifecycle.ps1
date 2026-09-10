@@ -106,9 +106,53 @@ function Invoke-RegionOverlayProbe([string] $FilePath, [string] $Name) {
     }
 }
 
-function Invoke-NormalAppLaunch([string] $FilePath, [string] $Name) {
+function Invoke-WindowOverlayProbe([string] $FilePath, [string] $Name) {
+    $marker = Join-Path $env:TEMP 'SNAPVERE/window-overlay-probe.ready'
+    Remove-Item -LiteralPath $marker -Force -ErrorAction SilentlyContinue
+    $env:SNAPVERE_WINDOW_OVERLAY_PROBE = '1'
+    $process = $null
+
+    try {
+        $process = Start-Process -FilePath $FilePath -ArgumentList @('--window-overlay-probe') -PassThru
+        if (-not $process.WaitForExit(20000)) {
+            Write-StartupLogIfPresent
+            try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
+            throw "$Name window-overlay probe timed out after 20 seconds."
+        }
+
+        if ($process.ExitCode -ne 0) {
+            Write-StartupLogIfPresent
+            throw "$Name window-overlay probe failed with exit code $($process.ExitCode)."
+        }
+
+        if (-not (Test-Path -LiteralPath $marker)) {
+            Write-StartupLogIfPresent
+            throw "$Name exited successfully but never loaded the Window Capture picker."
+        }
+
+        $markerText = Get-Content -LiteralPath $marker -Raw
+        $escapedVersion = [Regex]::Escape($Version)
+        if ($markerText -notmatch "SNAPVERE $escapedVersion WINDOW_OVERLAY_READY") {
+            throw "$Name window-overlay marker is invalid: $markerText"
+        }
+
+        Write-Host "$Name window-overlay marker: $markerText"
+    }
+    finally {
+        Remove-Item Env:SNAPVERE_WINDOW_OVERLAY_PROBE -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $marker -Force -ErrorAction SilentlyContinue
+        if ($null -ne $process) { $process.Dispose() }
+    }
+}
+
+function Clear-ProbeEnvironment {
     Remove-Item Env:SNAPVERE_STARTUP_PROBE -ErrorAction SilentlyContinue
     Remove-Item Env:SNAPVERE_REGION_OVERLAY_PROBE -ErrorAction SilentlyContinue
+    Remove-Item Env:SNAPVERE_WINDOW_OVERLAY_PROBE -ErrorAction SilentlyContinue
+}
+
+function Invoke-NormalAppLaunch([string] $FilePath, [string] $Name) {
+    Clear-ProbeEnvironment
     $process = Start-Process -FilePath $FilePath -PassThru
     try {
         if ($process.WaitForExit(5000)) {
@@ -131,8 +175,7 @@ function Invoke-NormalAppLaunch([string] $FilePath, [string] $Name) {
 }
 
 function Invoke-NormalPortableLaunch([string] $FilePath, [string] $Name) {
-    Remove-Item Env:SNAPVERE_STARTUP_PROBE -ErrorAction SilentlyContinue
-    Remove-Item Env:SNAPVERE_REGION_OVERLAY_PROBE -ErrorAction SilentlyContinue
+    Clear-ProbeEnvironment
     $launcher = Start-Process -FilePath $FilePath -PassThru
     try {
         if (-not $launcher.WaitForExit(15000)) {
@@ -162,6 +205,7 @@ function Invoke-NormalPortableLaunch([string] $FilePath, [string] $Name) {
     }
 }
 
+Clear-ProbeEnvironment
 Remove-Item -LiteralPath $startupLog -Force -ErrorAction SilentlyContinue
 
 $licenseProbe = Start-Process -FilePath $setup -ArgumentList @('--silent') -Wait -PassThru
@@ -180,6 +224,7 @@ $installedApp = Join-Path $install 'Snapvere.exe'
 $installedSetup = Join-Path $install 'SNAPVERE-Setup.exe'
 Invoke-StartupProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-RegionOverlayProbe $installedApp "Installed SNAPVERE $Arch"
+Invoke-WindowOverlayProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-NormalAppLaunch $installedApp "Installed SNAPVERE $Arch"
 
 $uninstallProcess = Start-Process -FilePath $installedSetup -ArgumentList @('--uninstall', '--silent') -Wait -PassThru
@@ -196,6 +241,8 @@ while ((Test-Path -LiteralPath $installedApp) -and (Get-Date) -lt $deadline) {
 
 Invoke-StartupProbe $portable "Portable SNAPVERE $Arch"
 Invoke-RegionOverlayProbe $portable "Portable SNAPVERE $Arch"
+Invoke-WindowOverlayProbe $portable "Portable SNAPVERE $Arch"
 Invoke-NormalPortableLaunch $portable "Portable SNAPVERE $Arch"
 
+Clear-ProbeEnvironment
 Write-Host "SNAPVERE $Version $Arch package lifecycle passed."

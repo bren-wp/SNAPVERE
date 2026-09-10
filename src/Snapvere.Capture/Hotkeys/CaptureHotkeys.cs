@@ -72,6 +72,7 @@ public static class DefaultCaptureHotkeys
     [
         AllBindings[0],
         AllBindings[1],
+        AllBindings[2],
         AllBindings[4]
     ];
 
@@ -80,8 +81,9 @@ public static class DefaultCaptureHotkeys
     /// <summary>
     /// Region capture deliberately has two bindings. Print Screen provides the
     /// expected screenshot-app workflow when Windows permits it, while
-    /// Ctrl+Shift+1 remains a conflict-safe fallback. Window and Scrolling stay
-    /// unregistered until their workflows are genuinely implemented.
+    /// Ctrl+Shift+1 remains a conflict-safe fallback. Window Capture is exposed
+    /// through Ctrl+Shift+2 now that its picker and WGC workflow are implemented.
+    /// Scrolling stays unregistered until its workflow is genuinely implemented.
     /// </summary>
     public static IReadOnlyList<CaptureHotkeyBinding> ImplementedNow => Implemented;
 }
