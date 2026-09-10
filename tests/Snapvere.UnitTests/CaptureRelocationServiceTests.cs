@@ -1,8 +1,10 @@
 using Snapvere.Application.Capture;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 
 namespace Snapvere.UnitTests;
 
-public sealed class CaptureRelocationServiceTests
+public sealed partial class CaptureRelocationServiceTests
 {
     [Fact]
     public async Task RelocateAsync_MovesCompletedCaptureToSelectedDestinationAndOverwritesExistingFile()
@@ -55,7 +57,7 @@ public sealed class CaptureRelocationServiceTests
         {
             Directory.CreateDirectory(root);
             await File.WriteAllBytesAsync(sourcePath, expectedBytes);
-            _ = new FileInfo(aliasPath).CreateAsHardLink(sourcePath);
+            CreateHardLink(aliasPath, sourcePath);
 
             var capture = new CaptureSaveResult(sourcePath, 320, 200, DateTimeOffset.UtcNow);
             var result = await new CaptureRelocationService().RelocateAsync(capture, aliasPath);
@@ -173,4 +175,19 @@ public sealed class CaptureRelocationServiceTests
             }
         }
     }
+
+    private static void CreateHardLink(string linkPath, string existingPath)
+    {
+        if (!CreateHardLinkNative(linkPath, existingPath, nint.Zero))
+        {
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not create hard-link alias for relocation test.");
+        }
+    }
+
+    [LibraryImport("kernel32.dll", EntryPoint = "CreateHardLinkW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool CreateHardLinkNative(
+        string fileName,
+        string existingFileName,
+        nint securityAttributes);
 }
