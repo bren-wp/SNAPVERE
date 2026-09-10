@@ -51,34 +51,17 @@ public static class EmbeddedAppLauncher
                     "Another SNAPVERE Portable launch is still preparing its application files.");
             }
 
-            var cacheRoot = Path.Combine(
-                Path.GetTempPath(),
-                "SNAPVERE",
-                LauncherToken,
-                $"{version}-{architectureToken}");
+            var launcherRoot = Path.Combine(Path.GetTempPath(), "SNAPVERE", LauncherToken);
+            var cacheRoot = Path.Combine(launcherRoot, $"{version}-{architectureToken}");
             var readyMarker = Path.Combine(cacheRoot, ".ready");
             var executable = Path.Combine(cacheRoot, AppExecutableName);
 
             if (!File.Exists(readyMarker) || !File.Exists(executable))
             {
-                EmbeddedPayload.DeleteDirectoryBestEffort(cacheRoot);
-                Directory.CreateDirectory(cacheRoot);
-
-                using var payload = UniversalPayload.OpenEmbeddedPayload(hostAssembly, architecture);
-                EmbeddedPayload.ExtractZipSafely(payload, cacheRoot);
-
-                if (!File.Exists(executable))
-                {
-                    throw new InvalidDataException(
-                        $"The Portable package does not contain Snapvere.exe in its {architectureToken} payload.");
-                }
-
-                File.WriteAllText(
-                    readyMarker,
-                    $"SNAPVERE {version} {LauncherToken} {architectureToken}{Environment.NewLine}");
+                PrepareCacheTransactionally(hostAssembly, architecture, architectureToken, version, launcherRoot, cacheRoot);
             }
 
-            CleanupOldCaches(Path.GetDirectoryName(cacheRoot)!, cacheRoot);
+            CleanupOldCaches(launcherRoot, cacheRoot);
             LaunchApplication(executable, cacheRoot, args);
             return 0;
         }
@@ -97,6 +80,49 @@ public static class EmbeddedAppLauncher
             "SNAPVERE",
             "Logs",
             "startup.log");
+
+    private static void PrepareCacheTransactionally(
+        Assembly hostAssembly,
+        SnapverePayloadArchitecture architecture,
+        string architectureToken,
+        string version,
+        string launcherRoot,
+        string cacheRoot)
+    {
+        Directory.CreateDirectory(launcherRoot);
+        var stagingRoot = Path.Combine(
+            launcherRoot,
+            $".stage-{version}-{architectureToken}-{Guid.NewGuid():N}");
+
+        try
+        {
+            Directory.CreateDirectory(stagingRoot);
+            using var payload = UniversalPayload.OpenEmbeddedPayload(hostAssembly, architecture);
+            EmbeddedPayload.ExtractZipSafely(payload, stagingRoot);
+
+            var stagedExecutable = Path.Combine(stagingRoot, AppExecutableName);
+            if (!File.Exists(stagedExecutable))
+            {
+                throw new InvalidDataException(
+                    $"The Portable package does not contain Snapvere.exe in its {architectureToken} payload.");
+            }
+
+            File.WriteAllText(
+                Path.Combine(stagingRoot, ".ready"),
+                $"SNAPVERE {version} {LauncherToken} {architectureToken}{Environment.NewLine}");
+
+            if (Directory.Exists(cacheRoot))
+            {
+                Directory.Delete(cacheRoot, recursive: true);
+            }
+
+            Directory.Move(stagingRoot, cacheRoot);
+        }
+        finally
+        {
+            EmbeddedPayload.DeleteDirectoryBestEffort(stagingRoot);
+        }
+    }
 
     private static void LaunchApplication(
         string executable,
@@ -201,7 +227,9 @@ public static class EmbeddedAppLauncher
         var currentFullPath = Path.GetFullPath(currentCache);
         foreach (var directory in Directory.EnumerateDirectories(launcherRoot))
         {
-            if (string.Equals(Path.GetFullPath(directory), currentFullPath, StringComparison.OrdinalIgnoreCase))
+            var fullPath = Path.GetFullPath(directory);
+            if (string.Equals(fullPath, currentFullPath, StringComparison.OrdinalIgnoreCase) ||
+                Path.GetFileName(directory).StartsWith(".stage-", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
