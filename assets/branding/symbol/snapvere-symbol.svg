@@ -1,13 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
   <title id="title">SNAPVERE symbol</title>
-  <desc id="desc">A precision capture frame surrounding a continuous S-shaped mark.</desc>
-  <rect width="128" height="128" rx="30" fill="#101116"/>
-  <g fill="none" stroke="#7667F5" stroke-width="8" stroke-linecap="round">
-    <path d="M30 48V30h18"/>
-    <path d="M80 30h18v18"/>
-    <path d="M98 80v18H80"/>
-    <path d="M48 98H30V80"/>
-  </g>
-  <path d="M84 43C78 37 70 34 61 34c-14 0-24 7-24 17 0 12 11 15 26 18 14 3 22 5 22 14 0 7-8 12-19 12-10 0-19-3-27-10" fill="none" stroke="#F7F7FB" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="92" cy="36" r="4" fill="#9C91FF"/>
+  <desc id="desc">A precise violet capture shard shaped like a fast feather.</desc>
+  <defs>
+    <linearGradient id="bg" x1="20" y1="18" x2="108" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#21173A"/><stop offset="1" stop-color="#0D1120"/>
+    </linearGradient>
+    <linearGradient id="blade" x1="34" y1="102" x2="96" y2="24" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6547F6"/><stop offset=".5" stop-color="#8C5CFF"/><stop offset="1" stop-color="#C18BFF"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="30" fill="url(#bg)" stroke="#5A45B8" stroke-width="4"/>
+  <path d="M31 102C39 69 59 39 100 22C92 57 72 87 31 106C45 83 61 64 84 45C62 57 46 76 31 102Z" fill="url(#blade)"/>
+  <path d="M38 94C52 73 67 57 87 42C73 63 59 79 38 94Z" fill="#E4D1FF" fill-opacity=".85"/>
+  <path d="M34 105C48 87 62 73 78 61" fill="none" stroke="#F5EFFF" stroke-width="4" stroke-linecap="round"/>
 </svg>

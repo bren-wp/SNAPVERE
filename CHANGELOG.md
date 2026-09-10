@@ -12,6 +12,44 @@ All notable SNAPVERE changes are documented here.
 - full History, Pin to Screen and OCR
 - automatic update mechanism
 
+## [0.0.4] - 2026-09-10
+
+### Added
+
+- true tray-first normal startup that keeps the Capture Center hidden
+- left-click notification-area action that starts Region Capture immediately
+- branded programmatic WinUI tray flyout for right-click actions
+- new violet SNAPVERE shard/feather runtime tray icon
+- branded About SNAPVERE window
+- direct tray actions for Region, Window, Screen, capture folder, Options/Recent, About and Exit
+- dedicated installed and Portable `TRAY_READY` runtime probe
+- repository-maintained tray-first, tray-menu and Region-editor SVG documentation illustrations
+- refreshed canonical symbol and README wordmarks
+- v0.0.4 release automation and package metadata
+
+### Changed
+
+- the notification-area icon is now the primary persistent application surface instead of an always-open launcher
+- normal application launch initializes the hotkey/tray hosts without activating the Capture Center
+- right-click tray interaction uses SNAPVERE's branded WinUI command surface instead of the former native text popup menu
+- tray event dispatch is routed through the application WinUI dispatcher rather than depending on launcher visibility
+- README and installation documentation now describe the actual tray-first product workflow
+- product tagline for current branding is `Capture. Edit. Done.`
+
+### Fixed
+
+- Portable validation now recognizes the tray-only startup probe
+- normal package QA explicitly validates that the application remains alive in hidden tray-first mode
+- left-click/double-click tray messages are debounced so a double-click does not trigger duplicate Region captures
+
+### Security
+
+- no telemetry or network dependency was added by the tray-first redesign
+- Setup uninstall remains owned by the same installed `SNAPVERE-Setup.exe --uninstall`
+- CI continues to reject standalone `uninstall*.exe` and Inno-style `unins*.exe` payloads
+- x64/x86 release publication remains gated by install, tray, Region, Window, Portable and uninstall lifecycle validation
+- release artifacts continue to publish SHA-256 checksums
+
 ## [0.0.3] - 2026-09-10
 
 ### Added

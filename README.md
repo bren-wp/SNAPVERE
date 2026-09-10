@@ -3,210 +3,188 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/branding/readme/snapvere-logo-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="assets/branding/readme/snapvere-logo-light.svg">
-  <img alt="SNAPVERE — Capture anything." src="assets/branding/readme/snapvere-logo-light.svg" width="520">
+  <img alt="SNAPVERE — Capture. Edit. Done." src="assets/branding/readme/snapvere-logo-light.svg" width="560">
 </picture>
 
-**Screen capture for Windows — developed and published by Brendigo.**
+**Fast, local-first screen capture for Windows — developed and published by Brendigo.**
 
-SNAPVERE is a local-first Windows capture application focused on fast region selection, physical-pixel precision, smart window targeting, inline annotation, dependable local PNG output and a clean path toward scrolling capture, OCR and richer history workflows.
+SNAPVERE is designed to stay out of the way. Start it once and it lives in the Windows notification area instead of keeping a launcher window open.
 
-## Current main
+## Tray-first workflow
 
-The current branch contains the v0.0.3 capture and packaging baseline:
+**Left-click the SNAPVERE tray icon → Region Capture starts immediately.** There is no intermediate dashboard.
 
-- compact tray-first Capture Center;
-- `Print Screen` as the preferred Region Capture shortcut;
-- `Ctrl+Shift+1` as an independent Region fallback when Print Screen is owned by Windows or another app;
-- `Ctrl+Shift+2` Window Capture with a frozen multi-monitor target picker;
-- `Ctrl+Shift+4` primary Screen Capture;
-- inline Region tools for Pen, Line, Arrow, Box and Highlight;
-- Copy and Save directly from the Region editor;
-- Windows.Graphics.Capture + D3D11 as the preferred monitor-acquisition backend on Windows 10 2004 / build 19041 and later;
-- Windows.Graphics.Capture `CreateForWindow` for real top-level Window Capture;
-- GDI retained as an automatic monitor compatibility fallback and for supported older Windows builds;
-- hardened Setup/Portable lifecycle validation with no separate uninstall executable.
+![SNAPVERE tray-first Region Capture](docs/images/tray-first-region.svg)
 
-## Version 0.0.3 packaging
+**Right-click the tray icon → open the branded SNAPVERE command menu** for Region, Window and Screen Capture, the capture folder, Options/Recent captures, About and Exit.
 
-GitHub Releases publish:
+![SNAPVERE branded tray menu](docs/images/tray-menu.svg)
 
-- `SNAPVERE-0.0.3-Setup-x64.exe`
-- `SNAPVERE-0.0.3-Portable-x64.exe`
-- `SNAPVERE-0.0.3-Setup-x86.exe`
-- `SNAPVERE-0.0.3-Portable-x86.exe`
-- raw x64/x86 self-contained ZIP payloads
-- `SHA256SUMS.txt`
+The Region editor exists only while a capture is active. Selection, annotation, Copy and Save happen directly over the frozen screen.
 
-`x86` is the 32-bit Windows architecture commonly called `x32`; duplicate x32 binaries are not published.
+![SNAPVERE Region Capture editor](docs/images/region-editor.svg)
 
-See [`docs/INSTALLATION.md`](docs/INSTALLATION.md) for Setup, Portable, platform and uninstall behavior.
+> The SVGs above are repository UI illustrations of the implemented workflow, maintained with the product sources. They are not claims of pixel-identical Windows screenshots across themes, DPI levels or Windows versions.
 
-## Technology
+## Capture controls
 
-- C# / .NET 10 LTS (`10.0.12`, SDK `10.0.401`)
-- WinUI 3
-- Windows App SDK 1.8 stable line
-- Windows.Graphics.Capture + Direct3D 11 preferred acquisition path
-- native GDI monitor compatibility fallback
-- x64 and x86/32-bit release targets; ARM64 remains a source/build target
-- Windows 10 version 1809 / build 17763 minimum application target
-- WGC monitor and Window Capture paths enabled from Windows 10 version 2004 / build 19041
-- nullable reference types and strict .NET analyzers
-- central NuGet package management
-- xUnit automated tests
-- GitHub Actions Windows CI and release packaging
+| Action | Primary input | Fallback / alternate |
+| --- | --- | --- |
+| Region Capture | **Left-click tray icon** or **Print Screen** | `Ctrl+Shift+1` |
+| Window Capture | Right-click tray → Capture window | `Ctrl+Shift+2` |
+| Screen Capture | Right-click tray → Capture screen | `Ctrl+Shift+4` |
+| Tray menu | **Right-click tray icon** | — |
+| Options / recent captures | Right-click tray → Options & recent captures | — |
+| Exit | Right-click tray → Exit SNAPVERE | — |
+
+If Windows or another application owns Print Screen, the independent `Ctrl+Shift+1` Region shortcut remains available.
+
+## Current main / v0.0.4 line
+
+The current development line builds on v0.0.3 and adds the tray-first interaction model and refreshed product identity:
+
+- normal startup stays hidden in the notification area;
+- left-clicking the tray icon starts Region Capture immediately;
+- right-clicking opens the branded WinUI tray flyout rather than a generic native text menu;
+- refreshed violet SNAPVERE shard/feather identity for tray and repository surfaces;
+- explicit tray-only runtime probe for installed and Portable packages;
+- Region, Window and Screen Capture remain available without keeping a launcher open;
+- Options/Recent and About open only when explicitly requested.
+
+## Implemented capture stack
+
+### Region Capture
+
+- frozen primary-display preview;
+- physical-pixel drag selection with reverse-drag normalization;
+- drag-to-move and eight resize handles;
+- `W × H` pixel badge;
+- Arrow 1 px / Shift+Arrow 10 px movement;
+- Pen, Line, Arrow, Box and Highlight tools;
+- four annotation colors and Undo;
+- Copy to Windows clipboard;
+- Save to local PNG;
+- Enter/double-click save and Esc cancel;
+- final output produced from the same frozen frame shown by the editor.
+
+### Window Capture
+
+- visible top-level window discovery;
+- DWM extended-frame bounds;
+- SNAPVERE/self/tool/cloaked-window filtering;
+- stable Z-order snapshot before picker overlays appear;
+- overlay-safe geometric hit testing;
+- one frozen DPI-aware picker surface per monitor;
+- negative virtual-desktop coordinate support;
+- coordinated highlight for windows spanning monitors;
+- hover title and physical size feedback;
+- left-click capture / Esc cancel;
+- Windows.Graphics.Capture `CreateForWindow` acquisition;
+- atomic local PNG save and recent-capture refresh.
+
+### Screen Capture
+
+- primary-display capture;
+- Windows.Graphics.Capture + Direct3D 11 preferred acquisition on Windows 10 build 19041+;
+- automatic GDI compatibility fallback for expected unsupported/native WGC failures;
+- caller cancellation never becomes fallback work;
+- optional cursor path;
+- local atomic PNG save.
 
 ## Architecture
 
 ```text
-WinUI Capture Center / Print Screen / capture hotkeys / tray actions
+Tray left-click / Print Screen / capture hotkeys / branded tray menu
     ↓
 Snapvere.Application workflows
-    ├── Region / Screen → IScreenCaptureService
-    │                    ↓
-    │             ResilientScreenCaptureService
-    │             ├── preferred: WindowsGraphicsCaptureService (WGC + D3D11)
-    │             └── fallback: GdiScreenCaptureService
+    ├── Region / Screen → ResilientScreenCaptureService
+    │                    ├── preferred: WindowsGraphicsCaptureService
+    │                    └── fallback: GdiScreenCaptureService
     │
-    └── Window → WindowTargetPicker + IWindowCaptureService
+    └── Window → WindowTargetPicker
                  └── WindowsGraphicsCaptureService.CreateForWindow
     ↓
 CaptureFrame (physical BGRA8 pixels)
     ↓
-Snapvere.Imaging crop / annotation render / encode
+Snapvere.Imaging crop / annotation render / PNG encode
     ↓
-CaptureFileWriter or Clipboard
+CaptureFileWriter or Windows Clipboard
     ↓
-local PNG / Windows clipboard
+Pictures\SNAPVERE / clipboard
 ```
 
-Release packaging remains isolated from the capture runtime:
-
-```text
-self-contained app publish
-    ↓
-validated ZIP payload
-    ├── SNAPVERE Setup    → per-user install + Windows uninstall registration
-    └── SNAPVERE Portable → private versioned temp cache + launch
-```
+The tray and hotkey hosts run independently from capture acquisition. The normal WinUI launcher is not activated during tray-first startup.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/CAPTURE-ENGINE.md`](docs/CAPTURE-ENGINE.md), [`docs/REGION-CAPTURE.md`](docs/REGION-CAPTURE.md) and [`docs/INSTALLATION.md`](docs/INSTALLATION.md).
 
-## Implemented now
+## Packaging
 
-### Capture engine
+Public release builds provide native Windows packages for x64 and x86/32-bit. `x32` is another informal name for x86; duplicate binaries are not published.
 
-- native Win32 display discovery;
-- physical virtual-desktop coordinates, including negative origins;
-- 100/125/150/175/200% DPI conversion coverage;
-- sub-DIP pointer conversion without premature rounding;
-- validated BGRA8 capture frames;
-- Windows.Graphics.Capture monitor acquisition through a free-threaded Direct3D 11 frame pool;
-- CPU staging-texture readback with row-pitch handling;
-- two-second WGC frame timeout and blank-frame/dimension validation;
-- automatic GDI fallback for expected unsupported/platform/native monitor-capture failures;
-- caller cancellation never converted into fallback work;
-- deterministic PNG encoder;
-- pixel-accurate BGRA8 cropper with stride support;
-- collision-safe `Pictures\SNAPVERE` paths;
-- temp-file + atomic-move persistence.
+Each release publishes:
 
-### Region Capture
+- `SNAPVERE-<version>-Setup-x64.exe`
+- `SNAPVERE-<version>-Portable-x64.exe`
+- `SNAPVERE-<version>-Setup-x86.exe`
+- `SNAPVERE-<version>-Portable-x86.exe`
+- x64/x86 self-contained ZIP payloads
+- `SHA256SUMS.txt`
 
-- `Print Screen` preferred global shortcut;
-- `Ctrl+Shift+1` independent fallback shortcut;
-- tray and launcher Region actions;
-- frozen primary-display preview;
-- borderless always-on-top selection/editor overlay;
-- four-sided dimming around the active region;
-- reverse-direction drag normalization;
-- drag-to-move selection;
-- eight resize handles;
-- physical-pixel `W × H` badge;
-- Arrow 1 px and Shift+Arrow 10 px movement;
-- Pen, Line, Arrow, Box and Highlight annotation tools;
-- annotation undo;
-- Copy to Windows clipboard;
-- Save to local PNG;
-- Enter/double-click save and Esc cancel;
-- final output generated from the same frozen frame shown in the editor.
+### Uninstall contract
 
-### Window Capture
+SNAPVERE intentionally does **not** install a separate `uninstall.exe`, `unins000.exe` or Inno-style `unins*.exe`. Windows Installed apps points back to the installed **`SNAPVERE-Setup.exe --uninstall`**. The same Setup binary owns install, maintenance/update and removal.
 
-- native visible top-level window discovery;
-- DWM extended-frame bounds for accurate targeting;
-- SNAPVERE/self/tool/cloaked window filtering;
-- stable Z-order snapshot taken before picker overlays appear;
-- overlay-safe geometric hit testing so SNAPVERE's own topmost surfaces do not become the selected target;
-- one frozen, borderless picker overlay per monitor;
-- per-monitor DPI conversion and support for negative desktop coordinates;
-- coordinated highlight for windows spanning monitor boundaries;
-- hover title and physical `W × H` target feedback;
-- left-click capture and Esc cancel;
-- WGC `CreateForWindow` acquisition with the shared D3D11 readback path;
-- local atomic PNG save and Recent Captures refresh;
-- launcher, tray and global `Ctrl+Shift+2` entry points.
-
-### Screen Capture
-
-- primary-display screenshot;
-- Capture Center hides before acquisition;
-- local PNG save;
-- global `Ctrl+Shift+4` hotkey;
-- tray Screen action.
-
-### Desktop integration
-
-- compact 560×620 capture-first WinUI launcher;
-- Region, Window and Screen actions;
-- Hide to tray action;
-- native system tray icon and menu;
-- tray recovery after Windows Explorer restarts;
-- conflict-aware native global hotkey host;
-- Print Screen conflict reporting that preserves the `Ctrl+Shift+1` fallback;
-- four-item recent local capture view;
-- Open capture folder action;
-- startup diagnostics under `%LOCALAPPDATA%\SNAPVERE\Logs`;
-- explicit activated-window, Region-editor and Window-picker runtime probes used by CI;
-- unavailable future features are not presented as working functionality.
-
-### Setup and Portable
-
-- x64 and x86 self-contained application payloads;
-- single-file Setup executable per architecture;
-- Mozilla Public License 2.0 shown before interactive installation;
-- per-user default installation without elevation;
-- optional Start menu/Desktop shortcuts;
-- Windows Installed apps registration;
-- uninstall through installed `SNAPVERE-Setup.exe --uninstall`, without a separate `uninstall.exe`, `unins000.exe` or other standalone uninstaller binary;
-- installation marker validation before destructive uninstall cleanup;
-- screenshots preserved when uninstalling;
-- single-file Portable launcher per architecture;
-- guarded payload extraction that blocks absolute paths and directory traversal;
-- bounded archive extraction and versioned portable cache;
-- SHA-256 release checksums.
+Screenshots under `Pictures\SNAPVERE` are preserved when the application is uninstalled.
 
 ## Automated QA
 
-The Windows CI gate validates both x64 and x86 on Windows Server 2022. Each architecture must pass build/publish plus Setup and Portable lifecycle checks. The lifecycle gate verifies application startup, real Region-editor materialization, real Window-picker materialization, the Installed apps uninstall contract and Setup-based cleanup. Unit tests cover capture geometry, image processing, window hit testing, Window Capture workflow persistence and preferred/fallback monitor orchestration.
+GitHub Actions validates x64 and x86 on `windows-2022`. The package lifecycle gate checks:
 
-The hosted runner is not treated as proof of a real end-user desktop WGC screenshot. Native WGC monitor and window acquisition are compiled and wired into production, while runtime surface probes validate the WinUI paths independently of protected/interactive desktop capture behavior.
+- strict build + unit tests;
+- self-contained application publish;
+- Setup and Portable EXE generation;
+- explicit license acceptance for silent Setup;
+- Installed apps uninstall registration and no standalone uninstaller payload;
+- legacy activated-window startup probe;
+- **tray-only startup probe with the Capture Center left hidden**;
+- Region-editor runtime materialization;
+- Window-picker runtime materialization;
+- normal installed and Portable process survival;
+- Setup-based uninstall cleanup.
+
+Hosted CI is not treated as proof of capturing arbitrary protected end-user desktop content. WGC/native capture is production-wired while UI and package surfaces are validated independently.
+
+## Platform and technology
+
+- C# / .NET 10 LTS
+- WinUI 3 / Windows App SDK 1.8 stable line
+- Windows.Graphics.Capture + Direct3D 11
+- native Win32/DWM/GDI interoperability
+- Windows 10 version 1809 / build 17763 minimum application target
+- WGC monitor and Window Capture paths enabled from Windows 10 version 2004 / build 19041
+- x64 and x86 public packages; ARM64 remains a source/build target
+- strict nullable/analyzer settings and deterministic builds
+- central NuGet management
+- xUnit tests
+- GitHub Actions CI + release automation
+
+## Privacy
+
+SNAPVERE is local-first. Current capture workflows do not upload screenshot pixels, recent-capture history or user files to analytics or telemetry services. Files are saved locally unless the user explicitly copies or shares them elsewhere.
 
 ## Current limitations
 
-The following remain intentionally deferred:
+Intentionally deferred rather than exposed as fake UI:
 
-- coordinated cross-monitor Region overlay and freeze composition;
+- coordinated cross-monitor Region freeze composition;
 - Scrolling Capture;
-- richer editor features such as text, blur/pixelate and numbered steps;
+- text, blur/pixelate and numbered-step annotations;
 - full History management, favorites and Pin to Screen;
 - OCR;
 - automatic updater;
-- Authenticode signing for public release artifacts.
+- Authenticode signing.
 
 ## Build
-
-Use Windows with the .NET SDK defined in `global.json` and Windows application development prerequisites.
 
 ```powershell
 dotnet restore SNAPVERE.sln
@@ -221,29 +199,25 @@ dotnet restore src/Snapvere.App/Snapvere.App.csproj -r win-x86
 dotnet build src/Snapvere.App/Snapvere.App.csproj -c Release -r win-x86 -p:Platform=x86
 ```
 
-## Privacy
+## Diagnostics
 
-SNAPVERE capture workflows are local-first. Screenshot pixels, local capture history and user files are not sent to an analytics or telemetry service by the current application.
+Startup diagnostics are local at:
 
-## Security
+```text
+%LOCALAPPDATA%\SNAPVERE\Logs\startup.log
+```
 
-Release packaging validates extraction destinations, bounds embedded archives, uses staged writes and publishes SHA-256 checksums. Setup validates a SNAPVERE installation marker before destructive cleanup. CI additionally verifies that Windows uninstall registration points to the installed `SNAPVERE-Setup.exe` and rejects standalone uninstaller payloads. Private signing keys, production credentials, user screenshots, dumps and runtime data must never be committed.
-
-Current executables are intentionally not Authenticode-signed. Use the published `SHA256SUMS.txt` for artifact integrity verification.
+Capture pixels are not written to the startup log.
 
 ## Branding
 
-Canonical vector sources are under `assets/branding/`. See [`docs/BRANDING.md`](docs/BRANDING.md).
+Canonical vector identity lives under `assets/branding/`. Product documentation visuals live under `docs/images/`. See [`docs/BRANDING.md`](docs/BRANDING.md).
 
 ## License
 
 Source code is distributed under the Mozilla Public License 2.0. Product branding and trademarks are not granted by the source-code license.
 
-## Contributing
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md).
-
 ---
 
-**SNAPVERE — Capture anything.**  
+**SNAPVERE — Capture. Edit. Done.**  
 Developed and published by **Brendigo**.

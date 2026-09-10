@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">SNAPVERE tray-first Region Capture</title>
+  <desc id="desc">Documentation illustration showing SNAPVERE running only in the Windows notification area and opening Region Capture from a left click.</desc>
+  <defs>
+    <linearGradient id="desktop" x1="0" y1="0" x2="1200" y2="700" gradientUnits="userSpaceOnUse"><stop stop-color="#07152E"/><stop offset=".48" stop-color="#123A89"/><stop offset="1" stop-color="#080C18"/></linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#6D4AFF"/><stop offset="1" stop-color="#C184FF"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#000" flood-opacity=".38"/></filter>
+  </defs>
+  <rect width="1200" height="700" fill="url(#desktop)"/>
+  <path d="M0 545C185 358 354 317 536 355S899 492 1200 272V700H0Z" fill="#10295E" opacity=".6"/>
+  <path d="M0 590C228 424 431 417 620 465S960 563 1200 392V700H0Z" fill="#245BCE" opacity=".34"/>
+  <rect x="0" y="640" width="1200" height="60" fill="#0C1322" fill-opacity=".96"/>
+  <rect x="935" y="648" width="46" height="44" rx="11" fill="#242A3B"/>
+  <rect x="942" y="654" width="32" height="32" rx="9" fill="#19132C" stroke="#7051DC"/>
+  <path d="M949 680C952 669 960 659 970 656C967 668 961 677 949 682C954 674 958 669 964 664C958 667 953 673 949 680Z" fill="url(#accent)"/>
+  <path d="M952 678C957 671 961 666 967 662" fill="none" stroke="#F4E9FF" stroke-width="1.5" stroke-linecap="round"/>
+  <text x="1000" y="674" fill="#E8EDF7" font-family="Segoe UI,Arial,sans-serif" font-size="16">Wi-Fi   VOL   100%</text>
+  <text x="1120" y="662" fill="#F4F6FA" font-family="Segoe UI,Arial,sans-serif" font-size="14">03:02</text>
+  <text x="1102" y="683" fill="#B7C0D0" font-family="Segoe UI,Arial,sans-serif" font-size="12">10.09.2026</text>
+
+  <rect x="170" y="105" width="650" height="390" rx="5" fill="#000" fill-opacity=".46"/>
+  <rect x="315" y="175" width="355" height="215" rx="4" fill="none" stroke="#A77CFF" stroke-width="3"/>
+  <circle cx="315" cy="175" r="5" fill="#F3EEFF"/><circle cx="670" cy="175" r="5" fill="#F3EEFF"/><circle cx="315" cy="390" r="5" fill="#F3EEFF"/><circle cx="670" cy="390" r="5" fill="#F3EEFF"/>
+  <rect x="315" y="397" width="98" height="30" rx="8" fill="#111724" stroke="#4F5C77"/><text x="332" y="417" fill="#F6F7FB" font-family="Segoe UI,Arial,sans-serif" font-size="13">355 × 215</text>
+  <rect x="681" y="182" width="58" height="201" rx="12" fill="#111724" stroke="#515B75" filter="url(#shadow)"/>
+  <g fill="#EAE6FF" font-family="Segoe UI,Arial,sans-serif" font-size="11" text-anchor="middle"><text x="710" y="211">Move</text><text x="710" y="239">Pen</text><text x="710" y="267">Line</text><text x="710" y="295">Arrow</text><text x="710" y="323">Box</text><text x="710" y="351">Mark</text><text x="710" y="376">Undo</text></g>
+  <rect x="489" y="400" width="180" height="40" rx="11" fill="#111724" stroke="#515B75" filter="url(#shadow)"/><text x="505" y="425" fill="#D6C8FF" font-family="Segoe UI,Arial,sans-serif" font-size="13">Copy</text><text x="558" y="425" fill="#F8F8FC" font-family="Segoe UI,Arial,sans-serif" font-size="13">Save</text><text x="610" y="425" fill="#C2C9D6" font-family="Segoe UI,Arial,sans-serif" font-size="13">Close</text>
+
+  <rect x="835" y="111" width="285" height="142" rx="18" fill="#101728" stroke="#56617A" filter="url(#shadow)"/>
+  <text x="865" y="145" fill="#B790FF" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="700">TRAY-FIRST</text>
+  <text x="865" y="179" fill="#FFFFFF" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="600">Left click → capture</text>
+  <text x="865" y="207" fill="#AAB5C8" font-family="Segoe UI,Arial,sans-serif" font-size="14">No launcher window opens.</text>
+  <text x="865" y="229" fill="#AAB5C8" font-family="Segoe UI,Arial,sans-serif" font-size="14">Region selection starts immediately.</text>
+  <path d="M959 253L958 626" stroke="#8F68FF" stroke-width="2" stroke-dasharray="6 8" opacity=".7"/>
+  <circle cx="958" cy="626" r="5" fill="#B983FF"/>
+  <text x="54" y="62" fill="#F7F6FF" font-family="Segoe UI,Arial,sans-serif" font-size="30" font-weight="700">SNAP<tspan fill="#A878FF">VERE</tspan></text>
+  <text x="55" y="88" fill="#AEB8CB" font-family="Segoe UI,Arial,sans-serif" font-size="14">Capture. Edit. Done.</text>
+</svg>

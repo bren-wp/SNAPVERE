@@ -1,4 +1,4 @@
-name: Release 0.0.3
+name: Release 0.0.4
 
 on:
   push:
@@ -8,15 +8,15 @@ permissions:
   contents: write
 
 concurrency:
-  group: snapvere-release-0.0.3
+  group: snapvere-release-0.0.4
   cancel-in-progress: false
 
 env:
-  SNAPVERE_VERSION: 0.0.3
+  SNAPVERE_VERSION: 0.0.4
 
 jobs:
   release:
-    if: contains(github.event.head_commit.message, '[release 0.0.3]')
+    if: contains(github.event.head_commit.message, '[release 0.0.4]')
     runs-on: windows-2022
     timeout-minutes: 90
     steps:
@@ -111,12 +111,8 @@ jobs:
           )
 
           foreach ($file in $required) {
-            if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
-              throw "Missing release file: $file"
-            }
-            if ((Get-Item -LiteralPath $file).Length -lt 1MB) {
-              throw "Release file is unexpectedly small: $file"
-            }
+            if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "Missing release file: $file" }
+            if ((Get-Item -LiteralPath $file).Length -lt 1MB) { throw "Release file is unexpectedly small: $file" }
           }
 
           foreach ($arch in @('x64', 'x86')) {
@@ -135,7 +131,7 @@ jobs:
             "$hash  $($_.Name)"
           } | Set-Content -Encoding ascii release/SHA256SUMS.txt
 
-      - name: Create immutable v0.0.3 tag
+      - name: Create immutable v0.0.4 tag
         shell: pwsh
         run: |
           if (git ls-remote --exit-code --tags origin "refs/tags/v$env:SNAPVERE_VERSION") {
@@ -155,7 +151,7 @@ jobs:
           $assets = Get-ChildItem release -File | ForEach-Object { $_.FullName }
           & gh release create "v$env:SNAPVERE_VERSION" @assets `
             --title "SNAPVERE v$env:SNAPVERE_VERSION" `
-            --notes-file RELEASE_NOTES_0.0.3.md `
+            --notes-file RELEASE_NOTES_0.0.4.md `
             --latest `
             --verify-tag
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

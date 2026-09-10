@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">SNAPVERE Region Capture editor</title>
+  <desc id="desc">Documentation illustration of the actual Region Capture flow with frozen desktop, selection, annotation toolbar and Copy Save Close actions.</desc>
+  <defs>
+    <linearGradient id="desktop" x1="0" y1="0" x2="1200" y2="700"><stop stop-color="#0D274C"/><stop offset=".5" stop-color="#2753A2"/><stop offset="1" stop-color="#10111A"/></linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#6D4AFF"/><stop offset="1" stop-color="#C184FF"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity=".42"/></filter>
+  </defs>
+  <rect width="1200" height="700" fill="url(#desktop)"/>
+  <path d="M0 520C180 349 378 310 578 369S931 509 1200 283V700H0Z" fill="#1A3977" opacity=".7"/>
+  <rect width="1200" height="700" fill="#02040A" fill-opacity=".48"/>
+  <rect x="230" y="140" width="610" height="355" fill="#19386F" fill-opacity=".38" stroke="#A77CFF" stroke-width="3"/>
+  <circle cx="230" cy="140" r="6" fill="#F5F0FF"/><circle cx="840" cy="140" r="6" fill="#F5F0FF"/><circle cx="230" cy="495" r="6" fill="#F5F0FF"/><circle cx="840" cy="495" r="6" fill="#F5F0FF"/>
+  <circle cx="535" cy="140" r="5" fill="#E4D5FF"/><circle cx="535" cy="495" r="5" fill="#E4D5FF"/><circle cx="230" cy="318" r="5" fill="#E4D5FF"/><circle cx="840" cy="318" r="5" fill="#E4D5FF"/>
+  <rect x="230" y="503" width="106" height="33" rx="8" fill="#101622" stroke="#505D76"/><text x="248" y="525" fill="#FFFFFF" font-family="Segoe UI,Arial,sans-serif" font-size="13">610 × 355</text>
+
+  <path d="M366 330L486 238" stroke="#FF687B" stroke-width="7" stroke-linecap="round"/>
+  <path d="M485 238L456 247M485 238L474 266" stroke="#FF687B" stroke-width="7" stroke-linecap="round"/>
+  <rect x="545" y="252" width="175" height="95" rx="5" fill="none" stroke="#FFCD58" stroke-width="6"/>
+  <path d="M295 405C330 382 374 417 416 392S493 378 521 405" fill="none" stroke="#50D8A7" stroke-width="8" stroke-linecap="round"/>
+  <path d="M568 414L742 414" stroke="#9B7AFF" stroke-width="18" stroke-linecap="round" opacity=".46"/>
+
+  <g filter="url(#shadow)">
+    <rect x="854" y="155" width="86" height="327" rx="16" fill="#101622" stroke="#4E5971"/>
+    <text x="897" y="188" text-anchor="middle" fill="#B8C0D0" font-family="Segoe UI,Arial,sans-serif" font-size="11">Move</text>
+    <rect x="863" y="201" width="68" height="37" rx="8" fill="#382975" stroke="#8066ED"/><text x="897" y="224" text-anchor="middle" fill="#FFFFFF" font-family="Segoe UI,Arial,sans-serif" font-size="12">Pen</text>
+    <text x="897" y="265" text-anchor="middle" fill="#DDE2EB" font-family="Segoe UI,Arial,sans-serif" font-size="12">Line</text>
+    <text x="897" y="302" text-anchor="middle" fill="#DDE2EB" font-family="Segoe UI,Arial,sans-serif" font-size="12">Arrow</text>
+    <text x="897" y="339" text-anchor="middle" fill="#DDE2EB" font-family="Segoe UI,Arial,sans-serif" font-size="12">Box</text>
+    <text x="897" y="376" text-anchor="middle" fill="#DDE2EB" font-family="Segoe UI,Arial,sans-serif" font-size="12">Mark</text>
+    <circle cx="879" cy="411" r="7" fill="#FF687B"/><circle cx="900" cy="411" r="7" fill="#FFCD58"/><circle cx="879" cy="434" r="7" fill="#50D8A7"/><circle cx="900" cy="434" r="7" fill="#8066FF"/>
+    <text x="897" y="466" text-anchor="middle" fill="#B8C0D0" font-family="Segoe UI,Arial,sans-serif" font-size="11">Undo</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="610" y="509" width="230" height="48" rx="13" fill="#101622" stroke="#4E5971"/>
+    <text x="635" y="539" fill="#CEBFFF" font-family="Segoe UI,Arial,sans-serif" font-size="14">Copy</text>
+    <rect x="692" y="516" width="64" height="34" rx="8" fill="#6547D8"/><text x="710" y="539" fill="#FFFFFF" font-family="Segoe UI,Arial,sans-serif" font-size="14">Save</text>
+    <text x="776" y="539" fill="#C2CAD7" font-family="Segoe UI,Arial,sans-serif" font-size="14">Close</text>
+  </g>
+  <rect x="370" y="36" width="460" height="47" rx="13" fill="#101622" stroke="#3D485F" filter="url(#shadow)"/><text x="600" y="65" text-anchor="middle" fill="#E8EBF3" font-family="Segoe UI,Arial,sans-serif" font-size="14">Drag to select · annotate inline · Enter save · Esc cancel</text>
+  <text x="48" y="650" fill="#F6F4FF" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700">SNAP<tspan fill="#A878FF">VERE</tspan> Region Capture</text>
+  <text x="49" y="677" fill="#AEB9CA" font-family="Segoe UI,Arial,sans-serif" font-size="14">The editor appears only while capturing. No full application window is required.</text>
+</svg>

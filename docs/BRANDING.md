@@ -2,80 +2,110 @@
 
 ## Brand purpose
 
-SNAPVERE is a premium Windows capture product built around speed, precision and local-first privacy. The identity should feel technical and calm rather than playful, gaming-oriented or generic SaaS.
+SNAPVERE is a premium Windows capture utility built around speed, precision and local-first privacy. The identity should feel immediate, technical and calm: the product stays in the tray until the user needs it, then gets out of the way again.
 
 ## Brand line
 
-**Capture anything.**
+**Capture. Edit. Done.**
 
-This is the current primary tagline. It is short enough for the application shell, README and installer surfaces while leaving feature-specific messaging to supporting copy.
+The line mirrors the actual interaction model: capture from the tray/hotkey, make inline edits when needed, then Copy or Save.
 
 ## Symbol
 
-The canonical symbol is `assets/branding/symbol/snapvere-symbol.svg`. It combines four precise selection corners with a continuous S-shaped capture stroke. The mark is designed to remain identifiable without the wordmark and to translate later into application, tray and installer icon families.
+The canonical symbol is `assets/branding/symbol/snapvere-symbol.svg`.
+
+The current mark is a single violet capture shard / feather. It represents speed and a precise directional stroke rather than a camera glyph. The silhouette is intentionally strong enough for notification-area sizes where a full wordmark is impossible.
+
+Do not revive the former capture-corners + S symbol in new product surfaces.
 
 ## Logo variants
 
 - `assets/branding/readme/snapvere-logo-dark.svg`
 - `assets/branding/readme/snapvere-logo-light.svg`
 
-Both are derived from the same symbol geometry. Raster and ICO exports must be generated from canonical vector sources rather than independently redrawn.
+Both use the canonical shard geometry and the same violet family. Small contexts use the standalone symbol.
 
 ## Palette
 
-### Core
-
 | Token | Value | Use |
 | --- | --- | --- |
-| Graphite 950 | `#101116` | dark symbol/application surfaces |
-| Ink 900 | `#17181D` | primary text on light surfaces |
-| Neutral 50 | `#F7F7FB` | primary text/mark on dark surfaces |
-| Indigo 500 | `#7667F5` | primary capture/focus accent |
-| Indigo 600 | `#5C45CF` | light-theme accent |
-| Indigo 400 | `#9C91FF` | small emphasis/details |
-| Neutral 400 | `#A8ABB5` | secondary dark-theme text |
-| Neutral 600 | `#5E626C` | secondary light-theme text |
+| Night 950 | `#0D1220` | tray flyout / dark product surfaces |
+| Night 900 | `#101622` | editor palettes and cards |
+| Violet 650 | `#6547F6` | primary brand stroke |
+| Violet 550 | `#8C5CFF` | primary interaction accent |
+| Violet 400 | `#C18BFF` | highlight / wordmark detail |
+| Lavender 100 | `#F5EFFF` | high-contrast mark detail |
+| Neutral 50 | `#F7F7FB` | primary text on dark surfaces |
+| Neutral 400 | `#A8B0C1` | secondary dark-theme text |
+| Ink 900 | `#171A24` | primary light-theme text |
 
-Accent color is intentionally constrained to capture affordances, focus, selection and key actions. Full-window gradients are not part of the core identity.
+Violet indicates the capture action, active tool or brand. It should not become an uncontrolled full-screen glow.
 
 ## Typography
 
-Use Windows-native Segoe UI / system typography. Do not bundle a custom web font solely for branding.
+Use Windows-native Segoe UI / system typography. Do not bundle a custom font solely for branding.
 
-Recommended application scale:
+- product name: Semibold/Bold with moderate tracking;
+- flyout action: 12–15 px, Semibold for primary capture;
+- body: 12–16 px, Regular;
+- metadata / hotkeys: 9–12 px, Regular/Medium.
 
-- Display: 32–40 px, Semibold
-- Heading: 20–24 px, Semibold
-- Body: 14–16 px, Regular
-- Caption: 12–13 px, Regular/Medium
-- Technical metadata: system monospace where code-like alignment is useful
+## Tray-first application direction
 
-## Clear space
+Normal startup does not open the Capture Center. The notification-area icon is the primary persistent product surface.
 
-Keep clear space around the standalone symbol of at least 16% of the symbol width. Do not let adjacent text, window chrome or installer decoration intersect the capture-corner geometry.
+- **Left click**: Region Capture immediately.
+- **Right click**: branded SNAPVERE flyout.
+- **Print Screen**: Region Capture when available.
+- Options/Recent and About are secondary windows opened only on request.
 
-## Minimum size
+The tray icon should remain readable at 16–32 px and must use the same violet shard direction as the canonical symbol.
 
-The full wordmark should not be used when the rendered height makes the tagline unreadable. Use the standalone symbol for tray/small icon contexts.
+## Branded tray flyout
 
-## Misuse
+The flyout uses a compact dark navy surface, one dominant violet Region action, restrained blue/violet secondary iconography and clear shortcut hints. It must feel like a lightweight Windows command surface, not a dashboard.
 
-Do not rotate the mark, recolor individual corners randomly, add glow/RGB effects, stretch non-proportionally, use stock camera glyphs as substitutes, or redraw the S independently between assets.
+Implemented menu groups:
 
-## Windows application direction
+1. Capture region / window / screen
+2. Open capture folder / Options & recent captures / About
+3. Exit
 
-Dark theme is the strongest brand showcase, but System theme is the intended default. Surfaces should remain Windows-native and Fluent-aligned. Mica/backdrop effects are optional accents, not the identity itself.
+Unavailable features must not be inserted merely to fill the menu.
 
 ## Capture overlay
 
-Overlay treatment should use graphite dimming, high-contrast neutral selection borders and controlled indigo focus/handle accents. Selection geometry must remain readable over arbitrary screen content.
+Region Capture uses graphite dimming, a high-contrast violet selection border, compact tool/action palettes and physical-pixel dimensions. Annotation colors may vary for utility, but the selection/focus treatment remains SNAPVERE violet.
+
+## Documentation visuals
+
+Repository-maintained UI illustrations are under `docs/images/`:
+
+- `tray-first-region.svg`
+- `tray-menu.svg`
+- `region-editor.svg`
+
+They document the implemented interaction model and may be used by the README. They are not substitutes for platform-specific runtime QA screenshots because Windows chrome, font rendering, DPI and system-tray layout vary by environment.
 
 ## Accessibility
 
-Brand colors are not allowed to override system high-contrast behavior. Focus indication must remain visible without relying on color alone.
+- brand colors must not be the only state indicator;
+- keyboard capture shortcuts remain available independently from pointer/tray actions;
+- text contrast must remain readable on dark surfaces;
+- high-contrast/system accessibility behavior takes precedence over brand decoration.
+
+## Misuse
+
+Do not use stock camera icons as the product mark, rotate the shard arbitrarily, recolor each segment randomly, stretch it non-proportionally, add heavy RGB glow, or mix the old and new symbol families in the same release.
 
 ## Asset production status
 
-Implemented: canonical symbol and README dark/light logos.
+Implemented:
 
-Planned from the canonical source: application ICO/PNG set, tray icon, installer icon, monochrome variants, social preview, splash/about artwork and installer artwork. These should be added only as real derived assets rather than placeholder graphics.
+- canonical shard symbol SVG;
+- README dark/light wordmarks;
+- branded runtime notification-area icon;
+- branded WinUI tray flyout mark;
+- README tray-first and Region-editor SVG illustrations.
+
+Future binary icon exports (ICO/PNG sizes) should be derived from the canonical shape and validated at native Windows icon sizes before replacing executable resources.

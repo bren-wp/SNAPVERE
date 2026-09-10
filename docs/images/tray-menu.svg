@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-labelledby="title desc">
+  <title id="title">SNAPVERE branded tray menu</title>
+  <desc id="desc">Documentation illustration of the branded SNAPVERE menu opened from a right click on the tray icon.</desc>
+  <defs>
+    <linearGradient id="desktop" x1="0" y1="0" x2="1200" y2="700"><stop stop-color="#071936"/><stop offset=".55" stop-color="#1546A0"/><stop offset="1" stop-color="#080C18"/></linearGradient>
+    <linearGradient id="accent" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#6547F6"/><stop offset="1" stop-color="#C18BFF"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="12" stdDeviation="20" flood-color="#000" flood-opacity=".45"/></filter>
+  </defs>
+  <rect width="1200" height="700" fill="url(#desktop)"/>
+  <path d="M0 532C211 373 401 340 587 397S921 526 1200 318V700H0Z" fill="#173778" opacity=".62"/>
+  <rect y="640" width="1200" height="60" fill="#0C1322" fill-opacity=".97"/>
+  <rect x="941" y="648" width="46" height="44" rx="11" fill="#242A3B"/>
+  <rect x="948" y="654" width="32" height="32" rx="9" fill="#19132C" stroke="#7051DC"/>
+  <path d="M955 680C958 669 966 659 976 656C973 668 967 677 955 682C960 674 964 669 970 664C964 667 959 673 955 680Z" fill="url(#accent)"/>
+  <text x="1004" y="675" fill="#E8EDF7" font-family="Segoe UI,Arial,sans-serif" font-size="16">Wi-Fi   VOL   100%</text>
+  <text x="1124" y="660" fill="#F4F6FA" font-family="Segoe UI,Arial,sans-serif" font-size="14">03:02</text><text x="1107" y="681" fill="#B7C0D0" font-family="Segoe UI,Arial,sans-serif" font-size="12">10.09.2026</text>
+
+  <g filter="url(#shadow)">
+    <rect x="688" y="76" width="418" height="540" rx="20" fill="#0D1321" stroke="#52617F"/>
+    <rect x="716" y="100" width="54" height="54" rx="14" fill="#1B1530" stroke="#674FD0"/>
+    <path d="M728 144C732 127 742 112 759 105C755 123 746 138 728 147C734 136 741 127 751 119C741 124 734 133 728 144Z" fill="url(#accent)"/>
+    <text x="786" y="125" fill="#F8F7FC" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="700">SNAP<tspan fill="#A979FF">VERE</tspan></text>
+    <text x="787" y="147" fill="#9FAAC0" font-family="Segoe UI,Arial,sans-serif" font-size="12">Capture. Edit. Done.</text>
+    <line x1="716" y1="170" x2="1078" y2="170" stroke="#2D3950"/>
+
+    <rect x="711" y="184" width="372" height="54" rx="11" fill="#392878" stroke="#8667F4"/>
+    <text x="732" y="216" fill="#CBB7FF" font-family="Segoe UI Symbol,Segoe UI,Arial" font-size="19">□</text><text x="769" y="216" fill="#FFFFFF" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="600">Capture region</text><text x="936" y="216" fill="#D0C7E6" font-family="Segoe UI,Arial,sans-serif" font-size="11">Print Screen</text>
+    <text x="732" y="267" fill="#91A7FF" font-family="Segoe UI,Arial,sans-serif" font-size="18">▣</text><text x="769" y="267" fill="#F1F3F8" font-family="Segoe UI,Arial,sans-serif" font-size="15">Capture window</text><text x="947" y="267" fill="#8995AA" font-family="Segoe UI,Arial,sans-serif" font-size="11">Ctrl+Shift+2</text>
+    <text x="732" y="313" fill="#91C9FF" font-family="Segoe UI,Arial,sans-serif" font-size="18">▭</text><text x="769" y="313" fill="#F1F3F8" font-family="Segoe UI,Arial,sans-serif" font-size="15">Capture screen</text><text x="947" y="313" fill="#8995AA" font-family="Segoe UI,Arial,sans-serif" font-size="11">Ctrl+Shift+4</text>
+    <line x1="716" y1="335" x2="1078" y2="335" stroke="#2D3950"/>
+    <text x="732" y="378" fill="#91A7FF" font-family="Segoe UI,Arial,sans-serif" font-size="18">▱</text><text x="769" y="378" fill="#F1F3F8" font-family="Segoe UI,Arial,sans-serif" font-size="15">Open capture folder</text>
+    <text x="732" y="424" fill="#A57BFF" font-family="Segoe UI,Arial,sans-serif" font-size="18">⚙</text><text x="769" y="424" fill="#F1F3F8" font-family="Segoe UI,Arial,sans-serif" font-size="15">Options &amp; recent captures</text>
+    <text x="732" y="470" fill="#9FB3E5" font-family="Segoe UI,Arial,sans-serif" font-size="18">ⓘ</text><text x="769" y="470" fill="#F1F3F8" font-family="Segoe UI,Arial,sans-serif" font-size="15">About SNAPVERE</text>
+    <line x1="716" y1="492" x2="1078" y2="492" stroke="#2D3950"/>
+    <text x="732" y="535" fill="#9FB3E5" font-family="Segoe UI,Arial,sans-serif" font-size="18">↪</text><text x="769" y="535" fill="#F1F3F8" font-family="Segoe UI,Arial,sans-serif" font-size="15">Exit SNAPVERE</text>
+    <circle cx="726" cy="579" r="4" fill="#38D983"/><text x="740" y="583" fill="#93A0B6" font-family="Segoe UI,Arial,sans-serif" font-size="11">Ready in tray</text><text x="1035" y="583" fill="#7C899E" font-family="Segoe UI,Arial,sans-serif" font-size="11">v0.0.4</text>
+  </g>
+
+  <text x="58" y="66" fill="#F7F6FF" font-family="Segoe UI,Arial,sans-serif" font-size="30" font-weight="700">Right click for everything else</text>
+  <text x="60" y="98" fill="#B5C0D4" font-family="Segoe UI,Arial,sans-serif" font-size="15">Capture actions, local files, options, About and Exit — without keeping a large launcher open.</text>
+  <path d="M652 138C599 245 627 525 941 656" fill="none" stroke="#9B72FF" stroke-width="2" stroke-dasharray="7 9" opacity=".72"/>
+</svg>
