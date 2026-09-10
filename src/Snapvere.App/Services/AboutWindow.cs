@@ -162,7 +162,7 @@ public sealed class AboutWindow : Window
         }
 
         _sizeApplied = true;
-        AppWindow.Resize(new SizeInt32(520, 500));
+        AppWindow.Resize(DpiAwareWindowSizing.ScaleSize(this, 520, 500));
     }
 
     private static FrameworkElement BuildBrandMark()
