@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Snapvere.Packaging;
 
@@ -30,6 +31,18 @@ public sealed class UniversalPayloadTests
             UniversalPayload.ResolveArchitecture(Architecture.X64, requested));
     }
 
+    [Theory]
+    [InlineData("x64")]
+    [InlineData("amd64")]
+    [InlineData("64")]
+    [InlineData("win-x64")]
+    public void ResolveArchitecture_AcceptsCommon64BitAliases(string requested)
+    {
+        Assert.Equal(
+            SnapverePayloadArchitecture.X64,
+            UniversalPayload.ResolveArchitecture(Architecture.X64, requested));
+    }
+
     [Fact]
     public void ResolveArchitecture_AllowsX86CompatibilityPayloadOnArm64()
     {
@@ -51,6 +64,13 @@ public sealed class UniversalPayloadTests
             UniversalPayload.ResolveArchitecture(operatingSystemArchitecture, requested));
     }
 
+    [Fact]
+    public void ResolveArchitecture_RejectsUnknownOverride()
+    {
+        Assert.Throws<ArgumentException>(() =>
+            UniversalPayload.ResolveArchitecture(Architecture.X64, "mips64"));
+    }
+
     [Theory]
     [InlineData(SnapverePayloadArchitecture.X86, "Snapvere.Payload.x86.zip")]
     [InlineData(SnapverePayloadArchitecture.X64, "Snapvere.Payload.x64.zip")]
@@ -60,5 +80,25 @@ public sealed class UniversalPayloadTests
         string expected)
     {
         Assert.Equal(expected, UniversalPayload.GetResourceName(architecture));
+    }
+
+    [Theory]
+    [InlineData(SnapverePayloadArchitecture.X86)]
+    [InlineData(SnapverePayloadArchitecture.X64)]
+    [InlineData(SnapverePayloadArchitecture.Arm64)]
+    public void OpenEmbeddedPayload_RejectsMissingArchitectureResource(
+        SnapverePayloadArchitecture architecture)
+    {
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+        {
+            using var _ = UniversalPayload.OpenEmbeddedPayload(
+                Assembly.GetExecutingAssembly(),
+                architecture);
+        });
+
+        Assert.Contains(
+            UniversalPayload.GetToken(architecture),
+            exception.Message,
+            StringComparison.OrdinalIgnoreCase);
     }
 }
