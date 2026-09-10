@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  SNAPVERE_VERSION: 0.0.4
+  SNAPVERE_VERSION: 0.0.5
 
 permissions:
   contents: read
@@ -58,7 +58,7 @@ jobs:
 
   package-smoke:
     runs-on: windows-2022
-    timeout-minutes: 45
+    timeout-minutes: 55
     strategy:
       fail-fast: false
       matrix:
@@ -141,3 +141,14 @@ jobs:
             -PortablePath "artifacts/portable-${{ matrix.arch }}/SNAPVERE-Portable.exe" `
             -Version $env:SNAPVERE_VERSION `
             -Arch "${{ matrix.arch }}"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Verify double-click EXE visibility
+        shell: pwsh
+        run: |
+          & ./eng/Test-SnapvereInteractiveLaunch.ps1 `
+            -SetupPath "artifacts/setup-${{ matrix.arch }}/SNAPVERE-Setup.exe" `
+            -PortablePath "artifacts/portable-${{ matrix.arch }}/SNAPVERE-Portable.exe" `
+            -Version $env:SNAPVERE_VERSION `
+            -Arch "${{ matrix.arch }}"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
