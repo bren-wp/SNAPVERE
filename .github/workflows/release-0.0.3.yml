@@ -1,0 +1,161 @@
+name: Release 0.0.3
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: snapvere-release-0.0.3
+  cancel-in-progress: false
+
+env:
+  SNAPVERE_VERSION: 0.0.3
+
+jobs:
+  release:
+    if: contains(github.event.head_commit.message, '[release 0.0.3]')
+    runs-on: windows-2022
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore and test release source
+        shell: pwsh
+        run: |
+          dotnet restore SNAPVERE.sln
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          dotnet build SNAPVERE.sln --configuration Release --no-restore -p:Platform=x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          dotnet test tests/Snapvere.UnitTests/Snapvere.UnitTests.csproj --configuration Release --no-restore -p:Platform=x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          dotnet restore src/Snapvere.App/Snapvere.App.csproj --runtime win-x86
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          dotnet build src/Snapvere.App/Snapvere.App.csproj --configuration Release --runtime win-x86 --no-restore -p:Platform=x86
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build x64 and x86 release packages
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+
+          foreach ($arch in @('x64', 'x86')) {
+            $rid = "win-$arch"
+            $appDir = "artifacts/app-$arch"
+            $payload = Join-Path $PWD "artifacts/SNAPVERE-payload-$arch.zip"
+            $setupDir = "artifacts/setup-$arch"
+            $portableDir = "artifacts/portable-$arch"
+
+            dotnet publish src/Snapvere.App/Snapvere.App.csproj `
+              --configuration Release `
+              --runtime $rid `
+              -p:Platform=$arch `
+              -p:SelfContained=true `
+              -p:WindowsAppSDKSelfContained=true `
+              -p:PublishReadyToRun=true `
+              -p:DebugType=None `
+              -p:DebugSymbols=false `
+              -p:Version=$env:SNAPVERE_VERSION `
+              --output $appDir
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+            Compress-Archive -Path "$appDir/*" -DestinationPath $payload -CompressionLevel Optimal
+
+            dotnet publish src/Snapvere.Setup/Snapvere.Setup.csproj `
+              --configuration Release `
+              --runtime $rid `
+              -p:Platform=$arch `
+              -p:SnapverePayloadPath="$payload" `
+              -p:Version=$env:SNAPVERE_VERSION `
+              --output $setupDir
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+            dotnet publish src/Snapvere.Portable/Snapvere.Portable.csproj `
+              --configuration Release `
+              --runtime $rid `
+              -p:Platform=$arch `
+              -p:SnapverePayloadPath="$payload" `
+              -p:Version=$env:SNAPVERE_VERSION `
+              --output $portableDir
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+            Copy-Item "$setupDir/SNAPVERE-Setup.exe" "release/SNAPVERE-$env:SNAPVERE_VERSION-Setup-$arch.exe"
+            Copy-Item "$portableDir/SNAPVERE-Portable.exe" "release/SNAPVERE-$env:SNAPVERE_VERSION-Portable-$arch.exe"
+            Copy-Item $payload "release/SNAPVERE-$env:SNAPVERE_VERSION-$arch.zip"
+          }
+
+      - name: Validate release artifacts and package lifecycle
+        shell: pwsh
+        run: |
+          $required = @(
+            "release/SNAPVERE-$env:SNAPVERE_VERSION-Setup-x64.exe",
+            "release/SNAPVERE-$env:SNAPVERE_VERSION-Portable-x64.exe",
+            "release/SNAPVERE-$env:SNAPVERE_VERSION-Setup-x86.exe",
+            "release/SNAPVERE-$env:SNAPVERE_VERSION-Portable-x86.exe",
+            "release/SNAPVERE-$env:SNAPVERE_VERSION-x64.zip",
+            "release/SNAPVERE-$env:SNAPVERE_VERSION-x86.zip"
+          )
+
+          foreach ($file in $required) {
+            if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
+              throw "Missing release file: $file"
+            }
+            if ((Get-Item -LiteralPath $file).Length -lt 1MB) {
+              throw "Release file is unexpectedly small: $file"
+            }
+          }
+
+          foreach ($arch in @('x64', 'x86')) {
+            & ./eng/Test-SnapverePackageLifecycle.ps1 `
+              -SetupPath "release/SNAPVERE-$env:SNAPVERE_VERSION-Setup-$arch.exe" `
+              -PortablePath "release/SNAPVERE-$env:SNAPVERE_VERSION-Portable-$arch.exe" `
+              -Version $env:SNAPVERE_VERSION `
+              -Arch $arch
+          }
+
+      - name: Generate SHA-256 checksums
+        shell: pwsh
+        run: |
+          Get-ChildItem release -File | Sort-Object Name | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($_.Name)"
+          } | Set-Content -Encoding ascii release/SHA256SUMS.txt
+
+      - name: Create immutable v0.0.3 tag
+        shell: pwsh
+        run: |
+          if (git ls-remote --exit-code --tags origin "refs/tags/v$env:SNAPVERE_VERSION") {
+            throw "Tag v$env:SNAPVERE_VERSION already exists. Refusing to replace an immutable release tag."
+          }
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$env:SNAPVERE_VERSION" -m "SNAPVERE v$env:SNAPVERE_VERSION"
+          git push origin "v$env:SNAPVERE_VERSION"
+
+      - name: Publish GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $assets = Get-ChildItem release -File | ForEach-Object { $_.FullName }
+          & gh release create "v$env:SNAPVERE_VERSION" @assets `
+            --title "SNAPVERE v$env:SNAPVERE_VERSION" `
+            --notes-file RELEASE_NOTES_0.0.3.md `
+            --latest `
+            --verify-tag
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

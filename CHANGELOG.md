@@ -4,41 +4,54 @@ All notable SNAPVERE changes are documented here.
 
 ## [Unreleased]
 
-### Added
-
-- `Print Screen` global shortcut for Region Capture
-- independent `Ctrl+Shift+1` Region fallback when Print Screen is already registered by Windows or another application
-- compact tray-first Capture Center with Region/Screen actions, four recent captures, Open folder and Hide to tray
-- inline Region annotation tools: Pen, Line, Arrow, Box and Highlight
-- Region Copy to Windows clipboard in addition to local PNG Save
-- installed and Portable Region-editor runtime probe for x64 and x86 CI
-- Windows.Graphics.Capture + Direct3D 11 monitor backend
-- Microsoft.Windows.CsWin32 generated D3D interop
-- resilient preferred/fallback screen-capture orchestration tests
-
-### Changed
-
-- production `IScreenCaptureService` now prefers Windows.Graphics.Capture on Windows 10 version 2004 / build 19041 and later
-- GDI is retained as automatic compatibility fallback and as the supported path for Windows 10 builds below 19041
-- caller cancellation no longer risks being converted into a fallback capture attempt
-- Region editor visual tree is created programmatically instead of depending on a secondary Window XAML resource
-- Region capture is presented as the primary SNAPVERE workflow rather than a large dashboard-style launcher
-
-### Fixed
-
-- Region editor runtime termination caused by a templated WinUI `ProgressRing` during visual-tree materialization on packaged x64/x86 CI runs
-- generated COM interface accessibility errors in the WGC backend
-- WGC HRESULT helper compilation inside the capture service
-- Windows platform analyzer warning for cursor-capture support by guarding WGC monitor acquisition to build 19041+
-
 ### Planned
 
 - coordinated cross-monitor Region Capture
-- Window Capture and smart targeting
 - Scrolling Capture
 - richer annotation tools including text and blur/pixelate
 - full History, Pin to Screen and OCR
 - automatic update mechanism
+
+## [0.0.3] - 2026-09-10
+
+### Added
+
+- production Window Capture workflow using Windows.Graphics.Capture `CreateForWindow`
+- native top-level window discovery with DWM extended-frame bounds
+- overlay-safe Z-order window hit testing that ignores SNAPVERE's own picker surfaces
+- multi-monitor Window Capture picker with one DPI-aware frozen overlay per monitor
+- Window Capture launcher action
+- global `Ctrl+Shift+2` Window Capture shortcut
+- Window Capture action in the native system tray menu
+- installed and Portable Window-picker runtime probe for x64 and x86 CI
+- centralized package lifecycle validation shared by CI and release automation
+- explicit install-contract validation for Windows Installed apps registration
+
+### Changed
+
+- current CI/package version advances to 0.0.3
+- capture launcher now presents Region, Window and Screen as implemented workflows
+- tray and global-hotkey surfaces expose Window Capture only after its backend, picker and workflow became real
+- production `IScreenCaptureService` prefers Windows.Graphics.Capture on Windows 10 version 2004 / build 19041 and later
+- GDI remains the automatic monitor-capture compatibility fallback and supported path below build 19041
+- Region editor visual tree remains programmatic to avoid fragile secondary Window XAML loading
+- package lifecycle smoke tests now validate main-window, Region-editor and Window-picker WinUI materialization
+
+### Fixed
+
+- Window Capture hover targeting no longer resolves SNAPVERE's own always-on-top overlay instead of the window below it
+- Window Capture unit tests no longer depend on unavailable xUnit `TestContext`
+- generated COM interface accessibility and HRESULT helper issues in the WGC backend
+- caller cancellation no longer risks becoming a fallback monitor-capture attempt
+- Region editor runtime termination caused by a templated WinUI `ProgressRing` during packaged validation
+
+### Security
+
+- uninstall remains handled by the installed `SNAPVERE-Setup.exe --uninstall`; no standalone uninstaller binary is generated
+- package QA rejects both `uninstall*.exe` and Inno-style `unins*.exe` files in the installation directory
+- CI validates `UninstallString`, `QuietUninstallString`, install location and version metadata before uninstall
+- uninstall QA confirms the Windows Installed apps registration is removed while screenshots are preserved
+- release artifacts continue to publish SHA-256 checksums
 
 ## [0.0.2] - 2026-09-09
 

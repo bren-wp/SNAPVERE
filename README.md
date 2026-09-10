@@ -8,28 +8,32 @@
 
 **Screen capture for Windows — developed and published by Brendigo.**
 
-SNAPVERE is a local-first Windows capture application focused on fast region selection, physical-pixel precision, inline annotation, dependable local PNG output and a clean path toward window targeting, scrolling capture, OCR and richer history workflows.
+SNAPVERE is a local-first Windows capture application focused on fast region selection, physical-pixel precision, smart window targeting, inline annotation, dependable local PNG output and a clean path toward scrolling capture, OCR and richer history workflows.
 
 ## Current main
 
-The current development branch keeps the hardened 0.0.2 Setup/Portable lifecycle while advancing the capture experience:
+The current branch contains the v0.0.3 capture and packaging baseline:
 
 - compact tray-first Capture Center;
 - `Print Screen` as the preferred Region Capture shortcut;
 - `Ctrl+Shift+1` as an independent Region fallback when Print Screen is owned by Windows or another app;
+- `Ctrl+Shift+2` Window Capture with a frozen multi-monitor target picker;
+- `Ctrl+Shift+4` primary Screen Capture;
 - inline Region tools for Pen, Line, Arrow, Box and Highlight;
 - Copy and Save directly from the Region editor;
 - Windows.Graphics.Capture + D3D11 as the preferred monitor-acquisition backend on Windows 10 2004 / build 19041 and later;
-- GDI retained as an automatic compatibility fallback and for supported older Windows builds.
+- Windows.Graphics.Capture `CreateForWindow` for real top-level Window Capture;
+- GDI retained as an automatic monitor compatibility fallback and for supported older Windows builds;
+- hardened Setup/Portable lifecycle validation with no separate uninstall executable.
 
-## Version 0.0.2 packaging
+## Version 0.0.3 packaging
 
 GitHub Releases publish:
 
-- `SNAPVERE-0.0.2-Setup-x64.exe`
-- `SNAPVERE-0.0.2-Portable-x64.exe`
-- `SNAPVERE-0.0.2-Setup-x86.exe`
-- `SNAPVERE-0.0.2-Portable-x86.exe`
+- `SNAPVERE-0.0.3-Setup-x64.exe`
+- `SNAPVERE-0.0.3-Portable-x64.exe`
+- `SNAPVERE-0.0.3-Setup-x86.exe`
+- `SNAPVERE-0.0.3-Portable-x86.exe`
 - raw x64/x86 self-contained ZIP payloads
 - `SHA256SUMS.txt`
 
@@ -43,10 +47,10 @@ See [`docs/INSTALLATION.md`](docs/INSTALLATION.md) for Setup, Portable, platform
 - WinUI 3
 - Windows App SDK 1.8 stable line
 - Windows.Graphics.Capture + Direct3D 11 preferred acquisition path
-- native GDI compatibility fallback
+- native GDI monitor compatibility fallback
 - x64 and x86/32-bit release targets; ARM64 remains a source/build target
 - Windows 10 version 1809 / build 17763 minimum application target
-- WGC monitor path enabled from Windows 10 version 2004 / build 19041
+- WGC monitor and Window Capture paths enabled from Windows 10 version 2004 / build 19041
 - nullable reference types and strict .NET analyzers
 - central NuGet package management
 - xUnit automated tests
@@ -55,15 +59,17 @@ See [`docs/INSTALLATION.md`](docs/INSTALLATION.md) for Setup, Portable, platform
 ## Architecture
 
 ```text
-WinUI compact Capture Center / Print Screen / fallback hotkey / tray action
+WinUI Capture Center / Print Screen / capture hotkeys / tray actions
     ↓
-Snapvere.Application workflow
-    ↓
-IScreenCaptureService
-    ↓
-ResilientScreenCaptureService
-    ├── preferred: WindowsGraphicsCaptureService (WGC + D3D11)
-    └── fallback: GdiScreenCaptureService
+Snapvere.Application workflows
+    ├── Region / Screen → IScreenCaptureService
+    │                    ↓
+    │             ResilientScreenCaptureService
+    │             ├── preferred: WindowsGraphicsCaptureService (WGC + D3D11)
+    │             └── fallback: GdiScreenCaptureService
+    │
+    └── Window → WindowTargetPicker + IWindowCaptureService
+                 └── WindowsGraphicsCaptureService.CreateForWindow
     ↓
 CaptureFrame (physical BGRA8 pixels)
     ↓
@@ -98,7 +104,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/CAPTURE-ENGINE.md`](d
 - Windows.Graphics.Capture monitor acquisition through a free-threaded Direct3D 11 frame pool;
 - CPU staging-texture readback with row-pitch handling;
 - two-second WGC frame timeout and blank-frame/dimension validation;
-- automatic GDI fallback for expected unsupported/platform/native failures;
+- automatic GDI fallback for expected unsupported/platform/native monitor-capture failures;
 - caller cancellation never converted into fallback work;
 - deterministic PNG encoder;
 - pixel-accurate BGRA8 cropper with stride support;
@@ -125,6 +131,22 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/CAPTURE-ENGINE.md`](d
 - Enter/double-click save and Esc cancel;
 - final output generated from the same frozen frame shown in the editor.
 
+### Window Capture
+
+- native visible top-level window discovery;
+- DWM extended-frame bounds for accurate targeting;
+- SNAPVERE/self/tool/cloaked window filtering;
+- stable Z-order snapshot taken before picker overlays appear;
+- overlay-safe geometric hit testing so SNAPVERE's own topmost surfaces do not become the selected target;
+- one frozen, borderless picker overlay per monitor;
+- per-monitor DPI conversion and support for negative desktop coordinates;
+- coordinated highlight for windows spanning monitor boundaries;
+- hover title and physical `W × H` target feedback;
+- left-click capture and Esc cancel;
+- WGC `CreateForWindow` acquisition with the shared D3D11 readback path;
+- local atomic PNG save and Recent Captures refresh;
+- launcher, tray and global `Ctrl+Shift+2` entry points.
+
 ### Screen Capture
 
 - primary-display screenshot;
@@ -136,6 +158,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/CAPTURE-ENGINE.md`](d
 ### Desktop integration
 
 - compact 560×620 capture-first WinUI launcher;
+- Region, Window and Screen actions;
 - Hide to tray action;
 - native system tray icon and menu;
 - tray recovery after Windows Explorer restarts;
@@ -144,7 +167,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/CAPTURE-ENGINE.md`](d
 - four-item recent local capture view;
 - Open capture folder action;
 - startup diagnostics under `%LOCALAPPDATA%\SNAPVERE\Logs`;
-- explicit activated-window and Region-editor runtime probes used by CI;
+- explicit activated-window, Region-editor and Window-picker runtime probes used by CI;
 - unavailable future features are not presented as working functionality.
 
 ### Setup and Portable
@@ -155,7 +178,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/CAPTURE-ENGINE.md`](d
 - per-user default installation without elevation;
 - optional Start menu/Desktop shortcuts;
 - Windows Installed apps registration;
-- uninstall through installed `SNAPVERE-Setup.exe --uninstall`, without a separate `uninstall.exe`;
+- uninstall through installed `SNAPVERE-Setup.exe --uninstall`, without a separate `uninstall.exe`, `unins000.exe` or other standalone uninstaller binary;
 - installation marker validation before destructive uninstall cleanup;
 - screenshots preserved when uninstalling;
 - single-file Portable launcher per architecture;
@@ -165,16 +188,15 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/CAPTURE-ENGINE.md`](d
 
 ## Automated QA
 
-The Windows CI gate validates both x64 and x86 on Windows Server 2022. Each architecture must pass build/publish plus Setup and Portable lifecycle checks. The lifecycle probe verifies application startup and real Region-editor materialization; unit tests cover capture geometry, image processing and preferred/fallback orchestration.
+The Windows CI gate validates both x64 and x86 on Windows Server 2022. Each architecture must pass build/publish plus Setup and Portable lifecycle checks. The lifecycle gate verifies application startup, real Region-editor materialization, real Window-picker materialization, the Installed apps uninstall contract and Setup-based cleanup. Unit tests cover capture geometry, image processing, window hit testing, Window Capture workflow persistence and preferred/fallback monitor orchestration.
 
-The hosted runner is not treated as proof of an end-user desktop WGC screenshot. Native WGC acquisition is compiled and wired as the preferred production path, while expected acquisition failures are designed to fall back to GDI.
+The hosted runner is not treated as proof of a real end-user desktop WGC screenshot. Native WGC monitor and window acquisition are compiled and wired into production, while runtime surface probes validate the WinUI paths independently of protected/interactive desktop capture behavior.
 
 ## Current limitations
 
 The following remain intentionally deferred:
 
 - coordinated cross-monitor Region overlay and freeze composition;
-- Window Capture and smart window/control targeting;
 - Scrolling Capture;
 - richer editor features such as text, blur/pixelate and numbered steps;
 - full History management, favorites and Pin to Screen;
@@ -205,7 +227,7 @@ SNAPVERE capture workflows are local-first. Screenshot pixels, local capture his
 
 ## Security
 
-Release packaging validates extraction destinations, bounds embedded archives, uses staged writes and publishes SHA-256 checksums. Setup validates a SNAPVERE installation marker before destructive cleanup. Private signing keys, production credentials, user screenshots, dumps and runtime data must never be committed.
+Release packaging validates extraction destinations, bounds embedded archives, uses staged writes and publishes SHA-256 checksums. Setup validates a SNAPVERE installation marker before destructive cleanup. CI additionally verifies that Windows uninstall registration points to the installed `SNAPVERE-Setup.exe` and rejects standalone uninstaller payloads. Private signing keys, production credentials, user screenshots, dumps and runtime data must never be committed.
 
 Current executables are intentionally not Authenticode-signed. Use the published `SHA256SUMS.txt` for artifact integrity verification.
 
