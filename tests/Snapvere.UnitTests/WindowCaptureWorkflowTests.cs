@@ -37,7 +37,7 @@ public sealed class WindowCaptureWorkflowTests : IDisposable
         var result = await workflow.CaptureWindowToDefaultFolderAsync(
             target,
             includeCursor: false,
-            TestContext.Current.CancellationToken);
+            CancellationToken.None);
 
         Assert.True(File.Exists(result.FilePath));
         Assert.Equal(frame.Size.Width, result.Width);
@@ -45,7 +45,7 @@ public sealed class WindowCaptureWorkflowTests : IDisposable
         Assert.Same(target, captureService.LastWindow);
         Assert.False(captureService.LastIncludeCursor);
 
-        var signature = await File.ReadAllBytesAsync(result.FilePath, TestContext.Current.CancellationToken);
+        var signature = await File.ReadAllBytesAsync(result.FilePath, CancellationToken.None);
         Assert.True(signature.Length > 8);
         Assert.Equal(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }, signature[..8]);
     }
