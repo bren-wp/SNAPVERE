@@ -116,7 +116,11 @@ public static class SnapvereLocalization
         ["ColorAmber"] = "Amber",
         ["ColorMint"] = "Mint",
         ["ColorIndigo"] = "Indigo",
-        ["AnnotationColor"] = "annotation color"
+        ["AnnotationColor"] = "annotation color",
+        ["RegionAccessDenied"] = "Windows denied access to the capture folder or clipboard.",
+        ["RegionIoFailure"] = "The selected region was captured, but the PNG file or clipboard stream could not be completed.",
+        ["RegionInvalidSelection"] = "The selected region is no longer valid. Select the region again.",
+        ["RegionCaptureFailed"] = "SNAPVERE could not complete the region capture. Press Esc and try again."
     };
 
     public static IReadOnlyList<SnapvereLanguage> SupportedLanguages => Languages;
@@ -236,6 +240,10 @@ public static class SnapvereLocalization
             ("hr", "ColorMint") => "Mint",
             ("hr", "ColorIndigo") => "Indigo",
             ("hr", "AnnotationColor") => "boja oznake",
+            ("hr", "RegionAccessDenied") => "Windows je odbio pristup mapi snimki ili međuspremniku.",
+            ("hr", "RegionIoFailure") => "Odabrano područje je snimljeno, ali PNG datoteku ili prijenos u međuspremnik nije bilo moguće dovršiti.",
+            ("hr", "RegionInvalidSelection") => "Odabrano područje više nije valjano. Ponovno odaberite područje.",
+            ("hr", "RegionCaptureFailed") => "SNAPVERE nije mogao dovršiti snimanje područja. Pritisnite Esc i pokušajte ponovno.",
 
             ("de", "Language") => "Sprache", ("de", "CaptureRegion") => "Bereich aufnehmen", ("de", "CaptureWindow") => "Fenster aufnehmen", ("de", "CaptureScreen") => "Bildschirm aufnehmen", ("de", "Settings") => "Einstellungen", ("de", "Exit") => "Beenden", ("de", "Copy") => "Kopieren", ("de", "Save") => "Speichern", ("de", "Close") => "Schließen",
             ("fr", "Language") => "Langue", ("fr", "CaptureRegion") => "Capturer une zone", ("fr", "CaptureWindow") => "Capturer une fenêtre", ("fr", "CaptureScreen") => "Capturer l’écran", ("fr", "Settings") => "Paramètres", ("fr", "Exit") => "Quitter", ("fr", "Copy") => "Copier", ("fr", "Save") => "Enregistrer", ("fr", "Close") => "Fermer",
