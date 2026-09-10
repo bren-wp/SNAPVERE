@@ -15,6 +15,11 @@ $install = [System.IO.Path]::GetFullPath($InstallDirectory)
 $setup = Join-Path $install 'SNAPVERE-Setup.exe'
 $app = Join-Path $install 'Snapvere.exe'
 $uninstallKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\SNAPVERE'
+$startupKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+$startupValueName = 'SNAPVERE'
+$desktop = [Environment]::GetFolderPath([Environment+SpecialFolder]::DesktopDirectory)
+$desktopShortcut = Join-Path $desktop 'SNAPVERE.lnk'
+$expectedStartup = '"' + $app + '"'
 
 if ($State -eq 'Installed') {
     if (-not (Test-Path -LiteralPath $app -PathType Leaf)) {
@@ -31,6 +36,20 @@ if ($State -eq 'Installed') {
     )
     if ($forbidden.Count -ne 0) {
         throw "SNAPVERE must not install a separate uninstaller executable: $($forbidden.Name -join ', ')"
+    }
+
+    if (-not (Test-Path -LiteralPath $desktopShortcut -PathType Leaf)) {
+        throw "Default Desktop shortcut is missing: $desktopShortcut"
+    }
+
+    if (-not (Test-Path -LiteralPath $startupKey)) {
+        throw 'Windows startup registry key is unavailable after install.'
+    }
+
+    $startup = Get-ItemProperty -LiteralPath $startupKey -Name $startupValueName -ErrorAction SilentlyContinue
+    if ($null -eq $startup -or $startup.$startupValueName -ne $expectedStartup) {
+        $actual = if ($null -eq $startup) { '<missing>' } else { [string]$startup.$startupValueName }
+        throw "Default Start with Windows registration mismatch. Expected: $expectedStartup Actual: $actual"
     }
 
     if (-not (Test-Path -LiteralPath $uninstallKey)) {
@@ -60,7 +79,7 @@ if ($State -eq 'Installed') {
         throw "QuietUninstallString must use the installed SNAPVERE-Setup.exe. Actual: $($registration.QuietUninstallString)"
     }
 
-    Write-Host 'SNAPVERE install contract verified: one Setup executable handles install/update/remove.'
+    Write-Host 'SNAPVERE install contract verified: Setup, Desktop shortcut, startup registration and Installed apps metadata are present.'
     return
 }
 
@@ -68,8 +87,17 @@ if (Test-Path -LiteralPath $app) {
     throw "Snapvere.exe remains after uninstall: $app"
 }
 
+if (Test-Path -LiteralPath $desktopShortcut) {
+    throw "Desktop shortcut remains after uninstall: $desktopShortcut"
+}
+
+$startupAfterRemoval = Get-ItemProperty -LiteralPath $startupKey -Name $startupValueName -ErrorAction SilentlyContinue
+if ($null -ne $startupAfterRemoval -and $null -ne $startupAfterRemoval.$startupValueName) {
+    throw "SNAPVERE startup registration remains after uninstall: $($startupAfterRemoval.$startupValueName)"
+}
+
 if (Test-Path -LiteralPath $uninstallKey) {
     throw 'Windows Installed apps registration remains after uninstall.'
 }
 
-Write-Host 'SNAPVERE uninstall contract verified: application and registration removed without a separate uninstaller.'
+Write-Host 'SNAPVERE uninstall contract verified: app, Desktop shortcut, startup registration and Installed apps registration were removed.'
