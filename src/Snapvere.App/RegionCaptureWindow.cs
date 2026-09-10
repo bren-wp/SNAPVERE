@@ -13,6 +13,7 @@ using Snapvere.Capture.Geometry;
 using Snapvere.Capture.Region;
 using Snapvere.Domain.Capture;
 using Snapvere.Imaging;
+using Snapvere.Shared;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
 using Windows.Storage.Streams;
@@ -103,7 +104,7 @@ public sealed class RegionCaptureWindow : Window
         _pngEncoder = pngEncoder ?? throw new ArgumentNullException(nameof(pngEncoder));
         _session = session ?? throw new ArgumentNullException(nameof(session));
 
-        Title = "SNAPVERE — Region Capture";
+        Title = L("RegionCaptureTitle");
 
         _frozenImage = new Image
         {
@@ -144,22 +145,22 @@ public sealed class RegionCaptureWindow : Window
             Child = _selectionSizeText
         };
 
-        _topLeftHandle = CreateResizeHandle(SelectionHandle.TopLeft, "Resize top left");
-        _topHandle = CreateResizeHandle(SelectionHandle.Top, "Resize top");
-        _topRightHandle = CreateResizeHandle(SelectionHandle.TopRight, "Resize top right");
-        _rightHandle = CreateResizeHandle(SelectionHandle.Right, "Resize right");
-        _bottomRightHandle = CreateResizeHandle(SelectionHandle.BottomRight, "Resize bottom right");
-        _bottomHandle = CreateResizeHandle(SelectionHandle.Bottom, "Resize bottom");
-        _bottomLeftHandle = CreateResizeHandle(SelectionHandle.BottomLeft, "Resize bottom left");
-        _leftHandle = CreateResizeHandle(SelectionHandle.Left, "Resize left");
+        _topLeftHandle = CreateResizeHandle(SelectionHandle.TopLeft, L("ResizeTopLeft"));
+        _topHandle = CreateResizeHandle(SelectionHandle.Top, L("ResizeTop"));
+        _topRightHandle = CreateResizeHandle(SelectionHandle.TopRight, L("ResizeTopRight"));
+        _rightHandle = CreateResizeHandle(SelectionHandle.Right, L("ResizeRight"));
+        _bottomRightHandle = CreateResizeHandle(SelectionHandle.BottomRight, L("ResizeBottomRight"));
+        _bottomHandle = CreateResizeHandle(SelectionHandle.Bottom, L("ResizeBottom"));
+        _bottomLeftHandle = CreateResizeHandle(SelectionHandle.BottomLeft, L("ResizeBottomLeft"));
+        _leftHandle = CreateResizeHandle(SelectionHandle.Left, L("ResizeLeft"));
 
-        _moveToolButton = CreateToolButton("Move", "\uE7C2", "None", "Move or resize selection");
-        _penToolButton = CreateToolButton("Pen", "\uE70F", nameof(CaptureAnnotationKind.Pen), "Freehand pen");
-        _lineToolButton = CreateToolButton("Line", "\uE738", nameof(CaptureAnnotationKind.Line), "Straight line");
-        _arrowToolButton = CreateToolButton("Arrow", "\uE72A", nameof(CaptureAnnotationKind.Arrow), "Arrow");
-        _rectangleToolButton = CreateToolButton("Box", "\uE7FB", nameof(CaptureAnnotationKind.Rectangle), "Rectangle");
-        _highlightToolButton = CreateToolButton("Mark", "\uE7E6", nameof(CaptureAnnotationKind.Highlight), "Highlighter");
-        _undoButton = CreatePaletteButton("Undo", "\uE7A7", "Undo last annotation");
+        _moveToolButton = CreateToolButton(L("RegionMove"), "\uE7C2", "None", L("RegionMoveHelp"));
+        _penToolButton = CreateToolButton(L("RegionPen"), "\uE70F", nameof(CaptureAnnotationKind.Pen), L("RegionPenHelp"));
+        _lineToolButton = CreateToolButton(L("RegionLine"), "\uE738", nameof(CaptureAnnotationKind.Line), L("RegionLineHelp"));
+        _arrowToolButton = CreateToolButton(L("RegionArrow"), "\uE72A", nameof(CaptureAnnotationKind.Arrow), L("RegionArrowHelp"));
+        _rectangleToolButton = CreateToolButton(L("RegionBox"), "\uE7FB", nameof(CaptureAnnotationKind.Rectangle), L("RegionBoxHelp"));
+        _highlightToolButton = CreateToolButton(L("RegionHighlight"), "\uE7E6", nameof(CaptureAnnotationKind.Highlight), L("RegionHighlightHelp"));
+        _undoButton = CreatePaletteButton(L("Undo"), "\uE7A7", L("UndoHelp"));
         _undoButton.Click += UndoButton_Click;
 
         _toolPalette = BuildToolPalette();
@@ -180,7 +181,7 @@ public sealed class RegionCaptureWindow : Window
             Opacity = 0,
             IsTabStop = true
         };
-        AutomationProperties.SetName(_keyboardFocusTarget, "Region capture keyboard input");
+        AutomationProperties.SetName(_keyboardFocusTarget, L("RegionKeyboardInput"));
 
         _overlayRoot = BuildRoot();
         Content = _overlayRoot;
@@ -277,10 +278,10 @@ public sealed class RegionCaptureWindow : Window
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-        AddColorButton(grid, CreateColorButton("Coral", 0xFF, 0x5A, 0x72), 0, 0);
-        AddColorButton(grid, CreateColorButton("Amber", 0xFF, 0xC8, 0x57), 0, 1);
-        AddColorButton(grid, CreateColorButton("Mint", 0x45, 0xD6, 0xA2), 1, 0);
-        AddColorButton(grid, CreateColorButton("Indigo", 0x7C, 0x6C, 0xFF), 1, 1);
+        AddColorButton(grid, CreateColorButton("Coral", L("ColorCoral"), 0xFF, 0x5A, 0x72), 0, 0);
+        AddColorButton(grid, CreateColorButton("Amber", L("ColorAmber"), 0xFF, 0xC8, 0x57), 0, 1);
+        AddColorButton(grid, CreateColorButton("Mint", L("ColorMint"), 0x45, 0xD6, 0xA2), 1, 0);
+        AddColorButton(grid, CreateColorButton("Indigo", L("ColorIndigo"), 0x7C, 0x6C, 0xFF), 1, 1);
         return grid;
     }
 
@@ -300,11 +301,11 @@ public sealed class RegionCaptureWindow : Window
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
-        var copy = CreateActionButton("Copy", "\uE8C8", "Copy selection to clipboard", primary: false);
+        var copy = CreateActionButton(L("Copy"), "\uE8C8", L("CopySelectionHelp"), primary: false);
         copy.Click += CopyButton_Click;
-        var save = CreateActionButton("Save", "\uE74E", "Save PNG", primary: true);
+        var save = CreateActionButton(L("Save"), "\uE74E", L("SavePngHelp"), primary: true);
         save.Click += SaveButton_Click;
-        var close = CreateActionButton("Close", "\uE711", "Cancel capture", primary: false);
+        var close = CreateActionButton(L("Close"), "\uE711", L("CancelCaptureHelp"), primary: false);
         close.Click += CancelButton_Click;
         stack.Children.Add(copy);
         stack.Children.Add(save);
@@ -327,7 +328,7 @@ public sealed class RegionCaptureWindow : Window
     private static Border BuildCaptureHint()
     {
         var hint = Text(
-            "Drag to select · annotate inline · Enter save · Esc cancel",
+            L("RegionHint"),
             10.5,
             Strong,
             Microsoft.UI.Text.FontWeights.SemiBold);
@@ -827,7 +828,7 @@ public sealed class RegionCaptureWindow : Window
         }
 
         _saving = true;
-        ShowStatus("Saving selected region…", isBusy: true);
+        ShowStatus(L("SavingRegion"), isBusy: true);
 
         try
         {
@@ -851,7 +852,7 @@ public sealed class RegionCaptureWindow : Window
         }
 
         _saving = true;
-        ShowStatus("Copying selection to clipboard…", isBusy: true);
+        ShowStatus(L("CopyingSelection"), isBusy: true);
 
         try
         {
@@ -895,7 +896,7 @@ public sealed class RegionCaptureWindow : Window
 
     private void ShowStatus(string message, bool isBusy)
     {
-        _overlayStatusText.Text = isBusy ? $"Working  ·  {message}" : message;
+        _overlayStatusText.Text = isBusy ? $"{L("Working")}  ·  {message}" : message;
         _overlayStatus.Visibility = Visibility.Visible;
     }
 
@@ -1365,7 +1366,7 @@ public sealed class RegionCaptureWindow : Window
         return button;
     }
 
-    private Button CreateColorButton(string tag, byte red, byte green, byte blue)
+    private Button CreateColorButton(string tag, string label, byte red, byte green, byte blue)
     {
         var button = new Button
         {
@@ -1386,8 +1387,8 @@ public sealed class RegionCaptureWindow : Window
                 StrokeThickness = 1
             }
         };
-        AutomationProperties.SetName(button, $"{tag} annotation color");
-        ToolTipService.SetToolTip(button, tag);
+        AutomationProperties.SetName(button, label);
+        ToolTipService.SetToolTip(button, label);
         button.Click += ColorButton_Click;
         return button;
     }
@@ -1401,6 +1402,9 @@ public sealed class RegionCaptureWindow : Window
             HorizontalAlignment = HorizontalAlignment.Center,
             Background = Brush(0xFF, 0x3A, 0x46, 0x5C)
         };
+
+    private static string L(string key)
+        => SnapvereLocalization.T(key, SnapvereLanguageState.CurrentLanguageCode);
 
     private static TextBlock Text(
         string value,
