@@ -1,11 +1,15 @@
+using Microsoft.Win32.SafeHandles;
+using System.Runtime.InteropServices;
+
 namespace Snapvere.Application.Capture;
 
 /// <summary>
 /// Moves a completed capture to a user-selected PNG destination without ever
 /// exposing a partially copied destination file. The destination is populated
 /// through a sibling temporary file and then atomically replaced. If Windows
-/// cannot remove the original after the destination is complete, the original
-/// is intentionally retained as a recovery copy.
+/// cannot prove that the source and destination are different files after the
+/// destination is complete, the original is intentionally retained rather
+/// than risking deletion through an alias, junction, hard link or mapped path.
 /// </summary>
 public sealed class CaptureRelocationService
 {
@@ -36,6 +40,11 @@ public sealed class CaptureRelocationService
             return capture with { FilePath = finalPath };
         }
 
+        if (GetFileRelationship(sourcePath, finalPath) == FileRelationship.Same)
+        {
+            return capture with { FilePath = finalPath };
+        }
+
         var destinationDirectory = Path.GetDirectoryName(finalPath)
             ?? throw new ArgumentException("The capture destination must include a parent directory.", nameof(destinationPath));
         Directory.CreateDirectory(destinationDirectory);
@@ -54,19 +63,13 @@ public sealed class CaptureRelocationService
             cancellationToken.ThrowIfCancellationRequested();
             File.Move(temporaryPath, finalPath, overwrite: true);
 
-            try
+            // Re-check identity after the atomic destination replacement. This
+            // closes the dangerous case where two different path strings refer
+            // to the same underlying file. Delete the source only when Windows
+            // positively identifies source and destination as different files.
+            if (GetFileRelationship(sourcePath, finalPath) == FileRelationship.Different)
             {
-                File.Delete(sourcePath);
-            }
-            catch (IOException)
-            {
-                // Destination is already complete. Keep the source as a safe
-                // recovery copy rather than risking loss of the capture.
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // Destination is already complete. Keep the source as a safe
-                // recovery copy rather than risking loss of the capture.
+                TryDeleteCompletedSource(sourcePath);
             }
         }
         catch
@@ -87,7 +90,7 @@ public sealed class CaptureRelocationService
             sourcePath,
             FileMode.Open,
             FileAccess.Read,
-            FileShare.Read,
+            FileShare.ReadWrite | FileShare.Delete,
             bufferSize: 64 * 1024,
             useAsync: true);
         await using var destination = new FileStream(
@@ -100,6 +103,64 @@ public sealed class CaptureRelocationService
 
         await source.CopyToAsync(destination, 64 * 1024, cancellationToken).ConfigureAwait(false);
         await destination.FlushAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private static FileRelationship GetFileRelationship(string firstPath, string secondPath)
+    {
+        if (!File.Exists(secondPath))
+        {
+            return FileRelationship.Different;
+        }
+
+        try
+        {
+            using var firstHandle = File.OpenHandle(
+                firstPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.ReadWrite | FileShare.Delete);
+            using var secondHandle = File.OpenHandle(
+                secondPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.ReadWrite | FileShare.Delete);
+
+            if (!NativeMethods.GetFileInformationByHandle(firstHandle, out var first) ||
+                !NativeMethods.GetFileInformationByHandle(secondHandle, out var second))
+            {
+                return FileRelationship.Unknown;
+            }
+
+            return first.VolumeSerialNumber == second.VolumeSerialNumber &&
+                   first.FileIndexHigh == second.FileIndexHigh &&
+                   first.FileIndexLow == second.FileIndexLow
+                ? FileRelationship.Same
+                : FileRelationship.Different;
+        }
+        catch (IOException)
+        {
+            return FileRelationship.Unknown;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return FileRelationship.Unknown;
+        }
+    }
+
+    private static void TryDeleteCompletedSource(string path)
+    {
+        try
+        {
+            File.Delete(path);
+        }
+        catch (IOException)
+        {
+            // Destination is already complete. Keep the source as a recovery copy.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Destination is already complete. Keep the source as a recovery copy.
+        }
     }
 
     private static void TryDeleteTemporaryFile(string path)
@@ -117,5 +178,43 @@ public sealed class CaptureRelocationService
         catch (UnauthorizedAccessException)
         {
         }
+    }
+
+    private enum FileRelationship
+    {
+        Unknown,
+        Same,
+        Different
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct FileTime
+    {
+        public uint LowDateTime;
+        public uint HighDateTime;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct ByHandleFileInformation
+    {
+        public uint FileAttributes;
+        public FileTime CreationTime;
+        public FileTime LastAccessTime;
+        public FileTime LastWriteTime;
+        public uint VolumeSerialNumber;
+        public uint FileSizeHigh;
+        public uint FileSizeLow;
+        public uint NumberOfLinks;
+        public uint FileIndexHigh;
+        public uint FileIndexLow;
+    }
+
+    private static class NativeMethods
+    {
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool GetFileInformationByHandle(
+            SafeFileHandle fileHandle,
+            out ByHandleFileInformation fileInformation);
     }
 }
