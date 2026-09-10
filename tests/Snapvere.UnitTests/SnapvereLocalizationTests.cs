@@ -30,6 +30,10 @@ public sealed class SnapvereLocalizationTests
     [InlineData("RegionHint", "Povuci za odabir · označi izravno · Enter spremi · Esc odustani")]
     [InlineData("WindowHint", "Pokaži na prozor · klikni za snimanje · Esc za odustajanje")]
     [InlineData("SavingRegion", "Spremanje odabranog područja…")]
+    [InlineData("RegionAccessDenied", "Windows je odbio pristup mapi snimki ili međuspremniku.")]
+    [InlineData("RegionIoFailure", "Odabrano područje je snimljeno, ali PNG datoteku ili prijenos u međuspremnik nije bilo moguće dovršiti.")]
+    [InlineData("RegionInvalidSelection", "Odabrano područje više nije valjano. Ponovno odaberite područje.")]
+    [InlineData("RegionCaptureFailed", "SNAPVERE nije mogao dovršiti snimanje područja. Pritisnite Esc i pokušajte ponovno.")]
     public void Croatian_CaptureSurfaceText_IsTranslated(string key, string expected)
         => Assert.Equal(expected, SnapvereLocalization.T(key, "hr"));
 
@@ -37,6 +41,7 @@ public sealed class SnapvereLocalizationTests
     [InlineData("WindowHint", "Point to a window · click to capture · Esc to cancel")]
     [InlineData("RegionMoveHelp", "Move or resize selection")]
     [InlineData("ResizeBottomRight", "Resize bottom right")]
+    [InlineData("RegionCaptureFailed", "SNAPVERE could not complete the region capture. Press Esc and try again.")]
     public void MissingCaptureSurfaceTranslation_FallsBackToEnglish(string key, string expected)
         => Assert.Equal(expected, SnapvereLocalization.T(key, "ja"));
 
