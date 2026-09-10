@@ -5,11 +5,12 @@ namespace Snapvere.UnitTests;
 public sealed class SnapvereLocalizationTests
 {
     [Fact]
-    public void SupportedLanguages_ContainsEnglishCroatianAndMoreThanTwentyLanguages()
+    public void SupportedLanguages_ContainsEnglishCroatianAndAllPublishedChoices()
     {
-        Assert.True(SnapvereLocalization.SupportedLanguages.Count >= 22);
+        Assert.Equal(28, SnapvereLocalization.SupportedLanguages.Count);
         Assert.Contains(SnapvereLocalization.SupportedLanguages, language => language.Code == "en");
         Assert.Contains(SnapvereLocalization.SupportedLanguages, language => language.Code == "hr");
+        Assert.Contains(SnapvereLocalization.SupportedLanguages, language => language.Code == "zh-CN");
     }
 
     [Theory]
@@ -22,9 +23,22 @@ public sealed class SnapvereLocalizationTests
     public void NormalizeLanguageCode_ReturnsSupportedStableCode(string? input, string expected)
         => Assert.Equal(expected, SnapvereLocalization.NormalizeLanguageCode(input));
 
-    [Fact]
-    public void Croatian_CoreAction_IsTranslated()
-        => Assert.Equal("Snimi područje", SnapvereLocalization.T("CaptureRegion", "hr"));
+    [Theory]
+    [InlineData("CaptureRegion", "Snimi područje")]
+    [InlineData("RegionCaptureTitle", "SNAPVERE — Snimanje područja")]
+    [InlineData("WindowCaptureTitle", "SNAPVERE — Snimanje prozora")]
+    [InlineData("RegionHint", "Povuci za odabir · označi izravno · Enter spremi · Esc odustani")]
+    [InlineData("WindowHint", "Pokaži na prozor · klikni za snimanje · Esc za odustajanje")]
+    [InlineData("SavingRegion", "Spremanje odabranog područja…")]
+    public void Croatian_CaptureSurfaceText_IsTranslated(string key, string expected)
+        => Assert.Equal(expected, SnapvereLocalization.T(key, "hr"));
+
+    [Theory]
+    [InlineData("WindowHint", "Point to a window · click to capture · Esc to cancel")]
+    [InlineData("RegionMoveHelp", "Move or resize selection")]
+    [InlineData("ResizeBottomRight", "Resize bottom right")]
+    public void MissingCaptureSurfaceTranslation_FallsBackToEnglish(string key, string expected)
+        => Assert.Equal(expected, SnapvereLocalization.T(key, "ja"));
 
     [Fact]
     public void MissingTranslation_FallsBackToEnglish()
