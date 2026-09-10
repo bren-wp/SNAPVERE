@@ -16,7 +16,6 @@ internal static class InstallerEngine
     private const string InstalledSetupName = "SNAPVERE-Setup.exe";
     private const string InstallationMarkerName = ".snapvere-installation";
     private const string InstallationMarkerPrefix = "SNAPVERE-INSTALLATION-V1";
-    private const string PayloadResourceName = "Snapvere.Payload.zip";
     private const string LicenseResourceName = "Snapvere.License.txt";
     private const string UninstallRegistryPath = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\SNAPVERE";
     private const string StartupRunRegistryPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
@@ -65,8 +64,9 @@ internal static class InstallerEngine
 
             try
             {
-                using var payload = Assembly.GetExecutingAssembly().GetManifestResourceStream(PayloadResourceName)
-                    ?? throw new InvalidOperationException("The SNAPVERE application payload is missing from this setup package.");
+                using var payload = UniversalPayload.OpenEmbeddedPayload(
+                    Assembly.GetExecutingAssembly(),
+                    out var payloadArchitecture);
 
                 EmbeddedPayload.ExtractZipSafely(
                     payload,
@@ -81,7 +81,12 @@ internal static class InstallerEngine
 
                 File.WriteAllText(
                     Path.Combine(stagingRoot, InstallationMarkerName),
-                    $"{InstallationMarkerPrefix}{Environment.NewLine}{VersionText}{Environment.NewLine}");
+                    string.Join(
+                        Environment.NewLine,
+                        InstallationMarkerPrefix,
+                        VersionText,
+                        UniversalPayload.GetToken(payloadArchitecture),
+                        string.Empty));
 
                 progress?.Invoke(78);
 
@@ -98,31 +103,14 @@ internal static class InstallerEngine
                     ?? throw new InvalidOperationException("Windows did not provide the setup executable path.");
                 File.Copy(currentSetupPath, Path.Combine(installRoot, InstalledSetupName), overwrite: true);
 
-                if (createStartMenuShortcut)
-                {
-                    ShortcutService.CreateShortcut(
-                        GetStartMenuShortcutPath(),
-                        Path.Combine(installRoot, AppExecutableName),
-                        installRoot,
-                        "SNAPVERE — Capture anything.");
-                }
-                else
-                {
-                    DeleteFileBestEffort(GetStartMenuShortcutPath());
-                }
-
-                if (createDesktopShortcut)
-                {
-                    ShortcutService.CreateShortcut(
-                        GetDesktopShortcutPath(),
-                        Path.Combine(installRoot, AppExecutableName),
-                        installRoot,
-                        "SNAPVERE — Capture anything.");
-                }
-                else
-                {
-                    DeleteFileBestEffort(GetDesktopShortcutPath());
-                }
+                UpdateShortcut(
+                    createStartMenuShortcut,
+                    GetStartMenuShortcutPath(),
+                    installRoot);
+                UpdateShortcut(
+                    createDesktopShortcut,
+                    GetDesktopShortcutPath(),
+                    installRoot);
 
                 progress?.Invoke(92);
                 WriteUninstallRegistration(installRoot);
@@ -133,12 +121,14 @@ internal static class InstallerEngine
                     EmbeddedPayload.DeleteDirectoryBestEffort(backupRoot);
                 }
 
-                return new InstallerResult(true, 0, $"SNAPVERE {VersionText} was installed successfully.");
+                return new InstallerResult(
+                    true,
+                    0,
+                    $"SNAPVERE {VersionText} ({UniversalPayload.GetToken(payloadArchitecture)}) was installed successfully.");
             }
             catch
             {
                 EmbeddedPayload.DeleteDirectoryBestEffort(stagingRoot);
-
                 if (previousInstallMoved && Directory.Exists(backupRoot))
                 {
                     EmbeddedPayload.DeleteDirectoryBestEffort(installRoot);
@@ -180,15 +170,11 @@ internal static class InstallerEngine
             if (currentSetupPath is not null && IsPathInside(currentSetupPath, installRoot))
             {
                 StartDeferredCleanup(currentSetupPath, installRoot);
-                DeleteFileBestEffort(GetStartMenuShortcutPath());
-                DeleteFileBestEffort(GetDesktopShortcutPath());
-                DeleteUninstallRegistration();
+                RemoveRegistrationsAndShortcuts();
             }
             else
             {
-                DeleteFileBestEffort(GetStartMenuShortcutPath());
-                DeleteFileBestEffort(GetDesktopShortcutPath());
-                DeleteUninstallRegistration();
+                RemoveRegistrationsAndShortcuts();
                 DeleteValidatedInstallationWithRetries(installRoot);
             }
 
@@ -211,23 +197,7 @@ internal static class InstallerEngine
     {
         try
         {
-            if (waitForProcessId > 0)
-            {
-                try
-                {
-                    using var process = Process.GetProcessById(waitForProcessId);
-                    _ = process.WaitForExit(20_000);
-                }
-                catch (ArgumentException)
-                {
-                    // The parent setup already exited.
-                }
-                catch (InvalidOperationException)
-                {
-                    // The parent setup already exited.
-                }
-            }
-
+            WaitForProcessExit(waitForProcessId);
             var installRoot = ValidateExistingInstallForRemoval(installDirectory);
             DeleteValidatedInstallationWithRetries(installRoot);
             ScheduleMaintenanceSelfCleanup();
@@ -249,7 +219,7 @@ internal static class InstallerEngine
                 return false;
             }
 
-            Process.Start(new ProcessStartInfo(executable)
+            _ = Process.Start(new ProcessStartInfo(executable)
             {
                 WorkingDirectory = Path.GetDirectoryName(executable)!,
                 UseShellExecute = true
@@ -262,12 +232,57 @@ internal static class InstallerEngine
         }
     }
 
+    private static void UpdateShortcut(bool enabled, string shortcutPath, string installRoot)
+    {
+        if (!enabled)
+        {
+            DeleteFileBestEffort(shortcutPath);
+            return;
+        }
+
+        ShortcutService.CreateShortcut(
+            shortcutPath,
+            Path.Combine(installRoot, AppExecutableName),
+            installRoot,
+            "SNAPVERE — Capture anything.");
+    }
+
+    private static void RemoveRegistrationsAndShortcuts()
+    {
+        DeleteFileBestEffort(GetStartMenuShortcutPath());
+        DeleteFileBestEffort(GetDesktopShortcutPath());
+        DeleteUninstallRegistration();
+    }
+
+    private static void WaitForProcessExit(int processId)
+    {
+        if (processId <= 0)
+        {
+            return;
+        }
+
+        try
+        {
+            using var process = Process.GetProcessById(processId);
+            _ = process.WaitForExit(20_000);
+        }
+        catch (ArgumentException)
+        {
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
     private static string ValidateInstallDirectory(string installDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(installDirectory);
         var fullPath = Path.GetFullPath(installDirectory.Trim());
         var root = Path.GetPathRoot(fullPath);
-        if (string.Equals(fullPath.TrimEnd(Path.DirectorySeparatorChar), root?.TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(
+                fullPath.TrimEnd(Path.DirectorySeparatorChar),
+                root?.TrimEnd(Path.DirectorySeparatorChar),
+                StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("SNAPVERE cannot be installed directly into a drive root.");
         }
@@ -401,12 +416,10 @@ internal static class InstallerEngine
 
             var installedAppPath = Path.GetFullPath(Path.Combine(installRoot, AppExecutableName));
             var expectedCommand = $"\"{installedAppPath}\"";
-            if (!string.Equals(registeredCommand, expectedCommand, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(registeredCommand, expectedCommand, StringComparison.OrdinalIgnoreCase))
             {
-                return;
+                key!.DeleteValue(StartupRunValueName, throwOnMissingValue: false);
             }
-
-            key!.DeleteValue(StartupRunValueName, throwOnMissingValue: false);
         }
         catch (UnauthorizedAccessException)
         {

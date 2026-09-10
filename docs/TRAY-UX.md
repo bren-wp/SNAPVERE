@@ -8,10 +8,10 @@ Normal launch:
 
 ```text
 Snapvere.exe
-  → initialize services
+  → initialize lightweight services
   → create hidden runtime/capture coordinator
   → start global hotkeys
-  → start tray host
+  → start native tray host
   → remain alive with no Capture Center visible
 ```
 
@@ -32,43 +32,46 @@ No menu or large window is opened first. Double-click handling is debounced so i
 
 ## Right click
 
-Right-click opens a branded programmatic WinUI flyout near the tray/cursor area. The native tray message thread raises `TrayCommand.ShowMenu`; WinUI window creation occurs only after routing through the application's UI `DispatcherQueue`.
+Right-click opens the branded programmatic WinUI flyout near the tray/cursor area. The native tray message thread raises `TrayCommand.ShowMenu`; WinUI window creation occurs only after routing through the application UI `DispatcherQueue`.
 
-Current commands:
+The v0.0.7 flyout follows the maintained `docs/images/tray-menu.svg` product reference: **418×540**, graphite `#0D1321`, strong `#52617F` outline, violet primary capture treatment, restrained cyan accents and the canonical SNAPVERE mark.
 
-- Capture Region — Print Screen / `Ctrl+Shift+1`
-- Capture Window — `Ctrl+Shift+2`
-- Capture Screen — `Ctrl+Shift+4`
-- Open Capture Folder
-- Recent captures
-- Options / Preferences
-- About SNAPVERE
-- Exit SNAPVERE
+Current user actions:
 
-The flyout closes when it loses activation and Esc closes it. It is borderless/compact and does not act as another application dashboard.
+- Capture region — Print Screen / `Ctrl+Shift+1`;
+- Capture window — `Ctrl+Shift+2`;
+- Capture screen — `Ctrl+Shift+4`;
+- Open capture folder;
+- Options & recent captures;
+- Language;
+- About SNAPVERE;
+- Exit.
+
+Language is a real action, not a decorative entry. The flyout reads the persisted language code when it is created and opens the on-demand `LanguagePickerWindow` through the application coordinator.
+
+The flyout closes when it loses activation, after a command is selected, or when Esc is pressed. It is a compact quick-action surface rather than a dashboard.
 
 ## Command ownership
 
-`Win32TrayIconService` owns only native integration concerns:
+`Win32TrayIconService` owns native integration concerns only:
 
 - notification icon add/update/remove;
-- left/right/double click native messages;
+- left/right/double-click native messages;
 - command event raising;
 - Explorer/taskbar recreation recovery;
 - native icon lifetime.
 
-The service must not directly create or mutate WinUI controls from its native message thread.
-
-`App` owns user-facing command dispatch on the WinUI thread.
+The service must not create or mutate WinUI controls from its native message thread. `App` owns user-facing command dispatch on the WinUI thread.
 
 ## Capture shortcuts
 
 | Action | Primary input | Fallback / alternate |
 | --- | --- | --- |
 | Region Capture | tray left-click or Print Screen | `Ctrl+Shift+1` |
-| Window Capture | tray right-click → Capture Window | `Ctrl+Shift+2` |
-| Screen Capture | tray right-click → Capture Screen | `Ctrl+Shift+4` |
+| Window Capture | tray right-click → Capture window | `Ctrl+Shift+2` |
+| Screen Capture | tray right-click → Capture screen | `Ctrl+Shift+4` |
 | Quick actions | tray right-click | — |
+| Language | tray language action or Options | — |
 
 Print Screen may be unavailable when Windows or another application owns it. The independent Region fallback remains available.
 
@@ -76,51 +79,57 @@ Print Screen may be unavailable when Windows or another application owns it. The
 
 ### Options / Preferences
 
-Opens the real `OptionsWindow`. It contains only implemented preferences and does not reintroduce the Capture Center as a visible launcher.
+Opens the real `OptionsWindow`. It contains implemented local preferences and Recent Captures without reintroducing Capture Center as a visible launcher.
+
+### Language
+
+Opens one on-demand language picker. English is the canonical default and fallback; Croatian and more than 20 additional built-in languages are selectable. Selection is written to local settings and creates no resident timer, watcher, network worker or translation service.
 
 ### Recent captures
 
-Opens the Recent Captures section of `OptionsWindow`. The list is local filesystem-backed history and provides real open/refresh/folder actions.
+Uses local filesystem-backed history and provides real open/refresh/folder actions.
 
 ### About
 
-Opens the factual SNAPVERE About surface. No fake updater, licensing or account controls are exposed.
+Opens the factual commercial SNAPVERE About surface with Brendigo developer/publisher identity and the official `snapvere.com` / `brendigo.com` links.
 
-## Startup probes
+## Startup and UI probes
 
-`SNAPVERE_TRAY_STARTUP_PROBE=1` or `--tray-startup-probe` exercises the tray-first initialization path and writes a marker containing:
+`SNAPVERE_TRAY_STARTUP_PROBE=1` or `--tray-startup-probe` exercises tray-first initialization and emits:
 
 ```text
 SNAPVERE 0.0.X TRAY_READY
 ```
 
-The probe is reached only after global hotkeys and tray host startup completes while the runtime coordinator remains hidden.
+The marker is reached only after global hotkeys and the tray host initialize while the runtime coordinator remains hidden.
 
-`SNAPVERE_SECONDARY_UI_PROBE=1` or `--secondary-ui-probe` runs a real WinUI materialization sequence:
+`SNAPVERE_SECONDARY_UI_PROBE=1` or `--secondary-ui-probe` now runs the actual WinUI materialization sequence:
 
 ```text
 tray flyout loaded
-  → Options / Preferences loaded
+  → Options loaded
+  → Language loaded
   → About loaded
   → SECONDARY_UI_READY
 ```
 
-This probe is executed against both installed and Portable x64/x86 release candidates. It prevents a compile-successful change to any of those three secondary surfaces from shipping if the actual WinUI tree cannot load on the release runner.
+This probe is executed against installed and Portable x64/x86 release candidates. A compile-successful but non-renderable Tray, Options, Language or About surface therefore blocks release publication.
 
-The legacy `READY` activated-window probe remains only a hidden runtime-host construction check. It is not the expected normal-launch behavior.
+The legacy `READY` activated-window probe remains only a hidden runtime-host construction check. It is not expected normal-launch behavior.
 
-## Stability rules
+## Stability and performance rules
 
 - do not initialize WGC/D3D merely to sit in the tray;
 - do not manipulate WinUI controls on the native tray thread;
-- do not use decorative templated controls known to destabilize packaged runtime probes;
-- do not expose commands for unimplemented standalone editor/update/licensing features;
+- do not introduce periodic polling for tray, localization or recent-capture state;
+- do not expose decorative controls without a real action;
 - do not make double-click behavior interfere with single-click Region Capture;
-- keep tray icon/native handles deterministically owned and recover after Explorer restarts;
-- keep manual launch and Windows startup on the same tray-first executable contract.
+- keep native tray handles deterministically owned and recover after Explorer restarts;
+- keep manual launch and Windows startup on the same tray-first executable contract;
+- create Tray/Options/Language/About windows only on demand and release them when closed.
 
-## Visual direction
+## Accessibility and visual direction
 
-The flyout uses the SNAPVERE graphite/navy and violet/indigo/cyan identity, compact rounded Windows 11-style spacing, local Fluent-style icons and concise shortcut metadata. Emoji are not used as product icons.
+The flyout uses Windows-native Segoe/Fluent iconography rather than emoji, exposes automation names for actionable controls, preserves keyboard Esc behavior and uses shape/border/state changes in addition to color. High-contrast and readable text remain more important than decorative glow.
 
-Brand specifics are documented in `docs/BRANDING.md`.
+Brand specifics are documented in `docs/BRANDING.md`; Croatian tray documentation is in `docs/hr/TRAY-UX.md`.

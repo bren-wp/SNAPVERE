@@ -17,7 +17,13 @@
   <ItemGroup>
     <ProjectReference Include="..\Snapvere.Packaging\Snapvere.Packaging.csproj" />
   </ItemGroup>
-  <ItemGroup Condition="'$(SnapverePayloadPath)' != '' and Exists('$(SnapverePayloadPath)')">
-    <EmbeddedResource Include="$(SnapverePayloadPath)" LogicalName="Snapvere.Payload.zip" />
+  <ItemGroup Condition="'$(SnapverePayloadX86Path)' != '' and Exists('$(SnapverePayloadX86Path)')">
+    <EmbeddedResource Include="$(SnapverePayloadX86Path)" LogicalName="Snapvere.Payload.x86.zip" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(SnapverePayloadX64Path)' != '' and Exists('$(SnapverePayloadX64Path)')">
+    <EmbeddedResource Include="$(SnapverePayloadX64Path)" LogicalName="Snapvere.Payload.x64.zip" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(SnapverePayloadArm64Path)' != '' and Exists('$(SnapverePayloadArm64Path)')">
+    <EmbeddedResource Include="$(SnapverePayloadArm64Path)" LogicalName="Snapvere.Payload.arm64.zip" />
   </ItemGroup>
 </Project>

@@ -2,20 +2,26 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Snapvere.Shared;
+using System.Diagnostics;
 using Windows.Graphics;
 
 namespace Snapvere.App.Services;
 
 public sealed class AboutWindow : Window
 {
+    private readonly string _languageCode;
     private bool _sizeApplied;
 
     public AboutWindow()
     {
-        Title = "About SNAPVERE";
+        _languageCode = SnapvereLanguageState.CurrentLanguageCode;
+        Title = SnapvereLocalization.T("About", _languageCode);
         Content = BuildContent();
         Activated += AboutWindow_Activated;
     }
+
+    private string L(string key) => SnapvereLocalization.T(key, _languageCode);
 
     private FrameworkElement BuildContent()
     {
@@ -58,7 +64,7 @@ public sealed class AboutWindow : Window
             BorderThickness = new Thickness(1)
         };
 
-        var content = new StackPanel { Spacing = 14 };
+        var content = new StackPanel { Spacing = 12 };
         var version = typeof(AboutWindow).Assembly.GetName().Version?.ToString(3) ?? "dev";
 
         var versionRow = new Grid();
@@ -90,7 +96,7 @@ public sealed class AboutWindow : Window
             BorderThickness = new Thickness(1)
         };
         var privacyCopy = new StackPanel { Spacing = 3 };
-        privacyCopy.Children.Add(Text("LOCAL-FIRST", 9, Success, Microsoft.UI.Text.FontWeights.Bold));
+        privacyCopy.Children.Add(Text(L("LocalFirst").ToUpperInvariant(), 9, Success, Microsoft.UI.Text.FontWeights.Bold));
         var description = Text(
             "Screenshots stay on your device unless you explicitly copy, save or share them through Windows.",
             10.5,
@@ -100,12 +106,17 @@ public sealed class AboutWindow : Window
         privacy.Child = privacyCopy;
         content.Children.Add(privacy);
 
-        content.Children.Add(BuildShortcutRow("Print Screen", "Region Capture"));
-        content.Children.Add(BuildShortcutRow("Ctrl + Shift + 2", "Window Capture"));
-        content.Children.Add(BuildShortcutRow("Ctrl + Shift + 4", "Screen Capture"));
+        content.Children.Add(BuildShortcutRow("Print Screen", L("CaptureRegion")));
+        content.Children.Add(BuildShortcutRow("Ctrl + Shift + 2", L("CaptureWindow")));
+        content.Children.Add(BuildShortcutRow("Ctrl + Shift + 4", L("CaptureScreen")));
 
-        var footerNote = Text("Built by Brendigo  •  MPL-2.0", 9.5, Subtle);
-        content.Children.Add(footerNote);
+        var commercial = Text("SNAPVERE commercial software • © Brendigo", 9.5, Subtle);
+        content.Children.Add(commercial);
+
+        var links = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        links.Children.Add(CreateLinkButton("snapvere.com", "https://snapvere.com"));
+        links.Children.Add(CreateLinkButton("brendigo.com", "https://brendigo.com"));
+        content.Children.Add(links);
 
         card.Child = content;
         Grid.SetRow(card, 1);
@@ -113,7 +124,7 @@ public sealed class AboutWindow : Window
 
         var close = new Button
         {
-            Content = "Close",
+            Content = L("Close"),
             HorizontalAlignment = HorizontalAlignment.Right,
             Padding = new Thickness(18, 8, 18, 8),
             CornerRadius = new CornerRadius(10),
@@ -122,11 +133,38 @@ public sealed class AboutWindow : Window
             BorderThickness = new Thickness(1),
             Foreground = Strong
         };
-        AutomationProperties.SetName(close, "Close About SNAPVERE");
+        AutomationProperties.SetName(close, L("Close"));
         close.Click += (_, _) => Close();
         Grid.SetRow(close, 2);
         root.Children.Add(close);
         return root;
+    }
+
+    private static Button CreateLinkButton(string text, string url)
+    {
+        var button = new Button
+        {
+            Content = text,
+            Padding = new Thickness(11, 6, 11, 6),
+            CornerRadius = new CornerRadius(9),
+            Background = Brush(0xFF, 0x16, 0x18, 0x22),
+            BorderBrush = Brush(0xFF, 0x2E, 0x32, 0x40),
+            BorderThickness = new Thickness(1),
+            Foreground = Strong
+        };
+        AutomationProperties.SetName(button, text);
+        button.Click += (_, _) =>
+        {
+            try
+            {
+                _ = Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (Exception exception) when (exception is System.ComponentModel.Win32Exception or InvalidOperationException)
+            {
+                StartupDiagnostics.Record($"Open {url}", exception);
+            }
+        };
+        return button;
     }
 
     private static Border BuildShortcutRow(string shortcut, string action)
@@ -162,7 +200,7 @@ public sealed class AboutWindow : Window
         }
 
         _sizeApplied = true;
-        AppWindow.Resize(DpiAwareWindowSizing.ScaleSize(this, 520, 500));
+        AppWindow.Resize(DpiAwareWindowSizing.ScaleSize(this, 560, 560));
     }
 
     private static FrameworkElement BuildBrandMark()

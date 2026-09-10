@@ -3,10 +3,10 @@ using Microsoft.Win32;
 namespace Snapvere.App.Services;
 
 /// <summary>
-/// Per-user Windows startup registration. Normal SNAPVERE launch is tray-first,
-/// so the Run entry uses the same stable executable path without a special
-/// startup mode. Portable builds receive the stable launcher path from the
-/// portable host so a Run entry never points into the temporary extraction cache.
+/// Per-user Windows startup registration. SNAPVERE is tray-first on normal
+/// launch, so the Run entry points directly to the stable executable path.
+/// Portable builds receive the stable launcher path from the portable host so
+/// startup never points into the temporary extraction cache.
 /// </summary>
 public sealed class StartupRegistrationService
 {
@@ -51,7 +51,16 @@ public sealed class StartupRegistrationService
         }
 
         using var existing = Registry.CurrentUser.OpenSubKey(RunRegistryPath, writable: true);
-        existing?.DeleteValue(RunValueName, throwOnMissingValue: false);
+        if (existing is null)
+        {
+            return;
+        }
+
+        var registered = existing.GetValue(RunValueName) as string;
+        if (string.Equals(registered, BuildLaunchCommand(), StringComparison.OrdinalIgnoreCase))
+        {
+            existing.DeleteValue(RunValueName, throwOnMissingValue: false);
+        }
     }
 
     private string BuildLaunchCommand()
