@@ -562,7 +562,7 @@ public sealed class OptionsWindow : Window
         }
 
         _sizeApplied = true;
-        AppWindow.Resize(new SizeInt32(720, 620));
+        AppWindow.Resize(DpiAwareWindowSizing.ScaleSize(this, 720, 620));
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
             presenter.IsMaximizable = false;
