@@ -10,6 +10,13 @@ namespace Snapvere.App.Services;
 
 public sealed class AboutWindow : Window
 {
+    private const string ProductWebsiteUrl = "https://snapvere.com";
+    private const string SupportEmailAddress = "info@snapvere.com";
+    private const string SupportEmailUri = "mailto:info@snapvere.com";
+    private const string PrivacyUrl = "https://snapvere.com/privacy";
+    private const string TermsUrl = "https://snapvere.com/terms";
+    private const string DeveloperWebsiteUrl = "https://brendigo.com";
+
     private readonly string _languageCode;
     private bool _sizeApplied;
 
@@ -109,9 +116,17 @@ public sealed class AboutWindow : Window
 
         content.Children.Add(Text(L("CommercialSoftware"), 9.5, Subtle));
 
-        var links = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        links.Children.Add(CreateLinkButton("snapvere.com", "https://snapvere.com"));
-        links.Children.Add(CreateLinkButton("brendigo.com", "https://brendigo.com"));
+        var links = new StackPanel { Spacing = 8 };
+        var contactLinks = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        contactLinks.Children.Add(CreateLinkButton("snapvere.com", ProductWebsiteUrl));
+        contactLinks.Children.Add(CreateLinkButton($"Support · {SupportEmailAddress}", SupportEmailUri));
+        links.Children.Add(contactLinks);
+
+        var legalLinks = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        legalLinks.Children.Add(CreateLinkButton("Privacy", PrivacyUrl));
+        legalLinks.Children.Add(CreateLinkButton("Terms", TermsUrl));
+        legalLinks.Children.Add(CreateLinkButton("brendigo.com", DeveloperWebsiteUrl));
+        links.Children.Add(legalLinks);
         content.Children.Add(links);
 
         card.Child = content;
