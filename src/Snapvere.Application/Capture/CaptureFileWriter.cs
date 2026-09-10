@@ -4,9 +4,9 @@ using Snapvere.Imaging;
 namespace Snapvere.Application.Capture;
 
 /// <summary>
-/// Writes capture frames as PNG files using a temp-file + atomic move sequence
-/// so partially written images never appear as completed captures. Callers can
-/// use the default SNAPVERE capture directory or an explicit user-selected path.
+/// Writes capture frames to the local SNAPVERE capture folder using a
+/// temp-file + atomic move sequence so partially written images never appear
+/// as completed captures.
 /// </summary>
 public sealed class CaptureFileWriter
 {
@@ -24,7 +24,7 @@ public sealed class CaptureFileWriter
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
-    public Task<CaptureSaveResult> SavePngAsync(
+    public async Task<CaptureSaveResult> SavePngAsync(
         CaptureFrame frame,
         CancellationToken cancellationToken = default)
     {
@@ -37,42 +37,6 @@ public sealed class CaptureFileWriter
 
         var timestamp = _timeProvider.GetLocalNow();
         var finalPath = CapturePathProvider.GetAvailablePath(directory, timestamp);
-        return SavePngCoreAsync(frame, finalPath, overwrite: false, cancellationToken);
-    }
-
-    public Task<CaptureSaveResult> SavePngAsync(
-        CaptureFrame frame,
-        string destinationPath,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(frame);
-        frame.Validate();
-        ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
-        cancellationToken.ThrowIfCancellationRequested();
-
-        var finalPath = Path.GetFullPath(destinationPath);
-        if (!string.Equals(Path.GetExtension(finalPath), ".png", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new ArgumentException("SNAPVERE capture destinations must use the .png extension.", nameof(destinationPath));
-        }
-
-        var directory = Path.GetDirectoryName(finalPath)
-            ?? throw new ArgumentException("The capture destination must include a parent directory.", nameof(destinationPath));
-        Directory.CreateDirectory(directory);
-
-        // A user-selected FileSavePicker path may intentionally point at an
-        // existing file after Windows has already confirmed replacement.
-        return SavePngCoreAsync(frame, finalPath, overwrite: true, cancellationToken);
-    }
-
-    private async Task<CaptureSaveResult> SavePngCoreAsync(
-        CaptureFrame frame,
-        string finalPath,
-        bool overwrite,
-        CancellationToken cancellationToken)
-    {
-        var directory = Path.GetDirectoryName(finalPath)
-            ?? throw new InvalidOperationException("The SNAPVERE capture path has no parent directory.");
         var temporaryPath = Path.Combine(
             directory,
             $".{Path.GetFileName(finalPath)}.{Guid.NewGuid():N}.tmp");
@@ -91,7 +55,7 @@ public sealed class CaptureFileWriter
                 await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
             }
 
-            File.Move(temporaryPath, finalPath, overwrite);
+            File.Move(temporaryPath, finalPath, overwrite: false);
         }
         catch
         {
