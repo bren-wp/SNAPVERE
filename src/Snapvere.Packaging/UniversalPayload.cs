@@ -11,16 +11,13 @@ public enum SnapverePayloadArchitecture
 }
 
 /// <summary>
-/// Resolves the native SNAPVERE application payload that is compatible with
-/// the current Windows installation. Universal public hosts are intentionally
-/// built as x86 executables so the same Setup or Portable file can start on
-/// 32-bit, x64 and ARM64 Windows; the child application then runs natively when
-/// a matching x64 or ARM64 payload is embedded.
+/// Resolves the native SNAPVERE application payload compatible with the
+/// current Windows installation. Public hosts are x86-compatible executables
+/// that embed explicit x86, x64 and ARM64 application resources.
 /// </summary>
 public static class UniversalPayload
 {
     public const string ArchitectureOverrideEnvironmentVariable = "SNAPVERE_PAYLOAD_ARCH";
-    public const string LegacyPayloadResourceName = "Snapvere.Payload.zip";
 
     public static SnapverePayloadArchitecture ResolveCurrentArchitecture()
         => ResolveArchitecture(
@@ -79,19 +76,10 @@ public static class UniversalPayload
     {
         ArgumentNullException.ThrowIfNull(hostAssembly);
 
-        var architectureResource = GetResourceName(architecture);
-        var stream = hostAssembly.GetManifestResourceStream(architectureResource);
-        if (stream is not null)
-        {
-            return stream;
-        }
-
-        // Backward-compatible build path for architecture-specific developer
-        // builds. Public universal releases require all architecture-specific
-        // resources explicitly and CI verifies that contract.
-        stream = hostAssembly.GetManifestResourceStream(LegacyPayloadResourceName);
-        return stream ?? throw new InvalidOperationException(
-            $"The SNAPVERE {GetToken(architecture)} application payload is missing from this package.");
+        var resourceName = GetResourceName(architecture);
+        return hostAssembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException(
+                $"The SNAPVERE {GetToken(architecture)} application payload is missing from this universal package.");
     }
 
     public static string GetResourceName(SnapverePayloadArchitecture architecture)
