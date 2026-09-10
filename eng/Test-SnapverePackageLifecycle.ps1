@@ -30,7 +30,11 @@ function Write-StartupLogIfPresent {
     }
 }
 
-function Invoke-StartupProbe([string] $FilePath, [string] $Name) {
+function Invoke-StartupProbe(
+    [string] $FilePath,
+    [string] $Name,
+    [int] $TimeoutMilliseconds = 20000
+) {
     $marker = Join-Path $env:TEMP 'SNAPVERE/startup-probe.ready'
     Remove-Item -LiteralPath $marker -Force -ErrorAction SilentlyContinue
     $env:SNAPVERE_STARTUP_PROBE = '1'
@@ -38,10 +42,11 @@ function Invoke-StartupProbe([string] $FilePath, [string] $Name) {
 
     try {
         $process = Start-Process -FilePath $FilePath -ArgumentList @('--startup-probe') -PassThru
-        if (-not $process.WaitForExit(20000)) {
+        if (-not $process.WaitForExit($TimeoutMilliseconds)) {
             Write-StartupLogIfPresent
             try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
-            throw "$Name startup probe timed out after 20 seconds."
+            $timeoutSeconds = [Math]::Ceiling($TimeoutMilliseconds / 1000.0)
+            throw "$Name startup probe timed out after $timeoutSeconds seconds."
         }
 
         if ($process.ExitCode -ne 0) {
@@ -338,7 +343,10 @@ if ($null -ne $startupAfterUninstall -and $null -ne $startupAfterUninstall.$star
     throw "$Arch uninstall left the installed SNAPVERE startup registration behind."
 }
 
-Invoke-StartupProbe $portable "Portable SNAPVERE $Arch"
+# The first Portable probe includes cold embedded-payload extraction before the
+# child WinUI probe can start. Keep installed probes strict at 20 seconds, but
+# allow a realistic cold-start budget for the Portable wrapper on hosted CI.
+Invoke-StartupProbe $portable "Portable SNAPVERE $Arch" 60000
 Invoke-TrayStartupProbe $portable "Portable SNAPVERE $Arch"
 Invoke-RegionOverlayProbe $portable "Portable SNAPVERE $Arch"
 Invoke-WindowOverlayProbe $portable "Portable SNAPVERE $Arch"
