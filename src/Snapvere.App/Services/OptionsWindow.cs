@@ -348,11 +348,12 @@ public sealed class OptionsWindow : Window
             return;
         }
 
+        var requestedState = _startupToggle.IsOn;
         try
         {
-            _startupRegistration.SetEnabled(_startupToggle.IsOn);
+            _startupRegistration.SetEnabled(requestedState);
             SetStatus(
-                _startupToggle.IsOn
+                requestedState
                     ? "Windows startup enabled — SNAPVERE will start quietly in the tray."
                     : "Windows startup disabled.",
                 Success);
@@ -360,10 +361,13 @@ public sealed class OptionsWindow : Window
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
         {
+            // Do not query the same registry key again while handling an ACL/policy
+            // failure: that secondary read can throw the same SecurityException and
+            // escape the UI event handler. Restore the last visible state instead.
             _updatingControls = true;
             try
             {
-                _startupToggle.IsOn = _startupRegistration.IsEnabled();
+                _startupToggle.IsOn = !requestedState;
             }
             finally
             {
