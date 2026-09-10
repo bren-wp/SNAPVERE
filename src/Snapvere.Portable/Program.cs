@@ -11,6 +11,7 @@ internal static class Program
     private const string AppExecutableName = "Snapvere.exe";
     private const string StartupProbeEnvironmentVariable = "SNAPVERE_STARTUP_PROBE";
     private const string RegionOverlayProbeEnvironmentVariable = "SNAPVERE_REGION_OVERLAY_PROBE";
+    private const string WindowOverlayProbeEnvironmentVariable = "SNAPVERE_WINDOW_OVERLAY_PROBE";
 
     [STAThread]
     private static void Main(string[] args)
@@ -19,7 +20,7 @@ internal static class Program
 
         try
         {
-            var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.2";
+            var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
             var architecture = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
             using var launchMutex = new Mutex(
                 initiallyOwned: false,
@@ -140,6 +141,10 @@ internal static class Program
             string.Equals(
                 Environment.GetEnvironmentVariable(RegionOverlayProbeEnvironmentVariable),
                 "1",
+                StringComparison.Ordinal) ||
+            string.Equals(
+                Environment.GetEnvironmentVariable(WindowOverlayProbeEnvironmentVariable),
+                "1",
                 StringComparison.Ordinal))
         {
             return true;
@@ -147,7 +152,8 @@ internal static class Program
 
         return args.Any(argument =>
             string.Equals(argument, "--startup-probe", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(argument, "--region-overlay-probe", StringComparison.OrdinalIgnoreCase));
+            string.Equals(argument, "--region-overlay-probe", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(argument, "--window-overlay-probe", StringComparison.OrdinalIgnoreCase));
     }
 
     private static void TryTerminate(Process process)
