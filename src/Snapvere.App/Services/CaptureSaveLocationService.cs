@@ -11,8 +11,6 @@ namespace Snapvere.App.Services;
 /// </summary>
 public sealed class CaptureSaveLocationService
 {
-    private const string PickerSettingsIdentifier = "SNAPVERE-Capture-Save";
-
     private readonly CapturePathProvider _pathProvider;
     private readonly CaptureRelocationService _relocationService;
 
@@ -42,12 +40,9 @@ public sealed class CaptureSaveLocationService
 
         var picker = new FileSavePicker(owner.AppWindow.Id)
         {
-            Title = "SNAPVERE",
             SuggestedFolder = Path.GetDirectoryName(sourcePath) ?? defaultDirectory,
             SuggestedFileName = Path.GetFileNameWithoutExtension(sourcePath),
-            DefaultFileExtension = ".png",
-            ShowOverwritePrompt = true,
-            SettingsIdentifier = PickerSettingsIdentifier
+            DefaultFileExtension = ".png"
         };
         picker.FileTypeChoices.Add("PNG", new List<string> { ".png" });
 
