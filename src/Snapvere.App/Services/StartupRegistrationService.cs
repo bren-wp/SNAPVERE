@@ -12,6 +12,7 @@ public sealed class StartupRegistrationService
     public const string PortableLauncherEnvironmentVariable = "SNAPVERE_PORTABLE_LAUNCHER_PATH";
     public const string RunValueName = "SNAPVERE";
     public const string RunRegistryPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
+    public const string BackgroundArgument = "--background";
 
     private readonly string _launchPath;
 
@@ -54,5 +55,5 @@ public sealed class StartupRegistrationService
     }
 
     private string BuildLaunchCommand()
-        => $"\"{_launchPath}\"";
+        => $"\"{_launchPath}\" {BackgroundArgument}";
 }

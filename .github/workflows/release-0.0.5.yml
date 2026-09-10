@@ -1,0 +1,245 @@
+name: Release 0.0.5
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: snapvere-release-0.0.5
+  cancel-in-progress: false
+
+env:
+  SNAPVERE_VERSION: 0.0.5
+
+jobs:
+  release:
+    if: contains(github.event.head_commit.message, '[release 0.0.5]')
+    runs-on: windows-2022
+    timeout-minutes: 100
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore and test release source
+        shell: pwsh
+        run: |
+          dotnet restore SNAPVERE.sln
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          dotnet build SNAPVERE.sln --configuration Release --no-restore -p:Platform=x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          dotnet test tests/Snapvere.UnitTests/Snapvere.UnitTests.csproj --configuration Release --no-restore -p:Platform=x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          dotnet restore src/Snapvere.App/Snapvere.App.csproj --runtime win-x86
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          dotnet build src/Snapvere.App/Snapvere.App.csproj --configuration Release --runtime win-x86 --no-restore -p:Platform=x86
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build x64 and x86 release packages
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+
+          foreach ($arch in @('x64', 'x86')) {
+            $rid = "win-$arch"
+            $appDir = "artifacts/app-$arch"
+            $payload = Join-Path $PWD "artifacts/SNAPVERE-payload-$arch.zip"
+            $setupDir = "artifacts/setup-$arch"
+            $portableDir = "artifacts/portable-$arch"
+
+            dotnet publish src/Snapvere.App/Snapvere.App.csproj `
+              --configuration Release `
+              --runtime $rid `
+              -p:Platform=$arch `
+              -p:SelfContained=true `
+              -p:WindowsAppSDKSelfContained=true `
+              -p:PublishReadyToRun=true `
+              -p:DebugType=None `
+              -p:DebugSymbols=false `
+              -p:Version=$env:SNAPVERE_VERSION `
+              --output $appDir
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+            Compress-Archive -Path "$appDir/*" -DestinationPath $payload -CompressionLevel Optimal
+
+            dotnet publish src/Snapvere.Setup/Snapvere.Setup.csproj `
+              --configuration Release `
+              --runtime $rid `
+              -p:Platform=$arch `
+              -p:SnapverePayloadPath="$payload" `
+              -p:Version=$env:SNAPVERE_VERSION `
+              --output $setupDir
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+            dotnet publish src/Snapvere.Portable/Snapvere.Portable.csproj `
+              --configuration Release `
+              --runtime $rid `
+              -p:Platform=$arch `
+              -p:SnapverePayloadPath="$payload" `
+              -p:Version=$env:SNAPVERE_VERSION `
+              --output $portableDir
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+            Copy-Item "$setupDir/SNAPVERE-Setup.exe" "release/SNAPVERE-$env:SNAPVERE_VERSION-Setup-$arch.exe"
+            Copy-Item "$portableDir/SNAPVERE-Portable.exe" "release/SNAPVERE-$env:SNAPVERE_VERSION-Portable-$arch.exe"
+            Copy-Item $payload "release/SNAPVERE-$env:SNAPVERE_VERSION-$arch.zip"
+          }
+
+      - name: Validate release artifacts and package lifecycle
+        shell: pwsh
+        run: |
+          $required = @(
+            "release/SNAPVERE-$env:SNAPVERE_VERSION-Setup-x64.exe",
+            "release/SNAPVERE-$env:SNAPVERE_VERSION-Portable-x64.exe",
+            "release/SNAPVERE-$env:SNAPVERE_VERSION-Setup-x86.exe",
+            "release/SNAPVERE-$env:SNAPVERE_VERSION-Portable-x86.exe",
+            "release/SNAPVERE-$env:SNAPVERE_VERSION-x64.zip",
+            "release/SNAPVERE-$env:SNAPVERE_VERSION-x86.zip"
+          )
+
+          foreach ($file in $required) {
+            if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "Missing release file: $file" }
+            if ((Get-Item -LiteralPath $file).Length -lt 1MB) { throw "Release file is unexpectedly small: $file" }
+          }
+
+          foreach ($arch in @('x64', 'x86')) {
+            $setup = "release/SNAPVERE-$env:SNAPVERE_VERSION-Setup-$arch.exe"
+            $portable = "release/SNAPVERE-$env:SNAPVERE_VERSION-Portable-$arch.exe"
+
+            & ./eng/Test-SnapverePackageLifecycle.ps1 `
+              -SetupPath $setup `
+              -PortablePath $portable `
+              -Version $env:SNAPVERE_VERSION `
+              -Arch $arch
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+            & ./eng/Test-SnapvereInteractiveLaunch.ps1 `
+              -SetupPath $setup `
+              -PortablePath $portable `
+              -Version $env:SNAPVERE_VERSION `
+              -Arch $arch
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Generate and validate SHA-256 manifest
+        shell: pwsh
+        run: |
+          Get-ChildItem release -File | Sort-Object Name | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($_.Name)"
+          } | Set-Content -Encoding ascii release/SHA256SUMS.txt
+
+          $expected = @(
+            "SNAPVERE-$env:SNAPVERE_VERSION-Portable-x64.exe",
+            "SNAPVERE-$env:SNAPVERE_VERSION-Portable-x86.exe",
+            "SNAPVERE-$env:SNAPVERE_VERSION-Setup-x64.exe",
+            "SNAPVERE-$env:SNAPVERE_VERSION-Setup-x86.exe",
+            "SNAPVERE-$env:SNAPVERE_VERSION-x64.zip",
+            "SNAPVERE-$env:SNAPVERE_VERSION-x86.zip",
+            "SHA256SUMS.txt"
+          ) | Sort-Object
+          $actual = @(Get-ChildItem release -File | Select-Object -ExpandProperty Name | Sort-Object)
+          $difference = @(Compare-Object -ReferenceObject $expected -DifferenceObject $actual)
+          if ($difference.Count -ne 0) {
+            $difference | Format-Table | Out-String | Write-Host
+            throw "Release directory does not contain exactly the expected seven assets."
+          }
+
+          $checksumLines = @(Get-Content release/SHA256SUMS.txt | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+          if ($checksumLines.Count -ne 6) {
+            throw "SHA256SUMS.txt must contain exactly six package checksums; got $($checksumLines.Count)."
+          }
+
+      - name: Create or verify immutable v0.0.5 tag
+        shell: pwsh
+        run: |
+          $tag = "v$env:SNAPVERE_VERSION"
+          git fetch --force --tags origin
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          git rev-parse --verify --quiet "refs/tags/$tag" *> $null
+          $tagExists = $LASTEXITCODE -eq 0
+
+          if ($tagExists) {
+            $tagCommit = (git rev-list -n 1 $tag).Trim()
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            if ($tagCommit -ne $env:GITHUB_SHA) {
+              throw "Immutable tag $tag already exists at $tagCommit instead of release commit $env:GITHUB_SHA."
+            }
+            Write-Host "Immutable tag $tag already points to this validated release commit."
+          }
+          else {
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a $tag -m "SNAPVERE $tag"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            git push origin $tag
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Publish GitHub Release if absent
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "v$env:SNAPVERE_VERSION"
+          gh release view $tag --json tagName *> $null
+          $releaseExists = $LASTEXITCODE -eq 0
+
+          if ($releaseExists) {
+            Write-Host "GitHub Release $tag already exists; leaving immutable published assets untouched and verifying them next."
+          }
+          else {
+            $assets = Get-ChildItem release -File | ForEach-Object { $_.FullName }
+            & gh release create $tag @assets `
+              --title "SNAPVERE $tag" `
+              --notes-file RELEASE_NOTES_0.0.5.md `
+              --latest `
+              --verify-tag
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Verify published v0.0.5 release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "v$env:SNAPVERE_VERSION"
+          $json = & gh release view $tag --json tagName,name,isDraft,isPrerelease,assets
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $release = $json | ConvertFrom-Json
+
+          if ($release.tagName -ne $tag) { throw "Published release tag mismatch: $($release.tagName)" }
+          if ($release.isDraft) { throw "Published $tag is still a draft." }
+          if ($release.isPrerelease) { throw "Published $tag is unexpectedly marked as a prerelease." }
+
+          $expected = @(
+            "SNAPVERE-$env:SNAPVERE_VERSION-Portable-x64.exe",
+            "SNAPVERE-$env:SNAPVERE_VERSION-Portable-x86.exe",
+            "SNAPVERE-$env:SNAPVERE_VERSION-Setup-x64.exe",
+            "SNAPVERE-$env:SNAPVERE_VERSION-Setup-x86.exe",
+            "SNAPVERE-$env:SNAPVERE_VERSION-x64.zip",
+            "SNAPVERE-$env:SNAPVERE_VERSION-x86.zip",
+            "SHA256SUMS.txt"
+          ) | Sort-Object
+          $published = @($release.assets | ForEach-Object { $_.name } | Sort-Object)
+          $difference = @(Compare-Object -ReferenceObject $expected -DifferenceObject $published)
+          if ($difference.Count -ne 0) {
+            $difference | Format-Table | Out-String | Write-Host
+            throw "Published $tag assets do not exactly match the expected seven-file release contract."
+          }
+
+          Write-Host "Verified $tag with exactly seven expected assets."

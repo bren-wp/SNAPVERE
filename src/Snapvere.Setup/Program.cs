@@ -5,6 +5,8 @@ namespace Snapvere.Setup;
 internal static class Program
 {
     private const string SetupMutexName = @"Local\Brendigo.SNAPVERE.Setup";
+    private const string UiProbeArgument = "--ui-probe";
+    private const string UiProbeMarkerFileName = "setup-ui-probe.ready";
 
     [STAThread]
     private static void Main(string[] args)
@@ -76,6 +78,19 @@ internal static class Program
             }
 
             using var setupForm = new SetupForm(uninstall);
+            if (HasArgument(args, UiProbeArgument))
+            {
+                setupForm.Shown += (_, _) =>
+                {
+                    var probeDirectory = Path.Combine(Path.GetTempPath(), "SNAPVERE");
+                    Directory.CreateDirectory(probeDirectory);
+                    File.WriteAllText(
+                        Path.Combine(probeDirectory, UiProbeMarkerFileName),
+                        $"SNAPVERE Setup UI READY | PID={Environment.ProcessId} | {DateTimeOffset.UtcNow:O}");
+                    setupForm.BeginInvoke(setupForm.Close);
+                };
+            }
+
             Application.Run(setupForm);
         }
         finally
