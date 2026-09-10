@@ -8,7 +8,7 @@ SNAPVERE omogućuje korisniku da za svaku dovršenu snimku **područja**, **proz
 2. Potpuno dovršena PNG datoteka najprije se sigurno zapisuje u zadanu lokalnu mapu (`Slike\SNAPVERE`, odnosno Windows Pictures mapa) postojećim temp-file + atomic-move mehanizmom.
 3. Nakon toga SNAPVERE otvara izvorni Windows dijalog **Spremi kao / Save As**, s već predloženim generiranim nazivom snimke i `.png` formatom.
 4. Korisnik može zadržati predloženu lokaciju i naziv ili odabrati drugu mapu i naziv datoteke.
-5. Ako se odabere druga putanja, SNAPVERE premješta već dovršenu PNG datoteku na odabranu lokaciju.
+5. Nakon što korisnik potvrdi odabranu putanju u Windows dijalogu, SNAPVERE premješta već dovršenu PNG datoteku na tu lokaciju.
 
 Ovaj redoslijed je namjeran: interaktivni dijalog za spremanje nikada ne smije ugroziti jedinu kopiju upravo snimljene slike.
 
@@ -18,13 +18,21 @@ Zatvaranje ili otkazivanje dijaloga **Spremi kao** ne briše snimku. Već dovrš
 
 ## Zamjena postojeće datoteke
 
-Windows dijalog traži potvrdu prije zamjene postojeće datoteke. Nakon korisničke potvrde SNAPVERE kopira dovršenu snimku u kratku privremenu datoteku u odredišnoj mapi, a zatim atomarno zamjenjuje odabrano odredište.
+Kada korisnik u izvornom Windows Save As toku potvrdi putanju koja odgovara postojećoj datoteci, SNAPVERE vlastito sigurno ažuriranje odredišta pokreće tek nakon što picker vrati tu putanju. Dovršena snimka kopira se u kratku privremenu datoteku u odredišnoj mapi, a ona se zatim atomarno premješta preko odabranog odredišta.
 
 Privremeni naziv ne sadrži puni korisnički naziv slike, nego koristi oblik `.snapvere-<guid>.tmp`. Tako i vrlo dugačak, ali valjan PNG naziv ne uzrokuje prekoračenje ograničenja duljine jedne datotečne komponente.
 
+Prije relokacije i ponovno prije brisanja izvornika SNAPVERE uspoređuje stvarni Windows identitet datoteke (serijski broj volumena i file index). Time alternativna putanja, hard link, junction, mapirani disk ili drugi alias prema istoj datoteci ne može uzrokovati brisanje upravo odabranog rezultata.
+
+Ako Windows ne može pouzdano potvrditi da su dovršeno odredište i izvornik različite datoteke, SNAPVERE zadržava izvornik kao sigurnosnu kopiju.
+
+## Spora ili prijenosna odredišta
+
+Kopiranje dovršene PNG datoteke u privremenu datoteku na odredištu izvodi se asinkrono i podržava otkazivanje. Odabir sporijeg USB, prijenosnog ili mrežnog odredišta zato namjerno ne blokira UI thread tijekom cijelog kopiranja.
+
 ## Ponašanje kod pogreške
 
-Ako premještanje ne uspije prije nego što je odredišna datoteka potpuno dovršena, izvorna snimka ostaje sačuvana u zadanoj mapi. Privremene datoteke brišu se po principu best effort.
+Ako premještanje ne uspije ili bude otkazano prije nego što je odredišna datoteka potpuno dovršena, izvorna snimka ostaje sačuvana u zadanoj mapi. Privremene datoteke brišu se po principu best effort.
 
 Ako je nova odredišna datoteka već potpuno zapisana, ali Windows ne dopusti brisanje izvornika, SNAPVERE namjerno ostavlja izvornu datoteku kao sigurnosnu kopiju umjesto da riskira gubitak snimke.
 
@@ -38,13 +46,13 @@ Ako se snimanje područja dovrši naredbom **Kopiraj**, Save As dijalog se ne ot
 
 ## Privatnost i potrošnja resursa
 
-Funkcija radi potpuno lokalno. Ne uvodi mrežni pristup, telemetriju, upload servis, polling, timer, file watcher niti novi stalni background worker. Windows picker nastaje samo nakon dovršene snimke i postoji samo dok korisnik bira lokaciju.
+Funkcija radi potpuno lokalno. Ne uvodi mrežni servis, telemetriju, upload servis, polling, timer, file watcher niti novi stalni background worker. Windows picker nastaje samo nakon dovršene snimke i postoji samo dok korisnik bira lokaciju.
 
 ## Arhitektura
 
 - `CaptureCenterWindow` koordinira završetak spremanja za područje, prozor i zaslon te poziva picker.
 - `CaptureSaveLocationService` je tanki Windows App SDK sloj za native Save As dijalog.
-- `CaptureRelocationService` sadrži UI-neovisni i testabilni ugovor sigurnog premještanja datoteke.
+- `CaptureRelocationService` sadrži UI-neovisni i testabilni asinkroni ugovor sigurnog premještanja i zaštite identiteta datoteke.
 - Postojeći capture workflowi i `CaptureFileWriter` i dalje upravljaju snimanjem, PNG kodiranjem, zadanom lokacijom i atomarnim stvaranjem prve dovršene PNG datoteke.
 
 Odvajanjem premještanja od samog snimanja promjene u Save As UX-u ne utječu na geometriju snimanja, anotacije, pokazivač miša, PNG encoder ili tray-first runtime ugovor.
