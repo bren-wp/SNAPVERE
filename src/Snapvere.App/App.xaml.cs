@@ -29,6 +29,7 @@ public partial class App : Microsoft.UI.Xaml.Application
     private RegionCaptureWindow? _regionProbeWindow;
     private WindowTargetOverlayWindow? _windowProbeWindow;
     private TrayMenuWindow? _trayMenuWindow;
+    private OptionsWindow? _optionsWindow;
     private AboutWindow? _aboutWindow;
     private IGlobalHotkeyService? _hotkeyService;
     private ITrayIconService? _trayIconService;
@@ -58,15 +59,18 @@ public partial class App : Microsoft.UI.Xaml.Application
             services.AddSingleton<PngCaptureEncoder>();
             services.AddSingleton(new CapturePathProvider());
             services.AddSingleton<CaptureFileWriter>();
+            services.AddSingleton<CapturePreferencesService>();
             services.AddSingleton<ScreenCaptureWorkflow>();
             services.AddSingleton<RegionCaptureWorkflow>();
             services.AddSingleton<WindowCaptureWorkflow>();
             services.AddSingleton<WindowTargetPicker>();
             services.AddSingleton<CaptureHistoryService>();
+            services.AddSingleton<StartupRegistrationService>();
             services.AddSingleton<IGlobalHotkeyService>(
                 _ => new Win32GlobalHotkeyService(DefaultCaptureHotkeys.ImplementedNow));
             services.AddSingleton<ITrayIconService, Win32TrayIconService>();
             services.AddTransient<CaptureCenterWindow>();
+            services.AddTransient<OptionsWindow>();
 
             _services = services.BuildServiceProvider(validateScopes: true);
             StartupDiagnostics.WriteLine("Application services initialized. WGC is preferred with GDI fallback for monitor acquisition.");
@@ -115,7 +119,7 @@ public partial class App : Microsoft.UI.Xaml.Application
 
             StartupDiagnostics.WriteLine("Starting system tray host.");
             StartTrayIcon();
-            StartupDiagnostics.WriteLine("System tray host startup completed. Capture Center remains hidden.");
+            StartupDiagnostics.WriteLine("System tray host startup completed. Capture coordinator remains hidden.");
 
             if (IsTrayStartupProbeRequested())
             {
@@ -425,7 +429,8 @@ public partial class App : Microsoft.UI.Xaml.Application
                 ShowTrayMenu();
                 break;
             case TrayCommand.Show:
-                window.ShowFromTray();
+                CloseTrayMenu();
+                ShowOptions(OptionsSection.Preferences);
                 break;
             case TrayCommand.RegionCapture:
                 CloseTrayMenu();
@@ -449,6 +454,7 @@ public partial class App : Microsoft.UI.Xaml.Application
                 break;
             case TrayCommand.Exit:
                 CloseTrayMenu();
+                _optionsWindow?.Close();
                 _aboutWindow?.Close();
                 window.Close();
                 break;
@@ -458,7 +464,9 @@ public partial class App : Microsoft.UI.Xaml.Application
     private void ShowTrayMenu()
     {
         CloseTrayMenu();
-        var menu = new TrayMenuWindow(ExecuteTrayCommand);
+        var menu = new TrayMenuWindow(
+            ExecuteTrayCommand,
+            () => ShowOptions(OptionsSection.RecentCaptures));
         _trayMenuWindow = menu;
         menu.Closed += (_, _) =>
         {
@@ -478,6 +486,28 @@ public partial class App : Microsoft.UI.Xaml.Application
         {
             menu.Close();
         }
+    }
+
+    private void ShowOptions(OptionsSection section)
+    {
+        if (_optionsWindow is not null)
+        {
+            _optionsWindow.ShowSection(section);
+            _optionsWindow.Activate();
+            return;
+        }
+
+        var options = _services.GetRequiredService<OptionsWindow>();
+        _optionsWindow = options;
+        options.ShowSection(section);
+        options.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_optionsWindow, options))
+            {
+                _optionsWindow = null;
+            }
+        };
+        options.Activate();
     }
 
     private void ShowAbout()
@@ -519,6 +549,8 @@ public partial class App : Microsoft.UI.Xaml.Application
     private void OnMainWindowClosed(object sender, WindowEventArgs args)
     {
         CloseTrayMenu();
+        _optionsWindow?.Close();
+        _optionsWindow = null;
         _aboutWindow?.Close();
         _aboutWindow = null;
 

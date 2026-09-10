@@ -1,28 +1,32 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.Graphics;
+using Windows.System;
 
 namespace Snapvere.App.Services;
 
 /// <summary>
-/// Branded tray flyout shown only from the notification-area icon. The main
-/// SNAPVERE capture coordinator stays hidden; this window is intentionally a
+/// Branded tray flyout shown only from the notification-area icon. The hidden
+/// capture coordinator stays out of sight; this window is intentionally a
 /// compact command surface, not a second application dashboard.
 /// </summary>
 public sealed class TrayMenuWindow : Window
 {
     private const int FlyoutWidth = 372;
-    private const int FlyoutHeight = 500;
+    private const int FlyoutHeight = 548;
 
     private readonly Action<TrayCommand> _commandHandler;
+    private readonly Action _recentCapturesHandler;
     private bool _hasActivated;
     private bool _closingForCommand;
 
-    public TrayMenuWindow(Action<TrayCommand> commandHandler)
+    public TrayMenuWindow(Action<TrayCommand> commandHandler, Action recentCapturesHandler)
     {
         _commandHandler = commandHandler ?? throw new ArgumentNullException(nameof(commandHandler));
+        _recentCapturesHandler = recentCapturesHandler ?? throw new ArgumentNullException(nameof(recentCapturesHandler));
         Title = "SNAPVERE";
         Content = BuildContent();
         ConfigureWindow();
@@ -43,6 +47,7 @@ public sealed class TrayMenuWindow : Window
             Background = Brush(0x0D, 0x12, 0x20),
             Padding = new Thickness(14)
         };
+        root.KeyDown += Root_KeyDown;
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -60,8 +65,9 @@ public sealed class TrayMenuWindow : Window
         actions.Children.Add(CreateMenuButton("\uE737", "Capture window", "Ctrl + Shift + 2", TrayCommand.WindowCapture));
         actions.Children.Add(CreateMenuButton("\uE7F4", "Capture screen", "Ctrl + Shift + 4", TrayCommand.ScreenCapture));
         actions.Children.Add(CreateSeparator());
-        actions.Children.Add(CreateMenuButton("\uE8B7", "Open capture folder", "Pictures\\SNAPVERE", TrayCommand.OpenCaptureFolder));
-        actions.Children.Add(CreateMenuButton("\uE713", "Options & recent captures", string.Empty, TrayCommand.Show));
+        actions.Children.Add(CreateMenuButton("\uE838", "Open capture folder", "Pictures\\SNAPVERE", TrayCommand.OpenCaptureFolder));
+        actions.Children.Add(CreateActionButton("\uE81C", "Recent captures", string.Empty, _recentCapturesHandler));
+        actions.Children.Add(CreateMenuButton("\uE713", "Options / Preferences", string.Empty, TrayCommand.Show));
         actions.Children.Add(CreateMenuButton("\uE946", "About SNAPVERE", string.Empty, TrayCommand.About));
         actions.Children.Add(CreateSeparator());
         actions.Children.Add(CreateMenuButton("\uE7E8", "Exit SNAPVERE", string.Empty, TrayCommand.Exit));
@@ -173,6 +179,17 @@ public sealed class TrayMenuWindow : Window
     }
 
     private Button CreateMenuButton(string glyph, string title, string shortcut, TrayCommand command, bool primary = false)
+        => CreateButton(glyph, title, shortcut, () => InvokeCommand(command), primary);
+
+    private Button CreateActionButton(string glyph, string title, string shortcut, Action action)
+        => CreateButton(glyph, title, shortcut, () => InvokeAction(action), primary: false);
+
+    private static Button CreateButton(
+        string glyph,
+        string title,
+        string shortcut,
+        Action action,
+        bool primary)
     {
         var content = new Grid();
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(34) });
@@ -214,7 +231,7 @@ public sealed class TrayMenuWindow : Window
             BorderThickness = new Thickness(1),
             Content = content
         };
-        button.Click += (_, _) => InvokeCommand(command);
+        button.Click += (_, _) => action();
         return button;
     }
 
@@ -236,6 +253,29 @@ public sealed class TrayMenuWindow : Window
         _closingForCommand = true;
         Close();
         _commandHandler(command);
+    }
+
+    private void InvokeAction(Action action)
+    {
+        if (_closingForCommand)
+        {
+            return;
+        }
+
+        _closingForCommand = true;
+        Close();
+        action();
+    }
+
+    private void Root_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != VirtualKey.Escape || _closingForCommand)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        Close();
     }
 
     private void TrayMenuWindow_Activated(object sender, WindowActivatedEventArgs args)

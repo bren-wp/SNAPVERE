@@ -13,6 +13,7 @@ internal static class Program
     private const string TrayStartupProbeEnvironmentVariable = "SNAPVERE_TRAY_STARTUP_PROBE";
     private const string RegionOverlayProbeEnvironmentVariable = "SNAPVERE_REGION_OVERLAY_PROBE";
     private const string WindowOverlayProbeEnvironmentVariable = "SNAPVERE_WINDOW_OVERLAY_PROBE";
+    private const string PortableLauncherEnvironmentVariable = "SNAPVERE_PORTABLE_LAUNCHER_PATH";
 
     [STAThread]
     private static void Main(string[] args)
@@ -102,6 +103,12 @@ internal static class Program
         foreach (var argument in args)
         {
             startInfo.ArgumentList.Add(argument);
+        }
+
+        var portableLauncher = Environment.ProcessPath;
+        if (!string.IsNullOrWhiteSpace(portableLauncher))
+        {
+            startInfo.Environment[PortableLauncherEnvironmentVariable] = Path.GetFullPath(portableLauncher);
         }
 
         using var process = Process.Start(startInfo)
