@@ -19,6 +19,8 @@ internal static class InstallerEngine
     private const string PayloadResourceName = "Snapvere.Payload.zip";
     private const string LicenseResourceName = "Snapvere.License.txt";
     private const string UninstallRegistryPath = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\SNAPVERE";
+    private const string StartupRunRegistryPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
+    private const string StartupRunValueName = "SNAPVERE";
     private const uint MoveFileDelayUntilReboot = 0x00000004;
 
     public static string VersionText =>
@@ -171,6 +173,8 @@ internal static class InstallerEngine
             {
                 return new InstallerResult(false, 1618, runningMessage);
             }
+
+            DeleteInstalledStartupRegistration(installRoot);
 
             var currentSetupPath = Environment.ProcessPath;
             if (currentSetupPath is not null && IsPathInside(currentSetupPath, installRoot))
@@ -380,6 +384,34 @@ internal static class InstallerEngine
             Registry.CurrentUser.DeleteSubKeyTree(UninstallRegistryPath, throwOnMissingSubKey: false);
         }
         catch (UnauthorizedAccessException)
+        {
+        }
+    }
+
+    private static void DeleteInstalledStartupRegistration(string installRoot)
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(StartupRunRegistryPath, writable: true);
+            var registeredCommand = key?.GetValue(StartupRunValueName) as string;
+            if (string.IsNullOrWhiteSpace(registeredCommand))
+            {
+                return;
+            }
+
+            var installedAppPath = Path.GetFullPath(Path.Combine(installRoot, AppExecutableName));
+            var expectedCommand = $"\"{installedAppPath}\"";
+            if (!string.Equals(registeredCommand, expectedCommand, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            key!.DeleteValue(StartupRunValueName, throwOnMissingValue: false);
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+        catch (System.Security.SecurityException)
         {
         }
     }

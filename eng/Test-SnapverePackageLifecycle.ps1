@@ -19,6 +19,8 @@ $portable = (Resolve-Path -LiteralPath $PortablePath).Path
 $install = Join-Path $env:LOCALAPPDATA 'Programs/SNAPVERE'
 $startupLog = Join-Path $env:LOCALAPPDATA 'SNAPVERE/Logs/startup.log'
 $contractScript = Join-Path $PSScriptRoot 'Assert-SnapvereInstallContract.ps1'
+$startupRunKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+$startupRunValueName = 'SNAPVERE'
 
 function Write-StartupLogIfPresent {
     if (Test-Path -LiteralPath $startupLog) {
@@ -268,6 +270,16 @@ Invoke-RegionOverlayProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-WindowOverlayProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-NormalAppLaunch $installedApp "Installed SNAPVERE $Arch"
 
+if (-not (Test-Path -LiteralPath $startupRunKey)) {
+    $null = New-Item -Path $startupRunKey -Force
+}
+$expectedInstalledStartupCommand = '"' + $installedApp + '"'
+Set-ItemProperty -LiteralPath $startupRunKey -Name $startupRunValueName -Value $expectedInstalledStartupCommand -Type String
+$registeredStartupCommand = (Get-ItemProperty -LiteralPath $startupRunKey -Name $startupRunValueName).$startupRunValueName
+if ($registeredStartupCommand -ne $expectedInstalledStartupCommand) {
+    throw "$Arch lifecycle could not establish the installed SNAPVERE startup registration test precondition."
+}
+
 $uninstallProcess = Start-Process -FilePath $installedSetup -ArgumentList @('--uninstall', '--silent') -Wait -PassThru
 if ($uninstallProcess.ExitCode -ne 0) {
     throw "$Arch Setup failed to uninstall with code $($uninstallProcess.ExitCode)."
@@ -279,6 +291,11 @@ while ((Test-Path -LiteralPath $installedApp) -and (Get-Date) -lt $deadline) {
 }
 
 & $contractScript -State Removed -InstallDirectory $install -ExpectedVersion $Version
+
+$startupAfterUninstall = Get-ItemProperty -LiteralPath $startupRunKey -Name $startupRunValueName -ErrorAction SilentlyContinue
+if ($null -ne $startupAfterUninstall -and $null -ne $startupAfterUninstall.$startupRunValueName) {
+    throw "$Arch uninstall left the installed SNAPVERE startup registration behind."
+}
 
 Invoke-StartupProbe $portable "Portable SNAPVERE $Arch"
 Invoke-TrayStartupProbe $portable "Portable SNAPVERE $Arch"
