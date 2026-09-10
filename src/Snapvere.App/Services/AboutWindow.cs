@@ -71,8 +71,8 @@ public sealed class AboutWindow : Window
         versionRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         versionRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var title = new StackPanel { Spacing = 3 };
-        title.Children.Add(Text("Local-first capture for Windows", 15, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
-        title.Children.Add(Text("Region, window and screen capture without cloud dependency.", 10.5, Muted));
+        title.Children.Add(Text(L("AboutLocalFirstTitle"), 15, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        title.Children.Add(Text(L("AboutCaptureDescription"), 10.5, Muted));
         versionRow.Children.Add(title);
         var badge = new Border
         {
@@ -97,10 +97,7 @@ public sealed class AboutWindow : Window
         };
         var privacyCopy = new StackPanel { Spacing = 3 };
         privacyCopy.Children.Add(Text(L("LocalFirst").ToUpperInvariant(), 9, Success, Microsoft.UI.Text.FontWeights.Bold));
-        var description = Text(
-            "Screenshots stay on your device unless you explicitly copy, save or share them through Windows.",
-            10.5,
-            Muted);
+        var description = Text(L("AboutPrivacyDescription"), 10.5, Muted);
         description.TextWrapping = TextWrapping.Wrap;
         privacyCopy.Children.Add(description);
         privacy.Child = privacyCopy;
@@ -110,8 +107,7 @@ public sealed class AboutWindow : Window
         content.Children.Add(BuildShortcutRow("Ctrl + Shift + 2", L("CaptureWindow")));
         content.Children.Add(BuildShortcutRow("Ctrl + Shift + 4", L("CaptureScreen")));
 
-        var commercial = Text("SNAPVERE commercial software • © Brendigo", 9.5, Subtle);
-        content.Children.Add(commercial);
+        content.Children.Add(Text(L("CommercialSoftware"), 9.5, Subtle));
 
         var links = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         links.Children.Add(CreateLinkButton("snapvere.com", "https://snapvere.com"));

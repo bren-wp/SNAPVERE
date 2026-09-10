@@ -29,14 +29,14 @@ public sealed class LanguagePickerWindow : Window
     public LanguagePickerWindow(CapturePreferencesService preferences)
     {
         _preferences = preferences ?? throw new ArgumentNullException(nameof(preferences));
-        Title = "SNAPVERE — Language";
+        Title = $"SNAPVERE — {L("Language")}";
 
         _languageCombo = new ComboBox
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
             MinHeight = 44
         };
-        AutomationProperties.SetName(_languageCombo, "SNAPVERE language");
+        AutomationProperties.SetName(_languageCombo, L("ChooseLanguage"));
         foreach (var language in SnapvereLocalization.SupportedLanguages)
         {
             _languageCombo.Items.Add(new ComboBoxItem
@@ -47,10 +47,7 @@ public sealed class LanguagePickerWindow : Window
         }
         _languageCombo.SelectionChanged += LanguageCombo_SelectionChanged;
 
-        _status = Text(
-            SnapvereLocalization.T("LanguageSaved", _preferences.Current.LanguageCode),
-            10.5,
-            Muted);
+        _status = Text(L("LanguageSaved"), 10.5, Muted);
         _status.TextWrapping = TextWrapping.Wrap;
 
         Content = BuildContent();
@@ -79,9 +76,13 @@ public sealed class LanguagePickerWindow : Window
         window.Activate();
     }
 
+    private string L(string key) => SnapvereLocalization.T(key, _preferences.Current.LanguageCode);
+
+    private string LF(string key, params object[] arguments)
+        => string.Format(L(key), arguments);
+
     private FrameworkElement BuildContent()
     {
-        var language = _preferences.Current.LanguageCode;
         var root = new Grid
         {
             RequestedTheme = ElementTheme.Dark,
@@ -105,15 +106,12 @@ public sealed class LanguagePickerWindow : Window
             VerticalAlignment = VerticalAlignment.Center
         };
         identity.Children.Add(Text("SNAPVERE", 12, Accent, Microsoft.UI.Text.FontWeights.Bold));
-        identity.Children.Add(Text(SnapvereLocalization.T("ChooseLanguage", language), 26, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        identity.Children.Add(Text(L("ChooseLanguage"), 26, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
         Grid.SetColumn(identity, 1);
         header.Children.Add(identity);
         root.Children.Add(header);
 
-        var intro = Text(
-            "English is the default language. Choose any supported language below; the preference is stored only on this PC.",
-            11,
-            Muted);
+        var intro = Text(L("LanguagePickerIntro"), 11, Muted);
         intro.TextWrapping = TextWrapping.Wrap;
         intro.Margin = new Thickness(0, 22, 0, 12);
         Grid.SetRow(intro, 1);
@@ -128,7 +126,7 @@ public sealed class LanguagePickerWindow : Window
             BorderThickness = new Thickness(1)
         };
         var stack = new StackPanel { Spacing = 12 };
-        stack.Children.Add(Text(SnapvereLocalization.T("Language", language).ToUpperInvariant(), 9, Accent, Microsoft.UI.Text.FontWeights.Bold));
+        stack.Children.Add(Text(L("Language").ToUpperInvariant(), 9, Accent, Microsoft.UI.Text.FontWeights.Bold));
         stack.Children.Add(_languageCombo);
         stack.Children.Add(_status);
         card.Child = stack;
@@ -137,7 +135,7 @@ public sealed class LanguagePickerWindow : Window
 
         var close = new Button
         {
-            Content = SnapvereLocalization.T("Close", language),
+            Content = L("Close"),
             HorizontalAlignment = HorizontalAlignment.Right,
             Margin = new Thickness(0, 18, 0, 0),
             Padding = new Thickness(20, 9, 20, 9),
@@ -147,7 +145,7 @@ public sealed class LanguagePickerWindow : Window
             BorderThickness = new Thickness(1),
             Foreground = Strong
         };
-        AutomationProperties.SetName(close, SnapvereLocalization.T("Close", language));
+        AutomationProperties.SetName(close, L("Close"));
         close.Click += (_, _) => Close();
         Grid.SetRow(close, 3);
         root.Children.Add(close);
@@ -178,13 +176,12 @@ public sealed class LanguagePickerWindow : Window
         try
         {
             _preferences.SetLanguageCode(code);
-            var normalized = _preferences.Current.LanguageCode;
-            _status.Text = SnapvereLocalization.T("LanguageSaved", normalized);
+            _status.Text = L("LanguageSaved");
             _status.Foreground = Success;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            _status.Text = $"Could not save language preference: {exception.Message}";
+            _status.Text = LF("LanguageSaveFailed", exception.Message);
             _status.Foreground = Error;
         }
     }
