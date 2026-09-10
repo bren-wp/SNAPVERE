@@ -38,7 +38,7 @@ public sealed class CaptureRelocationService
 
         var temporaryPath = Path.Combine(
             destinationDirectory,
-            $".{Path.GetFileName(finalPath)}.{Guid.NewGuid():N}.tmp");
+            $".snapvere-{Guid.NewGuid():N}.tmp");
 
         try
         {
