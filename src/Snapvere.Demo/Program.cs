@@ -1,7 +1,7 @@
 using Snapvere.Packaging;
 using System.Reflection;
 
-namespace Snapvere.Portable;
+namespace Snapvere.Demo;
 
 internal static class Program
 {
@@ -15,13 +15,13 @@ internal static class Program
             Environment.ExitCode = EmbeddedAppLauncher.Launch(
                 Assembly.GetExecutingAssembly(),
                 args,
-                SnapvereLauncherMode.Portable);
+                SnapvereLauncherMode.Demo);
         }
         catch (Exception exception)
         {
             MessageBox.Show(
-                $"SNAPVERE Portable could not start.\r\n\r\n{exception.Message}\r\n\r\nStartup log (when available):\r\n{EmbeddedAppLauncher.GetStartupLogPath()}",
-                "SNAPVERE Portable",
+                $"SNAPVERE Demo could not start.\r\n\r\n{exception.Message}\r\n\r\nStartup log (when available):\r\n{EmbeddedAppLauncher.GetStartupLogPath()}",
+                "SNAPVERE Demo",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
             Environment.ExitCode = 1;

@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <AssemblyName>SNAPVERE-Portable</AssemblyName>
-    <RootNamespace>Snapvere.Portable</RootNamespace>
+    <AssemblyName>SNAPVERE-Demo</AssemblyName>
+    <RootNamespace>Snapvere.Demo</RootNamespace>
     <UseWindowsForms>true</UseWindowsForms>
     <Platforms>x86;x64</Platforms>
     <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
@@ -16,9 +16,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Snapvere.Packaging\Snapvere.Packaging.csproj" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(SnapverePayloadPath)' != '' and Exists('$(SnapverePayloadPath)')">
-    <EmbeddedResource Include="$(SnapverePayloadPath)" LogicalName="Snapvere.Payload.zip" />
   </ItemGroup>
   <ItemGroup Condition="'$(SnapverePayloadX86Path)' != '' and Exists('$(SnapverePayloadX86Path)')">
     <EmbeddedResource Include="$(SnapverePayloadX86Path)" LogicalName="Snapvere.Payload.x86.zip" />
