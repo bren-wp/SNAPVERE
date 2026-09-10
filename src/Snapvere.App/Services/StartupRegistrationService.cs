@@ -3,16 +3,16 @@ using Microsoft.Win32;
 namespace Snapvere.App.Services;
 
 /// <summary>
-/// Per-user Windows startup registration. Installed builds point to Snapvere.exe;
-/// Portable builds receive the stable launcher path from the portable host so a
-/// Run entry never points into the temporary extraction cache.
+/// Per-user Windows startup registration. Normal SNAPVERE launch is tray-first,
+/// so the Run entry uses the same stable executable path without a special
+/// startup mode. Portable builds receive the stable launcher path from the
+/// portable host so a Run entry never points into the temporary extraction cache.
 /// </summary>
 public sealed class StartupRegistrationService
 {
     public const string PortableLauncherEnvironmentVariable = "SNAPVERE_PORTABLE_LAUNCHER_PATH";
     public const string RunValueName = "SNAPVERE";
     public const string RunRegistryPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    public const string BackgroundArgument = "--background";
 
     private readonly string _launchPath;
 
@@ -55,5 +55,5 @@ public sealed class StartupRegistrationService
     }
 
     private string BuildLaunchCommand()
-        => $"\"{_launchPath}\" {BackgroundArgument}";
+        => $"\"{_launchPath}\"";
 }
