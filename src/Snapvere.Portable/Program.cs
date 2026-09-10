@@ -14,8 +14,7 @@ internal static class Program
         {
             Environment.ExitCode = EmbeddedAppLauncher.Launch(
                 Assembly.GetExecutingAssembly(),
-                args,
-                SnapvereLauncherMode.Portable);
+                args);
         }
         catch (Exception exception)
         {
