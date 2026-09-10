@@ -18,17 +18,19 @@ public sealed class DefaultCaptureHotkeysTests
     }
 
     [Fact]
-    public void ImplementedNow_RegistersPrintScreenAndFallbackForRegionPlusFullScreen()
+    public void ImplementedNow_RegistersRegionWindowAndFullScreenBindings()
     {
         var bindings = DefaultCaptureHotkeys.ImplementedNow;
 
-        Assert.Equal(3, bindings.Count);
+        Assert.Equal(4, bindings.Count);
         Assert.Equal(2, bindings.Count(binding => binding.Mode == CaptureMode.Region));
+        Assert.Single(bindings, binding => binding.Mode == CaptureMode.Window);
         Assert.Single(bindings, binding => binding.Mode == CaptureMode.FullScreen);
-        Assert.DoesNotContain(bindings, binding => binding.Mode == CaptureMode.Window);
         Assert.DoesNotContain(bindings, binding => binding.Mode == CaptureMode.Scrolling);
         Assert.Contains(bindings, binding => binding.GestureText == "Print Screen");
         Assert.Contains(bindings, binding => binding.GestureText == "Ctrl+Shift+1");
+        Assert.Contains(bindings, binding => binding.GestureText == "Ctrl+Shift+2");
+        Assert.Contains(bindings, binding => binding.GestureText == "Ctrl+Shift+4");
     }
 
     [Fact]
