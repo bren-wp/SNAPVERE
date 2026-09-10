@@ -2,9 +2,18 @@
 
 ## Status
 
-SNAPVERE keeps capture acquisition behind explicit service contracts. Monitor capture uses a resilient preferred/fallback path, while Window Capture uses Windows.Graphics.Capture directly because it needs a real top-level HWND capture item.
+SNAPVERE keeps capture acquisition behind explicit service contracts. Region and Screen Capture use a resilient monitor backend that prefers Windows.Graphics.Capture (WGC) and falls back to GDI for expected compatibility failures. Window Capture uses WGC directly because it targets a real HWND and must not silently degrade into a screen crop.
 
-Presentation code does not call native capture APIs directly. Region and Screen workflows consume `IScreenCaptureService`; Window Capture consumes `IWindowDiscovery`, `IWindowCaptureService` and `WindowTargetPicker`.
+Presentation code does not call native capture APIs directly. `Snapvere.Application` workflows own capture orchestration and persistence.
+
+## Supported Windows policy
+
+The application minimum remains Windows 10 version 1809 / build 17763.
+
+- **17763–19040:** GDI monitor compatibility path. Window Capture is unavailable because the production HWND/WGC path requires the newer capture contract used by SNAPVERE.
+- **19041 and later:** WGC/D3D11 is preferred for Region/Screen monitor acquisition with GDI fallback; WGC Window Capture is available.
+
+The application therefore does not raise its minimum OS simply because newer capture capabilities are unavailable on older supported Windows builds.
 
 ## Monitor backend policy
 
@@ -18,59 +27,71 @@ ResilientScreenCaptureService
                     BitBlt + GetDIBits
 ```
 
-Fallback is deliberately narrow. Expected platform/acquisition failures such as unsupported WGC, frame timeout, COM/native errors and invalid capture state can use GDI. Caller-requested cancellation is propagated and never converted into a second capture attempt. Programming errors such as invalid arguments are not silently hidden behind fallback.
+The WGC/D3D backend is lazy. Tray-first application startup does not initialize the D3D device, capture item or frame pool; those resources are created only when a capture workflow requests them.
 
-## Windows.Graphics.Capture monitor path
+Fallback is deliberately narrow. Expected unsupported/platform/native/timeout acquisition failures may use GDI. Caller-requested cancellation is propagated and never converted into a second capture attempt. Invalid arguments and other programming failures are not broadly hidden by `catch (Exception)` fallback logic.
 
-The monitor WGC backend:
+## WGC monitor acquisition
 
-1. requires Windows 10 build 19041 or later for deterministic cursor-control support;
+The monitor backend:
+
+1. checks the supported Windows/build policy;
 2. verifies `GraphicsCaptureSession.IsSupported()`;
 3. resolves the native monitor handle from physical display bounds;
-4. creates a D3D11 hardware device with BGRA support;
-5. projects that device to a WinRT `IDirect3DDevice`;
-6. creates a monitor `GraphicsCaptureItem` through `IGraphicsCaptureItemInterop`;
-7. creates a free-threaded `Direct3D11CaptureFramePool`;
-8. starts capture with explicit cursor inclusion/exclusion;
-9. waits up to two seconds for a frame;
-10. obtains the captured `ID3D11Texture2D`;
-11. copies it into a CPU-readable staging texture;
-12. maps row-pitched GPU memory into a packed BGRA8 byte buffer;
-13. rejects blank or dimension-mismatched frames;
-14. returns a validated `CaptureFrame`.
+4. creates a D3D11 device with BGRA support;
+5. projects the device to WinRT `IDirect3DDevice`;
+6. creates a monitor `GraphicsCaptureItem` through native interop;
+7. creates a free-threaded frame pool;
+8. applies the requested cursor-capture state where supported;
+9. starts the capture session;
+10. waits for a bounded first frame;
+11. obtains the `ID3D11Texture2D`;
+12. copies to a CPU-readable staging texture;
+13. maps row-pitched GPU memory into a BGRA8 byte buffer;
+14. validates dimensions/content contract;
+15. returns a validated `CaptureFrame`.
 
-The D3D/COM boundary is generated with Microsoft.Windows.CsWin32 plus source-generated COM interop. Native and WinRT resources are released deterministically where ownership is explicit.
+D3D/COM/WinRT objects are scoped to the capture operation and released when their ownership ends. Full-resolution frames are not retained by the long-lived tray/hotkey services.
 
-## Window Capture path
+## GDI compatibility acquisition
 
-Window Capture uses the same D3D11 device/readback machinery but obtains the capture item through `IGraphicsCaptureItemInterop.CreateForWindow`.
+`GdiScreenCaptureService` captures a physical monitor rectangle with `BitBlt`, converts it to top-down 32-bit BGRA through `GetDIBits`, optionally draws the Windows cursor with hotspot correction, and normalizes alpha.
 
-Before the picker opens, `Win32WindowDiscovery` snapshots visible capturable top-level windows in native Z-order. It filters SNAPVERE's own process, tool windows, invisible/cloaked windows, untitled windows and invalid/empty bounds. DWM extended-frame bounds are preferred so target chrome matches the actual rendered window footprint.
+GDI is a monitor fallback, not a fake Window Capture implementation. A screen crop cannot reliably reproduce an occluded window and therefore is not substituted for a failed HWND capture.
 
-The picker intentionally does not call `WindowFromPoint` after its always-on-top surfaces are visible. Instead, it hit-tests the frozen Z-order snapshot geometrically. This prevents a SNAPVERE picker overlay from becoming the selected target simply because it sits above the application the user is pointing at.
+## Window Capture
 
-For mixed-DPI and multi-monitor layouts, the picker creates one frozen borderless overlay per display. Each overlay converts between local DIPs and physical desktop pixels with that monitor's DPI. A shared target is then clipped/highlighted per monitor, including windows that span display boundaries or displays with negative desktop coordinates.
+Window Capture uses the same D3D11/readback machinery but creates its capture item from the chosen HWND through `IGraphicsCaptureItemInterop.CreateForWindow`.
 
-After selection, `WindowCaptureWorkflow` asks `IWindowCaptureService` for the selected HWND frame and sends the validated BGRA8 frame through the shared atomic PNG writer. Window Capture requires WGC support and therefore Windows 10 version 2004 / build 19041 or later.
+Before picker overlays exist, `Win32WindowDiscovery` snapshots visible capturable top-level windows in native Z-order. The discovery layer filters SNAPVERE's own process and unsuitable targets including invisible, cloaked, tool and invalid/empty windows. DWM extended-frame bounds are preferred when available.
 
-## Compatibility path
+`WindowTargetPicker` then freezes one desktop frame per active display and creates one DPI-aware overlay per monitor. Hover hit-testing is performed geometrically against the frozen Z-order list; it does not ask Windows which always-on-top picker window is under the pointer after the overlays have appeared.
 
-`GdiScreenCaptureService` captures a physical monitor rectangle with `BitBlt`, converts it to top-down 32-bit BGRA pixels using `GetDIBits`, optionally draws the current cursor with hotspot correction, and normalizes the GDI high byte to opaque alpha.
+A shared selected target is clipped/highlighted on every monitor it intersects, so windows spanning displays remain visually coherent even with mixed DPI or negative virtual-desktop coordinates.
 
-The GDI backend is isolated and is not the intended HDR/protected-content strategy. It exists for monitor compatibility and resilient fallback. It is not used as a fake replacement for real Window Capture because a screen crop cannot reliably reproduce an occluded window.
+After left-click selection, `WindowCaptureWorkflow` captures the HWND through WGC and persists the validated frame with `CaptureFileWriter`. Esc cancels without substituting another backend.
 
-## Supported Windows policy
+## Region Capture
 
-SNAPVERE keeps the application minimum at Windows 10 version 1809 / build 17763.
+`RegionCaptureWorkflow` freezes the primary display through `IScreenCaptureService`. The editor converts pointer/DIP interaction to physical pixels, crops the same frozen `CaptureFrame`, applies annotations in the image pipeline and then copies or saves the rendered result.
 
-- **17763–19040:** GDI monitor compatibility path; Window Capture is unavailable.
-- **19041 and later:** WGC/D3D11 preferred for monitor acquisition with GDI fallback; WGC Window Capture available.
+The desktop is not recaptured after selection. This preserves what the user saw in the frozen overlay and avoids time-of-selection drift.
 
-This avoids raising the minimum application OS solely because the newer capture paths are unavailable on earlier builds.
+## Screen Capture
 
-## CaptureFrame
+`ScreenCaptureWorkflow` captures the primary display and writes the validated frame directly through the atomic PNG writer. Current public UI does not expose all-monitors or monitor-under-cursor choices because those product options are not yet implemented and release-gated.
 
-Every backend produces a validated `CaptureFrame` containing:
+## Cursor preference
+
+Cursor capture is now a real local preference exposed in **Options / Preferences**.
+
+`CapturePreferencesService` stores `IncludeCursorOnCapture` in `%LOCALAPPDATA%\SNAPVERE\settings.json`. Region, Window and Screen workflows combine the explicit request with that user preference before invoking the final capture backend.
+
+WGC uses `GraphicsCaptureSession.IsCursorCaptureEnabled` where supported. GDI draws the cursor only when Windows reports it visible and its screen coordinates fall within the captured monitor. Window picker background/frozen targeting frames intentionally remain cursor-free because they are interaction surfaces, not final capture output.
+
+## CaptureFrame contract
+
+Every backend returns a validated `CaptureFrame` containing:
 
 - physical width and height;
 - explicit stride;
@@ -78,32 +99,36 @@ Every backend produces a validated `CaptureFrame` containing:
 - UTC capture timestamp;
 - source identifier.
 
-WGC monitor frames use a source identifier prefixed with `wgc:` and Window Capture frames use a window-specific WGC source identifier. Validation rejects empty dimensions, invalid stride and undersized pixel buffers before downstream image work.
+Validation rejects empty dimensions, invalid stride and undersized buffers before crop, annotation, clipboard or PNG operations.
 
-## Failure and cancellation semantics
+## Persistence
 
-`ResilientScreenCaptureService` falls back only for known monitor acquisition failures:
+`CaptureFileWriter` owns durable PNG persistence. Output is encoded to a temporary/staging path and then atomically moved to a collision-safe final filename under `Pictures\SNAPVERE`.
 
-- `PlatformNotSupportedException`;
-- `TimeoutException`;
-- `COMException`;
-- `Win32Exception`;
-- `InvalidOperationException`.
+Recent Captures enumerates a bounded recent subset rather than scanning unrelated locations. Uninstall deliberately preserves capture files.
 
-If the caller cancellation token is cancelled, `OperationCanceledException` is propagated and the fallback backend is not called. Unexpected programming failures are also propagated rather than hidden.
+## Failure semantics
 
-Window Capture surfaces WGC/platform failures to the application instead of silently substituting a screen crop. This keeps target semantics correct.
+For resilient monitor capture, expected compatibility/acquisition failures may fall back to GDI, including supported `PlatformNotSupportedException`, timeout, COM/native and invalid WGC acquisition states defined by the service policy.
 
-## Cursor
-
-Cursor inclusion is explicit per capture request. WGC uses `GraphicsCaptureSession.IsCursorCaptureEnabled` on build 19041+. GDI draws a cursor only when Windows reports it visible and its screen coordinates lie within the selected display rectangle. Current Region, Window and Screen UI entry points capture without the cursor.
+`OperationCanceledException` caused by the caller token propagates immediately. Window Capture surfaces WGC/platform acquisition failure rather than changing the meaning of the requested target.
 
 ## Protected content
 
-SNAPVERE does not attempt to bypass DRM or operating-system capture restrictions. A blocked/blank WGC frame is treated as an acquisition failure. No backend is designed to defeat protected-content enforcement.
+SNAPVERE does not attempt to bypass DRM or operating-system capture restrictions. Protected, blocked or blank content is handled according to normal backend failure behavior; no implementation is designed to defeat Windows protection mechanisms.
 
 ## Automated validation
 
-CI validates WGC source generation and compilation on x64 and x86, self-contained publishing, Setup/Portable packaging and application lifecycle. Unit tests cover preferred-backend success, expected monitor fallback behavior, cancellation propagation, Window Capture workflow persistence and overlay-safe Z-order hit testing.
+CI/release QA validates:
 
-Installed and Portable package lifecycle tests materialize both the Region editor and Window picker WinUI surfaces on x64 and x86. The hosted Windows CI lifecycle is not considered proof of a real interactive end-user WGC screenshot; actual desktop capture still depends on Windows capture policy, GPU/desktop state and protected-content rules.
+- x64 and x86 compilation;
+- unit tests for geometry, persistence, backend fallback/cancellation and Window targeting;
+- self-contained publish;
+- Setup and Portable packaging;
+- tray-first startup probe;
+- Region editor materialization;
+- Window picker materialization;
+- normal installed and Portable startup survival;
+- uninstall contract and cleanup.
+
+Hosted CI runtime probes prove that product surfaces and package lifecycle materialize correctly. They are not treated as proof that an arbitrary protected or interactive end-user desktop can be captured on the hosted runner.

@@ -7,10 +7,12 @@ All notable SNAPVERE changes are documented here.
 ### Planned
 
 - coordinated cross-monitor Region Capture
+- monitor-under-cursor and all-monitors Screen Capture options
 - Scrolling Capture
-- richer annotation tools including text and blur/pixelate
-- full History, Pin to Screen and OCR
+- richer annotation tools including text, ellipse, blur/pixelate and numbered steps
+- expanded History, Pin to Screen and OCR
 - automatic update mechanism
+- Authenticode signing
 
 ## [0.0.4] - 2026-09-10
 
@@ -18,36 +20,51 @@ All notable SNAPVERE changes are documented here.
 
 - true tray-first normal startup that keeps the Capture Center hidden
 - left-click notification-area action that starts Region Capture immediately
-- branded programmatic WinUI tray flyout for right-click actions
-- new violet SNAPVERE shard/feather runtime tray icon
-- branded About SNAPVERE window
-- direct tray actions for Region, Window, Screen, capture folder, Options/Recent, About and Exit
+- branded programmatic WinUI tray flyout for right-click quick actions
+- separate Recent captures and Options / Preferences tray actions
+- real secondary `OptionsWindow` rather than routing the tray back to the capture dashboard
+- implemented `Start SNAPVERE with Windows` per-user preference
+- implemented `Include cursor on capture` preference applied by Region, Window and Screen workflows
+- local atomic `CapturePreferencesService` storage under `%LOCALAPPDATA%\SNAPVERE\settings.json`
+- real Recent Captures section with refresh, open capture and open-folder actions
+- stable Portable-launcher path handoff for Windows startup registration
 - dedicated installed and Portable `TRAY_READY` runtime probe
-- repository-maintained tray-first, tray-menu and Region-editor SVG documentation illustrations
-- refreshed canonical symbol and README wordmarks
+- repository-maintained tray-first, tray-menu and Region-editor SVG workflow illustrations
+- refreshed violet SNAPVERE shard/feather identity, README wordmarks and branded tray surfaces
+- `docs/TRAY-UX.md`, `docs/WINDOW-CAPTURE.md` and `docs/SETTINGS.md`
 - v0.0.4 release automation and package metadata
 
 ### Changed
 
-- the notification-area icon is now the primary persistent application surface instead of an always-open launcher
+- the notification-area icon is the primary persistent application surface instead of an always-open launcher
 - normal application launch initializes the hotkey/tray hosts without activating the Capture Center
-- right-click tray interaction uses SNAPVERE's branded WinUI command surface instead of the former native text popup menu
-- tray event dispatch is routed through the application WinUI dispatcher rather than depending on launcher visibility
-- README and installation documentation now describe the actual tray-first product workflow
+- right-click tray interaction uses SNAPVERE's branded WinUI command surface instead of a generic native text popup
+- tray event dispatch is routed through the application WinUI `DispatcherQueue`
+- `CaptureCenterWindow` remains a hidden capture coordinator; capture actions belong to tray/hotkeys/overlays
+- WGC/D3D monitor acquisition is documented as the preferred supported backend with GDI compatibility fallback
+- documentation now reflects the real Window Capture multi-monitor picker, tray startup model, local settings, uninstall startup cleanup and current limitations
+- README explicitly identifies repository SVGs as workflow illustrations rather than pixel-identical runtime screenshots
 - product tagline for current branding is `Capture. Edit. Done.`
 
 ### Fixed
 
-- Portable validation now recognizes the tray-only startup probe
+- Portable validation recognizes the tray-only startup probe
 - normal package QA explicitly validates that the application remains alive in hidden tray-first mode
 - left-click/double-click tray messages are debounced so a double-click does not trigger duplicate Region captures
+- tray Options no longer opens the old visible capture-launcher dashboard
+- installed Windows startup registration is removed by Setup uninstall when it points exactly to the validated installed `Snapvere.exe`
+- Portable Windows startup registration no longer risks pointing to a temporary extracted child executable
+- stale architecture/security documentation that still described older 0.0.1/0.0.2 backend/startup behavior
 
 ### Security
 
-- no telemetry or network dependency was added by the tray-first redesign
+- no telemetry, cloud-upload or network dependency was added by the tray-first redesign
+- settings remain local and are written through an atomic temp-file replacement path
 - Setup uninstall remains owned by the same installed `SNAPVERE-Setup.exe --uninstall`
+- uninstall removes `Run\SNAPVERE` only when it exactly matches the validated installed executable, preserving unrelated/Portable registrations
+- package lifecycle now creates an installed startup registration and requires uninstall to remove it
 - CI continues to reject standalone `uninstall*.exe` and Inno-style `unins*.exe` payloads
-- x64/x86 release publication remains gated by install, tray, Region, Window, Portable and uninstall lifecycle validation
+- x64/x86 release publication remains gated by build/test, install, tray, Region, Window, Portable and uninstall lifecycle validation
 - release artifacts continue to publish SHA-256 checksums
 
 ## [0.0.3] - 2026-09-10

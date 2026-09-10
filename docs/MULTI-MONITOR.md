@@ -2,27 +2,27 @@
 
 ## Status
 
-Native monitor enumeration and pure virtual-desktop geometry are implemented as the first multi-monitor foundation. Capture backend integration and manual QA across physical monitor configurations remain in progress.
+SNAPVERE now uses the Windows virtual desktop as a physical-pixel coordinate space across display discovery and Window Capture. The Window picker creates one frozen overlay per monitor and supports mixed-DPI layouts, negative coordinates and windows spanning display boundaries.
 
-## Rules
+Region Capture is intentionally still single-display: it freezes the primary display and constrains selection to that frame. Coordinated cross-monitor Region composition is not exposed as a completed feature.
 
-SNAPVERE treats the Windows virtual desktop as a physical-pixel coordinate space. The primary monitor is not assumed to start at the virtual origin, and monitors may exist left of or above it, producing negative coordinates.
+Screen Capture currently captures the primary display. Monitor-under-cursor and all-monitors options remain deferred until implemented and release-gated.
+
+## Display model
 
 Each `DisplayDescriptor` records:
 
-- physical monitor bounds
-- work area
-- effective DPI X/Y
-- primary-display flag
-- stable Windows device identifier when available
+- physical monitor bounds;
+- work area;
+- effective DPI X/Y;
+- primary-display flag;
+- stable Windows device identifier when available.
 
-`Win32DisplayDiscovery` uses `EnumDisplayMonitors` and `GetMonitorInfoW` for monitor geometry. Effective monitor DPI is read through `GetDpiForMonitor` with a conservative 96-DPI fallback if DPI discovery is unavailable for a specific monitor.
+`Win32DisplayDiscovery` uses `EnumDisplayMonitors` and `GetMonitorInfoW`. Effective monitor DPI is obtained through Windows DPI APIs with a conservative 96-DPI fallback when discovery is unavailable for a specific monitor.
 
-## Virtual desktop bounds
+## Virtual desktop rules
 
-`VirtualDesktopLayout.GetBounds` computes a union across all monitor rectangles. It does not use resolution assumptions, monitor ordering, or primary-monitor anchoring.
-
-Example:
+The primary monitor is never assumed to begin at `(0, 0)`. A display may sit left of or above primary and therefore use negative X/Y coordinates.
 
 ```text
           [ portrait monitor ]
@@ -32,34 +32,75 @@ Example:
  x = -1920       x = 0
 ```
 
-The resulting virtual desktop may therefore begin at a negative X and/or negative Y coordinate.
+`VirtualDesktopLayout.GetBounds` computes the union of monitor rectangles without assuming resolution, ordering or primary anchoring.
 
-## Hit testing
+Monitor hit testing treats left/top edges as inclusive and right/bottom edges as exclusive so one physical boundary pixel does not belong to two adjacent displays.
 
-Monitor hit testing treats left/top edges as inclusive and right/bottom edges as exclusive. This avoids assigning a boundary pixel to two adjacent monitors.
+## DPI contract
 
-## DPI
+Capture geometry ultimately uses physical pixels. WinUI pointer positions are logical/DIP values and must cross an explicit DPI conversion before entering capture geometry.
 
-All capture engine geometry ultimately uses physical pixels. XAML/logical coordinates must cross an explicit DPI transform before entering capture geometry. No capture subsystem may assume 96 DPI.
+Each Window picker overlay uses the DPI for the display it covers. The selected HWND bounds remain desktop-physical coordinates; individual overlays clip and convert the shared target into their own local presentation coordinates.
 
-Automated coverage currently includes 100%, 125%, 150%, 200%, negative coordinates, mixed-axis DPI, adjacent-monitor edge ownership, a monitor left of primary and a portrait monitor above primary.
+Automated geometry coverage includes common scale factors, mixed-axis DPI, adjacent-monitor boundaries and negative virtual origins.
 
-## Manual QA matrix before 1.0
+## Window Capture across monitors
 
-- one monitor
-- two monitors
-- three or more monitors
-- primary in center/right positions
-- monitor left of primary
-- monitor above primary
-- portrait orientation
-- 100/125/150/175/200% scaling combinations
-- HDR + SDR combinations
-- x64 and ARM64 where hardware is available
+Window Capture performs these steps before any always-on-top picker window exists:
 
-## Next implementation
+1. enumerate active displays;
+2. snapshot capturable windows in native Z-order;
+3. freeze one desktop frame per display;
+4. create one `WindowTargetOverlayWindow` per display;
+5. show overlays;
+6. hit-test the frozen window list geometrically;
+7. project the shared target highlight onto every display the window intersects.
 
-1. Map Windows.Graphics.Capture targets to `DisplayDescriptor` instances.
-2. Capture physical monitor frames without coordinate conversion drift.
-3. Build freeze-frame region selection across the complete virtual desktop.
-4. Validate cursor placement across mixed-DPI monitor boundaries.
+This architecture avoids selecting SNAPVERE's own overlay and remains stable for a target window that spans two monitors.
+
+A display can use a negative physical origin; no selection code requires a positive coordinate system.
+
+## Region Capture boundary
+
+Current Region Capture freezes one primary-display frame. The Region overlay converts local WinUI interaction into physical pixels relative to that display and then adds the display's desktop origin. The resulting crop is still constrained to the selected display frame.
+
+Cross-monitor Region capture requires more than simply increasing an overlay rectangle: SNAPVERE would need a coordinated frozen virtual-desktop composition, per-display DPI mapping and deterministic crop/render behavior across display seams. That work remains intentionally deferred.
+
+## Screen Capture boundary
+
+Current Screen Capture uses the primary `DisplayDescriptor`. The codebase has the display-discovery and virtual-desktop primitives needed for future monitor-under-cursor/all-monitor choices, but those choices are not shown in product UI today.
+
+## Cursor behavior
+
+The final Region/Window/Screen capture path can include the cursor through the implemented local preference. Window picker background frames remain cursor-free because the picker is a targeting UI surface, not final image output.
+
+Future cross-monitor cursor work must preserve hotspot placement and physical coordinates across mixed-DPI display boundaries.
+
+## Runtime and QA coverage
+
+Automated coverage includes:
+
+- negative virtual desktop coordinates;
+- monitor union and hit-test boundaries;
+- physical/logical DPI transforms;
+- one frozen Window picker overlay per display;
+- window targets that intersect multiple displays;
+- overlay-safe frozen Z-order hit testing;
+- x64/x86 Window picker runtime materialization in Installed and Portable packages.
+
+Hardware/manual QA remains valuable for combinations hosted CI cannot faithfully emulate:
+
+- three or more physical monitors;
+- primary in center/right positions;
+- portrait/rotated displays;
+- 100/125/150/175/200% mixed scaling;
+- HDR + SDR combinations;
+- unusual GPU/driver configurations.
+
+## Remaining work
+
+- coordinated cross-monitor Region freeze and selection;
+- monitor-under-cursor Screen Capture;
+- all-monitors / virtual-desktop Screen Capture;
+- broader physical-hardware mixed-DPI validation;
+- portrait/rotation-specific polish.
