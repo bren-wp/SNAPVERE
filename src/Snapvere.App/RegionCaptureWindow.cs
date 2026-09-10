@@ -1493,10 +1493,10 @@ public sealed class RegionCaptureWindow : Window
     private static string GetUserFacingError(Exception exception)
         => exception switch
         {
-            UnauthorizedAccessException => "Windows denied access to the capture folder or clipboard.",
-            IOException => "The selected region was captured, but the PNG file or clipboard stream could not be completed.",
-            ArgumentException => "The selected region is no longer valid. Select the region again.",
+            UnauthorizedAccessException => L("RegionAccessDenied"),
+            IOException => L("RegionIoFailure"),
+            ArgumentException => L("RegionInvalidSelection"),
             InvalidOperationException => exception.Message,
-            _ => "SNAPVERE could not complete the region capture. Press Esc and try again."
+            _ => L("RegionCaptureFailed")
         };
 }
