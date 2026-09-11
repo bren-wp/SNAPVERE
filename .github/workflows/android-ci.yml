@@ -41,6 +41,23 @@ jobs:
             echo 'Android source is not on this revision yet; build is intentionally skipped.'
           fi
 
+      - name: Validate Android privacy and service contract
+        if: steps.project.outputs.exists == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest='android/app/src/main/AndroidManifest.xml'
+          if grep -q 'android.permission.INTERNET' "$manifest"; then
+            echo 'INTERNET permission is forbidden for the local-first Android app.' >&2
+            exit 1
+          fi
+          grep -q 'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION' "$manifest"
+          grep -q 'android:foregroundServiceType="mediaProjection"' "$manifest"
+          grep -q 'android:usesCleartextTraffic="false"' "$manifest"
+          grep -q 'android:allowBackup="false"' "$manifest"
+          grep -A4 'android:name=".CaptureService"' "$manifest" | grep -q 'android:exported="false"'
+          echo 'Android privacy/service manifest contract validated.'
+
       - name: Setup JDK 17
         if: steps.project.outputs.exists == 'true'
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -64,11 +81,11 @@ jobs:
           test -x "$ANDROID_HOME/build-tools/35.0.0/zipalign"
           echo "ANDROID_HOME=$ANDROID_HOME"
 
-      - name: Lint and build debug APK
+      - name: Lint and build debug and release variants
         if: steps.project.outputs.exists == 'true'
         shell: bash
         run: |
-          gradle -p android --no-daemon clean lintDebug assembleDebug
+          gradle -p android --no-daemon clean lintDebug assembleDebug assembleRelease
           cp android/app/build/outputs/apk/debug/app-debug.apk android/SNAPVERE-Android-0.0.9-debug.apk
 
       - name: Verify APK signature, alignment and digest
