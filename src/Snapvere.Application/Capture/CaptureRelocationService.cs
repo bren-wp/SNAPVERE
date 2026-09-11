@@ -6,13 +6,20 @@ namespace Snapvere.Application.Capture;
 /// <summary>
 /// Moves a completed capture to a user-selected PNG destination without ever
 /// exposing a partially copied destination file. The destination is populated
-/// through a sibling temporary file and then atomically replaced. If Windows
-/// cannot prove that the source and destination are different files after the
-/// destination is complete, the original is intentionally retained rather
-/// than risking deletion through an alias, junction, hard link or mapped path.
+/// through a sibling temporary file and then atomically replaced. Source
+/// deletion is tied to the exact open file handle that supplied the copied
+/// bytes; if SNAPVERE cannot obtain that delete-capable snapshot handle, the
+/// original is intentionally retained as a recovery copy.
 /// </summary>
 public sealed class CaptureRelocationService
 {
+    private const uint GenericRead = 0x80000000;
+    private const uint DeleteAccess = 0x00010000;
+    private const uint FileShareRead = 0x00000001;
+    private const uint OpenExisting = 3;
+    private const uint FileAttributeNormal = 0x00000080;
+    private const uint FileFlagOverlapped = 0x40000000;
+
     public async Task<CaptureSaveResult> RelocateAsync(
         CaptureSaveResult capture,
         string destinationPath,
@@ -60,21 +67,32 @@ public sealed class CaptureRelocationService
 
         try
         {
+            // Prefer a handle that combines read + DELETE access while sharing
+            // reads only. While this handle remains open, another process
+            // cannot replace, rename, truncate or delete the source path. That
+            // lets deletion be applied to the exact file object that supplied
+            // the copied bytes instead of performing a later path-based delete.
+            await using var source = OpenSourceSnapshot(sourcePath, out var canDeleteByHandle);
+            var copiedSourceIdentity = TryGetFileIdentity(source.SafeFileHandle);
+
             await CopyToTemporaryFileAsync(
-                sourcePath,
+                source,
                 temporaryPath,
                 cancellationToken).ConfigureAwait(false);
 
             cancellationToken.ThrowIfCancellationRequested();
             File.Move(temporaryPath, finalPath, overwrite: true);
 
-            // Re-check identity after the atomic destination replacement. This
-            // closes the dangerous case where two different path strings refer
-            // to the same underlying file. Delete the source only when Windows
-            // positively identifies source and destination as different files.
-            if (GetFileRelationship(sourcePath, finalPath) == FileRelationship.Different)
+            // If the stronger DELETE-capable handle could not be obtained (for
+            // example because another reader denies delete sharing), leave the
+            // original in place. The selected destination is already complete,
+            // and a duplicate recovery copy is safer than deleting by pathname.
+            if (canDeleteByHandle &&
+                copiedSourceIdentity is { } copiedIdentity &&
+                TryGetFileIdentity(finalPath) is { } destinationIdentity &&
+                destinationIdentity != copiedIdentity)
             {
-                TryDeleteCompletedSource(sourcePath);
+                TryMarkOpenedSourceForDeletion(source.SafeFileHandle);
             }
         }
         catch
@@ -86,21 +104,54 @@ public sealed class CaptureRelocationService
         return capture with { FilePath = finalPath };
     }
 
-    private static async Task CopyToTemporaryFileAsync(
-        string sourcePath,
-        string temporaryPath,
-        CancellationToken cancellationToken)
+    private static FileStream OpenSourceSnapshot(string sourcePath, out bool canDeleteByHandle)
     {
-        // The completed capture is treated as an immutable snapshot while it
-        // is copied. Other readers may inspect it, but writes, truncation and
-        // deletion are denied until this stream is disposed.
-        await using var source = new FileStream(
+        var handle = NativeMethods.CreateFile(
+            sourcePath,
+            GenericRead | DeleteAccess,
+            FileShareRead,
+            nint.Zero,
+            OpenExisting,
+            FileAttributeNormal | FileFlagOverlapped,
+            nint.Zero);
+
+        if (!handle.IsInvalid)
+        {
+            try
+            {
+                canDeleteByHandle = true;
+                return new FileStream(
+                    handle,
+                    FileAccess.Read,
+                    bufferSize: 64 * 1024,
+                    isAsync: true);
+            }
+            catch
+            {
+                handle.Dispose();
+                throw;
+            }
+        }
+
+        // Some filesystems, redirected folders or concurrently-open readers may
+        // refuse DELETE access even though reading is valid. Fall back to a
+        // read-only snapshot and deliberately preserve the source after copy.
+        handle.Dispose();
+        canDeleteByHandle = false;
+        return new FileStream(
             sourcePath,
             FileMode.Open,
             FileAccess.Read,
             FileShare.Read,
             bufferSize: 64 * 1024,
             useAsync: true);
+    }
+
+    private static async Task CopyToTemporaryFileAsync(
+        FileStream source,
+        string temporaryPath,
+        CancellationToken cancellationToken)
+    {
         await using var destination = new FileStream(
             temporaryPath,
             FileMode.CreateNew,
@@ -133,15 +184,14 @@ public sealed class CaptureRelocationService
                 FileAccess.Read,
                 FileShare.ReadWrite | FileShare.Delete);
 
-            if (!NativeMethods.GetFileInformationByHandle(firstHandle, out var first) ||
-                !NativeMethods.GetFileInformationByHandle(secondHandle, out var second))
+            var first = TryGetFileIdentity(firstHandle);
+            var second = TryGetFileIdentity(secondHandle);
+            if (first is null || second is null)
             {
                 return FileRelationship.Unknown;
             }
 
-            return first.VolumeSerialNumber == second.VolumeSerialNumber &&
-                   first.FileIndexHigh == second.FileIndexHigh &&
-                   first.FileIndexLow == second.FileIndexLow
+            return first.Value == second.Value
                 ? FileRelationship.Same
                 : FileRelationship.Different;
         }
@@ -155,20 +205,50 @@ public sealed class CaptureRelocationService
         }
     }
 
-    private static void TryDeleteCompletedSource(string path)
+    private static FileIdentity? TryGetFileIdentity(string path)
     {
         try
         {
-            File.Delete(path);
+            using var handle = File.OpenHandle(
+                path,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.ReadWrite | FileShare.Delete);
+            return TryGetFileIdentity(handle);
         }
         catch (IOException)
         {
-            // Destination is already complete. Keep the source as a recovery copy.
+            return null;
         }
         catch (UnauthorizedAccessException)
         {
-            // Destination is already complete. Keep the source as a recovery copy.
+            return null;
         }
+    }
+
+    private static FileIdentity? TryGetFileIdentity(SafeFileHandle handle)
+    {
+        if (!NativeMethods.GetFileInformationByHandle(handle, out var information))
+        {
+            return null;
+        }
+
+        return new FileIdentity(
+            information.VolumeSerialNumber,
+            information.FileIndexHigh,
+            information.FileIndexLow);
+    }
+
+    private static void TryMarkOpenedSourceForDeletion(SafeFileHandle sourceHandle)
+    {
+        var disposition = new FileDispositionInfo { DeleteFile = true };
+        _ = NativeMethods.SetFileInformationByHandle(
+            sourceHandle,
+            FileInfoByHandleClass.FileDispositionInfo,
+            ref disposition,
+            (uint)Marshal.SizeOf<FileDispositionInfo>());
+        // Destination is already complete. If Windows refuses the disposition
+        // change, closing the handle simply preserves the source recovery copy.
     }
 
     private static void TryDeleteTemporaryFile(string path)
@@ -188,11 +268,25 @@ public sealed class CaptureRelocationService
         }
     }
 
+    private readonly record struct FileIdentity(
+        uint VolumeSerialNumber,
+        uint FileIndexHigh,
+        uint FileIndexLow);
+
     private enum FileRelationship
     {
         Unknown,
         Same,
         Different
+    }
+
+    private enum FileInfoByHandleClass
+    {
+        FileBasicInfo = 0,
+        FileStandardInfo = 1,
+        FileNameInfo = 2,
+        FileRenameInfo = 3,
+        FileDispositionInfo = 4
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -217,12 +311,37 @@ public sealed class CaptureRelocationService
         public uint FileIndexLow;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct FileDispositionInfo
+    {
+        [MarshalAs(UnmanagedType.Bool)]
+        public bool DeleteFile;
+    }
+
     private static class NativeMethods
     {
+        [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
+        internal static extern SafeFileHandle CreateFile(
+            string fileName,
+            uint desiredAccess,
+            uint shareMode,
+            nint securityAttributes,
+            uint creationDisposition,
+            uint flagsAndAttributes,
+            nint templateFile);
+
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool GetFileInformationByHandle(
             SafeFileHandle fileHandle,
             out ByHandleFileInformation fileInformation);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool SetFileInformationByHandle(
+            SafeFileHandle fileHandle,
+            FileInfoByHandleClass fileInformationClass,
+            ref FileDispositionInfo fileInformation,
+            uint bufferSize);
     }
 }
