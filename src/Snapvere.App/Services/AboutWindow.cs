@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Snapvere.Shared;
@@ -19,17 +20,28 @@ public sealed class AboutWindow : Window
     private const string DeveloperWebsiteUrl = "https://brendigo.com";
 
     private readonly string _languageCode;
+    private readonly TextBlock _supportStatus;
     private bool _sizeApplied;
 
     public AboutWindow()
     {
         _languageCode = SnapvereLanguageState.CurrentLanguageCode;
+        _supportStatus = Text(string.Empty, 9.5, Success);
+        _supportStatus.TextWrapping = TextWrapping.Wrap;
+        _supportStatus.Visibility = Visibility.Collapsed;
+        AutomationProperties.SetLiveSetting(_supportStatus, AutomationLiveSetting.Assertive);
+
         Title = SnapvereLocalization.T("About", _languageCode);
         Content = BuildContent();
         Activated += AboutWindow_Activated;
     }
 
     private string L(string key) => SnapvereLocalization.T(key, _languageCode);
+
+    private string SupportCopiedAnnouncement()
+        => string.Equals(_languageCode, "hr", StringComparison.OrdinalIgnoreCase)
+            ? $"Adresa podrške {SupportEmailAddress} kopirana je u međuspremnik."
+            : $"Support email {SupportEmailAddress} copied to the clipboard.";
 
     private FrameworkElement BuildContent()
     {
@@ -117,20 +129,20 @@ public sealed class AboutWindow : Window
 
         content.Children.Add(Text(L("CommercialSoftware"), 9.5, Subtle));
 
+        // Keep links in a single vertical flow. This costs a little vertical
+        // space, which the existing ScrollViewer handles, but prevents long
+        // localized labels and the support address from becoming unreachable
+        // when Windows text scaling increases their width.
         var links = new StackPanel { Spacing = 8 };
-        var contactLinks = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        contactLinks.Children.Add(CreateLinkButton("snapvere.com", ProductWebsiteUrl));
-        contactLinks.Children.Add(CreateLinkButton(
+        links.Children.Add(CreateLinkButton("snapvere.com", ProductWebsiteUrl));
+        links.Children.Add(CreateLinkButton(
             $"{L("Support")} · {SupportEmailAddress}",
             SupportEmailUri,
             SupportEmailAddress));
-        links.Children.Add(contactLinks);
-
-        var legalLinks = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        legalLinks.Children.Add(CreateLinkButton(L("Privacy"), PrivacyUrl));
-        legalLinks.Children.Add(CreateLinkButton(L("Terms"), TermsUrl));
-        legalLinks.Children.Add(CreateLinkButton("brendigo.com", DeveloperWebsiteUrl));
-        links.Children.Add(legalLinks);
+        links.Children.Add(_supportStatus);
+        links.Children.Add(CreateLinkButton(L("Privacy"), PrivacyUrl));
+        links.Children.Add(CreateLinkButton(L("Terms"), TermsUrl));
+        links.Children.Add(CreateLinkButton("brendigo.com", DeveloperWebsiteUrl));
         content.Children.Add(links);
 
         card.Child = new ScrollViewer
@@ -163,14 +175,19 @@ public sealed class AboutWindow : Window
         return root;
     }
 
-    private static Button CreateLinkButton(
+    private Button CreateLinkButton(
         string text,
         string url,
         string? clipboardFallbackText = null)
     {
+        var label = Text(text, 10, Strong);
+        label.TextWrapping = TextWrapping.Wrap;
+
         var button = new Button
         {
-            Content = text,
+            Content = label,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Left,
             Padding = new Thickness(11, 6, 11, 6),
             CornerRadius = new CornerRadius(9),
             Background = Brush(0xFF, 0x16, 0x18, 0x22),
@@ -199,15 +216,21 @@ public sealed class AboutWindow : Window
                     package.SetText(clipboardFallbackText);
                     Clipboard.SetContent(package);
                     Clipboard.Flush();
-                    button.Content = $"✓ {clipboardFallbackText}";
-                    AutomationProperties.SetName(button, clipboardFallbackText);
+
+                    var announcement = SupportCopiedAnnouncement();
+                    label.Text = $"✓ {clipboardFallbackText}";
+                    AutomationProperties.SetName(button, announcement);
+                    AutomationProperties.SetHelpText(button, announcement);
+                    _supportStatus.Text = announcement;
+                    _supportStatus.Visibility = Visibility.Visible;
                 }
                 catch (Exception clipboardException) when (
                     clipboardException is System.Runtime.InteropServices.COMException or InvalidOperationException)
                 {
                     StartupDiagnostics.Record("Copy support email fallback", clipboardException);
-                    button.Content = clipboardFallbackText;
+                    label.Text = clipboardFallbackText;
                     AutomationProperties.SetName(button, clipboardFallbackText);
+                    AutomationProperties.SetHelpText(button, clipboardFallbackText);
                 }
             }
         };
