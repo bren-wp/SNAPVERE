@@ -1,4 +1,7 @@
 using System.IO.Compression;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using Snapvere.Packaging;
 
 namespace Snapvere.UnitTests;
@@ -100,8 +103,8 @@ public sealed class EmbeddedPayloadTests
 
             File.WriteAllText(Path.Combine(directory, ".ready"), "ready");
 
-            using var verificationPayload = BuildZip(("Snapvere.exe", "binary"), ("data/readme.txt", "hello"));
-            Assert.True(EmbeddedPayload.IsExtractedPayloadIntact(verificationPayload, directory, [".ready"]));
+            using var manifest = BuildIntegrityManifest(("Snapvere.exe", "binary"), ("data/readme.txt", "hello"));
+            Assert.True(EmbeddedPayload.IsExtractedPayloadIntact(manifest, directory, [".ready"]));
         }
         finally
         {
@@ -110,7 +113,7 @@ public sealed class EmbeddedPayloadTests
     }
 
     [Fact]
-    public void IsExtractedPayloadIntact_RejectsTamperedCachedFile()
+    public void IsExtractedPayloadIntact_RejectsTamperedCachedFileWithSameLength()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"snapvere-payload-{Guid.NewGuid():N}");
 
@@ -123,8 +126,8 @@ public sealed class EmbeddedPayloadTests
 
             File.WriteAllText(Path.Combine(directory, "Snapvere.exe"), "tampered");
 
-            using var verificationPayload = BuildZip(("Snapvere.exe", "original"), ("data/readme.txt", "hello"));
-            Assert.False(EmbeddedPayload.IsExtractedPayloadIntact(verificationPayload, directory));
+            using var manifest = BuildIntegrityManifest(("Snapvere.exe", "original"), ("data/readme.txt", "hello"));
+            Assert.False(EmbeddedPayload.IsExtractedPayloadIntact(manifest, directory));
         }
         finally
         {
@@ -146,8 +149,8 @@ public sealed class EmbeddedPayloadTests
 
             File.Delete(Path.Combine(directory, "data", "readme.txt"));
 
-            using var verificationPayload = BuildZip(("Snapvere.exe", "binary"), ("data/readme.txt", "hello"));
-            Assert.False(EmbeddedPayload.IsExtractedPayloadIntact(verificationPayload, directory));
+            using var manifest = BuildIntegrityManifest(("Snapvere.exe", "binary"), ("data/readme.txt", "hello"));
+            Assert.False(EmbeddedPayload.IsExtractedPayloadIntact(manifest, directory));
         }
         finally
         {
@@ -169,8 +172,8 @@ public sealed class EmbeddedPayloadTests
 
             File.WriteAllText(Path.Combine(directory, "unexpected.dll"), "injected");
 
-            using var verificationPayload = BuildZip(("Snapvere.exe", "binary"), ("data/readme.txt", "hello"));
-            Assert.False(EmbeddedPayload.IsExtractedPayloadIntact(verificationPayload, directory));
+            using var manifest = BuildIntegrityManifest(("Snapvere.exe", "binary"), ("data/readme.txt", "hello"));
+            Assert.False(EmbeddedPayload.IsExtractedPayloadIntact(manifest, directory));
         }
         finally
         {
@@ -186,10 +189,29 @@ public sealed class EmbeddedPayloadTests
         try
         {
             Directory.CreateDirectory(directory);
-            using var payload = BuildZip(("Snapvere.exe", "binary"));
+            using var manifest = BuildIntegrityManifest(("Snapvere.exe", "binary"));
 
             Assert.Throws<ArgumentException>(() =>
-                EmbeddedPayload.IsExtractedPayloadIntact(payload, directory, ["../outside.txt"]));
+                EmbeddedPayload.IsExtractedPayloadIntact(manifest, directory, ["../outside.txt"]));
+        }
+        finally
+        {
+            EmbeddedPayload.DeleteDirectoryBestEffort(directory);
+        }
+    }
+
+    [Fact]
+    public void IsExtractedPayloadIntact_RejectsManifestPathTraversal()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"snapvere-payload-{Guid.NewGuid():N}");
+
+        try
+        {
+            Directory.CreateDirectory(directory);
+            using var manifest = BuildIntegrityManifest(("../outside.txt", "blocked"));
+
+            Assert.Throws<InvalidDataException>(() =>
+                EmbeddedPayload.IsExtractedPayloadIntact(manifest, directory));
         }
         finally
         {
@@ -212,5 +234,28 @@ public sealed class EmbeddedPayloadTests
 
         stream.Position = 0;
         return stream;
+    }
+
+    private static MemoryStream BuildIntegrityManifest(params (string Name, string Content)[] entries)
+    {
+        var files = entries
+            .Select(entry =>
+            {
+                var bytes = Encoding.UTF8.GetBytes(entry.Content);
+                return new
+                {
+                    Path = entry.Name,
+                    Length = (long)bytes.Length,
+                    Sha256 = Convert.ToHexString(SHA256.HashData(bytes))
+                };
+            })
+            .ToArray();
+
+        var json = JsonSerializer.Serialize(new
+        {
+            FormatVersion = 1,
+            Files = files
+        });
+        return new MemoryStream(Encoding.UTF8.GetBytes(json));
     }
 }
