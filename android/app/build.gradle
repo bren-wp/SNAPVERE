@@ -1,0 +1,54 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.snapvere.android'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.snapvere.android'
+        minSdk 29
+        targetSdk 36
+        versionCode 9
+        versionName '0.0.9'
+
+        testInstrumentationRunner 'android.test.InstrumentationTestRunner'
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix '.debug'
+            versionNameSuffix '-debug'
+        }
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError true
+        checkReleaseBuilds true
+        warningsAsErrors true
+    }
+
+    packaging {
+        resources {
+            excludes += ['/META-INF/{AL2.0,LGPL2.1}']
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.activity:activity:1.13.0'
+    // Core 1.19.0 requires compileSdk 37 and AGP 9.1; this project intentionally stays on the AGP 8.10.1 / SDK 36 compatibility line.
+    //noinspection GradleDependency
+    implementation 'androidx.core:core:1.18.0'
+}

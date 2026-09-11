@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SNAPVERE</string>
+    <string name="tagline">Capture. Edit. Done.</string>
+    <string name="local_first">LOCAL-FIRST</string>
+    <string name="local_first_description">Screenshots stay on this device. No account, cloud upload, analytics or telemetry.</string>
+    <string name="capture_screen">Capture screen</string>
+    <string name="capture_screen_description">Android will show its system screen-capture consent before every capture.</string>
+    <string name="open_latest">Open latest capture</string>
+    <string name="share_latest">Share latest capture</string>
+    <string name="capture_ready">Ready for a local screen capture.</string>
+    <string name="capture_requesting">Waiting for Android screen-capture consent…</string>
+    <string name="capture_cancelled">Screen capture was cancelled.</string>
+    <string name="capture_background_failed">SNAPVERE could not move behind the screen you want to capture.</string>
+    <string name="capture_saved">Saved to Pictures/SNAPVERE: %1$s</string>
+    <string name="capture_failed">Screen capture failed: %1$s</string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="no_capture">No SNAPVERE capture has been created yet.</string>
+    <string name="open_failed">Android could not open the saved capture.</string>
+    <string name="share_failed">Android could not share the saved capture.</string>
+    <string name="notification_channel_name">Screen capture</string>
+    <string name="notification_channel_description">Visible only while SNAPVERE completes a user-approved screen capture.</string>
+    <string name="notification_capturing">Capturing screen…</string>
+    <string name="privacy_note">SNAPVERE never starts screen capture in the background. Each capture requires Android system consent.</string>
+</resources>
