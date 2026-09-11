@@ -1,0 +1,237 @@
+name: One-time visual probe readiness patch
+
+on:
+  push:
+    branches: [ci/visual-probe-readiness-patch]
+
+permissions:
+  contents: write
+
+jobs:
+  patch-target-branch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout visual QA branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: fix/stabilize-rendered-ui-probe
+          persist-credentials: true
+
+      - name: Add app-side render-ready handshake
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          app_path = Path('src/Snapvere.App/App.xaml.cs')
+          app = app_path.read_text(encoding='utf-8')
+
+          old_region = '''    private async void RegionOverlayProbeRoot_Loaded(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await Task.Delay(250);
+            WriteProbeMarker(
+                RegionOverlayProbeMarkerFileName,
+                "REGION_OVERLAY_READY",
+                "Region overlay probe loaded editor surface.");
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.ShowFatal("Region overlay probe", exception);
+            Environment.Exit(1);
+        }
+    }
+'''
+          new_region = '''    private async void RegionOverlayProbeRoot_Loaded(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (sender is not FrameworkElement root)
+            {
+                throw new InvalidOperationException("Region overlay probe could not resolve its rendered root.");
+            }
+
+            await WaitForProbeVisualReadyAsync(root);
+            WriteProbeMarker(
+                RegionOverlayProbeMarkerFileName,
+                "REGION_OVERLAY_READY",
+                "Region overlay probe rendered frozen editor surface.",
+                exitProcess: false);
+            await Task.Delay(1200);
+            Environment.Exit(0);
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.ShowFatal("Region overlay probe", exception);
+            Environment.Exit(1);
+        }
+    }
+'''
+
+          old_window = '''    private async void WindowOverlayProbeRoot_Loaded(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await Task.Delay(250);
+            WriteProbeMarker(
+                WindowOverlayProbeMarkerFileName,
+                "WINDOW_OVERLAY_READY",
+                "Window overlay probe loaded target-selection surface.");
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.ShowFatal("Window overlay probe", exception);
+            Environment.Exit(1);
+        }
+    }
+'''
+          new_window = '''    private async void WindowOverlayProbeRoot_Loaded(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (sender is not FrameworkElement root)
+            {
+                throw new InvalidOperationException("Window overlay probe could not resolve its rendered root.");
+            }
+
+            await WaitForProbeVisualReadyAsync(root);
+            WriteProbeMarker(
+                WindowOverlayProbeMarkerFileName,
+                "WINDOW_OVERLAY_READY",
+                "Window overlay probe rendered frozen target-selection surface.",
+                exitProcess: false);
+            await Task.Delay(1200);
+            Environment.Exit(0);
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.ShowFatal("Window overlay probe", exception);
+            Environment.Exit(1);
+        }
+    }
+'''
+
+          old_marker = '''    private static void WriteProbeMarker(string fileName, string state, string logMessage)
+    {
+        var probeDirectory = Path.Combine(Path.GetTempPath(), "SNAPVERE");
+        Directory.CreateDirectory(probeDirectory);
+        var markerPath = Path.Combine(probeDirectory, fileName);
+        var version = typeof(App).Assembly.GetName().Version?.ToString(3) ?? "unknown";
+        File.WriteAllText(
+            markerPath,
+            $"SNAPVERE {version} {state} | PID={Environment.ProcessId} | ARCH={RuntimeInformation.ProcessArchitecture} | {DateTimeOffset.UtcNow:O}");
+
+        StartupDiagnostics.WriteLine($"{logMessage} Marker={markerPath}");
+        Environment.Exit(0);
+    }
+'''
+          new_marker = '''    private static async Task WaitForProbeVisualReadyAsync(FrameworkElement root)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        while (stopwatch.ElapsedMilliseconds < 5000)
+        {
+            if (HasReadyProbeImage(root))
+            {
+                // Let one compositor frame pass after the frozen bitmap becomes
+                // observable in the visual tree before the external QA process reads it.
+                await Task.Delay(50);
+                return;
+            }
+
+            await Task.Delay(20);
+        }
+
+        throw new TimeoutException("SNAPVERE probe surface did not publish its frozen image within 5 seconds.");
+    }
+
+    private static bool HasReadyProbeImage(DependencyObject node)
+    {
+        if (node is Microsoft.UI.Xaml.Controls.Image { Source: not null })
+        {
+            return true;
+        }
+
+        var childCount = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(node);
+        for (var index = 0; index < childCount; index++)
+        {
+            if (HasReadyProbeImage(Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(node, index)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void WriteProbeMarker(
+        string fileName,
+        string state,
+        string logMessage,
+        bool exitProcess = true)
+    {
+        var probeDirectory = Path.Combine(Path.GetTempPath(), "SNAPVERE");
+        Directory.CreateDirectory(probeDirectory);
+        var markerPath = Path.Combine(probeDirectory, fileName);
+        var version = typeof(App).Assembly.GetName().Version?.ToString(3) ?? "unknown";
+        File.WriteAllText(
+            markerPath,
+            $"SNAPVERE {version} {state} | PID={Environment.ProcessId} | ARCH={RuntimeInformation.ProcessArchitecture} | {DateTimeOffset.UtcNow:O}");
+
+        StartupDiagnostics.WriteLine($"{logMessage} Marker={markerPath}");
+        if (exitProcess)
+        {
+            Environment.Exit(0);
+        }
+    }
+'''
+
+          replacements = [
+              ('region probe handler', old_region, new_region),
+              ('window probe handler', old_window, new_window),
+              ('marker helper', old_marker, new_marker),
+          ]
+          for label, old, new in replacements:
+              if app.count(old) != 1:
+                  raise SystemExit(f'Expected exactly one {label} block, found {app.count(old)}')
+              app = app.replace(old, new)
+
+          app_path.write_text(app, encoding='utf-8', newline='\n')
+
+          qa_path = Path('eng/Capture-SnapvereVisualQa.ps1')
+          qa = qa_path.read_text(encoding='utf-8')
+          old = '''    try {
+        while (-not $process.HasExited -and $stopwatch.ElapsedMilliseconds -lt 12000) {
+            $window = Get-CapturableWindows -Process $process |
+'''
+          new = '''    try {
+        $markerPath = Get-ProbeMarkerPath -FileName $MarkerFileName
+        while (-not $process.HasExited -and $stopwatch.ElapsedMilliseconds -lt 10000 -and -not (Test-Path -LiteralPath $markerPath -PathType Leaf)) {
+            Start-Sleep -Milliseconds 10
+        }
+
+        if (-not (Test-Path -LiteralPath $markerPath -PathType Leaf)) {
+            throw "SNAPVERE render-ready marker '$MarkerFileName' was not created before capture."
+        }
+        Assert-ProbeMarker -FileName $MarkerFileName -ExpectedState $ExpectedMarkerState
+
+        while (-not $process.HasExited -and $stopwatch.ElapsedMilliseconds -lt 12000) {
+            $window = Get-CapturableWindows -Process $process |
+'''
+          if qa.count(old) != 1:
+              raise SystemExit(f'Expected exactly one single-surface loop, found {qa.count(old)}')
+          qa = qa.replace(old, new)
+          qa_path.write_text(qa, encoding='utf-8', newline='\n')
+          PY
+
+      - name: Commit readiness handshake to visual QA branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add src/Snapvere.App/App.xaml.cs eng/Capture-SnapvereVisualQa.ps1
+          git diff --cached --check
+          git config user.name 'Brendigo'
+          git config user.email 'info@brendigo.com'
+          git commit -m 'Wait for rendered probe surfaces before visual QA'
+          git push origin HEAD:fix/stabilize-rendered-ui-probe
