@@ -40,8 +40,6 @@ public sealed class SnapvereVisualQaWindowInfo
 
 public static class SnapvereVisualQaNative
 {
-    private const int GwlExStyle = -20;
-    private const long WsExTopmost = 0x00000008L;
     private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
     [StructLayout(LayoutKind.Sequential)]
@@ -71,25 +69,14 @@ public static class SnapvereVisualQaNative
     [DllImport("user32.dll")]
     private static extern bool GetWindowRect(IntPtr hWnd, out Rect rect);
 
-    [DllImport("user32.dll", EntryPoint = "GetWindowLongW")]
-    private static extern int GetWindowLong32(IntPtr hWnd, int index);
-
-    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
-    private static extern IntPtr GetWindowLongPtr64(IntPtr hWnd, int index);
-
     [DllImport("user32.dll")]
     public static extern bool PrintWindow(IntPtr hWnd, IntPtr hdcBlt, uint flags);
 
     [DllImport("user32.dll")]
     public static extern bool SetForegroundWindow(IntPtr hWnd);
 
-    public static bool IsTopmost(IntPtr hWnd)
-    {
-        long extendedStyle = IntPtr.Size == 8
-            ? GetWindowLongPtr64(hWnd, GwlExStyle).ToInt64()
-            : GetWindowLong32(hWnd, GwlExStyle);
-        return (extendedStyle & WsExTopmost) != 0;
-    }
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
 
     public static SnapvereVisualQaWindowInfo[] GetVisibleWindows(int processId)
     {
@@ -129,6 +116,7 @@ public static class SnapvereVisualQaNative
             });
             return true;
         }, IntPtr.Zero);
+
         return windows.ToArray();
     }
 }
@@ -175,6 +163,11 @@ function Test-BitmapHasVisualContent {
     return $false
 }
 
+function Test-IsTargetForeground {
+    param([Parameter(Mandatory = $true)][IntPtr]$Handle)
+    [SnapvereVisualQaNative]::GetForegroundWindow() -eq $Handle
+}
+
 function Save-WindowSnapshot {
     param(
         [Parameter(Mandatory = $true)]$Window,
@@ -186,42 +179,45 @@ function Save-WindowSnapshot {
         $Window.Height,
         [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
     $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+    $captureMethod = $null
+    $hasVisualContent = $false
 
     try {
-        $hasVisualContent = $false
-        $captureMethod = $null
-
-        # WinUI/DirectComposition can expose an HWND slightly before PrintWindow
-        # can return painted pixels. Keep retries short enough to stay inside the
-        # probe surface lifetime instead of waiting until the overlay has exited.
         for ($attempt = 0; $attempt -lt 3 -and -not $hasVisualContent; $attempt++) {
-            $graphics.Clear([System.Drawing.Color]::Black)
-            [void][SnapvereVisualQaNative]::SetForegroundWindow($Window.Handle)
-            Start-Sleep -Milliseconds (20 + ($attempt * 10))
+            foreach ($flag in @(2, 0)) {
+                $graphics.Clear([System.Drawing.Color]::Black)
+                $hdc = $graphics.GetHdc()
+                try {
+                    $printed = [SnapvereVisualQaNative]::PrintWindow($Window.Handle, $hdc, [uint32]$flag)
+                }
+                finally {
+                    $graphics.ReleaseHdc($hdc)
+                }
 
-            $hdc = $graphics.GetHdc()
-            try {
-                $printed = [SnapvereVisualQaNative]::PrintWindow($Window.Handle, $hdc, 2)
-            }
-            finally {
-                $graphics.ReleaseHdc($hdc)
+                if ($printed -and (Test-BitmapHasVisualContent -Bitmap $bitmap)) {
+                    $hasVisualContent = $true
+                    $captureMethod = if ($flag -eq 2) { 'PrintWindowFullContent' } else { 'PrintWindow' }
+                    break
+                }
             }
 
-            $hasVisualContent = $printed -and (Test-BitmapHasVisualContent -Bitmap $bitmap)
             if ($hasVisualContent) {
-                $captureMethod = 'PrintWindow'
+                break
             }
-        }
 
-        if (-not $hasVisualContent) {
-            # Region and window-selection probe overlays explicitly set
-            # WS_EX_TOPMOST. Requiring that native window style makes the screen
-            # fallback target-specific without relying on SetForegroundWindow,
-            # which hosted Windows runners are allowed to reject. Ordinary runner
-            # consoles/desktops cannot satisfy this check.
-            $current = [SnapvereVisualQaNative]::GetVisibleWindows([System.Diagnostics.Process]::GetCurrentProcess().Id)
-            $isTargetTopmost = [SnapvereVisualQaNative]::IsTopmost($Window.Handle)
-            if ($isTargetTopmost) {
+            # Hosted Windows runners may expose a WinUI HWND before DirectComposition
+            # has paint available to PrintWindow. A screen-copy fallback is permitted
+            # only when Windows confirms that this exact SNAPVERE HWND is foreground.
+            # This prevents the runner desktop or another process from being accepted.
+            [void][SnapvereVisualQaNative]::SetForegroundWindow($Window.Handle)
+            for ($foregroundAttempt = 0; $foregroundAttempt -lt 4; $foregroundAttempt++) {
+                if (Test-IsTargetForeground -Handle $Window.Handle) {
+                    break
+                }
+                Start-Sleep -Milliseconds 8
+            }
+
+            if (Test-IsTargetForeground -Handle $Window.Handle) {
                 $graphics.Clear([System.Drawing.Color]::Black)
                 $graphics.CopyFromScreen(
                     $Window.Left,
@@ -230,15 +226,20 @@ function Save-WindowSnapshot {
                     0,
                     [System.Drawing.Size]::new($Window.Width, $Window.Height),
                     [System.Drawing.CopyPixelOperation]::SourceCopy)
-                $hasVisualContent = Test-BitmapHasVisualContent -Bitmap $bitmap
-                if ($hasVisualContent) {
-                    $captureMethod = 'TopmostScreenCopy'
+
+                if (Test-BitmapHasVisualContent -Bitmap $bitmap) {
+                    $hasVisualContent = $true
+                    $captureMethod = 'ForegroundScreenCopy'
+                    break
                 }
             }
+
+            Start-Sleep -Milliseconds 8
         }
 
         if (-not $hasVisualContent) {
-            throw "Rendered SNAPVERE window '$($Window.Title)' did not produce a target-owned visual frame. Target HWND=$($Window.Handle.ToInt64()), topmost=$([SnapvereVisualQaNative]::IsTopmost($Window.Handle))."
+            $foreground = [SnapvereVisualQaNative]::GetForegroundWindow().ToInt64()
+            throw "Rendered SNAPVERE window '$($Window.Title)' did not produce a target-owned visual frame. Target HWND=$($Window.Handle.ToInt64()), foreground HWND=$foreground."
         }
 
         $bitmap.Save($DestinationPath, [System.Drawing.Imaging.ImageFormat]::Png)
@@ -332,10 +333,10 @@ function Invoke-SingleSurfaceProbe {
                 Select-Object -First 1
 
             if ($null -ne $window) {
-                Start-Sleep -Milliseconds 35
                 $current = Get-CapturableWindows -Process $process |
                     Where-Object { $_.Handle -eq $window.Handle } |
                     Select-Object -First 1
+
                 if ($null -ne $current) {
                     try {
                         $snapshot = Save-WindowSnapshot -Window $current -DestinationPath (Join-Path $resolvedOutputDirectory $SnapshotFileName)
@@ -348,14 +349,13 @@ function Invoke-SingleSurfaceProbe {
                 }
             }
 
-            Start-Sleep -Milliseconds 10
+            Start-Sleep -Milliseconds 6
         }
 
         if ($null -eq $snapshot) {
             if ($null -ne $lastCaptureError) {
                 throw "No target-owned SNAPVERE window was captured for $EnvironmentVariable. Last capture error: $($lastCaptureError.Message)"
             }
-
             throw "No rendered SNAPVERE window was captured for $EnvironmentVariable."
         }
 
@@ -388,7 +388,6 @@ function Invoke-SecondarySurfaceProbe {
                     continue
                 }
 
-                Start-Sleep -Milliseconds 25
                 $current = Get-CapturableWindows -Process $process |
                     Where-Object { $_.Handle -eq $window.Handle } |
                     Select-Object -First 1
@@ -412,7 +411,7 @@ function Invoke-SecondarySurfaceProbe {
                 }
             }
 
-            Start-Sleep -Milliseconds 10
+            Start-Sleep -Milliseconds 6
         }
 
         Wait-ForProcessExit -Process $process
