@@ -32,7 +32,7 @@ Android 14+ zahtijeva novo dopuštenje za svaku MediaProjection sesiju. SNAPVERE
 
 ## Učvršćivanje lifecyclea u 0.1.0
 
-Servis sada platformske/provider pogreške pretvara u kontrolirani capture failure kad god je to moguće umjesto da ih pušta izvan lifecyclea procesa.
+Servis platformske/provider pogreške pretvara u kontrolirani capture failure kad god je to praktično moguće.
 
 - Pogreška inicijalizacije notification channela bilježi se i obrađuje pri startu capturea umjesto namjernog izlijetanja iz `onCreate()`.
 - Provjerava se prihvaća li Handler task-hide/frame posao; odbijeni posao ne smije ostaviti capture ownership aktivnim.
@@ -73,14 +73,7 @@ UI zadnje snimke provjerava je li spremljeni URI i dalje čitljiv prije nego omo
 
 Android dijeli SNAPVERE tamni vizualni identitet s Windows aplikacijom. OEM `forceDark` je isključen jer aplikacija već ima namjerno dizajniranu tamnu paletu.
 
-Početna površina sadrži:
-
-- SNAPVERE identitet i Android/privatno/lokalno bedž;
-- primarnu Capture karticu i accessibility-aware status;
-- Zadnju snimku s Otvori / Podijeli / Izbriši akcijama;
-- Privatno po dizajnu karticu;
-- About/support/legal akcije;
-- footer s verzijom i platformom.
+Početna površina sadrži SNAPVERE identitet, primarnu Capture karticu, accessibility-aware status, Zadnju snimku s Otvori / Podijeli / Izbriši akcijama, Privatno po dizajnu karticu, About/support/legal akcije i footer s verzijom/platformom.
 
 Stranica je vertikalno pomična, poštuje system-bar insete i koristi širi padding na tablet-class širinama. Parovi akcija slažu se vertikalno na uskim ekranima ili kada Android font scale dosegne 1,25x. Gumbi zadržavaju najmanje 52 dp dodirne visine i jasno enabled/disabled stanje.
 
@@ -99,14 +92,7 @@ Ove akcije ne dodaju `INTERNET` dopuštenje niti first-party mrežni klijent.
 
 ## Sigurnosni ugovor manifesta
 
-CI pada ako se u manifest doda `android.permission.INTERNET`. Dodatno provjerava:
-
-- `FOREGROUND_SERVICE_MEDIA_PROJECTION`;
-- `CaptureService` ostaje `android:exported="false"`;
-- `CaptureService` ostaje `android:foregroundServiceType="mediaProjection"`;
-- cleartext promet je onemogućen;
-- backup je onemogućen;
-- versionName/versionCode odgovaraju ugovoru 0.1.0.
+CI pada ako se u manifest doda `android.permission.INTERNET`. Dodatno provjerava `FOREGROUND_SERVICE_MEDIA_PROJECTION`, non-exported `CaptureService`, `foregroundServiceType="mediaProjection"`, isključen cleartext, isključen backup te versionName/versionCode 0.1.0.
 
 U ovoj Android liniji nema telemetrije, analytics SDK-a, oglasnog SDK-a, cloud-upload klijenta, WebViewa ni remote-command kanala.
 
@@ -127,15 +113,28 @@ SNAPVERE-Android-0.1.0-debug.apk.sha256
 
 u Actions artifactu `snapvere-android-ci-apk-<commit-sha>`.
 
-Taj CI APK je razvojno/debug potpisan dokaz. Ne predstavlja javni produkcijski APK.
-
 ## Javni Android paket za 0.1.0
 
-Release workflow gradi minificirani/shrunk release APK, ZIP-aligna ga, potpisuje stabilnim privatnim SNAPVERE Android release identitetom i provjerava potpis s `apksigner` prije objave kao:
+Za v0.1.0 javni `SNAPVERE.apk` namjerno koristi isti CI/debug-potpisani paketni put koji je već potvrđen Android CI-jem. Privatni production keystore i repository signing secreti nisu potrebni.
+
+Release workflow i dalje gradi **debug i release varijantu** te zahtijeva:
+
+- privacy/service/version validaciju;
+- `lintDebug` i `lintRelease`;
+- JVM unit testove;
+- uspješan debug i release build;
+- potpisan, neprazan debug APK;
+- `apksigner` provjeru;
+- ZIP alignment provjeru;
+- SHA-256 provjeru kroz Actions prijenos i nakon javne objave.
+
+Provjereni debug-potpisani paket objavljuje se kao:
 
 ```text
 SNAPVERE.apk
 ```
+
+APK je instalabilan, ali se **ne predstavlja kao Google Play/production-potpisan paket**. Njegov signing identitet nije podržani dugoročni production upgrade ugovor. Ako kasniji Android kanal koristi drugačiji stabilni production ključ, Android može zahtijevati deinstalaciju i novu instalaciju prije instaliranja drugačije potpisanog paketa.
 
 Iz istog validiranog Git commita stvara se i:
 
@@ -144,15 +143,6 @@ SNAPVERE-Android-Source.zip
 ```
 
 Source ZIP sadrži samo praćeni `android/` source/configuration. Ne uključuje generirani `build/`, Gradle cache ni signing materijal.
-
-Potrebni GitHub release-signing secreti, koji se ne nalaze u repozitoriju, su:
-
-- `SNAPVERE_ANDROID_KEYSTORE_BASE64`
-- `SNAPVERE_ANDROID_KEY_ALIAS`
-- `SNAPVERE_ANDROID_KEYSTORE_PASSWORD`
-- `SNAPVERE_ANDROID_KEY_PASSWORD`
-
-Ako bilo koji nedostaje ili potpis nije moguće verificirati, workflow pada **prije** stvaranja immutable taga i objave. Ne koristi se ephemeral debug key kao zamjena za javni release identitet.
 
 ## Javni asset ugovor 0.1.0
 
@@ -169,7 +159,7 @@ SHA-256 se provjerava kroz prijenos Android Actions artifacta, zatim ponovno ra�
 
 ## Granice dokaza
 
-Zeleni Android CI dokazuje kompilaciju, debug/release lint, JVM testove, debug/release build, debug APK potpis/alignment i artifact. Zeleni 0.1.0 release job dodatno dokazuje verifikaciju release APK potpisa, strukturu source arhive i release-asset digest provjeru. To nije tvrdnja o iscrpnom runtime testu na svakom fizičkom OEM uređaju.
+Zeleni Android CI dokazuje kompilaciju, debug/release lint, JVM testove, debug/release build, debug APK potpis/alignment i artifact. Zeleni 0.1.0 release job dodatno dokazuje potpis/alignment javnog CI/debug-potpisanog APK-a, strukturu source arhive, Windows package lifecycle provjere i release-asset digest provjeru. To nije tvrdnja o iscrpnom runtime testu na svakom fizičkom OEM uređaju.
 
 ## Granica platformske jednakosti
 
