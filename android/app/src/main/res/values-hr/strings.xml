@@ -20,7 +20,5 @@
     <string name="notification_channel_name">Snimanje zaslona</string>
     <string name="notification_channel_description">Vidljivo samo dok SNAPVERE dovršava snimku zaslona koju je korisnik odobrio.</string>
     <string name="notification_capturing">Snimanje zaslona…</string>
-    <string name="notification_saved">Snimka je spremljena lokalno</string>
-    <string name="notification_failed">Snimku nije moguće dovršiti</string>
     <string name="privacy_note">SNAPVERE nikad ne pokreće snimanje zaslona u pozadini. Za svaku snimku potrebno je Android sustavsko dopuštenje.</string>
 </resources>
