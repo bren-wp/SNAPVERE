@@ -61,7 +61,7 @@ Android changes must preserve the manifest privacy/service contract:
 - `CaptureService` remains non-exported;
 - release versionName/versionCode remain synchronized with the intended release line.
 
-CI verifies the debug APK signature, ZIP alignment and SHA-256 artifact. A debug-signed CI APK is development/internal evidence and must not be represented as the public release identity.
+CI verifies the debug APK signature, ZIP alignment and SHA-256 artifact. For v0.1.0, the public `SNAPVERE.apk` intentionally uses this validated CI/debug signing identity rather than a stable production/Play signing key. Do not describe the v0.1.0 APK as production-signed.
 
 ## v0.1.0 release contract
 
@@ -74,18 +74,11 @@ SNAPVERE.apk
 SNAPVERE-Android-Source.zip
 ```
 
-The public Android APK must come from the minified release variant and use SNAPVERE's stable Android release signing identity. Never commit keystores/passwords and never replace missing production signing material with a newly generated/debug key merely to pass publication.
+The public Android APK is the validated CI/debug-signed package built from the same 0.1.0 source that also passes `lintRelease` and release-variant build validation. No private Android production-signing secret is required for the published v0.1.0 channel.
 
-The release workflow expects these repository secrets, managed outside Git source:
+A future production/Play-signed Android channel must use a deliberately managed stable signing identity and must not be represented as an in-place continuation of the v0.1.0 CI/debug-signed identity unless Android signature compatibility is actually established. Users may need uninstall/reinstall when moving between different signing identities.
 
-```text
-SNAPVERE_ANDROID_KEYSTORE_BASE64
-SNAPVERE_ANDROID_KEY_ALIAS
-SNAPVERE_ANDROID_KEYSTORE_PASSWORD
-SNAPVERE_ANDROID_KEY_PASSWORD
-```
-
-Release automation must fail before immutable tag creation when stable Android signing cannot be verified.
+Never commit keystores, private signing keys or passwords merely to make publication pass.
 
 `SNAPVERE-Android-Source.zip` must be generated from the exact validated Git tree, not from an untracked working directory containing build output or secrets.
 

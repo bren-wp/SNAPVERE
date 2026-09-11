@@ -31,18 +31,19 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 - Temporary PNG cleanup cannot replace the original capture failure when a security policy prevents deleting the staging file.
 - Existing v0.0.9 tray protocol, package-integrity and lifecycle hardening remains in place.
 
-### Android CI and public signing
+### Android CI and public APK signing
 
 - Android CI validates 0.1.0 versionCode/versionName in addition to the privacy/service manifest contract.
-- CI continues `lintDebug`, `lintRelease`, JVM tests and debug/release builds; the debug APK remains an internal development artifact.
-- Public `SNAPVERE.apk` is generated from the minified release variant and requires SNAPVERE's stable private Android signing identity.
-- Release signing uses repository secrets and fails closed when signing material is absent/invalid; the workflow never substitutes an ephemeral debug identity.
+- CI runs `lintDebug`, `lintRelease`, JVM tests and debug/release builds, and verifies the debug APK signature, ZIP alignment and SHA-256.
+- The published `SNAPVERE.apk` is the validated CI/debug-signed package built from the same 0.1.0 source that also passes release-variant lint/build validation.
+- v0.1.0 does not require a private production Android keystore and is not represented as Google Play/production-signed.
+- Because a future production signing identity may differ, moving from the v0.1.0 APK to a later production-signed channel may require uninstall/reinstall rather than an in-place update.
 - The Android source ZIP is created with `git archive` from the exact validated release commit and structurally checked for expected source files and absence of generated build/cache content.
 
 ### v0.1.0 release automation
 
-- A separate Android release job validates the manifest, lints/tests/builds, ZIP-aligns, release-signs and verifies `SNAPVERE.apk`, generates `SNAPVERE-Android-Source.zip` and records transfer SHA-256 values.
-- The Windows release job depends on successful Android validation, then re-runs audited Windows builds/tests, architecture payload integrity, rendered UI QA and x64/x86 Setup+Portable lifecycle/tray-first checks.
+- A separate Android release job validates the manifest, lints/tests/builds both variants, verifies the CI/debug APK signature and alignment, generates `SNAPVERE-Android-Source.zip` and records transfer SHA-256 values.
+- The Windows release job depends on successful Android validation, then re-runs audited Windows builds/tests, architecture payload integrity and x64/x86 Setup+Portable lifecycle/tray-first checks; real rendered WinUI QA remains a required normal-CI gate on the same release commit.
 - Android assets are re-hashed after Actions artifact transfer before being admitted into the final release directory.
 - The exact four-file public contract is enforced before the immutable tag is created.
 - Post-publication verification checks exact asset names and compares GitHub's published SHA-256 digest for every asset with the locally validated value.
