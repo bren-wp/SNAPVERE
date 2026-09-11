@@ -22,7 +22,17 @@ Native Android companion for SNAPVERE with the same local-first privacy model as
 
 ## Dark UI / UX
 
-The Android app uses a dedicated SNAPVERE dark design system rather than Android default light controls. Central tokens live in `res/values/colors.xml`; Activity code consumes those resources instead of embedding an unrelated palette.
+The Android app shares the core dark SNAPVERE palette with the Windows distribution rather than maintaining a separate visual identity. Canonical desktop values live in `src/Snapvere.App/App.xaml`; Android mirrors the core tokens in `res/values/colors.xml`:
+
+- canvas `#0B0D12`
+- surface `#12151C`
+- raised surface `#181C25`
+- border `#2A3140`
+- primary text `#F6F7FB`
+- secondary text `#98A2B3`
+- muted text `#727C90`
+- violet accent `#7C6CFF`
+- success `#45D6A2`
 
 The interface is organized into five clear surfaces:
 
@@ -32,7 +42,7 @@ The interface is organized into five clear surfaces:
 4. private-by-design explanation
 5. About/support/legal actions
 
-The canvas, elevated surfaces, border hierarchy, violet accent, cyan secondary accent, success/warning/error states, text contrast and ripple feedback are all defined centrally. Buttons expose disabled states explicitly, status changes use an accessibility live region, and the entire page remains scrollable for small displays and larger text scaling.
+Buttons use a minimum 52 dp touch height, native ripple feedback and explicit disabled states. The page is system-inset aware and scrollable for small screens and larger text. Phone layouts keep compact horizontal spacing while tablet-class layouts use 48 dp horizontal padding. Status changes use an accessibility live region.
 
 ## Capture behavior
 

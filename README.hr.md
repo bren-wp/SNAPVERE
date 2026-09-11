@@ -6,7 +6,7 @@
   <img alt="SNAPVERE — Capture. Edit. Done." src="assets/branding/readme/snapvere-logo-light.svg" width="560">
 </picture>
 
-**Capture. Edit. Done. — brza, lokalna i privatna aplikacija za snimanje zaslona na Windowsu koju razvija Brendigo.**
+**Capture. Edit. Done. — brza, lokalna i privatna aplikacija za snimanje zaslona za Windows i Android koju razvija Brendigo.**
 
 [English README](README.md) · [Službena stranica proizvoda](https://snapvere.com) · [Developer: Brendigo](https://brendigo.com)
 
@@ -88,6 +88,16 @@ Odabrani jezik sprema se lokalno u:
 ```
 
 Nema translation API-ja, mrežnih poziva, polling servisa niti dodatnog background threada za prijevode.
+
+## Android
+
+SNAPVERE ima i nativnu Android 10+ aplikaciju koja koristi službeni Android MediaProjection model. Zadržava isti local-first ugovor privatnosti i iste ključne tamne SNAPVERE design tokene kao Windows distribucija: gotovo crnu canvas pozadinu, slojevite tamne površine, ljubičasti `#7C6CFF` accent i zeleni `#45D6A2` success status.
+
+Android aplikacija omogućuje korisnički odobreno snimanje cijelog zaslona, lokalno PNG spremanje u `Pictures/SNAPVERE`, provjerene Otvori / Podijeli / Izbriši akcije za zadnju snimku, engleske i hrvatske UI resurse te korisnički pokrenute Web / Podrška / Privatnost / Uvjeti akcije. Ne traži `INTERNET` permission i nema račun, telemetriju, analitiku ni cloud-upload klijent.
+
+Android CI provjerava manifest privacy/service ugovor, lint, debug i release build, APK potpis, ZIP alignment i SHA-256 te objavljuje instalabilni debug APK kao GitHub Actions artifact za točan source commit. Generirani APK binariji namjerno se ne spremaju u Git.
+
+Android nema isti opći top-level-window capture primitive kao Windows, pa se Windows Window Capture ne prikazuje kao implementiran na Androidu. Detalji: [Android aplikacija](docs/hr/ANDROID.md) i [Android source/build vodič](android/README.md).
 
 ## About, podrška i pravne poveznice
 

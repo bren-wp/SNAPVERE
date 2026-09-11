@@ -58,30 +58,35 @@ UI zadnje snimke provjerava je li spremljeni URI još čitljiv prije nego omogu�
 
 ## Tamni dizajn sustav
 
-Android distribucija prati isti SNAPVERE tamni vizualni smjer kao desktop aplikacija i ne oslanja se na zadane svijetle Android kontrole.
+Android distribucija sada dijeli ključnu SNAPVERE dark paletu s Windows distribucijom umjesto zasebnog vizualnog identiteta. Canonical desktop tokeni definirani su u `src/Snapvere.App/App.xaml`, a Android ih preslikava u `android/app/src/main/res/values/colors.xml`.
 
-Centralni design tokeni nalaze se u `android/app/src/main/res/values/colors.xml`:
+Zajednički ključni tokeni:
 
-- gotovo crna canvas pozadina
-- surface i elevated-surface hijerarhija
-- suptilne i jače granice
-- primarni i sekundarni tekst
-- ljubičasti SNAPVERE accent
-- cijan sekundarni accent
-- success, warning i destructive semantičke boje
-- ripple feedback token
+| Token | Vrijednost |
+| --- | --- |
+| Canvas | `#0B0D12` |
+| Surface | `#12151C` |
+| Raised surface | `#181C25` |
+| Border | `#2A3140` |
+| Primarni tekst | `#F6F7FB` |
+| Sekundarni tekst | `#98A2B3` |
+| Muted tekst | `#727C90` |
+| Primarni accent | `#7C6CFF` |
+| Success | `#45D6A2` |
 
-`MainActivity` koristi te resurse. UI hijerarhija:
+Android-specific strong-border, strong-accent, warning i destructive tokeni nadograđuju tu osnovu bez mijenjanja zajedničkog identiteta proizvoda.
+
+`MainActivity` koristi resource tokene umjesto hardkodirane nepovezane palete. UI hijerarhija:
 
 - zaglavlje s SNAPVERE ikonom, taglineom i Android/local bedžom
 - naglašena Capture kartica
 - accessibility-aware status površina
-- Latest Capture kartica s validiranim radnjama
+- Latest Capture kartica s validiranim Otvori / Podijeli / Izbriši radnjama
 - Private by Design kartica
 - About/support/legal kartica
 - footer s verzijom i platformom
 
-Cijela stranica je vertikalno pomična i poštuje system-bar insete. Gumbi imaju eksplicitna disabled stanja, touch ripple feedback i čitljiv kontrast u fiksnoj tamnoj temi.
+Stranica je vertikalno pomična i poštuje system-bar insete. Telefoni koriste kompaktniji horizontalni razmak, a tablet-class layout koristi 48 dp horizontalnog paddinga. Interaktivni gumbi imaju minimalnu visinu 52 dp, nativni ripple feedback i eksplicitno disabled stanje bez dodavanja teškog UI frameworka.
 
 ## Radnje nad zadnjom snimkom
 

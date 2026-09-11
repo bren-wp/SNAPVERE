@@ -6,7 +6,7 @@
   <img alt="SNAPVERE — Capture. Edit. Done." src="assets/branding/readme/snapvere-logo-light.svg" width="560">
 </picture>
 
-**Capture. Edit. Done. — fast, local-first screen capture for Windows by Brendigo.**
+**Capture. Edit. Done. — fast, local-first screen capture for Windows and Android by Brendigo.**
 
 [Hrvatski README](README.hr.md) · [Official product site](https://snapvere.com) · [Support](mailto:info@snapvere.com) · [Developer: Brendigo](https://brendigo.com)
 
@@ -46,6 +46,16 @@ SNAPVERE discovers visible top-level windows before overlays appear, uses DWM ex
 ## Screen Capture
 
 Windows.Graphics.Capture + Direct3D 11 is preferred where supported. Expected monitor-acquisition failures can fall back to the resilient GDI monitor path. Capture resources are lazy and are not initialized merely because SNAPVERE is idle in the tray.
+
+## Android
+
+SNAPVERE also ships a native Android 10+ companion built around Android's official MediaProjection model. It uses the same local-first privacy contract and the same core dark SNAPVERE design tokens as the Windows distribution: near-black canvas, layered dark surfaces, violet `#7C6CFF` accent and green `#45D6A2` success state.
+
+The Android application provides user-approved full-screen capture, local PNG storage in `Pictures/SNAPVERE`, validated Open / Share / Delete actions for the latest capture, English and Croatian UI resources, and user-initiated Website / Support / Privacy / Terms actions. It requests no `INTERNET` permission and contains no account, telemetry, analytics or cloud-upload client.
+
+Android CI validates the manifest privacy/service contract, lint, debug and release builds, APK signature, ZIP alignment and SHA-256, then publishes the installable debug APK as a GitHub Actions artifact for the exact source commit. Generated APK binaries are deliberately not committed to Git.
+
+Android does not expose the same general top-level-window capture primitive used by SNAPVERE on Windows, so Windows-style Window Capture is not claimed on Android. See [Android application](docs/ANDROID.md) and [Android source/build guide](android/README.md).
 
 ## About and support
 
@@ -148,7 +158,7 @@ Safe default PNG → optional Save As relocation
 
 English documentation lives in [`docs/`](docs/) and Croatian documentation in [`docs/hr/`](docs/hr/).
 
-Key documents: [Architecture](docs/ARCHITECTURE.md), [Tray UX](docs/TRAY-UX.md), [Capture engine](docs/CAPTURE-ENGINE.md), [Region Capture](docs/REGION-CAPTURE.md), [Window Capture](docs/WINDOW-CAPTURE.md), [Save location](docs/SAVE-LOCATION.md), [Settings](docs/SETTINGS.md), [Security/performance 0.0.9](docs/SECURITY-PERFORMANCE-0.0.9.md), [Installation](docs/INSTALLATION.md), [Branding](docs/BRANDING.md) and [Image pipeline](docs/IMAGE-PIPELINE.md).
+Key documents: [Architecture](docs/ARCHITECTURE.md), [Tray UX](docs/TRAY-UX.md), [Capture engine](docs/CAPTURE-ENGINE.md), [Region Capture](docs/REGION-CAPTURE.md), [Window Capture](docs/WINDOW-CAPTURE.md), [Save location](docs/SAVE-LOCATION.md), [Settings](docs/SETTINGS.md), [Security/performance 0.0.9](docs/SECURITY-PERFORMANCE-0.0.9.md), [Installation](docs/INSTALLATION.md), [Branding](docs/BRANDING.md) and [Image pipeline](docs/IMAGE-PIPELINE.md) and [Android application](docs/ANDROID.md).
 
 ## Technology
 
