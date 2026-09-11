@@ -228,7 +228,7 @@ about.png
 
 CI odbija prazan/neočekivano mali output i zapisuje dimenzije, veličine i SHA-256.
 
-Android CI provjerava manifest privacy/version/service ugovor, `lintDebug`, `lintRelease`, JVM testove, debug/release build, debug APK signature/alignment i SHA-256. Public-release automatizacija dodatno provjerava stabilni Android release signing i strukturu source arhive.
+Android CI provjerava manifest privacy/version/service ugovor, `lintDebug`, `lintRelease`, JVM testove, debug/release build, debug APK signature/alignment i SHA-256. v0.1.0 publication put dodatno ponovno provjerava CI/debug APK potpis i alignment, validira Android source arhivu i prenosi SHA-256 vrijednosti do finalne objave. Ne tvrdi se produkcijski/Google Play signing identitet.
 
 ## Packaging i javni release
 
@@ -240,7 +240,9 @@ Hosted x64 CI izvršava universal x64/x86 package lifecycle. ARM64 je cross-buil
 
 ### Android
 
-Javni APK nastaje iz minificiranog/shrunk release varianta, ZIP-aligna se i potpisuje stabilnim privatnim SNAPVERE release identitetom. Signing materijal ostaje izvan Git sourcea. Release pada prije taga ako se signing ne može verificirati.
+Javni v0.1.0 `SNAPVERE.apk` je validirani CI/debug-potpisani APK. Nastaje iz istog Android sourcea koji prolazi i release-variant lint/build provjeru, a objava provjerava njegov potpis, ZIP alignment i SHA-256 identitet. v0.1.0 ne zahtijeva niti ugrađuje privatni produkcijski Android keystore i ne predstavlja se kao produkcijski/Play-potpisan.
+
+Budući produkcijski potpisani Android kanal mora koristiti namjerno upravljani stabilni signing identitet. Ako se taj identitet razlikuje od v0.1.0 CI/debug identiteta, Android može zahtijevati uninstall/reinstall umjesto in-place nadogradnje; kompatibilnost potpisa ne smije se pretpostaviti.
 
 `SNAPVERE-Android-Source.zip` generira se izravno iz točno validiranog `android/` Git treea i ne sadrži generirani build/cache output ni signing secret.
 
