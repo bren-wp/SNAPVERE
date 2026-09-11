@@ -49,41 +49,29 @@ public static class DefaultCaptureHotkeys
     private const uint Key1 = 0x31;
     private const uint Key2 = 0x32;
     private const uint Key3 = 0x33;
-    private const uint Key4 = 0x34;
 
     private const HotkeyModifiers StandardModifiers =
         HotkeyModifiers.Control |
         HotkeyModifiers.Shift |
         HotkeyModifiers.NoRepeat;
 
-    private static readonly CaptureHotkeyBinding PrintScreenRegion =
-        new(0x5300, CaptureMode.Region, HotkeyModifiers.NoRepeat, PrintScreenKey, "Print Screen");
-
     private static readonly IReadOnlyList<CaptureHotkeyBinding> AllBindings =
     [
-        PrintScreenRegion,
+        new(0x5300, CaptureMode.Region, HotkeyModifiers.NoRepeat, PrintScreenKey, "Print Screen"),
         new(0x5301, CaptureMode.Region, StandardModifiers, Key1, "Ctrl+Shift+1"),
         new(0x5302, CaptureMode.Window, StandardModifiers, Key2, "Ctrl+Shift+2"),
-        new(0x5303, CaptureMode.Scrolling, StandardModifiers, Key3, "Ctrl+Shift+3"),
-        new(0x5304, CaptureMode.FullScreen, StandardModifiers, Key4, "Ctrl+Shift+4")
+        new(0x5303, CaptureMode.FullScreen, StandardModifiers, Key3, "Ctrl+Shift+3")
     ];
-
-    private static readonly IReadOnlyList<CaptureHotkeyBinding> Implemented =
-    [
-        AllBindings[0],
-        AllBindings[1],
-        AllBindings[2],
-        AllBindings[4]
-    ];
-
-    public static IReadOnlyList<CaptureHotkeyBinding> All => AllBindings;
 
     /// <summary>
-    /// Region capture deliberately has two bindings. Print Screen provides the
-    /// expected screenshot-app workflow when Windows permits it, while
-    /// Ctrl+Shift+1 remains a conflict-safe fallback. Window Capture is exposed
-    /// through Ctrl+Shift+2 now that its picker and WGC workflow are implemented.
-    /// Scrolling stays unregistered until its workflow is genuinely implemented.
+    /// Every published binding is implemented. Region capture deliberately has
+    /// two bindings: Print Screen provides the expected screenshot workflow
+    /// when Windows permits it, while Ctrl+Shift+1 remains a conflict-safe
+    /// fallback. Window Capture uses Ctrl+Shift+2 and Full Screen uses
+    /// Ctrl+Shift+3. Scrolling capture is not assigned a global hotkey until a
+    /// real scrolling workflow exists.
     /// </summary>
-    public static IReadOnlyList<CaptureHotkeyBinding> ImplementedNow => Implemented;
+    public static IReadOnlyList<CaptureHotkeyBinding> All => AllBindings;
+
+    public static IReadOnlyList<CaptureHotkeyBinding> ImplementedNow => AllBindings;
 }
