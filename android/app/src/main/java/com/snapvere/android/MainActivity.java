@@ -35,6 +35,7 @@ public final class MainActivity extends ComponentActivity {
     private Button openLatestButton;
     private Button shareLatestButton;
     private boolean receiverRegistered;
+    private boolean captureTaskHidePending;
     private ActivityResultLauncher<Intent> captureLauncher;
 
     private final BroadcastReceiver captureReceiver = new BroadcastReceiver() {
@@ -78,6 +79,10 @@ public final class MainActivity extends ComponentActivity {
 
     @Override
     protected void onStop() {
+        if (captureTaskHidePending) {
+            captureTaskHidePending = false;
+            CaptureService.notifyAppTaskHidden();
+        }
         if (receiverRegistered) {
             unregisterReceiver(captureReceiver);
             receiverRegistered = false;
@@ -179,14 +184,20 @@ public final class MainActivity extends ComponentActivity {
             .putExtra(CaptureService.EXTRA_RESULT_CODE, resultCode)
             .putExtra(CaptureService.EXTRA_RESULT_DATA, data);
 
+        CaptureService.prepareForCaptureHandoff();
+        captureTaskHidePending = true;
         try {
             ContextCompat.startForegroundService(this, serviceIntent);
             if (!moveTaskToBack(true)) {
+                captureTaskHidePending = false;
+                CaptureService.cancelCaptureHandoff();
                 stopService(new Intent(this, CaptureService.class));
                 refreshCaptureState();
                 statusText.setText(R.string.capture_background_failed);
             }
         } catch (RuntimeException exception) {
+            captureTaskHidePending = false;
+            CaptureService.cancelCaptureHandoff();
             refreshCaptureState();
             String message = exception.getMessage();
             statusText.setText(getString(
