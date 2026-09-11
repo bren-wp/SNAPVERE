@@ -1,25 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">SNAPVERE</string>
-    <string name="tagline">Snimi. Uredi. Gotovo.</string>
-    <string name="local_first">LOKALNO I PRIVATNO</string>
-    <string name="local_first_description">Snimke ostaju na ovom uređaju. Bez računa, prijenosa u oblak, analitike i telemetrije.</string>
+    <string name="tagline">Snimi brzo. Zadrži lokalno.</string>
+    <string name="android_local_badge">ANDROID · LOKALNO</string>
+
+    <string name="capture_section">SNIMANJE</string>
     <string name="capture_screen">Snimi zaslon</string>
-    <string name="capture_screen_description">Android će prije svake snimke prikazati svoj sustavski dijalog za dopuštenje snimanja zaslona.</string>
-    <string name="open_latest">Otvori zadnju snimku</string>
-    <string name="share_latest">Podijeli zadnju snimku</string>
+    <string name="capture_screen_description">Android svaki put traži sustavsko dopuštenje za snimanje zaslona. SNAPVERE se prije izrade slike premješta iza trenutačnog zaslona.</string>
+    <string name="capture_consent_note">Jedan dodir pokreće jednu korisnički odobrenu snimku. Nema automatskog ni pozadinskog snimanja.</string>
     <string name="capture_ready">Spremno za lokalnu snimku zaslona.</string>
     <string name="capture_requesting">Čekam Android dopuštenje za snimanje zaslona…</string>
+    <string name="capture_in_progress">Snimanje je u tijeku…</string>
     <string name="capture_cancelled">Snimanje zaslona je otkazano.</string>
     <string name="capture_background_failed">SNAPVERE se nije mogao premjestiti iza zaslona koji želite snimiti.</string>
     <string name="capture_saved">Spremljeno u Pictures/SNAPVERE: %1$s</string>
     <string name="capture_failed">Snimanje zaslona nije uspjelo: %1$s</string>
     <string name="unknown_error">Nepoznata pogreška</string>
+
+    <string name="latest_section">ZADNJA SNIMKA</string>
+    <string name="latest_empty">Još nema snimke</string>
+    <string name="latest_empty_description">Sljedeći PNG pojavit će se ovdje nakon što Android dovrši snimanje.</string>
+    <string name="latest_location">Pictures/SNAPVERE · PNG</string>
+    <string name="open_latest">Otvori</string>
+    <string name="share_latest">Podijeli</string>
+    <string name="delete_latest">Izbriši</string>
     <string name="no_capture">Još nije izrađena nijedna SNAPVERE snimka.</string>
     <string name="open_failed">Android ne može otvoriti spremljenu snimku.</string>
     <string name="share_failed">Android ne može podijeliti spremljenu snimku.</string>
+    <string name="delete_capture_title">Izbrisati zadnju snimku?</string>
+    <string name="delete_capture_message">PNG će biti uklonjen iz Pictures/SNAPVERE na ovom uređaju.</string>
+    <string name="delete_capture_confirm">Izbriši</string>
+    <string name="delete_capture_cancel">Odustani</string>
+    <string name="delete_capture_done">Zadnja snimka je izbrisana.</string>
+    <string name="delete_capture_failed">Android ne može izbrisati zadnju snimku.</string>
+
+    <string name="privacy_section">PRIVATNO PO DIZAJNU</string>
+    <string name="local_first">Lokalno snimanje</string>
+    <string name="local_first_description">Snimke ostaju na ovom uređaju. SNAPVERE nema račun, prijenos u oblak, analitiku, telemetriju ni INTERNET dopuštenje.</string>
+    <string name="privacy_note">SNAPVERE nikad ne pokreće snimanje zaslona u pozadini. Za svaku snimku potrebno je Android sustavsko dopuštenje.</string>
+
+    <string name="about_section">SNAPVERE ZA ANDROID</string>
+    <string name="about_description">Izvorno Android snimanje zaslona s fokusiranim tamnim sučeljem, lokalnim MediaStore spremanjem i dijeljenjem koje uvijek pokreće korisnik.</string>
+    <string name="website">Web</string>
+    <string name="support">Podrška</string>
+    <string name="privacy_policy">Privatnost</string>
+    <string name="terms_of_use">Uvjeti</string>
+    <string name="external_link_failed">Android ne može otvoriti ovu poveznicu.</string>
+    <string name="support_copied">Nema dostupne aplikacije za e-poštu. info@snapvere.com kopiran je u međuspremnik.</string>
+    <string name="version_format">Verzija %1$s · Android 10+</string>
+
     <string name="notification_channel_name">Snimanje zaslona</string>
     <string name="notification_channel_description">Vidljivo samo dok SNAPVERE dovršava snimku zaslona koju je korisnik odobrio.</string>
     <string name="notification_capturing">Snimanje zaslona…</string>
-    <string name="privacy_note">SNAPVERE nikad ne pokreće snimanje zaslona u pozadini. Za svaku snimku potrebno je Android sustavsko dopuštenje.</string>
 </resources>
