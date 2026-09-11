@@ -15,6 +15,7 @@
     <string name="capture_background_failed">SNAPVERE could not move behind the screen you want to capture.</string>
     <string name="capture_saved">Saved to Pictures/SNAPVERE: %1$s</string>
     <string name="capture_failed">Screen capture failed: %1$s</string>
+    <string name="capture_receiver_failed">Android could not attach the local capture-status listener. Capture remains local; reopen SNAPVERE after the capture to refresh its status.</string>
     <string name="unknown_error">Unknown error</string>
 
     <string name="latest_section">LATEST CAPTURE</string>
@@ -47,6 +48,7 @@
     <string name="terms_of_use">Terms</string>
     <string name="external_link_failed">Android could not open this link.</string>
     <string name="support_copied">No mail app was available. info@snapvere.com was copied to the clipboard.</string>
+    <string name="support_unavailable">Android could not open mail or copy the support address.</string>
     <string name="version_format">Version %1$s · Android 10+</string>
 
     <string name="notification_channel_name">Screen capture</string>
