@@ -1,0 +1,10 @@
+SNAPVERE v0.1.0 release trigger
+
+Validated source main SHA: f72d2182c7a1d414c7e27275e0d9d82f9a6e04ca
+Final PR: #34
+Final PR Windows CI: #450 / run 34650181644 / success
+Final PR Android CI: #109 / run 34650181605 / success
+Post-merge main Windows CI: #451 / run 34650837656 / success
+Post-merge main Android CI: #110 / run 34650837881 / success
+
+Release workflow must rebuild and revalidate all Windows and Android release candidates before creating immutable tag v0.1.0.
