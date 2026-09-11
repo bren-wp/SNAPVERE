@@ -307,15 +307,21 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         try
         {
-            if (sender is FrameworkElement root)
+            if (sender is not FrameworkElement root)
             {
-                root.Loaded -= TrayMenuProbeRoot_Loaded;
+                throw new InvalidOperationException("Tray flyout probe could not resolve its loaded root.");
             }
 
-            await Task.Delay(180);
+            root.Loaded -= TrayMenuProbeRoot_Loaded;
+            await WaitForSecondarySurfaceCaptureAsync(
+                root,
+                "secondary-tray.ready",
+                "SECONDARY_TRAY_READY",
+                "secondary-tray.captured",
+                "tray flyout");
             _trayMenuWindow?.Close();
             _trayMenuWindow = null;
-            StartupDiagnostics.WriteLine("Secondary UI probe loaded tray flyout.");
+            StartupDiagnostics.WriteLine("Secondary UI probe captured tray flyout.");
             StartOptionsSurfaceProbe();
         }
         catch (Exception exception)
@@ -343,15 +349,21 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         try
         {
-            if (sender is FrameworkElement root)
+            if (sender is not FrameworkElement root)
             {
-                root.Loaded -= OptionsProbeRoot_Loaded;
+                throw new InvalidOperationException("Options probe could not resolve its loaded root.");
             }
 
-            await Task.Delay(180);
+            root.Loaded -= OptionsProbeRoot_Loaded;
+            await WaitForSecondarySurfaceCaptureAsync(
+                root,
+                "secondary-options.ready",
+                "SECONDARY_OPTIONS_READY",
+                "secondary-options.captured",
+                "Options");
             _optionsWindow?.Close();
             _optionsWindow = null;
-            StartupDiagnostics.WriteLine("Secondary UI probe loaded Options window.");
+            StartupDiagnostics.WriteLine("Secondary UI probe captured Options window.");
             StartLanguageSurfaceProbe();
         }
         catch (Exception exception)
@@ -379,15 +391,21 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         try
         {
-            if (sender is FrameworkElement root)
+            if (sender is not FrameworkElement root)
             {
-                root.Loaded -= LanguageProbeRoot_Loaded;
+                throw new InvalidOperationException("Language probe could not resolve its loaded root.");
             }
 
-            await Task.Delay(180);
+            root.Loaded -= LanguageProbeRoot_Loaded;
+            await WaitForSecondarySurfaceCaptureAsync(
+                root,
+                "secondary-language.ready",
+                "SECONDARY_LANGUAGE_READY",
+                "secondary-language.captured",
+                "Language");
             _languageWindow?.Close();
             _languageWindow = null;
-            StartupDiagnostics.WriteLine("Secondary UI probe loaded Language window.");
+            StartupDiagnostics.WriteLine("Secondary UI probe captured Language window.");
             StartAboutSurfaceProbe();
         }
         catch (Exception exception)
@@ -414,23 +432,80 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         try
         {
-            if (sender is FrameworkElement root)
+            if (sender is not FrameworkElement root)
             {
-                root.Loaded -= AboutProbeRoot_Loaded;
+                throw new InvalidOperationException("About probe could not resolve its loaded root.");
             }
 
-            await Task.Delay(180);
+            root.Loaded -= AboutProbeRoot_Loaded;
+            await WaitForSecondarySurfaceCaptureAsync(
+                root,
+                "secondary-about.ready",
+                "SECONDARY_ABOUT_READY",
+                "secondary-about.captured",
+                "About");
             _aboutWindow?.Close();
             _aboutWindow = null;
             WriteProbeMarker(
                 SecondaryUiProbeMarkerFileName,
                 "SECONDARY_UI_READY",
-                "Secondary UI probe loaded tray flyout, Options, Language and About surfaces.");
+                "Secondary UI probe captured tray flyout, Options, Language and About surfaces.");
         }
         catch (Exception exception)
         {
             FailSecondaryUiProbe("About", exception);
         }
+    }
+
+    private static async Task WaitForSecondarySurfaceCaptureAsync(
+        FrameworkElement root,
+        string readyMarkerFileName,
+        string readyState,
+        string capturedMarkerFileName,
+        string surface)
+    {
+        await WaitForSecondarySurfaceReadyAsync(root, surface);
+        WriteProbeMarker(
+            readyMarkerFileName,
+            readyState,
+            $"Secondary UI probe rendered {surface} surface.",
+            exitProcess: false);
+
+        var acknowledgementPath = Path.Combine(
+            Path.GetTempPath(),
+            "SNAPVERE",
+            capturedMarkerFileName);
+        var stopwatch = Stopwatch.StartNew();
+        while (stopwatch.ElapsedMilliseconds < 5000)
+        {
+            if (File.Exists(acknowledgementPath))
+            {
+                return;
+            }
+
+            await Task.Delay(20);
+        }
+
+        throw new TimeoutException(
+            $"Visual QA did not acknowledge the rendered {surface} surface within 5 seconds.");
+    }
+
+    private static async Task WaitForSecondarySurfaceReadyAsync(FrameworkElement root, string surface)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        while (stopwatch.ElapsedMilliseconds < 5000)
+        {
+            if (root.ActualWidth >= 120 && root.ActualHeight >= 100)
+            {
+                await Task.Delay(50);
+                return;
+            }
+
+            await Task.Delay(20);
+        }
+
+        throw new TimeoutException(
+            $"Secondary UI probe surface '{surface}' did not reach a capturable rendered size within 5 seconds.");
     }
 
     private static void FailSecondaryUiProbe(string surface, Exception exception)
@@ -480,11 +555,19 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         try
         {
-            await Task.Delay(250);
+            if (sender is not FrameworkElement root)
+            {
+                throw new InvalidOperationException("Region overlay probe could not resolve its rendered root.");
+            }
+
+            await WaitForProbeVisualReadyAsync(root);
             WriteProbeMarker(
                 RegionOverlayProbeMarkerFileName,
                 "REGION_OVERLAY_READY",
-                "Region overlay probe loaded editor surface.");
+                "Region overlay probe rendered frozen editor surface.",
+                exitProcess: false);
+            await Task.Delay(1200);
+            Environment.Exit(0);
         }
         catch (Exception exception)
         {
@@ -497,11 +580,19 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         try
         {
-            await Task.Delay(250);
+            if (sender is not FrameworkElement root)
+            {
+                throw new InvalidOperationException("Window overlay probe could not resolve its rendered root.");
+            }
+
+            await WaitForProbeVisualReadyAsync(root);
             WriteProbeMarker(
                 WindowOverlayProbeMarkerFileName,
                 "WINDOW_OVERLAY_READY",
-                "Window overlay probe loaded target-selection surface.");
+                "Window overlay probe rendered frozen target-selection surface.",
+                exitProcess: false);
+            await Task.Delay(1200);
+            Environment.Exit(0);
         }
         catch (Exception exception)
         {
@@ -510,7 +601,49 @@ public partial class App : Microsoft.UI.Xaml.Application
         }
     }
 
-    private static void WriteProbeMarker(string fileName, string state, string logMessage)
+    private static async Task WaitForProbeVisualReadyAsync(FrameworkElement root)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        while (stopwatch.ElapsedMilliseconds < 5000)
+        {
+            if (HasReadyProbeImage(root))
+            {
+                // Let one compositor frame pass after the frozen bitmap becomes
+                // observable in the visual tree before external QA reads it.
+                await Task.Delay(50);
+                return;
+            }
+
+            await Task.Delay(20);
+        }
+
+        throw new TimeoutException("SNAPVERE probe surface did not publish its frozen image within 5 seconds.");
+    }
+
+    private static bool HasReadyProbeImage(DependencyObject node)
+    {
+        if (node is Microsoft.UI.Xaml.Controls.Image { Source: not null })
+        {
+            return true;
+        }
+
+        var childCount = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(node);
+        for (var index = 0; index < childCount; index++)
+        {
+            if (HasReadyProbeImage(Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(node, index)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void WriteProbeMarker(
+        string fileName,
+        string state,
+        string logMessage,
+        bool exitProcess = true)
     {
         var probeDirectory = Path.Combine(Path.GetTempPath(), "SNAPVERE");
         Directory.CreateDirectory(probeDirectory);
@@ -521,7 +654,10 @@ public partial class App : Microsoft.UI.Xaml.Application
             $"SNAPVERE {version} {state} | PID={Environment.ProcessId} | ARCH={RuntimeInformation.ProcessArchitecture} | {DateTimeOffset.UtcNow:O}");
 
         StartupDiagnostics.WriteLine($"{logMessage} Marker={markerPath}");
-        Environment.Exit(0);
+        if (exitProcess)
+        {
+            Environment.Exit(0);
+        }
     }
 
     private void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
