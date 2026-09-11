@@ -48,5 +48,7 @@ android {
 
 dependencies {
     implementation 'androidx.activity:activity:1.13.0'
-    implementation 'androidx.core:core:1.19.0'
+    // Core 1.19.0 requires compileSdk 37 and AGP 9.1; this project intentionally stays on the AGP 8.10.1 / SDK 36 compatibility line.
+    //noinspection GradleDependency
+    implementation 'androidx.core:core:1.18.0'
 }
