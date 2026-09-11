@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="snapvere_canvas">#07080D</color>
-    <color name="snapvere_surface">#0D1018</color>
-    <color name="snapvere_surface_high">#121725</color>
-    <color name="snapvere_border">#262E41</color>
-    <color name="snapvere_border_strong">#3B4661</color>
-    <color name="snapvere_text_primary">#F7F8FC</color>
-    <color name="snapvere_text_secondary">#B2BACB</color>
-    <color name="snapvere_text_muted">#7D879C</color>
-    <color name="snapvere_accent">#8C5AF4</color>
-    <color name="snapvere_accent_strong">#A789FF</color>
-    <color name="snapvere_cyan">#36B6D5</color>
-    <color name="snapvere_success">#55D6A8</color>
-    <color name="snapvere_warning">#F2C96D</color>
-    <color name="snapvere_danger">#FF6B7A</color>
-    <color name="snapvere_ripple">#338C5AF4</color>
+    <!-- Core values mirror the Windows dark theme in src/Snapvere.App/App.xaml. -->
+    <color name="snapvere_canvas">#0B0D12</color>
+    <color name="snapvere_surface">#12151C</color>
+    <color name="snapvere_surface_high">#181C25</color>
+    <color name="snapvere_border">#2A3140</color>
+    <color name="snapvere_border_strong">#3A4353</color>
+    <color name="snapvere_text_primary">#F6F7FB</color>
+    <color name="snapvere_text_secondary">#98A2B3</color>
+    <color name="snapvere_text_muted">#727C90</color>
+    <color name="snapvere_accent">#7C6CFF</color>
+    <color name="snapvere_accent_strong">#9B8DFF</color>
+    <color name="snapvere_cyan">#45D6A2</color>
+    <color name="snapvere_success">#45D6A2</color>
+    <color name="snapvere_warning">#F2B84B</color>
+    <color name="snapvere_danger">#FF7A8A</color>
+    <color name="snapvere_ripple">#337C6CFF</color>
 </resources>
