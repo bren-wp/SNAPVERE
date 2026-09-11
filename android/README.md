@@ -26,7 +26,7 @@ The matching digest file is:
 
 Current committed APK SHA-256:
 
-`f9df90450eb52a73cdfeccc1c12d4a5e197716f9c625cd0e867b6cf11d368bff`
+`895da8531edbe601f055d92bd136cbc52b2bf43eb81b0cec9d21fec03845a6f5`
 
 The committed binary came directly from a successful GitHub Actions Android build after `lintDebug`, `assembleDebug`, APK signature verification and zip alignment verification completed successfully. Debug signing is intentionally treated as development/internal distribution only. A production release APK must use a separately managed release-signing key; signing secrets must never be committed to this repository.
 
