@@ -72,12 +72,6 @@ public static class SnapvereVisualQaNative
     [DllImport("user32.dll")]
     public static extern bool PrintWindow(IntPtr hWnd, IntPtr hdcBlt, uint flags);
 
-    [DllImport("user32.dll")]
-    public static extern bool SetForegroundWindow(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    public static extern IntPtr GetForegroundWindow();
-
     public static SnapvereVisualQaWindowInfo[] GetVisibleWindows(int processId)
     {
         var windows = new List<SnapvereVisualQaWindowInfo>();
@@ -144,6 +138,25 @@ function Get-CapturableWindows {
     })
 }
 
+function Get-BitmapSampleFingerprint {
+    param([Parameter(Mandatory = $true)][System.Drawing.Bitmap]$Bitmap)
+
+    $builder = [System.Text.StringBuilder]::new()
+    $stepX = [Math]::Max(1, [int][Math]::Floor($Bitmap.Width / 18.0))
+    $stepY = [Math]::Max(1, [int][Math]::Floor($Bitmap.Height / 18.0))
+
+    for ($y = 0; $y -lt $Bitmap.Height; $y += $stepY) {
+        for ($x = 0; $x -lt $Bitmap.Width; $x += $stepX) {
+            [void]$builder.Append($Bitmap.GetPixel($x, $y).ToArgb())
+            [void]$builder.Append('|')
+        }
+    }
+
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($builder.ToString())
+    $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
+    [Convert]::ToHexString($hash)
+}
+
 function Test-BitmapHasVisualContent {
     param([Parameter(Mandatory = $true)][System.Drawing.Bitmap]$Bitmap)
 
@@ -163,11 +176,6 @@ function Test-BitmapHasVisualContent {
     return $false
 }
 
-function Test-IsTargetForeground {
-    param([Parameter(Mandatory = $true)][IntPtr]$Handle)
-    [SnapvereVisualQaNative]::GetForegroundWindow() -eq $Handle
-}
-
 function Save-WindowSnapshot {
     param(
         [Parameter(Mandatory = $true)]$Window,
@@ -180,11 +188,19 @@ function Save-WindowSnapshot {
         [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
     $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
     $captureMethod = $null
-    $hasVisualContent = $false
+    $hasStableVisualContent = $false
 
     try {
-        for ($attempt = 0; $attempt -lt 3 -and -not $hasVisualContent; $attempt++) {
-            foreach ($flag in @(2, 0)) {
+        # Use HWND-owned PrintWindow pixels only. A rendered frame is accepted only
+        # after the same sampled visual fingerprint appears on three consecutive
+        # captures, separated by a frame-scale delay. This avoids accepting the
+        # first non-empty WinUI chrome before DirectComposition content settles.
+        foreach ($flag in @(2, 0)) {
+            $previousFingerprint = $null
+            $stableCount = 0
+            $maxAttempts = if ($flag -eq 2) { 6 } else { 4 }
+
+            for ($attempt = 0; $attempt -lt $maxAttempts; $attempt++) {
                 $graphics.Clear([System.Drawing.Color]::Black)
                 $hdc = $graphics.GetHdc()
                 try {
@@ -195,51 +211,36 @@ function Save-WindowSnapshot {
                 }
 
                 if ($printed -and (Test-BitmapHasVisualContent -Bitmap $bitmap)) {
-                    $hasVisualContent = $true
-                    $captureMethod = if ($flag -eq 2) { 'PrintWindowFullContent' } else { 'PrintWindow' }
-                    break
+                    $fingerprint = Get-BitmapSampleFingerprint -Bitmap $bitmap
+                    if ($fingerprint -eq $previousFingerprint) {
+                        $stableCount++
+                    }
+                    else {
+                        $previousFingerprint = $fingerprint
+                        $stableCount = 1
+                    }
+
+                    if ($stableCount -ge 3) {
+                        $hasStableVisualContent = $true
+                        $captureMethod = if ($flag -eq 2) { 'StablePrintWindowFullContent' } else { 'StablePrintWindow' }
+                        break
+                    }
                 }
+                else {
+                    $previousFingerprint = $null
+                    $stableCount = 0
+                }
+
+                Start-Sleep -Milliseconds 20
             }
 
-            if ($hasVisualContent) {
+            if ($hasStableVisualContent) {
                 break
             }
-
-            # Hosted Windows runners may expose a WinUI HWND before DirectComposition
-            # has paint available to PrintWindow. A screen-copy fallback is permitted
-            # only when Windows confirms that this exact SNAPVERE HWND is foreground.
-            # This prevents the runner desktop or another process from being accepted.
-            [void][SnapvereVisualQaNative]::SetForegroundWindow($Window.Handle)
-            for ($foregroundAttempt = 0; $foregroundAttempt -lt 4; $foregroundAttempt++) {
-                if (Test-IsTargetForeground -Handle $Window.Handle) {
-                    break
-                }
-                Start-Sleep -Milliseconds 8
-            }
-
-            if (Test-IsTargetForeground -Handle $Window.Handle) {
-                $graphics.Clear([System.Drawing.Color]::Black)
-                $graphics.CopyFromScreen(
-                    $Window.Left,
-                    $Window.Top,
-                    0,
-                    0,
-                    [System.Drawing.Size]::new($Window.Width, $Window.Height),
-                    [System.Drawing.CopyPixelOperation]::SourceCopy)
-
-                if (Test-BitmapHasVisualContent -Bitmap $bitmap) {
-                    $hasVisualContent = $true
-                    $captureMethod = 'ForegroundScreenCopy'
-                    break
-                }
-            }
-
-            Start-Sleep -Milliseconds 8
         }
 
-        if (-not $hasVisualContent) {
-            $foreground = [SnapvereVisualQaNative]::GetForegroundWindow().ToInt64()
-            throw "Rendered SNAPVERE window '$($Window.Title)' did not produce a target-owned visual frame. Target HWND=$($Window.Handle.ToInt64()), foreground HWND=$foreground."
+        if (-not $hasStableVisualContent) {
+            throw "Rendered SNAPVERE window '$($Window.Title)' did not produce three consecutive stable target-owned PrintWindow frames. Target HWND=$($Window.Handle.ToInt64())."
         }
 
         $bitmap.Save($DestinationPath, [System.Drawing.Imaging.ImageFormat]::Png)
@@ -333,6 +334,7 @@ function Invoke-SingleSurfaceProbe {
                 Select-Object -First 1
 
             if ($null -ne $window) {
+                Start-Sleep -Milliseconds 25
                 $current = Get-CapturableWindows -Process $process |
                     Where-Object { $_.Handle -eq $window.Handle } |
                     Select-Object -First 1
@@ -349,12 +351,12 @@ function Invoke-SingleSurfaceProbe {
                 }
             }
 
-            Start-Sleep -Milliseconds 6
+            Start-Sleep -Milliseconds 8
         }
 
         if ($null -eq $snapshot) {
             if ($null -ne $lastCaptureError) {
-                throw "No target-owned SNAPVERE window was captured for $EnvironmentVariable. Last capture error: $($lastCaptureError.Message)"
+                throw "No stable target-owned SNAPVERE window was captured for $EnvironmentVariable. Last capture error: $($lastCaptureError.Message)"
             }
             throw "No rendered SNAPVERE window was captured for $EnvironmentVariable."
         }
@@ -388,6 +390,7 @@ function Invoke-SecondarySurfaceProbe {
                     continue
                 }
 
+                Start-Sleep -Milliseconds 20
                 $current = Get-CapturableWindows -Process $process |
                     Where-Object { $_.Handle -eq $window.Handle } |
                     Select-Object -First 1
@@ -411,14 +414,14 @@ function Invoke-SecondarySurfaceProbe {
                 }
             }
 
-            Start-Sleep -Milliseconds 6
+            Start-Sleep -Milliseconds 8
         }
 
         Wait-ForProcessExit -Process $process
         Assert-ProbeMarker -FileName $markerFileName -ExpectedState 'SECONDARY_UI_READY'
 
         if ($snapshots.Count -ne $expectedNames.Count) {
-            throw "Expected four target-owned rendered secondary UI surfaces but captured $($snapshots.Count)."
+            throw "Expected four stable target-owned rendered secondary UI surfaces but captured $($snapshots.Count)."
         }
 
         return $snapshots.ToArray()
@@ -469,7 +472,7 @@ $manifest = [pscustomobject]@{
 $manifestPath = Join-Path $resolvedOutputDirectory 'manifest.json'
 $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifestPath -Encoding utf8
 
-Write-Host "SNAPVERE visual QA captured six target-owned rendered Windows surfaces:"
+Write-Host "SNAPVERE visual QA captured six stable target-owned rendered Windows surfaces:"
 foreach ($snapshot in $results) {
     Write-Host "  $($snapshot.File) $($snapshot.Width)x$($snapshot.Height) $([Math]::Round($snapshot.Bytes / 1KB, 1)) KB $($snapshot.CaptureMethod) sha256:$($snapshot.Sha256)"
 }
