@@ -166,6 +166,8 @@ The CI APK is debug-signed for development/internal distribution and can be inst
 
 A green Android CI run proves source compilation, Android lint, debug/release variant build, debug APK signature, APK alignment and artifact generation. It does not by itself prove physical-device interaction on every OEM/Android combination. Device/emulator runtime QA should be cited separately when actually performed.
 
+Final pull-request evidence must be generated from a merge-ref against the current `main`. A green run whose base predates another merged QA or packaging fix is useful historical evidence, but it is not accepted as the final Android merge proof.
+
 ## Platform parity boundary
 
 The Android application is complete for its implemented full-screen MediaProjection workflow. Android does not expose the same top-level-window capture primitive that SNAPVERE uses on Windows; therefore Windows-style Window Capture is not claimed on Android. Region selection and annotation parity remain future features until implemented and device-tested.
