@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SNAPVERE</string>
+    <string name="tagline">Snimi. Uredi. Gotovo.</string>
+    <string name="android_label">SNAPVERE za Android</string>
+    <string name="local_first">LOKALNO I PRIVATNO</string>
+    <string name="local_first_description">Snimke ostaju na ovom uređaju. Bez računa, prijenosa u oblak, analitike i telemetrije.</string>
+    <string name="capture_screen">Snimi zaslon</string>
+    <string name="capture_screen_description">Android će prije svake snimke prikazati svoj sustavski dijalog za dopuštenje snimanja zaslona.</string>
+    <string name="open_latest">Otvori zadnju snimku</string>
+    <string name="share_latest">Podijeli zadnju snimku</string>
+    <string name="capture_ready">Spremno za lokalnu snimku zaslona.</string>
+    <string name="capture_requesting">Čekam Android dopuštenje za snimanje zaslona…</string>
+    <string name="capture_cancelled">Snimanje zaslona je otkazano.</string>
+    <string name="capture_saved">Spremljeno u Pictures/SNAPVERE: %1$s</string>
+    <string name="capture_failed">Snimanje zaslona nije uspjelo: %1$s</string>
+    <string name="no_capture">Još nije izrađena nijedna SNAPVERE snimka.</string>
+    <string name="open_failed">Android ne može otvoriti spremljenu snimku.</string>
+    <string name="share_failed">Android ne može podijeliti spremljenu snimku.</string>
+    <string name="notification_channel_name">Snimanje zaslona</string>
+    <string name="notification_channel_description">Vidljivo samo dok SNAPVERE dovršava snimku zaslona koju je korisnik odobrio.</string>
+    <string name="notification_capturing">Snimanje zaslona…</string>
+    <string name="notification_saved">Snimka je spremljena lokalno</string>
+    <string name="notification_failed">Snimku nije moguće dovršiti</string>
+    <string name="permission_notifications">Dopuštenje za obavijesti nije obavezno; snimanje zaslona i dalje se može zatražiti.</string>
+    <string name="privacy_note">SNAPVERE nikad ne pokreće snimanje zaslona u pozadini. Za svaku snimku potrebno je Android sustavsko dopuštenje.</string>
+</resources>
