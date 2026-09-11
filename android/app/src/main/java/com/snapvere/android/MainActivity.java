@@ -1,19 +1,15 @@
 package com.snapvere.android;
 
-import android.app.Activity;
 import android.app.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -21,16 +17,23 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-public final class MainActivity extends Activity {
-    private static final int REQUEST_SCREEN_CAPTURE = 1001;
+import androidx.activity.ComponentActivity;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+
+public final class MainActivity extends ComponentActivity {
     private static final String PREFS = "snapvere_android";
     private static final String PREF_LATEST_URI = "latest_capture_uri";
-    private static final String PREF_LATEST_NAME = "latest_capture_name";
 
     private TextView statusText;
     private Button openLatestButton;
     private Button shareLatestButton;
     private boolean receiverRegistered;
+    private ActivityResultLauncher<Intent> captureLauncher;
 
     private final BroadcastReceiver captureReceiver = new BroadcastReceiver() {
         @Override
@@ -41,7 +44,9 @@ public final class MainActivity extends Activity {
                 refreshLatestState();
             } else if (CaptureService.ACTION_CAPTURE_FAILED.equals(intent.getAction())) {
                 String message = intent.getStringExtra(CaptureService.EXTRA_ERROR_MESSAGE);
-                statusText.setText(getString(R.string.capture_failed, message == null ? "Unknown error" : message));
+                statusText.setText(getString(
+                    R.string.capture_failed,
+                    message == null || message.isBlank() ? "Unknown error" : message));
             }
         }
     };
@@ -49,8 +54,11 @@ public final class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setStatusBarColor(Color.rgb(7, 8, 13));
-        getWindow().setNavigationBarColor(Color.rgb(7, 8, 13));
+
+        captureLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> handleCaptureResult(result.getResultCode(), result.getData()));
+
         setContentView(buildContent());
         refreshLatestState();
     }
@@ -71,38 +79,15 @@ public final class MainActivity extends Activity {
         super.onStop();
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != REQUEST_SCREEN_CAPTURE) {
-            return;
-        }
-
-        if (resultCode != RESULT_OK || data == null) {
-            statusText.setText(R.string.capture_cancelled);
-            return;
-        }
-
-        Intent serviceIntent = new Intent(this, CaptureService.class)
-            .setAction(CaptureService.ACTION_CAPTURE_ONCE)
-            .putExtra(CaptureService.EXTRA_RESULT_CODE, resultCode)
-            .putExtra(CaptureService.EXTRA_RESULT_DATA, data);
-
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent);
-            } else {
-                startService(serviceIntent);
-            }
-        } catch (RuntimeException exception) {
-            statusText.setText(getString(R.string.capture_failed, exception.getMessage()));
-        }
-    }
-
     private View buildContent() {
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
-        scroll.setBackgroundColor(Color.rgb(7, 8, 13));
+        scroll.setBackgroundColor(0xFF07080D);
+        ViewCompat.setOnApplyWindowInsetsListener(scroll, (view, windowInsets) -> {
+            Insets bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            return windowInsets;
+        });
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -167,7 +152,28 @@ public final class MainActivity extends Activity {
         statusText.setText(R.string.capture_requesting);
         MediaProjectionManager manager =
             (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-        startActivityForResult(manager.createScreenCaptureIntent(), REQUEST_SCREEN_CAPTURE);
+        captureLauncher.launch(manager.createScreenCaptureIntent());
+    }
+
+    private void handleCaptureResult(int resultCode, Intent data) {
+        if (resultCode != RESULT_OK || data == null) {
+            statusText.setText(R.string.capture_cancelled);
+            return;
+        }
+
+        Intent serviceIntent = new Intent(this, CaptureService.class)
+            .setAction(CaptureService.ACTION_CAPTURE_ONCE)
+            .putExtra(CaptureService.EXTRA_RESULT_CODE, resultCode)
+            .putExtra(CaptureService.EXTRA_RESULT_DATA, data);
+
+        try {
+            ContextCompat.startForegroundService(this, serviceIntent);
+        } catch (RuntimeException exception) {
+            String message = exception.getMessage();
+            statusText.setText(getString(
+                R.string.capture_failed,
+                message == null || message.isBlank() ? exception.getClass().getSimpleName() : message));
+        }
     }
 
     private void refreshLatestState() {
@@ -175,7 +181,8 @@ public final class MainActivity extends Activity {
             return;
         }
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-        boolean hasLatest = !prefs.getString(PREF_LATEST_URI, "").isBlank();
+        String latest = prefs.getString(PREF_LATEST_URI, "");
+        boolean hasLatest = latest != null && !latest.isBlank();
         openLatestButton.setEnabled(hasLatest);
         shareLatestButton.setEnabled(hasLatest);
         openLatestButton.setAlpha(hasLatest ? 1.0f : 0.5f);
@@ -230,11 +237,11 @@ public final class MainActivity extends Activity {
         IntentFilter filter = new IntentFilter();
         filter.addAction(CaptureService.ACTION_CAPTURE_COMPLETED);
         filter.addAction(CaptureService.ACTION_CAPTURE_FAILED);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(captureReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            registerReceiver(captureReceiver, filter);
-        }
+        ContextCompat.registerReceiver(
+            this,
+            captureReceiver,
+            filter,
+            ContextCompat.RECEIVER_NOT_EXPORTED);
         receiverRegistered = true;
     }
 
