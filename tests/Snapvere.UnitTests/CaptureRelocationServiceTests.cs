@@ -78,6 +78,52 @@ public sealed class CaptureRelocationServiceTests
     }
 
     [Fact]
+    public async Task RelocateAsync_WhenDeleteCapableSnapshotCannotBeOpened_PreservesSourceRecoveryCopy()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"snapvere-relocate-share-{Guid.NewGuid():N}");
+        var sourceDirectory = Path.Combine(root, "source");
+        var destinationDirectory = Path.Combine(root, "chosen");
+        var sourcePath = Path.Combine(sourceDirectory, "SNAPVERE_source.png");
+        var destinationPath = Path.Combine(destinationDirectory, "chosen.png");
+        var expectedBytes = new byte[] { 137, 80, 78, 71, 13, 10, 26, 10, 11, 12, 13 };
+
+        try
+        {
+            Directory.CreateDirectory(sourceDirectory);
+            Directory.CreateDirectory(destinationDirectory);
+            await File.WriteAllBytesAsync(sourcePath, expectedBytes);
+
+            // This reader allows other readers but deliberately denies delete
+            // sharing. Relocation must still complete the selected destination,
+            // while conservatively retaining the original instead of falling
+            // back to a later pathname-based delete.
+            await using var reader = new FileStream(
+                sourcePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                bufferSize: 4096,
+                useAsync: true);
+
+            var capture = new CaptureSaveResult(sourcePath, 800, 600, DateTimeOffset.UtcNow);
+            var result = await new CaptureRelocationService().RelocateAsync(capture, destinationPath);
+
+            Assert.True(File.Exists(sourcePath));
+            Assert.True(File.Exists(destinationPath));
+            Assert.Equal(expectedBytes, await File.ReadAllBytesAsync(destinationPath));
+            Assert.Equal(Path.GetFullPath(destinationPath), result.FilePath);
+            Assert.Empty(Directory.EnumerateFiles(destinationDirectory, ".snapvere-*.tmp", SearchOption.TopDirectoryOnly));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task RelocateAsync_SupportsLongValidDestinationNameWithoutExpandingStagingName()
     {
         var root = Path.Combine(Path.GetTempPath(), $"snapvere-relocate-long-{Guid.NewGuid():N}");
