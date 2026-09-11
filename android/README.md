@@ -1,38 +1,61 @@
 # SNAPVERE Android
 
-Native Android companion for SNAPVERE. The Android app follows the same local-first privacy model as the Windows application: capture starts only after explicit user interaction and Android's system MediaProjection consent.
+Native Android companion for SNAPVERE with the same local-first privacy model as the Windows application. Screen capture starts only after explicit user action and Android's system MediaProjection consent.
 
-## Current implemented scope
+## Implemented application
 
 - Native Android application under `android/`
-- Android 10+ (`minSdk 29`), compiled/targeted against API 36
+- Android 10+ (`minSdk 29`), compile/target SDK 36
 - Full-screen capture through the official Android `MediaProjection` API
-- Foreground media-projection service only while a user-approved capture is being completed
-- PNG output through `MediaStore` to `Pictures/SNAPVERE`
-- Open and Share actions for the most recent capture
-- English and Croatian UI resources with Android's normal fallback model
-- No account, telemetry, analytics, cloud upload, background capture, `INTERNET` permission or cleartext traffic
-- App backup/device-transfer disabled for SNAPVERE app-private state
+- Lifecycle handoff that waits for `MainActivity.onStop()` before creating the capture virtual display, so SNAPVERE is moved behind the screen being captured
+- Foreground media-projection service only while one user-approved capture is active
+- Single-active-capture guard and serialized teardown of MediaProjection, VirtualDisplay, ImageReader and capture thread resources
+- PNG output through `MediaStore` into `Pictures/SNAPVERE`
+- Latest-capture card with validated Open, Share and Delete actions
+- Stale MediaStore URI detection so buttons are disabled instead of pointing at a missing image
+- Native confirmation before deleting the latest capture
+- User-initiated Website, Support, Privacy and Terms links
+- Support fallback copies `info@snapvere.com` when no mail client is registered
+- English and Croatian UI resources using Android's normal resource fallback model
+- No account, telemetry, analytics, cloud upload, automatic background capture or `INTERNET` permission
+- App backup/device-transfer disabled for SNAPVERE private state
 
-## APK
+## Dark UI / UX
 
-The CI-verified internal/debug APK is committed at:
+The Android app uses a dedicated SNAPVERE dark design system rather than Android default light controls. Central tokens live in `res/values/colors.xml`; Activity code consumes those resources instead of embedding an unrelated palette.
 
-`android/SNAPVERE-Android-0.0.9-debug.apk`
+The interface is organized into five clear surfaces:
 
-The matching digest file is:
+1. SNAPVERE identity/header with Android-local badge
+2. capture card with live status and primary Capture action
+3. latest-capture card with Open, Share and Delete
+4. private-by-design explanation
+5. About/support/legal actions
 
-`android/SNAPVERE-Android-0.0.9-debug.apk.sha256`
+The canvas, elevated surfaces, border hierarchy, violet accent, cyan secondary accent, success/warning/error states, text contrast and ripple feedback are all defined centrally. Buttons expose disabled states explicitly, status changes use an accessibility live region, and the entire page remains scrollable for small displays and larger text scaling.
 
-Current committed APK SHA-256:
+## Capture behavior
 
-`895da8531edbe601f055d92bd136cbc52b2bf43eb81b0cec9d21fec03845a6f5`
+Each capture uses a fresh Android MediaProjection consent token. SNAPVERE starts the foreground service while the Activity is still visible, requests `moveTaskToBack(true)`, and starts the VirtualDisplay only after `MainActivity.onStop()` confirms that the SNAPVERE task is no longer visible. A bounded timeout is failure protection only; it never substitutes for the lifecycle handoff.
 
-The committed binary came directly from a successful GitHub Actions Android build after `lintDebug`, `assembleDebug`, APK signature verification and zip alignment verification completed successfully. Debug signing is intentionally treated as development/internal distribution only. A production release APK must use a separately managed release-signing key; signing secrets must never be committed to this repository.
+A process-local guard prevents overlapping capture sessions. Destruction atomically closes the session and serializes cleanup onto the capture handler when required, preventing a new capture from racing teardown of the previous one.
 
-## Build
+## APK and source-of-truth policy
 
-The CI toolchain is pinned to:
+Generated APK binaries are **not committed to the source tree**. The canonical development APK is the artifact produced by the final green GitHub Actions `Android CI` run for the exact source commit being evaluated.
+
+CI publishes:
+
+- `SNAPVERE-Android-0.0.9-debug.apk`
+- `SNAPVERE-Android-0.0.9-debug.apk.sha256`
+
+inside an artifact named `snapvere-android-apk-<commit-sha>`.
+
+This avoids leaving a stale binary in the repository after source changes. The debug APK is an internal/development build. Production publication still requires a separately managed release-signing key; signing secrets are never committed to the repository.
+
+## Build and validation
+
+Pinned CI toolchain:
 
 - JDK 17
 - Android Gradle Plugin 8.10.1
@@ -40,22 +63,37 @@ The CI toolchain is pinned to:
 - Android SDK 36
 - Android SDK Build Tools 35.0.0
 
-From a configured Android build environment:
+CI performs all of the following:
+
+1. validates the manifest privacy/service contract (`INTERNET` forbidden, cleartext disabled, backup disabled, non-exported mediaProjection service required)
+2. runs Android lint with warnings treated as errors
+3. builds the debug APK
+4. builds the minified/shrunk release variant as compile/shrinker evidence
+5. verifies the debug APK with `apksigner`
+6. verifies APK alignment with `zipalign`
+7. computes SHA-256
+8. uploads the APK and digest as a GitHub Actions artifact
+
+Equivalent local build command for a configured Android toolchain:
 
 ```bash
-gradle -p android --no-daemon clean lintDebug assembleDebug
+gradle -p android --no-daemon clean lintDebug assembleDebug assembleRelease
 ```
 
-The raw Gradle output is written to `android/app/build/outputs/apk/debug/app-debug.apk`.
+The raw debug APK is written to:
 
-CI additionally verifies the generated APK with Android SDK `apksigner` and `zipalign`, then publishes the APK and SHA-256 digest as an Actions artifact.
+```text
+android/app/build/outputs/apk/debug/app-debug.apk
+```
 
-## Privacy/security notes
+## Privacy and security
 
-SNAPVERE does not attempt to bypass Android screen-capture controls. Each capture uses a fresh system consent flow. The capture service is not exported and is declared with the `mediaProjection` foreground-service type. Captures are written through Android `MediaStore`; no broad filesystem permission is requested.
+The manifest intentionally contains no `android.permission.INTERNET`. SNAPVERE does not fetch remote configuration, upload screenshots, send analytics, register a remote command channel or perform background capture. Website/support/legal actions are explicit user actions delegated to Android's browser/mail handlers.
 
-The Android CI workflow is read-only against repository contents during normal operation. The one-time write-capable artifact-import job used to place the explicitly requested verified APK in `android/` was removed immediately after that binary was committed.
+The capture service is `android:exported="false"`, uses the `mediaProjection` foreground-service type and stops with the app task. Captures are stored through MediaStore without broad filesystem permissions.
 
-## Next Android milestones
+## Scope
 
-The first functional Android milestone intentionally focuses on reliable full-screen capture. Region selection, annotation tools, richer capture history, Android-specific settings, release signing, and device/emulator runtime QA should be added in later reviewable increments rather than being represented as complete before they are implemented and tested.
+This Android milestone is a complete, polished full-screen capture application for the implemented Android capture model. Android does not expose the same top-level-window capture primitive used by SNAPVERE on Windows, so Windows-style Window Capture is not represented as implemented on Android. Region selection/annotation parity remains a distinct future feature rather than being falsely documented as complete.
+
+For the detailed architecture, UI contract and QA evidence policy, see [`docs/ANDROID.md`](../docs/ANDROID.md) and [`docs/hr/ANDROID.md`](../docs/hr/ANDROID.md).
