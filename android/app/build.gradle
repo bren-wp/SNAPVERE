@@ -37,7 +37,6 @@ android {
         abortOnError true
         checkReleaseBuilds true
         warningsAsErrors true
-        disable 'OldTargetApi'
     }
 
     packaging {
@@ -45,4 +44,8 @@ android {
             excludes += ['/META-INF/{AL2.0,LGPL2.1}']
         }
     }
+}
+
+dependencies {
+    implementation 'androidx.activity:activity:1.13.0'
 }
