@@ -16,6 +16,13 @@
     <string name="capture_saved">Spremljeno lokalno: %1$s</string>
     <string name="capture_failed">Snimanje nije uspjelo: %1$s</string>
     <string name="capture_receiver_failed">Android nije mogao uključiti lokalno praćenje statusa. Snimka i dalje ostaje lokalna; ponovno otvorite SNAPVERE kako biste osvježili rezultat.</string>
+    <string name="capture_error_permission">Android nije vratio valjano odobrenje za snimanje. Pokrenite snimanje ponovno.</string>
+    <string name="capture_error_service_unavailable">Android nije mogao pokrenuti uslugu snimanja zaslona. Pokušajte ponovno.</string>
+    <string name="capture_error_stopped">Android je prekinuo snimanje prije spremanja slike.</string>
+    <string name="capture_error_hidden">SNAPVERE se nije uspio potpuno premjestiti iza zaslona na vrijeme. Pokušajte ponovno.</string>
+    <string name="capture_error_frame_timeout">Android nije dostavio kadar zaslona na vrijeme. Pokušajte ponovno.</string>
+    <string name="capture_error_frame">Android je vratio neispravan ili nedostupan kadar zaslona. Pokušajte ponovno.</string>
+    <string name="capture_error_save">Android nije mogao spremiti PNG u Pictures/SNAPVERE.</string>
     <string name="unknown_error">Neočekivana Android pogreška</string>
 
     <string name="latest_section">ZADNJA SNIMKA</string>
