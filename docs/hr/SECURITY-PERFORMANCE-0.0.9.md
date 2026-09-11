@@ -33,7 +33,9 @@ v0.0.9 koristi ograničeno staging ime:
 
 Više se ne produžuje odredišni basename dodatnim suffixom, pa valjano dugo NTFS ime ne postaje nevaljano samo zbog privremenog imena.
 
-Portable host više ne smatra user-writable `%TEMP%` extraction cache pouzdanim samo zato što postoje `.ready` i `Snapvere.exe`. Prije pokretanja raspakirane aplikacije svaki očekivani payload file uspoređuje se bajt-po-bajt s ugrađenim ZIP-om za odabranu arhitekturu, odbijaju se nestale i neočekivane datoteke te reparse pointovi, a nevaljan cache transakcijski se ponovno gradi iz embedded payloada. Obnovljeni cache ponovno se provjerava prije izvršavanja. Time se smanjuje rizik trajne izmjene reusable Portable cachea bez tvrdnje da SNAPVERE može sandboxirati zlonamjerni kod koji već radi kao isti Windows korisnik.
+Portable host više ne smatra user-writable `%TEMP%` extraction cache pouzdanim samo zato što postoje `.ready` i `Snapvere.exe`. CI prije izgradnje universal Portable hosta generira integrity manifest za svaku arhitekturu iz točno objavljenog payloada. Mali manifest ugrađuje se uz pripadajući payload ZIP i bilježi očekivanu relativnu putanju, veličinu i SHA-256 digest svake datoteke. Prije pokretanja cached aplikacije Portable odbija reparse pointove, nestale ili neočekivane datoteke te svaku datoteku čija se veličina ili SHA-256 ne podudara s trusted embedded manifestom. Nevaljan cache ponovno se transakcijski gradi iz embedded payloada i još jednom provjerava prije izvršavanja.
+
+Prva implementacija uspoređivala je cached datoteke izravno s drugim decompression prolazom kroz veliki embedded ZIP. Stvarni package lifecycle CI pokazao je da takav dizajn na hosted runneru može prijeći postojeći 60-sekundni Portable startup-probe prozor. Zato nije povećan timeout niti oslabljen test: popravljen je uzrok tako da cache provjera radi jedan sekvencijalni hash prolaz kroz raspakirane datoteke i uspoređuje ih s embedded manifestom, bez redundantne ZIP dekompresije.
 
 Zajednički path-boundary helper sada tretira i samu zaštićenu mapu i njezine potomke kao dio granice, a odbija parent i sibling putanje koje samo dijele isti tekstualni prefiks. Setup ga koristi pri zaštiti Windows system direktorija i identifikaciji vlastitih instaliranih datoteka/procesa.
 
@@ -61,7 +63,7 @@ Capture i Direct3D resursi stvaraju se za stvarni capture rad umjesto da stalno 
 
 Recent-capture enumeracija ostaje ograničena i pokreće se na zahtjev. v0.0.9 uklanja nepotrebni eksplicitni metadata refresh za svaki pronađeni PNG te tolerira očekivane I/O/access race situacije bez file watchera, baze ili resident cachea.
 
-Portable cache provjera dodaje foreground rad pri pokretanju javnog Portable executablea jer se reusable raspakirani payload uspoređuje s embedded izvorom prije izvršavanja. Ovdje se ne iznosi tvrdnja o vremenu pokretanja; CI lifecycle validacija mora ostati zelena, a stvarni launch-time benchmark odvojen je od statičkog pregleda.
+Portable cache provjera dodaje foreground rad pri pokretanju javnog Portable executablea jer se cached payload datoteke SHA-256 provjeravaju prije izvršavanja. Validator ih čita sekvencijalno i ne dekomprimira ponovno embedded ZIP samo radi ponovnog dobivanja očekivanih bajtova. Ne objavljuje se fiksna tvrdnja o vremenu pokretanja; package lifecycle CI ostaje regression gate, a stvarno launch vrijeme i dalje ovisi o storageu i endpoint-security uvjetima.
 
 Projekt namjerno ne objavljuje izmišljene RAM ili CPU postotke. Working set i CPU ovise o Windows verziji, DPI-ju, broju monitora, driverima i aktivnoj capture/editor sesiji. Performance ugovor je arhitekturni: nema nepotrebnog periodičnog idle loopa, telemetry workera, language/network workera niti stalno aktivnog capture GPU pipelinea.
 
