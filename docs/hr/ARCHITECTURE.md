@@ -1,82 +1,283 @@
 # Arhitektura SNAPVERE-a
 
-Aktualni `main` je post-**v0.0.8** hardening. Najnovije objavljeno izdanje je v0.0.8; kasnije promjene na `main` nisu novo izdanje dok zasebni release workflow ne objavi novi tag i assete. Objavljeni releaseovi ne prepisuju se naknadnim razvojem.
+## Status
 
-SNAPVERE koristi tray-first arhitekturu. Vidljivi dashboard nije dio normalnog startup toka. Aplikacija drži mali skriveni WinUI runtime/capture coordinator, native tray icon i globalne hotkeye, dok se capture i sekundarni prozori stvaraju samo kada su potrebni.
+Aktualna release linija je **0.1.0**. SNAPVERE se sastoji od tray-first Windows aplikacije za snimanje zaslona i zasebnog nativnog Android 10+ companiona. Objavljeni povijesni tagovi/releaseovi ostaju nepromjenjivi i kasniji razvoj ih ne prepisuje.
 
-## Slojevi
+Windows normalni launch stvara skriveni WinUI capture coordinator, global-hotkey host i notification-area host te ostaje tray-first. Region, Window i Screen Capture su implementirani. Tray, Options/Recent Captures, Language i About sekundarne su površine koje nastaju na zahtjev.
+
+Android implementira izričito korisnički odobreno full-screen snimanje kroz MediaProjection i MediaStore. Nije port Windows top-level-window capture enginea i ne navodi Windows-only funkcije koje Android platforma ne pruža.
+
+## Ciljevi dizajna
+
+SNAPVERE daje prioritet niskoj capture latenciji, fizičkoj pixel točnosti, mixed-DPI ispravnosti, determinističkom native cleanupu, local-first privatnosti, bounded failure ponašanju, predvidljivom tray/service startupu i maloj razumljivoj dependency površini.
+
+## Windows slojevi
+
+### Snapvere.App
+
+WinUI 3 composition root i presentation layer.
+
+- `App` upravlja dependency injectionom, UI-thread routingom, runtime/visual probeovima i životnim vijekom prozora.
+- `CaptureCenterWindow` ostaje skriveni capture coordinator, a ne normalni launcher UI.
+- `TrayMenuWindow`, `OptionsWindow`, `LanguagePickerWindow` i `AboutWindow` nastaju na zahtjev.
+- `RegionCaptureWindow` upravlja interaktivnom Region selekcijom i anotacijama.
+- `WindowTargetPicker` koordinira DPI-aware target overlaye.
+
+Programatski WinUI treeovi ostaju preferirani za sekundarne prozore jer ih package/runtime probeovi pouzdano materijaliziraju bez dodatnih XAML resource-load ovisnosti.
+
+### Snapvere.Application
+
+UI-neovisni Windows workflowi i lokalna persistencija:
+
+- `RegionCaptureWorkflow`
+- `WindowCaptureWorkflow`
+- `ScreenCaptureWorkflow`
+- `CaptureFileWriter`
+- `CaptureHistoryService`
+- `CapturePreferencesService`
+
+Preference i capture history ostaju lokalni. 0.1.0 dodatno zadržava filesystem policy/security failure unutar load/enumeration/temp-cleanup putova tako da sekundarna lokalna I/O greška ne ruši UI tok.
+
+### Snapvere.Domain
+
+Modeli i geometrija capturea u fizičkim pikselima bez UI ovisnosti.
+
+### Snapvere.Capture
+
+Windows acquisition i desktop integration:
+
+- monitor/window discovery;
+- DPI i virtual-desktop geometrija;
+- global hotkey host;
+- Windows.Graphics.Capture / D3D11;
+- GDI monitor compatibility backend;
+- native window Z-order filtering i targeting.
+
+### Snapvere.Imaging
+
+Deterministički BGRA8 crop, annotation rendering i PNG encoding.
+
+### Snapvere.Packaging / Snapvere.Setup / Snapvere.Portable
+
+Guarded embedded-payload obrada, architecture selection, per-user Setup lifecycle, same-Setup uninstall i Portable extraction/launch. Portable reusable cache provjerava se prema trusted architecture-specific SHA-256 manifestu ugrađenom u host prije izvršavanja.
+
+### Snapvere.Shared
+
+Male zajedničke komponente poput lokalizacije i process-local language statea.
+
+## Windows tray-first startup
 
 ```text
-Tray / Print Screen / hotkeys
+Snapvere.exe
     ↓
-Snapvere.App
+startup dijagnostika + DI
     ↓
-Snapvere.Application workflows
+skriveni CaptureCenterWindow coordinator
     ↓
-Snapvere.Capture acquisition
+Win32 global-hotkey host
     ↓
-Snapvere.Imaging obrada
+Win32 notification-area icon host
+    ↓
+coordinator ostaje skriven dok proces ostaje aktivan
+```
+
+Native tray/hotkey threadovi ne mijenjaju WinUI kontrole izravno. Naredbe se prebacuju na WinUI `DispatcherQueue`. Tray host koristi `NOTIFYICON_VERSION_4`, obrađuje Explorer/taskbar rekreaciju te pointer i keyboard activation.
+
+## Windows capture pipelineovi
+
+### Region / Screen
+
+```text
+naredba
+    ↓
+ResilientScreenCaptureService
+    ├── Windows.Graphics.Capture + D3D11
+    └── očekivani monitor-acquisition failure → GDI fallback
+    ↓
+CaptureFrame (fizički BGRA8)
+    ↓
+opcionalni crop + annotation render
     ↓
 CaptureFileWriter / Clipboard
 ```
 
-`Snapvere.Domain` sadrži osnovne modele i geometriju bez UI ovisnosti. `Snapvere.Shared` sadrži lagane zajedničke komponente poput built-in lokalizacijskog kataloga i process-local language statea. `Snapvere.Packaging` sadrži zajedničku logiku za universal Setup i Portable hostove kako se ekstrakcija, cache i architecture izbor ne bi duplicirali.
+WGC/D3D resursi stvaraju se lazy za aktivni capture. Caller cancellation i neočekivane programerske greške ne skrivaju se iza nepovezanog fallback rada.
 
-## Startup i idle ponašanje
+### Window
 
-Normalni launch je tray-first. Tray i globalni hotkey hostovi rade event-driven preko Windows poruka; nema periodičnog timer polling-a. WGC/D3D capture resursi nisu inicijalizirani samo zato što aplikacija miruje u trayu.
+```text
+Window naredba / Ctrl+Shift+2
+    ↓
+snapshot eligible top-level prozora u Z-orderu
+    ↓
+freeze zaslona prije overlayja
+    ↓
+DPI-aware picker overlayi
+    ↓
+geometrijski hit-test prema frozen snapshotu
+    ↓
+WindowsGraphicsCaptureService.CreateForWindow
+    ↓
+lokalni PNG
+```
 
-Native tray thread ne manipulira WinUI kontrolama izravno. Naredba se prenosi na WinUI `DispatcherQueue`, koji zatim otvara capture ili sekundarnu površinu.
+Picker ne koristi `WindowFromPoint` nakon stvaranja SNAPVERE overlayja, čime se sprječava self-selection.
 
-## Capture putevi
+### Region editor
 
-Region i Screen capture koriste `ResilientScreenCaptureService`: preferira Windows.Graphics.Capture, a za očekivane monitor-acquisition probleme može koristiti GDI fallback. Window Capture koristi stvarni `CreateForWindow` WGC put i ne zamjenjuje neuspjeh običnim cropom zaslona.
+```text
+tray / Print Screen / Ctrl+Shift+1
+    ↓
+frozen frame
+    ↓
+fizička pixel selekcija / move / osam resize ručki
+    ↓
+Pen / Line / Arrow / Box / Highlight
+    ↓
+render anotacija u odabrani frame
+    ↓
+Copy ili Save
+```
 
-Region Capture radi nad jednim frozen frameom primarnog zaslona, koristi fizičku pixel geometriju i renderira implementirane anotacije u konačni rezultat. Window picker prije prikaza overlayja snima geometrijski/Z-order snapshot kandidata kako SNAPVERE overlay ne bi postao cilj.
+Preview, selection i output koriste isti frozen frame.
 
-## Koordinate i DPI
+## Windows koordinate i frame ugovor
 
-Interni capture modeli koriste fizičke piksele. WinUI overlay koristi logičke DPI jedinice samo za prikaz, uz eksplicitnu konverziju kroz DPI transformer. Time selection i finalni PNG ostaju vezani uz stvarni frozen frame.
+Virtual-desktop koordinate mogu biti negativne. Display geometrija koristi fizičke bounds/effective DPI. WinUI logičke pointer pozicije prolaze eksplicitnu DPI konverziju prije capture geometrije.
 
-Window picker može koristiti odvojeni overlay po monitoru. Coordinated cross-monitor Region Capture i dalje je namjerno odgođen dok ne bude implementiran i release-gated.
+`CaptureFrame` je validirani BGRA8 podatak s fizičkim dimenzijama, strideom, UTC timestampom i source identifikatorom. Prazne dimenzije, neispravan stride i premalen buffer odbijaju se prije downstream obrade.
 
-## Postavke i lokalizacija
+## Windows lokalno stanje
 
-`CapturePreferencesService` sprema implementirane preference lokalno u:
+Preference su u:
 
 ```text
 %LOCALAPPDATA%\SNAPVERE\settings.json
 ```
 
-Trenutačno se spremaju cursor preference i language code. Zapis koristi privremenu datoteku i atomic replacement/move. Neispravan JSON ili nepodržani jezik vraća sigurne zadane vrijednosti.
+Zapis koristi privremenu datoteku i atomic move. Neispravno/nečitljivo stanje vraća sigurne zadane vrijednosti. Lokalizacija je statična i in-process; English je canonical fallback. Windows startup registracija je per-user i njome upravlja `StartupRegistrationService`.
 
-`SnapvereLocalization` koristi statični ugrađeni katalog. English je canonical fallback, a Hrvatski ima zasebne stringove za aktualne capture i sekundarne UI površine. Nema mrežnog translation servisa, file watchera ni background pollinga.
+## Android arhitektura
 
-## Lifecycle
+Android source živi pod `android/` i namjerno je odvojen od WinUI/.NET aplikacijskog sloja.
 
-Privremeni capture prozori i teški frame resursi nastaju na zahtjev i zatvaraju se nakon workflowa. Tray flyout, Options, Language i About također se stvaraju samo kada ih korisnik otvori.
+Glavne komponente:
 
-## Packaging
+- `MainActivity` — responzivni native home UI, Capture/Otvori/Podijeli/Izbriši i support/legal akcije;
+- `CaptureService` — foreground `mediaProjection` servis koji posjeduje jednu odobrenu capture sesiju;
+- `CaptureBufferLayout` — čista validirana RGBA row-layout aritmetika;
+- Android resources — tamna tema, engleski/hrvatski stringovi i native ikone.
 
-Od v0.0.7 `SNAPVERE-Setup.exe` i `SNAPVERE-Portable.exe` jedina su dva javna release asseta. Svaki universal host građen je kao x86-compatible executable, ugrađuje x86, x64 i ARM64 application payload te automatski odabire kompatibilni native payload prema Windows arhitekturi.
+Android manifest zadržava `INTERNET` absent, cleartext disabled, backup disabled i `CaptureService` non-exported s `foregroundServiceType="mediaProjection"`.
 
-Setup je per-user i isti `SNAPVERE-Setup.exe` upravlja install/update/remove lifecycleom. Portable koristi versioned lokalni cache, bounded/path-safe extraction, preparation mutex i stabilni originalni Portable launcher path za opcionalni Windows startup.
+## Android capture pipeline
 
-Hosted x64 CI stvarno izvršava universal Setup/Portable lifecycle za x64 i x86 payload selection. ARM64 se cross-builda i package-validira, ali to nije predstavljeno kao stvarni ARM64 hardware runtime test.
+```text
+izričiti Capture tap
+    ↓
+Android MediaProjection dopuštenje
+    ↓
+start foreground CaptureServicea
+    ↓
+Activity se premješta iza ciljanog zaslona
+    ↓
+MainActivity.onStop() potvrđuje skriveno stanje
+    ↓
+VirtualDisplay + RGBA_8888 ImageReader
+    ↓
+bounded first-frame wait
+    ↓
+pixel stride / row stride / padding / buffer-length validacija
+    ↓
+bitmap konverzija
+    ↓
+MediaStore PNG → Pictures/SNAPVERE
+    ↓
+Otvori / Podijeli / Izbriši
+```
+
+Svaka snimka koristi novi consent token/projection instance. Petsekundni task-hide guard i sedam-sekundni first-frame guard ograničavaju ownership. Handler scheduling i image acquisition se provjeravaju. Teardown je idempotentan/per-resource, a capture ownership service-instance-aware kako stale teardown ne bi očistio drugu aktivnu sesiju.
+
+RGBA put zahtijeva 4-byte pixel stride, dovoljan row stride, whole-pixel padding, overflow-safe aritmetiku i dovoljno ByteBuffer bajtova za `rowStride × height`. JVM unit testovi pokrivaju valjane i nevaljane layoute.
+
+## Android UI/UX granica
+
+Android dijeli SNAPVERE tamni identitet, ali koristi native Android layout ponašanje. Površina je vertikalno scrollable, system-inset aware, zadržava najmanje 52 dp touch targete i slaže paired actions vertikalno na uskim zaslonima ili kada je font scale >= 1,25x.
+
+System/provider problemi za Capture/Otvori/Podijeli/Izbriši/Web/Podrška/Privatnost/Uvjeti prelaze u vidljiv recovery status gdje je moguće, umjesto da raw internal exception izađe iz Activityja.
+
+## Životni vijek resursa
+
+Teški capture resursi na obje platforme stvaraju se na zahtjev. Windows ne drži full-resolution frame/D3D capture resurse samo radi tray rezidentnosti. Android stvara MediaProjection, VirtualDisplay, ImageReader i capture thread samo za izričito odobrenu sesiju i gasi ih nakon uspjeha ili failurea.
+
+Nijedna platforma ne dodaje telemetry worker, cloud-upload worker niti continuous capture loop.
 
 ## Runtime i visual QA
 
-Marker probeovi odvajaju tehničku konstrukciju od normalnog startup ugovora:
+Windows tehnički probeovi uključuju `READY`, `TRAY_READY`, `REGION_OVERLAY_READY`, `WINDOW_OVERLAY_READY`, `SECONDARY_UI_READY` i normal-launch survival. Visual QA snima šest stvarno renderiranih x64 površina:
 
-1. `READY` — tehnički aktivira skriveni coordinator;
-2. `TRAY_READY` — potvrđuje tray/hotkey startup bez vidljivog Capture Centera;
-3. `REGION_OVERLAY_READY` — potvrđuje Region editor;
-4. `WINDOW_OVERLAY_READY` — potvrđuje Window picker;
-5. `SECONDARY_UI_READY` — redom materijalizira Tray, Options, Language i About;
-6. normal-launch survival — potvrđuje da installed/Portable proces ostaje živ u tray-first načinu.
+```text
+region-capture.png
+window-capture.png
+tray-menu.png
+options.png
+language.png
+about.png
+```
 
-Dodatni x64 visual-QA harness pokreće stvarne probeove i snima šest renderiranih PNG-ova: Region, Window, Tray, Options, Language i About. Prazan ili neočekivano malen frame ruši CI. `manifest.json` zapisuje naslov, dimenzije, veličinu i SHA-256 svakog PNG-a, a GitHub Actions sprema cijeli set kao kratkotrajni artefakt.
+CI odbija prazan/neočekivano mali output i zapisuje dimenzije, veličine i SHA-256.
 
-## Sigurnosni principi
+Android CI provjerava manifest privacy/version/service ugovor, `lintDebug`, `lintRelease`, JVM testove, debug/release build, debug APK signature/alignment i SHA-256. Public-release automatizacija dodatno provjerava stabilni Android release signing i strukturu source arhive.
 
-ZIP payload se ekstrahira uz zaštitu od path traversal napada i bounded extraction pravila. Setup prije rekurzivnog uklanjanja provjerava vlastiti installation marker. Startup i uninstall registracije su per-user. Postavke se zapisuju atomically. Screenshot pixeli nisu rutinski startup-log payload, nema telemetry/cloud-upload dependencyja, a uninstall ne uklanja `Pictures\SNAPVERE` korisničke snimke.
+## Packaging i javni release
+
+### Windows
+
+`SNAPVERE-Setup.exe` i `SNAPVERE-Portable.exe` ugrađuju x86, x64 i ARM64 payloade te automatski biraju kompatibilnu arhitekturu. Setup upravlja per-user install/update/uninstall lifecycleom. Portable koristi versioned cache s bounded/path-safe extractionom, integrity validacijom, mutexom i child-startup provjerom.
+
+Hosted x64 CI izvršava universal x64/x86 package lifecycle. ARM64 je cross-build/package validacija, ne fizički ARM64 runtime dokaz.
+
+### Android
+
+Javni APK nastaje iz minificiranog/shrunk release varianta, ZIP-aligna se i potpisuje stabilnim privatnim SNAPVERE release identitetom. Signing materijal ostaje izvan Git sourcea. Release pada prije taga ako se signing ne može verificirati.
+
+`SNAPVERE-Android-Source.zip` generira se izravno iz točno validiranog `android/` Git treea i ne sadrži generirani build/cache output ni signing secret.
+
+### v0.1.0 javni asseti
+
+Finalno GitHub izdanje mora sadržavati točno:
+
+```text
+SNAPVERE-Setup.exe
+SNAPVERE-Portable.exe
+SNAPVERE.apk
+SNAPVERE-Android-Source.zip
+```
+
+Za sva četiri asseta računa se lokalni SHA-256 i nakon objave provjerava GitHub digest prije prihvaćanja izdanja.
+
+## Sigurnosna i privacy granica
+
+Screenshot pixeli, clipboard sadržaj i korisničke datoteke nisu rutinski diagnostic payload. Capture je local-first. Package extraction je path-constrained/size-bounded. Uninstall čuva `Pictures\SNAPVERE`. Android nema first-party network capture path.
+
+Vidi `SECURITY.md`, `docs/hr/SECURITY-PERFORMANCE-0.1.0.md` i `docs/hr/ANDROID.md`.
+
+## Namjerno odgođeno
+
+Windows:
+
+- coordinated cross-monitor Region composition;
+- text, blur/pixelate i numbered-step anotacije;
+- scrolling capture;
+- prošireni History/favorites/pin-to-screen;
+- OCR;
+- automatic updater;
+- Authenticode signing.
+
+Android:
+
+- Windows-style arbitrary top-level Window Capture;
+- Region-selection/annotation paritet s desktop editorom.
+
+Odgođene funkcije ne ulaze u production UI/dokumentaciju dok stvarno nisu implementirane i release-gated.
