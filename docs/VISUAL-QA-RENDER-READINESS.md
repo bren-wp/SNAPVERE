@@ -13,5 +13,6 @@ The gate therefore follows these rules:
 - A non-empty frame is not enough: the sampled visual fingerprint must match on three consecutive captures separated by a short bounded delay.
 - Probe-only readiness polling is bounded and exists only when an explicit visual-QA probe mode is active. It does not run during normal SNAPVERE startup or capture use.
 - Visual comparison thresholds are unchanged. A readiness fix must not be implemented by weakening the regression gate.
+- Final pull-request evidence must come from a merge-ref generated against the current `main`; a green run against an older base is informative but is not final merge evidence.
 
 A PR that changes this mechanism is not considered verified until CI also passes x86 build, x64 build/tests, ARM64 build, six-surface rendered capture, baseline comparison, the two-file universal package contract, and x64/x86 Setup and Portable lifecycle validation.
