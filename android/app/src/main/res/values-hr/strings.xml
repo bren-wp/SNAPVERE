@@ -2,7 +2,6 @@
 <resources>
     <string name="app_name">SNAPVERE</string>
     <string name="tagline">Snimi. Uredi. Gotovo.</string>
-    <string name="android_label">SNAPVERE za Android</string>
     <string name="local_first">LOKALNO I PRIVATNO</string>
     <string name="local_first_description">Snimke ostaju na ovom uređaju. Bez računa, prijenosa u oblak, analitike i telemetrije.</string>
     <string name="capture_screen">Snimi zaslon</string>
@@ -22,6 +21,5 @@
     <string name="notification_capturing">Snimanje zaslona…</string>
     <string name="notification_saved">Snimka je spremljena lokalno</string>
     <string name="notification_failed">Snimku nije moguće dovršiti</string>
-    <string name="permission_notifications">Dopuštenje za obavijesti nije obavezno; snimanje zaslona i dalje se može zatražiti.</string>
     <string name="privacy_note">SNAPVERE nikad ne pokreće snimanje zaslona u pozadini. Za svaku snimku potrebno je Android sustavsko dopuštenje.</string>
 </resources>
