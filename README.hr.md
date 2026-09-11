@@ -8,37 +8,13 @@
 
 **Capture. Edit. Done. — brza, lokalna i privatna aplikacija za snimanje zaslona za Windows i Android koju razvija Brendigo.**
 
-[English README](README.md) · [Službena stranica proizvoda](https://snapvere.com) · [Developer: Brendigo](https://brendigo.com)
+[English README](README.md) · [Službena stranica](https://snapvere.com) · [Podrška](mailto:info@snapvere.com) · [Developer: Brendigo](https://brendigo.com)
 
-SNAPVERE je tray-first Windows aplikacija za brzo snimanje područja, prozora i zaslona, jednostavne anotacije i lokalno spremanje PNG datoteka. Primarni i zadani jezik je engleski, a hrvatski i više od 20 dodatnih jezika mogu se odabrati u aplikaciji.
+SNAPVERE je tray-first Windows aplikacija za brzo snimanje područja, prozora i zaslona, lagane anotacije i lokalno PNG spremanje. Android 10+ companion koristi službeni MediaProjection model i isti local-first privacy ugovor.
 
-> Trenutačno objavljeno izdanje je **v0.0.8**. Grana za v0.0.9 sadrži neobjavljeni sigurnosni, stabilnosni, performance i UX hardening. Objavljeni tagovi, izdanja i asseti tretiraju se kao nepromjenjivi i kasniji razvoj ih ne prepisuje.
+> **v0.0.9 je aktualni release milestone u završnoj validaciji.** Objavljeni povijesni tagovi, releaseovi i asseti ne prepisuju se naknadnim razvojem.
 
-## Dizajn i UI
-
-Vizuali u repozitoriju predstavljaju referentni ugovor prema kojem se izrađuje stvarni WinUI program. Tray flyout i Region editor usklađuju se s tim prikazima umjesto sa starim Capture Center dizajnom.
-
-### Tray-first Region Capture
-
-Lijevi klik na SNAPVERE ikonu u trayu ili tipka **Print Screen** odmah pokreću snimanje područja.
-
-![SNAPVERE tray-first Region Capture referenca](docs/images/tray-first-region.svg)
-
-### Brendirani tray izbornik
-
-Desni klik otvara akcije za snimanje, lokalne datoteke, postavke, jezik, informacije o programu i izlaz.
-
-![SNAPVERE tray izbornik](docs/images/tray-menu.svg)
-
-### Region editor
-
-Editor radi izravno preko zamrznutog prikaza zaslona. Ima fizičku pixel selekciju, osam ručki za promjenu veličine, vertikalni alatni panel i odvojeni Copy / Save / Close panel.
-
-![SNAPVERE Region editor](docs/images/region-editor.svg)
-
-SVG datoteke su održavane UI reference, a ne lažno predstavljeni Windows screenshotovi. CI pokreće stvarnu x64 WinUI aplikaciju i prije universal pakiranja snima šest renderiranih PNG površina — Region, Window, Tray, Options, Language i About. v0.0.9 dodatno hardena provenance tog probea kako hosted runner desktop ne bi mogao postati valjani SNAPVERE baseline.
-
-## Kontrole
+## Windows kontrole
 
 | Akcija | Primarni unos | Alternativa |
 | --- | --- | --- |
@@ -49,59 +25,82 @@ SVG datoteke su održavane UI reference, a ne lažno predstavljeni Windows scree
 | Jezik | kontrola jezika u trayu ili Options | — |
 | About / Exit | desni klik tray | — |
 
-Scrolling Capture ne rezervira globalni shortcut dok taj workflow stvarno nije implementiran.
-
-## Region Capture
-
-Implementirano je: zamrznuti frame, fizička pixel selekcija, pomicanje i resize, osam ručki, prikaz dimenzija, Pen, Line, Arrow, Box i Highlight alati, četiri boje, Undo, `Ctrl+Z`, `Ctrl+C`, Copy, Save, Enter/dvostruki klik za spremanje i Esc za odustajanje. Anotacije se renderiraju u konačni PNG.
-
-UI slijedi graphite/violet SNAPVERE referencu s vertikalnim toolbarom uz selekciju i zasebnim action barom ispod nje. Text, blur/pixelate, ellipse i numbered-step alati ne prikazuju se kao gotove mogućnosti dok stvarno nisu implementirani i testirani.
-
-## Window Capture
-
-SNAPVERE otkriva vidljive top-level Windows prozore prije prikaza overlayja, koristi DWM extended-frame granice, filtrira vlastite/tool/cloaked/nevidljive prozore, prikazuje DPI-aware picker i završno snima prozor kroz Windows.Graphics.Capture `CreateForWindow`. Window Capture ne prelazi potajno na običan screen crop.
-
-## Screen Capture
-
-Windows.Graphics.Capture + Direct3D 11 je preferirani put gdje je podržan. Za očekivane probleme pri monitor captureu postoji resilient GDI fallback. Capture/D3D resursi se stvaraju tek kada su potrebni i ne ostaju aktivni samo zato što SNAPVERE miruje u trayu.
+Scrolling Capture ne rezervira globalni shortcut dok workflow stvarno nije implementiran.
 
 ## Spremanje snimki
 
-SNAPVERE prvo sigurno dovršava PNG u zadanoj mapi `Pictures\SNAPVERE`. Za Region, Window i Full Screen spremanje v0.0.9 zatim može otvoriti izvorni Windows **Save As** picker.
+Region, Window i Screen snimke prvo se sigurno dovršavaju kao PNG u standardnoj SNAPVERE mapi. Nakon uspješnog spremanja SNAPVERE može otvoriti izvorni Windows **Save As** picker kako bi korisnik odabrao konačnu mapu i naziv.
 
-- odustajanje od pickera zadržava već dovršenu PNG datoteku;
-- premještanje na drugi put koristi asinkronu kopiju, destination-local privremenu datoteku i završni atomic replacement;
-- odredište je ograničeno na PNG;
-- Windows file-identity provjere štite hard-link/alias slučajeve i sprječavaju pogrešno brisanje izvora;
-- clipboard-only Copy ostaje bez Save As koraka.
+Odustajanje od pickera zadržava dovršenu PNG datoteku u `Pictures\SNAPVERE`. Premještanje koristi asinkronu kopiju, privremenu datoteku na odredištu, završni atomic replacement, PNG-only validaciju i Windows file-identity provjere. Alias, hard-link ili nesigurni identity slučajevi zadržavaju recovery kopiju izvora. Clipboard-only Copy ostaje bez Save As koraka.
 
-## Jezici
+Detalji: [Save location](docs/hr/SAVE-LOCATION.md).
 
-English (`en`) je canonical default i fallback. Ugrađeni katalog trenutačno nudi 28 jezika, uključujući Hrvatski (`hr`), Deutsch, Français, Español, Italiano, Português, Nederlands, Polski, Čeština, Slovenčina, Slovenščina, Magyar, Română, Български, Ελληνικά, Svenska, Dansk, Norsk, Suomi, Eesti, Latviešu, Lietuvių, Українська, Türkçe, 日本語, 한국어 i 简体中文.
+## Region Capture
 
-Hrvatski ima zasebne prijevode za aktualne capture i sekundarne korisničke površine. Ako odabrani jezik nema prijevod pojedinog stringa, koristi se canonical English fallback umjesto prikaza nepoznatog resource ključa.
+Implementirani workflow uključuje zamrznuti frame, fizičku pixel selekciju, pomicanje/resize, osam ručki, live dimenzije, Pen, Line, Arrow, Box i Highlight alate, četiri boje, Undo, `Ctrl+Z`, `Ctrl+C`, Copy, Save, Enter/dvostruki klik za spremanje i Esc za odustajanje. Anotacije se renderiraju u konačni PNG.
 
-Odabrani jezik sprema se lokalno u:
+## Window Capture
 
-```text
-%LOCALAPPDATA%\SNAPVERE\settings.json
-```
+SNAPVERE otkriva vidljive top-level prozore prije prikaza overlayja, koristi DWM extended-frame granice, filtrira SNAPVERE/tool/cloaked/nevidljive prozore, prikazuje DPI-aware picker i završno snima prozor kroz Windows.Graphics.Capture `CreateForWindow`. Window Capture ne prelazi potajno na običan screen crop.
 
-Nema translation API-ja, mrežnih poziva, polling servisa niti dodatnog background threada za prijevode.
+## Screen Capture
+
+Windows.Graphics.Capture + Direct3D 11 je preferirani backend gdje je podržan. Za očekivane probleme pri monitor captureu postoji resilient GDI fallback. Capture/D3D resursi stvaraju se samo kada su potrebni i ne ostaju aktivni dok aplikacija miruje u trayu.
+
+## Pouzdanost i pristupačnost Windows traya
+
+Nativni notification-area host u v0.0.9 koristi moderni `NOTIFYICON_VERSION_4` callback ugovor. Nakon svakog uspješnog dodavanja ikone, uključujući ponovno stvaranje taskbara/Explorera, SNAPVERE postavlja verziju protokola. Standardni tooltip ostaje uključen putem `NIF_SHOWTIP`, callback event čita se iz low worda `lParam`, a podržane su i keyboard select/context-menu notifikacije. Region Capture i dalje koristi debounce kako dupli activation event ne bi pokrenuo dva capture workflowa.
 
 ## Android
 
-SNAPVERE ima i nativnu Android 10+ aplikaciju koja koristi službeni Android MediaProjection model. Zadržava isti local-first ugovor privatnosti i iste ključne tamne SNAPVERE design tokene kao Windows distribucija: gotovo crnu canvas pozadinu, slojevite tamne površine, ljubičasti `#7C6CFF` accent i zeleni `#45D6A2` success status.
+SNAPVERE za Android 10+ je nativna aplikacija za korisnički odobreno snimanje cijelog zaslona. Nema korisnički račun, telemetriju, analytics SDK, cloud upload niti `INTERNET` permission. PNG se sprema kroz MediaStore u `Pictures/SNAPVERE`.
 
-Android aplikacija omogućuje korisnički odobreno snimanje cijelog zaslona, lokalno PNG spremanje u `Pictures/SNAPVERE`, provjerene Otvori / Podijeli / Izbriši akcije za zadnju snimku, engleske i hrvatske UI resurse te korisnički pokrenute Web / Podrška / Privatnost / Uvjeti akcije. Ne traži `INTERNET` permission i nema račun, telemetriju, analitiku ni cloud-upload klijent.
+Svaka snimka dobiva novi Android MediaProjection consent. SNAPVERE ne cacheira niti ponovno koristi consent token. Activity se nakon odobrenja premješta iza ciljane aplikacije, a VirtualDisplay se stvara tek nakon potvrde `MainActivity.onStop()`.
 
-Android CI provjerava manifest privacy/service ugovor, lint, debug i release build, APK potpis, ZIP alignment i SHA-256 te objavljuje instalabilni debug APK kao GitHub Actions artifact za točan source commit. Generirani APK binariji namjerno se ne spremaju u Git.
+### Stabilnost capture lifecyclea
 
-Android nema isti opći top-level-window capture primitive kao Windows, pa se Windows Window Capture ne prikazuje kao implementiran na Androidu. Detalji: [Android aplikacija](docs/hr/ANDROID.md) i [Android source/build vodič](android/README.md).
+v0.0.9 dodaje dvije eksplicitne granice neuspjeha:
+
+- 5 sekundi za Activity → background handoff;
+- 7 sekundi za prvi frame nakon stvaranja VirtualDisplaya.
+
+Ako ImageReader/driver ne isporuči frame, sesija završava kontrolirano umjesto da foreground servis i globalni capture lock ostanu trajno aktivni. Cleanup je idempotentan i odvija se po resursu: pogreška pri oslobađanju jednog MediaProjection/VirtualDisplay/ImageReader objekta ne prekida čišćenje ostalih resursa.
+
+`ImageReader.acquireLatestImage()` je zaštićen od runtime iznimki, svaki dohvaćeni `Image` se zatvara, a prije alokacije padded bitmapa provjeravaju se width, pixel stride, row stride i integer overflow. `CaptureBufferLayout` ima direktne JVM unit testove.
+
+### Android UI/UX
+
+Android koristi istu tamnu SNAPVERE paletu kao Windows: canvas `#0B0D12`, surface `#12151C`, raised surface `#181C25`, border `#2A3140`, primarni tekst `#F6F7FB`, sekundarni `#98A2B3`, violet accent `#7C6CFF` i success `#45D6A2`.
+
+OEM `forceDark` je onemogućen jer aplikacija već ima vlastiti dark theme. Parovi akcijskih gumba automatski prelaze u vertikalni raspored na uskim zaslonima ili pri font scaleu 1,25x+, touch targeti ostaju najmanje 52 dp, sadržaj poštuje system-bar insete i stranica ostaje scrollable.
+
+Capture, Otvori, Podijeli, Izbriši, Web, Podrška, Privatnost i Uvjeti imaju kontrolirane failure stateove. MediaStore/provider/intent/clipboard problem prikazuje status korisniku umjesto da sruši Activity. Support prvo pokušava `mailto:info@snapvere.com`, a zatim lokalni clipboard fallback.
+
+Engleski i hrvatski status/recovery stringovi održavaju se zajedno.
+
+### Android CI
+
+Za svaku Android promjenu CI provjerava:
+
+1. manifest privacy/service ugovor — `INTERNET` je zabranjen, cleartext i backup ostaju isključeni, a MediaProjection servis nije exported;
+2. `lintDebug` i `lintRelease` uz warnings-as-errors;
+3. `testDebugUnitTest`, uključujući capture-buffer testove;
+4. debug build;
+5. minificirani/shrunk release build;
+6. debug APK potpis kroz `apksigner`;
+7. ZIP alignment;
+8. SHA-256;
+9. Actions artifact vezan uz točan source SHA.
+
+CI APK je debug-potpisan development/internal build. Produkcijski Play/release potpis zahtijeva zasebno čuvani privatni signing key; repozitorij ne izmišlja produkcijski potpis niti sprema signing secret.
+
+Android nema isti opći top-level-window capture primitive kao Windows. Zato se Windows-style Window Capture ne prikazuje kao Android funkcija. Region selection/annotation parity ostaju zasebne mogućnosti dok stvarno nisu implementirane i device-testirane.
+
+Detalji: [Android aplikacija](docs/hr/ANDROID.md) · [Android source/build vodič](android/README.md).
 
 ## About, podrška i pravne poveznice
 
-About prikazuje službene i korisnički pokrenute destinacije:
+Korisnički pokrenute destinacije:
 
 - `https://snapvere.com`
 - `info@snapvere.com`
@@ -109,155 +108,116 @@ About prikazuje službene i korisnički pokrenute destinacije:
 - `https://snapvere.com/terms`
 - `https://brendigo.com`
 
-Ako Windows nema registriran mail handler, akcija Podrška kopira `info@snapvere.com` u lokalni clipboard i vidljivo potvrđuje adresu. Otvaranje About prozora samo po sebi ne radi mrežni poziv i nema prefetch pravnih stranica.
+Desktop aplikacija ih ne prefetchira. Ako Windows nema mail handler, Podrška kopira `info@snapvere.com` u lokalni clipboard.
 
-## Postavke i zadane opcije
+## Jezici
 
-Implementirane postavke:
+English (`en`) je canonical default i fallback. Ugrađeni katalog nudi 28 jezika, uključujući hrvatski (`hr`). Ako odabrani jezik nema prijevod pojedinog stringa, koristi se canonical English fallback umjesto prikaza resource ključa.
 
-- **Start SNAPVERE with Windows**;
-- **Include cursor on capture**;
-- **Language**.
+Odabrani jezik sprema se lokalno u:
 
-Setup prema zadanim postavkama označava:
+```text
+%LOCALAPPDATA%\SNAPVERE\settings.json
+```
 
-- Start menu prečac: **uključeno**;
-- Desktop ikona: **uključeno**;
-- Pokretanje SNAPVERE-a s Windowsima: **uključeno**;
-- Pokretanje nakon instalacije: **uključeno** na završnom ekranu.
+Nema translation API-ja, mrežnih poziva, polling servisa ni dodatnog background threada za prijevod.
 
-Sve opcionalne postavke korisnik može isključiti prije instalacije. Startup je per-user i pokreće tray-first aplikaciju bez velikog dashboard prozora.
+## Postavke
 
-## Universal packaging
+Implementirane preference uključuju **Start SNAPVERE with Windows**, **Include cursor on capture** i **Language**. Windows startup je per-user i pokreće isti tray-first program bez dashboard prozora.
 
-Od **v0.0.7 nadalje** javni release ugovor sadrži točno dvije datoteke:
+## Sigurnosni hardening v0.0.9
+
+- NuGet audit uključuje direktne i tranzitivne ovisnosti od `low` severity nadalje.
+- `NU1901`–`NU1904` su build failure.
+- GitHub Actions su pinani na pune commit SHA vrijednosti.
+- Normalni CI checkout ne ostavlja repository credentials.
+- Dependabot prati NuGet i Actions ovisnosti.
+- Setup path-boundary validacija pravilno tretira zaštićeni direktorij i njegove poddirektorije.
+- ZIP ekstrakcija odbija absolute/traversal putanje, duplicate destination, prevelik entry count i expanded-size te koristi bounded random staging nazive.
+- Portable prije izvršavanja reusable `%TEMP%` cachea provjerava arhitekturni SHA-256 manifest; missing/modified/unexpected/reparse-point sadržaj uzrokuje transactional rebuild i ponovnu validaciju.
+- Prvi direct-ZIP integrity dizajn odbijen je u lifecycle CI-u zbog startup regresije; timeout nije povećan, nego je runtime provjera prebačena na jedan sekvencijalni SHA-256 prolaz.
+- Android capture hardening sprječava beskonačno aktivnu projekciju nakon frame timeouta ili cleanup iznimke.
+- Nema telemetry, cloud-upload, remote-command ni automatic-update kanala u v0.0.9.
+
+Trenutačni desktop kod nema WebView/WebView2 ni HTML/JavaScript runtime površinu, pa browser-style XSS nije aktualna aplikacijska površina. SNAPVERE nije sandbox protiv proizvoljnog zlonamjernog koda koji već radi kao isti Windows korisnik.
+
+Detalji: [Security policy](SECURITY.md) · [v0.0.9 sigurnost i performanse](docs/hr/SECURITY-PERFORMANCE-0.0.9.md).
+
+## Performanse i stabilnost
+
+- tray i global-hotkey hostovi blokiraju na Win32 message loopovima bez periodičnog app pollinga;
+- capture/D3D resursi stvaraju se na zahtjev;
+- sekundarni prozori nastaju samo kada su potrebni;
+- Recent Captures enumeracija je lokalna i ograničena te uklanja nepotreban metadata refresh;
+- Portable integrity provjera čita cache jednom sekvencijalno za SHA-256 i ne dekomprimira ponovno payload samo radi usporedbe;
+- Android capture ima bounded handoff/frame wait i per-resource cleanup bez idle workera;
+- nema telemetry workera, file watchera ni background network pollinga.
+
+Ne obećava se fiksna CPU/RAM brojka jer Windows verzija, DPI, monitori, driveri, Android OEM ponašanje i aktivni capture/editor mijenjaju radni set.
+
+## Universal Windows packaging
+
+Javni Windows release ugovor sadrži točno dvije datoteke:
 
 ```text
 SNAPVERE-Setup.exe
 SNAPVERE-Portable.exe
 ```
 
-Nema zasebnih x86/x64 downloadova i nema Demo executablea. Svaki javni host je napravljen tako da se može pokrenuti na 32-bit Windowsu te u sebi sadrži native application payloade za:
+Svaki host sadrži native payloade za x86, x64 i ARM64 i automatski bira kompatibilni payload. Minimalni Windows application target ostaje Windows 10 version 1809 / build 17763; WGC capture put zahtijeva Windows 10 version 2004 / build 19041 ili noviji.
 
-- x86 / x32 / 32-bit Windows;
-- x64 / AMD64 Windows;
-- ARM64 Windows.
+SNAPVERE namjerno nema zaseban `uninstall.exe`. Windows Installed apps koristi instalirani `SNAPVERE-Setup.exe --uninstall`; isti Setup provjerava installation marker prije uklanjanja i ne briše korisničke screenshotove.
 
-Host automatski odabire kompatibilni payload. Korisnik ne mora znati treba li mu x86 ili x64 izdanje.
-
-To **ne znači** podršku za svaki povijesni Windows. Minimalni application target ostaje Windows 10 version 1809 / build 17763, dok WGC capture putevi zahtijevaju Windows 10 version 2004 / build 19041 ili noviji.
-
-### Uninstall kroz isti Setup
-
-SNAPVERE ne instalira zaseban `uninstall.exe`. Windows Installed apps koristi instaliranu kopiju:
-
-```text
-SNAPVERE-Setup.exe --uninstall
-```
-
-Isti Setup upravlja instalacijom, nadogradnjom i uklanjanjem. Prije rekurzivnog brisanja provjerava installation marker, a screenshotove u `Pictures\SNAPVERE` ostavlja netaknute. v0.0.9 path-boundary validacija pravilno tretira i zaštićeni direktorij sam i njegove poddirektorije.
-
-## Sigurnost
-
-v0.0.9 pojačava build i lokalne granice bez izmišljanja sigurnosnih jamstava:
-
-- NuGet audit je eksplicitno uključen za direktne i tranzitivne ovisnosti;
-- `NU1901`–`NU1904` tretiraju se kao build greške;
-- GitHub Actions u CI/release workflowima pinani su na pune commit SHA vrijednosti;
-- normalni CI checkout ne zadržava repository credentials;
-- Dependabot prati NuGet i GitHub Actions ovisnosti;
-- ZIP ekstrakcija odbija absolute path i traversal/destination escape, ograničava broj entryja i ukupnu proširenu veličinu te koristi kratke interne staging nazive;
-- trenutačni proizvod nema WebView/WebView2 niti HTML/JavaScript execution površinu, pa klasični XSS nije aktualna aplikacijska attack surface;
-- trenutačni kod nema first-party HTTP/socket klijent, telemetry, cloud-upload ili remote-command kanal.
-
-SNAPVERE nije sandbox protiv zlonamjernog koda koji već izvršava naredbe kao isti Windows korisnik i projekt ne tvrdi da bilo koji softver može biti zajamčeno bez svih budućih sigurnosnih propusta.
-
-Detalji: [Security policy](SECURITY.md) · [v0.0.9 security/performance hardening](docs/hr/SECURITY-PERFORMANCE-0.0.9.md).
-
-## Performanse i privatnost
-
-SNAPVERE je projektiran za mali idle overhead:
-
-- tray i hotkey hostovi čekaju blokirajuće Win32 poruke umjesto periodičnog polling-a;
-- capture/D3D resursi su lazy i stvaraju se na zahtjev;
-- prijevodi su statični i lokalni;
-- settings JSON je malen i zapisuje se atomically;
-- Recent Captures enumerira lokalne PNG datoteke samo kada je ta površina potrebna i v0.0.9 uklanja nepotreban eksplicitni metadata refresh po datoteci;
-- nema obaveznog računa, telemetrije, cloud uploada niti analitike screenshotova.
-
-Ne obećava se fiksna RAM/CPU brojka jer Windows verzija, DPI, broj monitora, driveri i aktivna capture sesija mijenjaju radni set. Cilj optimizacije je da idle SNAPVERE ne obavlja periodični posao bez potrebe.
+Android CI artifact nije dio ovog exact-two-file Windows release ugovora.
 
 ## Automatizirani QA
 
-GitHub Actions builda/testira x64 i x86 te cross-builda ARM64. Universal package gate dodatno provjerava:
+Windows CI builda/testira x64 i x86 te cross-builda ARM64. Universal package gate provjerava sva tri native payloada i njihove integrity manifeste, šest stvarno renderiranih WinUI površina, exact two-file package contract te x64/x86 Setup/Portable lifecycle i tray-first ponašanje.
 
-- audited dependency restore;
-- točno dva javna EXE outputa;
-- sva tri native payloada sadrže `Snapvere.exe`;
-- x64 i x86 Setup/Portable lifecycle;
-- eksplicitno prihvaćanje komercijalne licence za silent Setup;
-- zadani Desktop shortcut i startup registraciju;
-- uninstall istim Setupom i cleanup;
-- tray-first startup;
-- Region editor;
-- Window picker;
-- Tray / Options / Language / About površine;
-- šest stvarno renderiranih x64 WinUI PNG screenshotova: Region, Window, Tray, Options, Language i About;
-- hardened visual-QA provenance manifest;
-- unit testove za architecture selection, sigurnu ZIP ekstrakciju, path boundaries, hotkeye i language/settings fallback.
+Visual-QA površine: Region, Window, Tray, Options, Language i About. Thresholdi se ne spuštaju radi skrivanja regresije.
 
-Vizualno prazan, pogrešno pripisan ili neočekivano malen UI snapshot ruši CI. ARM64 se cross-builda i strukturno provjerava na hosted x64 runneru; to se ne predstavlja kao stvarni ARM64 runtime test.
+Android CI zasebno provjerava manifest ugovor, debug/release lint, JVM unit testove, debug/release build, potpis, alignment i SHA-256 artifacta.
 
-## Arhitektura
+ARM64 dokaz na hosted x64 runneru je cross-build/package dokaz, ne stvarni ARM64 hardware runtime. Zeleni Android CI je build/lint/unit/package dokaz, ne tvrdnja da je svaki OEM uređaj fizički testiran.
 
-```text
-Tray / Print Screen / hotkeys
-    ↓
-Skriveni WinUI runtime coordinator
-    ↓
-Snapvere.Application workflows
-    ├── Region / Screen → resilient monitor capture
-    └── Window → geometric picker → WGC CreateForWindow
-    ↓
-CaptureFrame (physical BGRA8 pixels)
-    ↓
-Crop / annotation render / PNG encode
-    ↓
-Pictures\SNAPVERE / Save As ili Windows Clipboard
-```
+## Release 0.0.9 disciplina
+
+Objava se pokreće tek nakon finalnog zelenog source/PR/main CI-a. Release workflow ponovno gradi i validira source prije taga. Immutable `v0.0.9` lookup razlikuje samo stvarni HTTP 404 kao “tag ne postoji”; druge GitHub API greške prekidaju objavu. Annotated-tag objekt i tag ref također moraju biti uspješno stvoreni i imati valjani SHA prije objave.
+
+GitHub Release nakon toga smije sadržavati samo `SNAPVERE-Setup.exe` i `SNAPVERE-Portable.exe`, a zadnji korak uspoređuje GitHub asset SHA-256 digest s lokalno izračunatim release digestom.
 
 ## Dokumentacija
 
-Engleska dokumentacija nalazi se u [`docs/`](docs/), a hrvatska u [`docs/hr/`](docs/hr/).
+Engleska dokumentacija: [`docs/`](docs/). Hrvatska dokumentacija: [`docs/hr/`](docs/hr/).
 
-Ključni dokumenti: [Architecture](docs/ARCHITECTURE.md), [Tray UX](docs/TRAY-UX.md), [Capture engine](docs/CAPTURE-ENGINE.md), [Region Capture](docs/REGION-CAPTURE.md), [Window Capture](docs/WINDOW-CAPTURE.md), [Settings](docs/SETTINGS.md), [Security](SECURITY.md) i [v0.0.9 hardening](docs/hr/SECURITY-PERFORMANCE-0.0.9.md).
+Ključni dokumenti: [Arhitektura](docs/hr/ARCHITECTURE.md), [Tray UX](docs/hr/TRAY-UX.md), [Capture engine](docs/hr/CAPTURE-ENGINE.md), [Region Capture](docs/hr/REGION-CAPTURE.md), [Window Capture](docs/hr/WINDOW-CAPTURE.md), [Save location](docs/hr/SAVE-LOCATION.md), [Postavke](docs/hr/SETTINGS.md), [Sigurnost/performance 0.0.9](docs/hr/SECURITY-PERFORMANCE-0.0.9.md), [Instalacija](docs/hr/INSTALLATION.md), [Branding](docs/hr/BRANDING.md), [Image pipeline](docs/hr/IMAGE-PIPELINE.md) i [Android](docs/hr/ANDROID.md).
 
 ## Tehnologija
 
 - C# / .NET 10
 - WinUI 3 / Windows App SDK 1.8 stable line
 - Windows.Graphics.Capture + Direct3D 11
-- Win32 / DWM / GDI interoperability
-- deterministic buildovi, nullable/analyzer provjere i central NuGet management
-- xUnit + GitHub Actions
+- Win32 / DWM / GDI interop
+- Java 17 / nativni Android API / MediaProjection / MediaStore
+- deterministic buildovi, nullable/analyzer enforcement i centralni NuGet management
+- xUnit + JUnit 4 + GitHub Actions
 
-## Dijagnostika
+## Diagnostics
 
-Lokalni startup log:
+Windows startup diagnostics:
 
 ```text
 %LOCALAPPDATA%\SNAPVERE\Logs\startup.log
 ```
 
-Pixel sadržaj screenshotova ne zapisuje se u startup log.
+Screenshot pikseli namjerno se ne zapisuju u startup log.
 
 ## Licenca i vlasništvo
 
-**SNAPVERE 0.0.7 i noviji distribuiraju se pod SNAPVERE Commercial Software License Agreementom iz [`LICENSE`](LICENSE).** SNAPVERE je brend proizvoda. Brendigo je developer i publisher. Službena stranica proizvoda je **snapvere.com**, a developerova stranica **brendigo.com**.
-
-Ranije objavljene verzije ostaju pod licencom s kojom su bile distribuirane; današnja promjena licence ne može retroaktivno ukinuti ranije dodijeljena prava.
+**SNAPVERE 0.0.7 i noviji distribuira se pod SNAPVERE Commercial Software License Agreement ugovorom u [`LICENSE`](LICENSE).** SNAPVERE je proizvodni brand. Brendigo je developer i publisher. Službena stranica je **snapvere.com**, a podrška **info@snapvere.com**.
 
 ---
 
 **SNAPVERE — Capture. Edit. Done.**  
-Razvio i objavljuje **Brendigo** · [snapvere.com](https://snapvere.com) · [brendigo.com](https://brendigo.com)
+Razvija i objavljuje **Brendigo** · [snapvere.com](https://snapvere.com) · [info@snapvere.com](mailto:info@snapvere.com) · [brendigo.com](https://brendigo.com)
