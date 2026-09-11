@@ -53,16 +53,32 @@ public final class CaptureService extends Service {
 
     private static final String CHANNEL_ID = "snapvere_capture";
     private static final int NOTIFICATION_ID = 42;
+    private static final long CAPTURE_SETTLE_DELAY_MS = 300L;
     private static final String PREFS = "snapvere_android";
     private static final String PREF_LATEST_URI = "latest_capture_uri";
     private static final String PREF_LATEST_NAME = "latest_capture_name";
+    private static final AtomicBoolean CAPTURE_ACTIVE = new AtomicBoolean();
+    private static volatile String lastError;
 
     private final AtomicBoolean completed = new AtomicBoolean();
     private HandlerThread captureThread;
+    private Handler captureHandler;
     private MediaProjection mediaProjection;
     private MediaProjection.Callback projectionCallback;
     private VirtualDisplay virtualDisplay;
     private ImageReader imageReader;
+
+    public static boolean isCaptureActive() {
+        return CAPTURE_ACTIVE.get();
+    }
+
+    public static String getLastError() {
+        return lastError;
+    }
+
+    public static void clearLastError() {
+        lastError = null;
+    }
 
     @Override
     public void onCreate() {
@@ -77,20 +93,28 @@ public final class CaptureService extends Service {
             return START_NOT_STICKY;
         }
 
-        completed.set(false);
-        startForeground(
-            NOTIFICATION_ID,
-            buildNotification(getString(R.string.notification_capturing), false),
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
-
-        int resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, Activity.RESULT_CANCELED);
-        Intent resultData = getProjectionData(intent);
-        if (resultCode != Activity.RESULT_OK || resultData == null) {
-            failCapture("Android did not provide a valid screen-capture token.");
+        // One MediaProjection consent token is one capture session. Ignore any
+        // accidental second start while the first session is still active.
+        if (!CAPTURE_ACTIVE.compareAndSet(false, true)) {
             return START_NOT_STICKY;
         }
 
+        completed.set(false);
+        lastError = null;
+
         try {
+            startForeground(
+                NOTIFICATION_ID,
+                buildNotification(getString(R.string.notification_capturing), false),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
+
+            int resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, Activity.RESULT_CANCELED);
+            Intent resultData = getProjectionData(intent);
+            if (resultCode != Activity.RESULT_OK || resultData == null) {
+                failCapture("Android did not provide a valid screen-capture token.");
+                return START_NOT_STICKY;
+            }
+
             startCapture(resultCode, resultData);
         } catch (RuntimeException exception) {
             failCapture(messageOf(exception));
@@ -100,9 +124,11 @@ public final class CaptureService extends Service {
 
     @Override
     public void onDestroy() {
-        // If Android destroys the service before our normal completion path,
-        // explicitly stop MediaProjection as well as releasing local surfaces.
+        if (CAPTURE_ACTIVE.get() && !completed.get()) {
+            lastError = "Android stopped the capture service before the image was completed.";
+        }
         cleanupCapture(true);
+        CAPTURE_ACTIVE.set(false);
         super.onDestroy();
     }
 
@@ -121,7 +147,7 @@ public final class CaptureService extends Service {
 
         captureThread = new HandlerThread("SnapvereCapture");
         captureThread.start();
-        Handler captureHandler = new Handler(captureThread.getLooper());
+        captureHandler = new Handler(captureThread.getLooper());
 
         projectionCallback = new MediaProjection.Callback() {
             @Override
@@ -132,6 +158,26 @@ public final class CaptureService extends Service {
             }
         };
         mediaProjection.registerCallback(projectionCallback, captureHandler);
+
+        // MainActivity moves its task behind the previously visible task as soon
+        // as consent returns. This one-shot delay gives that transition a frame
+        // to settle before VirtualDisplay starts; there is no polling or timer loop.
+        captureHandler.postDelayed(() -> {
+            if (completed.get()) {
+                return;
+            }
+            try {
+                beginVirtualDisplayCapture();
+            } catch (RuntimeException exception) {
+                failCapture(messageOf(exception));
+            }
+        }, CAPTURE_SETTLE_DELAY_MS);
+    }
+
+    private void beginVirtualDisplayCapture() {
+        if (mediaProjection == null || captureHandler == null) {
+            throw new IllegalStateException("Screen-capture session ended before the display became ready.");
+        }
 
         CaptureSize size = getCaptureSize();
         imageReader = ImageReader.newInstance(
@@ -245,6 +291,7 @@ public final class CaptureService extends Service {
             return;
         }
 
+        lastError = null;
         SharedPreferences.Editor editor = getSharedPreferences(PREFS, MODE_PRIVATE).edit();
         editor.putString(PREF_LATEST_URI, saved.uri.toString());
         editor.putString(PREF_LATEST_NAME, saved.name);
@@ -257,6 +304,7 @@ public final class CaptureService extends Service {
         sendBroadcast(result);
 
         cleanupCapture(true);
+        CAPTURE_ACTIVE.set(false);
         stopForeground(STOP_FOREGROUND_REMOVE);
         stopSelf();
     }
@@ -266,17 +314,22 @@ public final class CaptureService extends Service {
             return;
         }
 
+        lastError = message;
         Intent result = new Intent(ACTION_CAPTURE_FAILED)
             .setPackage(getPackageName())
             .putExtra(EXTRA_ERROR_MESSAGE, message);
         sendBroadcast(result);
 
         cleanupCapture(true);
+        CAPTURE_ACTIVE.set(false);
         stopForeground(STOP_FOREGROUND_REMOVE);
         stopSelf();
     }
 
     private void cleanupCapture(boolean stopProjection) {
+        if (captureHandler != null) {
+            captureHandler.removeCallbacksAndMessages(null);
+        }
         if (virtualDisplay != null) {
             virtualDisplay.release();
             virtualDisplay = null;
@@ -296,6 +349,7 @@ public final class CaptureService extends Service {
             }
             mediaProjection = null;
         }
+        captureHandler = null;
         if (captureThread != null) {
             captureThread.quitSafely();
             captureThread = null;

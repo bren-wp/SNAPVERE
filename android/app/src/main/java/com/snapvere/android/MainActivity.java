@@ -28,6 +28,7 @@ import androidx.core.view.WindowInsetsCompat;
 public final class MainActivity extends ComponentActivity {
     private static final String PREFS = "snapvere_android";
     private static final String PREF_LATEST_URI = "latest_capture_uri";
+    private static final String PREF_LATEST_NAME = "latest_capture_name";
 
     private TextView statusText;
     private Button captureButton;
@@ -39,8 +40,7 @@ public final class MainActivity extends ComponentActivity {
     private final BroadcastReceiver captureReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            captureButton.setEnabled(true);
-            captureButton.setAlpha(1.0f);
+            refreshCaptureState();
             if (CaptureService.ACTION_CAPTURE_COMPLETED.equals(intent.getAction())) {
                 String name = intent.getStringExtra(CaptureService.EXTRA_CAPTURE_NAME);
                 statusText.setText(getString(R.string.capture_saved, name == null ? "PNG" : name));
@@ -63,6 +63,7 @@ public final class MainActivity extends ComponentActivity {
             result -> handleCaptureResult(result.getResultCode(), result.getData()));
 
         setContentView(buildContent());
+        refreshCaptureState();
         refreshLatestState();
     }
 
@@ -70,7 +71,9 @@ public final class MainActivity extends ComponentActivity {
     protected void onStart() {
         super.onStart();
         registerCaptureReceiver();
+        refreshCaptureState();
         refreshLatestState();
+        refreshStatusFromLastCapture();
     }
 
     @Override
@@ -150,6 +153,12 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private void requestScreenCapture() {
+        if (CaptureService.isCaptureActive()) {
+            refreshCaptureState();
+            return;
+        }
+
+        CaptureService.clearLastError();
         captureButton.setEnabled(false);
         captureButton.setAlpha(0.65f);
         statusText.setText(R.string.capture_requesting);
@@ -160,8 +169,7 @@ public final class MainActivity extends ComponentActivity {
 
     private void handleCaptureResult(int resultCode, Intent data) {
         if (resultCode != RESULT_OK || data == null) {
-            captureButton.setEnabled(true);
-            captureButton.setAlpha(1.0f);
+            refreshCaptureState();
             statusText.setText(R.string.capture_cancelled);
             return;
         }
@@ -173,14 +181,27 @@ public final class MainActivity extends ComponentActivity {
 
         try {
             ContextCompat.startForegroundService(this, serviceIntent);
+            if (!moveTaskToBack(true)) {
+                stopService(new Intent(this, CaptureService.class));
+                refreshCaptureState();
+                statusText.setText(R.string.capture_background_failed);
+            }
         } catch (RuntimeException exception) {
-            captureButton.setEnabled(true);
-            captureButton.setAlpha(1.0f);
+            refreshCaptureState();
             String message = exception.getMessage();
             statusText.setText(getString(
                 R.string.capture_failed,
                 message == null || message.isBlank() ? getString(R.string.unknown_error) : message));
         }
+    }
+
+    private void refreshCaptureState() {
+        if (captureButton == null) {
+            return;
+        }
+        boolean active = CaptureService.isCaptureActive();
+        captureButton.setEnabled(!active);
+        captureButton.setAlpha(active ? 0.65f : 1.0f);
     }
 
     private void refreshLatestState() {
@@ -194,6 +215,24 @@ public final class MainActivity extends ComponentActivity {
         shareLatestButton.setEnabled(hasLatest);
         openLatestButton.setAlpha(hasLatest ? 1.0f : 0.5f);
         shareLatestButton.setAlpha(hasLatest ? 1.0f : 0.5f);
+    }
+
+    private void refreshStatusFromLastCapture() {
+        if (statusText == null || CaptureService.isCaptureActive()) {
+            return;
+        }
+
+        String lastError = CaptureService.getLastError();
+        if (lastError != null && !lastError.isBlank()) {
+            statusText.setText(getString(R.string.capture_failed, lastError));
+            return;
+        }
+
+        String latestName = getSharedPreferences(PREFS, MODE_PRIVATE)
+            .getString(PREF_LATEST_NAME, "");
+        if (latestName != null && !latestName.isBlank()) {
+            statusText.setText(getString(R.string.capture_saved, latestName));
+        }
     }
 
     private void openLatestCapture() {

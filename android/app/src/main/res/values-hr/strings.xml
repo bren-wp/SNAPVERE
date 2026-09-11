@@ -11,6 +11,7 @@
     <string name="capture_ready">Spremno za lokalnu snimku zaslona.</string>
     <string name="capture_requesting">Čekam Android dopuštenje za snimanje zaslona…</string>
     <string name="capture_cancelled">Snimanje zaslona je otkazano.</string>
+    <string name="capture_background_failed">SNAPVERE se nije mogao premjestiti iza zaslona koji želite snimiti.</string>
     <string name="capture_saved">Spremljeno u Pictures/SNAPVERE: %1$s</string>
     <string name="capture_failed">Snimanje zaslona nije uspjelo: %1$s</string>
     <string name="unknown_error">Nepoznata pogreška</string>
