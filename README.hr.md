@@ -57,7 +57,7 @@ Implementirani Android workflow uključuje:
 - `ByteBuffer.rewind()` prije kopiranja i deterministički Image/Bitmap cleanup redoslijed;
 - conversion/provider/allocation failure ostaje unutar kontroliranog teardowna i prikazuje lokaliziranu recovery poruku.
 
-Android CI pokreće `lintDebug`, `lintRelease`, JVM testove, debug/release build, signature/alignment i SHA-256. CI APK je debug-potpisan development dokaz; javni APK prolazi zasebni stabilni release-signing gate.
+Android CI pokreće `lintDebug`, `lintRelease`, JVM testove, debug/release build, signature/alignment i SHA-256. Za v0.1.0 javni `SNAPVERE.apk` namjerno koristi isti provjereni CI/debug-potpisani paketni put; privatni production keystore nije potreban.
 
 Detalji: [Android arhitektura i QA](docs/hr/ANDROID.md) · [Android source/build vodič](android/README.md).
 
@@ -97,7 +97,9 @@ SNAPVERE-Android-Source.zip
 
 `SNAPVERE-Setup.exe` i `SNAPVERE-Portable.exe` sadrže x86, x64 i ARM64 Windows payloade i automatski biraju kompatibilni payload. Minimalni Windows target ostaje Windows 10 1809/build 17763; WGC putovi zahtijevaju Windows 10 2004/build 19041 ili noviji.
 
-`SNAPVERE.apk` je minificirani/shrunk Android release paket. Objavljuje se tek nakon ZIP alignmenta i verifikacije stabilnog SNAPVERE Android release potpisa. Privatni signing podaci su GitHub secreti i nikad se ne commitaju. Workflow ne zamjenjuje nedostajući release key ephemeral debug ključem.
+`SNAPVERE.apk` je instalabilni Android CI/debug-potpisani paket iz validiranog 0.1.0 sourcea. Release put i dalje zahtijeva debug/release lint, JVM testove, uspješan debug/release build, provjeru APK potpisa, ZIP alignment i SHA-256. Paket se ne predstavlja kao Google Play/production-potpisan i ne zahtijeva privatne signing secrete.
+
+Budući da javni 0.1.0 APK koristi CI/debug signing identitet, to nije podržani dugoročni production update lineage. Kasniji Android kanal s drugačijim stabilnim production ključem može zahtijevati deinstalaciju i novu instalaciju.
 
 `SNAPVERE-Android-Source.zip` generira se izravno iz validiranog Git `android/` treea i ne sadrži generirani build output, Gradle cache niti signing materijal.
 
@@ -120,22 +122,15 @@ ARM64 na hosted x64 runneru ostaje cross-build/package dokaz, ne fizički ARM64 
 
 ### Android
 
-Android CI provjerava manifest privacy/service/version ugovor, SDK/tooling, debug/release lint, JVM testove, debug/release build, debug potpis/alignment i SHA-256. Release workflow dodatno provjerava stabilni release potpis, source arhivu, digest kroz Actions artifact transfer i sva četiri objavljena GitHub digesta.
+Android CI provjerava manifest privacy/service/version ugovor, SDK/tooling, debug/release lint, JVM testove, debug/release build, debug potpis/alignment i SHA-256. Release workflow dodatno provjerava javni CI/debug-potpisani APK, source arhivu, digest kroz Actions artifact transfer i sva četiri objavljena GitHub digesta.
 
 Zeleni Android workflow je automatizirani build/package dokaz, ne tvrdnja o iscrpnom runtime testu na svakom fizičkom OEM uređaju.
 
-## Android release signing
+## Android potpisivanje paketa za 0.1.0
 
-Za javni Android 0.1.0 release potrebni su repository secreti:
+Javni 0.1.0 APK namjerno slijedi CI/debug signing put i zato **ne zahtijeva privatne Android keystore secrete**. `apksigner` i ZIP-alignment provjere ostaju obavezne prije nego APK može doći do release joba.
 
-```text
-SNAPVERE_ANDROID_KEYSTORE_BASE64
-SNAPVERE_ANDROID_KEY_ALIAS
-SNAPVERE_ANDROID_KEYSTORE_PASSWORD
-SNAPVERE_ANDROID_KEY_PASSWORD
-```
-
-Ako neki nedostaje ili nije valjan, release pada prije stvaranja immutable taga. Detalji su u [Android dokumentaciji](docs/hr/ANDROID.md).
+Ovaj izbor omogućuje odmah instalabilan APK bez spremanja privatnog production ključa na GitHub. Ne treba ga tumačiti kao trajnu production/Play signing strategiju.
 
 ## Jezici
 
