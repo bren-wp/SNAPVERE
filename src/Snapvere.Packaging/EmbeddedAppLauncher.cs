@@ -115,8 +115,8 @@ public static class EmbeddedAppLauncher
 
         // The Portable cache lives below the user's temporary directory and is
         // therefore not a trust boundary. Rebuild it from the embedded payload
-        // whenever any expected byte changed, an expected file disappeared, an
-        // unexpected file appeared, or a reparse point entered the cache tree.
+        // whenever an expected file changed or disappeared, an unexpected file
+        // appeared, or a reparse point entered the cache tree.
         PrepareCacheTransactionally(
             hostAssembly,
             architecture,
@@ -137,9 +137,9 @@ public static class EmbeddedAppLauncher
         SnapverePayloadArchitecture architecture,
         string cacheRoot)
     {
-        using var payload = UniversalPayload.OpenEmbeddedPayload(hostAssembly, architecture);
+        using var manifest = UniversalPayload.OpenEmbeddedIntegrityManifest(hostAssembly, architecture);
         return EmbeddedPayload.IsExtractedPayloadIntact(
-            payload,
+            manifest,
             cacheRoot,
             [ReadyMarkerFileName]);
     }
