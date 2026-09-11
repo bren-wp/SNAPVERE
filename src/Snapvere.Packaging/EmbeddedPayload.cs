@@ -1,4 +1,6 @@
 using System.IO.Compression;
+using System.Security.Cryptography;
+using System.Text.Json;
 
 namespace Snapvere.Packaging;
 
@@ -7,6 +9,7 @@ public static class EmbeddedPayload
     private const int MaximumEntryCount = 20_000;
     private const long MaximumExpandedBytes = 4L * 1024 * 1024 * 1024;
     private const int CopyBufferSize = 128 * 1024;
+    private const int IntegrityManifestFormatVersion = 1;
 
     public static void ExtractZipSafely(
         Stream zipStream,
@@ -92,17 +95,18 @@ public static class EmbeddedPayload
     }
 
     /// <summary>
-    /// Verifies that an extracted payload is an exact byte-for-byte projection
-    /// of the embedded ZIP, apart from explicitly allowed launcher metadata.
-    /// This is intended for user-writable caches that must not be trusted solely
-    /// because a ready marker and executable are present.
+    /// Verifies a user-writable extracted payload against a trusted SHA-256
+    /// manifest embedded in the Portable host. The manifest is generated from
+    /// the exact application payload at package-build time, so validation only
+    /// needs one sequential read of each cached file and does not re-decompress
+    /// the large embedded ZIP on every launch.
     /// </summary>
     public static bool IsExtractedPayloadIntact(
-        Stream zipStream,
+        Stream integrityManifestStream,
         string destinationRoot,
         IReadOnlyCollection<string>? allowedExtraRelativePaths = null)
     {
-        ArgumentNullException.ThrowIfNull(zipStream);
+        ArgumentNullException.ThrowIfNull(integrityManifestStream);
         ArgumentException.ThrowIfNullOrWhiteSpace(destinationRoot);
 
         var root = Path.GetFullPath(destinationRoot);
@@ -111,91 +115,69 @@ public static class EmbeddedPayload
             return false;
         }
 
-        var rootWithSeparator = EnsureTrailingSeparator(root);
-        var expectedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var allowedExtras = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        if (allowedExtraRelativePaths is not null)
-        {
-            foreach (var allowed in allowedExtraRelativePaths)
-            {
-                if (string.IsNullOrWhiteSpace(allowed) || Path.IsPathRooted(allowed))
-                {
-                    throw new ArgumentException(
-                        "Allowed extra paths must be non-empty relative paths.",
-                        nameof(allowedExtraRelativePaths));
-                }
-
-                var normalizedAllowed = Path.GetRelativePath(root, Path.GetFullPath(Path.Combine(root, allowed)));
-                if (normalizedAllowed == "." || IsOutsideRoot(normalizedAllowed))
-                {
-                    throw new ArgumentException(
-                        "Allowed extra paths must remain inside the payload root.",
-                        nameof(allowedExtraRelativePaths));
-                }
-
-                allowedExtras.Add(normalizedAllowed);
-            }
-        }
+        var expectedFiles = ReadIntegrityManifest(integrityManifestStream, root);
+        var allowedExtras = BuildAllowedExtraSet(root, allowedExtraRelativePaths);
 
         try
         {
-            using var archive = new ZipArchive(zipStream, ZipArchiveMode.Read, leaveOpen: true);
-            ValidateArchiveShape(archive);
+            var matchedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var pendingDirectories = new Stack<string>();
+            pendingDirectories.Push(root);
 
-            long expandedBytes = 0;
-            foreach (var entry in archive.Entries)
+            while (pendingDirectories.Count > 0)
             {
-                if (string.IsNullOrWhiteSpace(entry.FullName))
+                var current = pendingDirectories.Pop();
+                foreach (var entryPath in Directory.EnumerateFileSystemEntries(
+                    current,
+                    "*",
+                    SearchOption.TopDirectoryOnly))
                 {
-                    continue;
-                }
+                    var attributes = File.GetAttributes(entryPath);
+                    if ((attributes & FileAttributes.ReparsePoint) != 0)
+                    {
+                        return false;
+                    }
 
-                expandedBytes = checked(expandedBytes + Math.Max(0, entry.Length));
-                if (expandedBytes > MaximumExpandedBytes)
-                {
-                    throw new InvalidDataException("The SNAPVERE package expands beyond the allowed size.");
-                }
+                    if ((attributes & FileAttributes.Directory) != 0)
+                    {
+                        pendingDirectories.Push(entryPath);
+                        continue;
+                    }
 
-                var targetPath = GetValidatedTargetPath(root, rootWithSeparator, entry.FullName);
-                if (IsDirectoryEntry(entry.FullName))
-                {
-                    continue;
-                }
+                    var relativePath = Path.GetRelativePath(root, entryPath);
+                    if (allowedExtras.Contains(relativePath))
+                    {
+                        continue;
+                    }
 
-                var relativePath = Path.GetRelativePath(root, targetPath);
-                if (!expectedFiles.Add(relativePath))
-                {
-                    throw new InvalidDataException("The SNAPVERE package contains duplicate file destinations.");
-                }
+                    if (!expectedFiles.TryGetValue(relativePath, out var expected) ||
+                        !matchedFiles.Add(relativePath))
+                    {
+                        return false;
+                    }
 
-                if (!File.Exists(targetPath) || IsReparsePoint(targetPath))
-                {
-                    return false;
-                }
+                    var fileInfo = new FileInfo(entryPath);
+                    if (fileInfo.Length != expected.Length)
+                    {
+                        return false;
+                    }
 
-                var fileInfo = new FileInfo(targetPath);
-                if (fileInfo.Length != entry.Length)
-                {
-                    return false;
-                }
-
-                using var expected = entry.Open();
-                using var actual = new FileStream(
-                    targetPath,
-                    FileMode.Open,
-                    FileAccess.Read,
-                    FileShare.Read,
-                    bufferSize: CopyBufferSize,
-                    FileOptions.SequentialScan);
-
-                if (!StreamsEqual(expected, actual))
-                {
-                    return false;
+                    using var file = new FileStream(
+                        entryPath,
+                        FileMode.Open,
+                        FileAccess.Read,
+                        FileShare.Read,
+                        bufferSize: CopyBufferSize,
+                        FileOptions.SequentialScan);
+                    var actualHash = Convert.ToHexString(SHA256.HashData(file));
+                    if (!string.Equals(actualHash, expected.Sha256, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return false;
+                    }
                 }
             }
 
-            return ContainsOnlyExpectedFiles(root, expectedFiles, allowedExtras);
+            return matchedFiles.Count == expectedFiles.Count;
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or DirectoryNotFoundException)
@@ -226,6 +208,135 @@ public static class EmbeddedPayload
         }
     }
 
+    private static Dictionary<string, IntegrityManifestEntry> ReadIntegrityManifest(
+        Stream manifestStream,
+        string root)
+    {
+        IntegrityManifest? manifest;
+        try
+        {
+            manifest = JsonSerializer.Deserialize<IntegrityManifest>(
+                manifestStream,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidDataException("The SNAPVERE payload integrity manifest is invalid JSON.", exception);
+        }
+
+        if (manifest is null || manifest.FormatVersion != IntegrityManifestFormatVersion)
+        {
+            throw new InvalidDataException("The SNAPVERE payload integrity manifest has an unsupported format.");
+        }
+
+        if (manifest.Files is null || manifest.Files.Length == 0 || manifest.Files.Length > MaximumEntryCount)
+        {
+            throw new InvalidDataException("The SNAPVERE payload integrity manifest has an invalid file count.");
+        }
+
+        var expectedFiles = new Dictionary<string, IntegrityManifestEntry>(
+            manifest.Files.Length,
+            StringComparer.OrdinalIgnoreCase);
+
+        foreach (var entry in manifest.Files)
+        {
+            if (entry is null ||
+                string.IsNullOrWhiteSpace(entry.Path) ||
+                entry.Length < 0 ||
+                !IsSha256Hex(entry.Sha256))
+            {
+                throw new InvalidDataException("The SNAPVERE payload integrity manifest contains an invalid file entry.");
+            }
+
+            var relativePath = NormalizeRelativePathInsideRoot(root, entry.Path);
+            if (!expectedFiles.TryAdd(
+                relativePath,
+                new IntegrityManifestEntry(relativePath, entry.Length, entry.Sha256.ToUpperInvariant())))
+            {
+                throw new InvalidDataException("The SNAPVERE payload integrity manifest contains duplicate file destinations.");
+            }
+        }
+
+        return expectedFiles;
+    }
+
+    private static HashSet<string> BuildAllowedExtraSet(
+        string root,
+        IReadOnlyCollection<string>? allowedExtraRelativePaths)
+    {
+        var allowedExtras = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (allowedExtraRelativePaths is null)
+        {
+            return allowedExtras;
+        }
+
+        foreach (var allowed in allowedExtraRelativePaths)
+        {
+            if (string.IsNullOrWhiteSpace(allowed))
+            {
+                throw new ArgumentException(
+                    "Allowed extra paths must be non-empty relative paths.",
+                    nameof(allowedExtraRelativePaths));
+            }
+
+            try
+            {
+                allowedExtras.Add(NormalizeRelativePathInsideRoot(root, allowed));
+            }
+            catch (InvalidDataException exception)
+            {
+                throw new ArgumentException(
+                    "Allowed extra paths must remain inside the payload root.",
+                    nameof(allowedExtraRelativePaths),
+                    exception);
+            }
+        }
+
+        return allowedExtras;
+    }
+
+    private static string NormalizeRelativePathInsideRoot(string root, string relativePath)
+    {
+        var normalized = relativePath.Replace('/', Path.DirectorySeparatorChar);
+        if (Path.IsPathRooted(normalized))
+        {
+            throw new InvalidDataException("A SNAPVERE payload path must be relative.");
+        }
+
+        var rootWithSeparator = EnsureTrailingSeparator(root);
+        var target = Path.GetFullPath(Path.Combine(root, normalized));
+        if (!target.StartsWith(rootWithSeparator, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidDataException("A SNAPVERE payload path escapes its destination root.");
+        }
+
+        var canonicalRelative = Path.GetRelativePath(root, target);
+        if (canonicalRelative == "." || IsOutsideRoot(canonicalRelative))
+        {
+            throw new InvalidDataException("A SNAPVERE payload path is not a valid file destination.");
+        }
+
+        return canonicalRelative;
+    }
+
+    private static bool IsSha256Hex(string? value)
+    {
+        if (value is null || value.Length != 64)
+        {
+            return false;
+        }
+
+        foreach (var character in value)
+        {
+            if (!Uri.IsHexDigit(character))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private static void ValidateArchiveShape(ZipArchive archive)
     {
         if (archive.Entries.Count > MaximumEntryCount)
@@ -252,74 +363,9 @@ public static class EmbeddedPayload
         return targetPath;
     }
 
-    private static bool ContainsOnlyExpectedFiles(
-        string root,
-        IReadOnlySet<string> expectedFiles,
-        IReadOnlySet<string> allowedExtras)
-    {
-        var pendingDirectories = new Stack<string>();
-        pendingDirectories.Push(root);
-
-        while (pendingDirectories.Count > 0)
-        {
-            var current = pendingDirectories.Pop();
-            foreach (var entryPath in Directory.EnumerateFileSystemEntries(current, "*", SearchOption.TopDirectoryOnly))
-            {
-                var attributes = File.GetAttributes(entryPath);
-                if ((attributes & FileAttributes.ReparsePoint) != 0)
-                {
-                    return false;
-                }
-
-                if ((attributes & FileAttributes.Directory) != 0)
-                {
-                    pendingDirectories.Push(entryPath);
-                    continue;
-                }
-
-                var relativePath = Path.GetRelativePath(root, entryPath);
-                if (!expectedFiles.Contains(relativePath) && !allowedExtras.Contains(relativePath))
-                {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    private static bool StreamsEqual(Stream expected, Stream actual)
-    {
-        var expectedBuffer = new byte[CopyBufferSize];
-        var actualBuffer = new byte[CopyBufferSize];
-
-        while (true)
-        {
-            var expectedRead = expected.Read(expectedBuffer, 0, expectedBuffer.Length);
-            var actualRead = actual.Read(actualBuffer, 0, actualBuffer.Length);
-            if (expectedRead != actualRead)
-            {
-                return false;
-            }
-
-            if (expectedRead == 0)
-            {
-                return true;
-            }
-
-            if (!expectedBuffer.AsSpan(0, expectedRead).SequenceEqual(actualBuffer.AsSpan(0, actualRead)))
-            {
-                return false;
-            }
-        }
-    }
-
     private static bool IsDirectoryEntry(string entryName)
         => entryName.EndsWith("/", StringComparison.Ordinal) ||
            entryName.EndsWith("\\", StringComparison.Ordinal);
-
-    private static bool IsReparsePoint(string path)
-        => (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0;
 
     private static bool IsOutsideRoot(string relativePath)
         => Path.IsPathRooted(relativePath) ||
@@ -348,4 +394,13 @@ public static class EmbeddedPayload
         {
         }
     }
+
+    private sealed class IntegrityManifest
+    {
+        public int FormatVersion { get; init; }
+
+        public IntegrityManifestEntry?[]? Files { get; init; }
+    }
+
+    private sealed record IntegrityManifestEntry(string Path, long Length, string Sha256);
 }
