@@ -109,6 +109,26 @@ jobs:
               --output $output
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+            $outputRoot = (Resolve-Path $output).Path
+            $manifestFiles = @(
+              Get-ChildItem -LiteralPath $outputRoot -Recurse -File |
+                ForEach-Object {
+                  $relativePath = [System.IO.Path]::GetRelativePath($outputRoot, $_.FullName).Replace('\\', '/')
+                  [pscustomobject]@{
+                    Path = $relativePath
+                    Length = $_.Length
+                    Sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToUpperInvariant()
+                  }
+                } |
+                Sort-Object Path
+            )
+            $manifest = [pscustomobject]@{
+              FormatVersion = 1
+              Files = $manifestFiles
+            }
+            $manifestPath = "artifacts/SNAPVERE-payload-$arch.integrity.json"
+            $manifest | ConvertTo-Json -Depth 4 -Compress | Set-Content -LiteralPath $manifestPath -Encoding utf8NoBOM
+
             Compress-Archive -Path "$output/*" -DestinationPath "artifacts/SNAPVERE-payload-$arch.zip" -CompressionLevel Optimal
           }
 
@@ -118,14 +138,24 @@ jobs:
           Add-Type -AssemblyName System.IO.Compression.FileSystem
           foreach ($arch in @('x86', 'x64', 'arm64')) {
             $zipPath = (Resolve-Path "artifacts/SNAPVERE-payload-$arch.zip").Path
+            $integrityPath = (Resolve-Path "artifacts/SNAPVERE-payload-$arch.integrity.json").Path
             $archive = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
             try {
               if (-not ($archive.Entries | Where-Object { $_.FullName -ieq 'Snapvere.exe' })) {
                 throw "$arch payload does not contain Snapvere.exe at its root."
               }
-              Write-Host "$arch payload validated: $([Math]::Round((Get-Item $zipPath).Length / 1MB, 1)) MB"
             }
             finally { $archive.Dispose() }
+
+            $manifest = Get-Content -LiteralPath $integrityPath -Raw | ConvertFrom-Json
+            if ($manifest.FormatVersion -ne 1 -or @($manifest.Files).Count -eq 0) {
+              throw "$arch payload integrity manifest is invalid."
+            }
+            if (-not ($manifest.Files | Where-Object { $_.Path -ieq 'Snapvere.exe' -and $_.Sha256 -match '^[0-9A-F]{64}$' })) {
+              throw "$arch payload integrity manifest does not contain a valid Snapvere.exe digest."
+            }
+
+            Write-Host "$arch payload validated: $([Math]::Round((Get-Item $zipPath).Length / 1MB, 1)) MB, $(@($manifest.Files).Count) integrity entries"
           }
 
       - name: Capture real rendered UI snapshots
@@ -205,6 +235,9 @@ jobs:
           $x86 = (Resolve-Path 'artifacts/SNAPVERE-payload-x86.zip').Path
           $x64 = (Resolve-Path 'artifacts/SNAPVERE-payload-x64.zip').Path
           $arm64 = (Resolve-Path 'artifacts/SNAPVERE-payload-arm64.zip').Path
+          $x86Integrity = (Resolve-Path 'artifacts/SNAPVERE-payload-x86.integrity.json').Path
+          $x64Integrity = (Resolve-Path 'artifacts/SNAPVERE-payload-x64.integrity.json').Path
+          $arm64Integrity = (Resolve-Path 'artifacts/SNAPVERE-payload-arm64.integrity.json').Path
 
           dotnet publish src/Snapvere.Setup/Snapvere.Setup.csproj `
             --configuration Release `
@@ -227,6 +260,9 @@ jobs:
             "-p:SnapverePayloadX86Path=$x86" `
             "-p:SnapverePayloadX64Path=$x64" `
             "-p:SnapverePayloadArm64Path=$arm64" `
+            "-p:SnapverePayloadX86IntegrityPath=$x86Integrity" `
+            "-p:SnapverePayloadX64IntegrityPath=$x64Integrity" `
+            "-p:SnapverePayloadArm64IntegrityPath=$arm64Integrity" `
             --output artifacts/portable-universal
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

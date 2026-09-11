@@ -13,6 +13,7 @@ public static class EmbeddedAppLauncher
     public const string PortableLauncherEnvironmentVariable = "SNAPVERE_PORTABLE_LAUNCHER_PATH";
 
     private const string AppExecutableName = "Snapvere.exe";
+    private const string ReadyMarkerFileName = ".ready";
     private const string LauncherToken = "Portable";
     private const string StartupProbeEnvironmentVariable = "SNAPVERE_STARTUP_PROBE";
     private const string TrayStartupProbeEnvironmentVariable = "SNAPVERE_TRAY_STARTUP_PROBE";
@@ -53,13 +54,18 @@ public static class EmbeddedAppLauncher
 
             var launcherRoot = Path.Combine(Path.GetTempPath(), "SNAPVERE", LauncherToken);
             var cacheRoot = Path.Combine(launcherRoot, $"{version}-{architectureToken}");
-            var readyMarker = Path.Combine(cacheRoot, ".ready");
+            var readyMarker = Path.Combine(cacheRoot, ReadyMarkerFileName);
             var executable = Path.Combine(cacheRoot, AppExecutableName);
 
-            if (!File.Exists(readyMarker) || !File.Exists(executable))
-            {
-                PrepareCacheTransactionally(hostAssembly, architecture, architectureToken, version, launcherRoot, cacheRoot);
-            }
+            EnsureCacheReady(
+                hostAssembly,
+                architecture,
+                architectureToken,
+                version,
+                launcherRoot,
+                cacheRoot,
+                readyMarker,
+                executable);
 
             CleanupOldCaches(launcherRoot, cacheRoot);
             LaunchApplication(executable, cacheRoot, args);
@@ -80,6 +86,63 @@ public static class EmbeddedAppLauncher
             "SNAPVERE",
             "Logs",
             "startup.log");
+
+    private static void EnsureCacheReady(
+        Assembly hostAssembly,
+        SnapverePayloadArchitecture architecture,
+        string architectureToken,
+        string version,
+        string launcherRoot,
+        string cacheRoot,
+        string readyMarker,
+        string executable)
+    {
+        if (!File.Exists(readyMarker) || !File.Exists(executable))
+        {
+            PrepareCacheTransactionally(
+                hostAssembly,
+                architecture,
+                architectureToken,
+                version,
+                launcherRoot,
+                cacheRoot);
+        }
+
+        if (IsCacheIntact(hostAssembly, architecture, cacheRoot))
+        {
+            return;
+        }
+
+        // The Portable cache lives below the user's temporary directory and is
+        // therefore not a trust boundary. Rebuild it from the embedded payload
+        // whenever an expected file changed or disappeared, an unexpected file
+        // appeared, or a reparse point entered the cache tree.
+        PrepareCacheTransactionally(
+            hostAssembly,
+            architecture,
+            architectureToken,
+            version,
+            launcherRoot,
+            cacheRoot);
+
+        if (!IsCacheIntact(hostAssembly, architecture, cacheRoot))
+        {
+            throw new InvalidDataException(
+                "SNAPVERE Portable could not establish an intact application cache from its embedded payload.");
+        }
+    }
+
+    private static bool IsCacheIntact(
+        Assembly hostAssembly,
+        SnapverePayloadArchitecture architecture,
+        string cacheRoot)
+    {
+        using var manifest = UniversalPayload.OpenEmbeddedIntegrityManifest(hostAssembly, architecture);
+        return EmbeddedPayload.IsExtractedPayloadIntact(
+            manifest,
+            cacheRoot,
+            [ReadyMarkerFileName]);
+    }
 
     private static void PrepareCacheTransactionally(
         Assembly hostAssembly,
@@ -108,7 +171,7 @@ public static class EmbeddedAppLauncher
             }
 
             File.WriteAllText(
-                Path.Combine(stagingRoot, ".ready"),
+                Path.Combine(stagingRoot, ReadyMarkerFileName),
                 $"SNAPVERE {version} {LauncherToken} {architectureToken}{Environment.NewLine}");
 
             if (Directory.Exists(cacheRoot))
