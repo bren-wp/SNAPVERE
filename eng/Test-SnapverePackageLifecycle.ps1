@@ -190,17 +190,58 @@ function Invoke-WindowOverlayProbe([string] $FilePath, [string] $Name) {
 }
 
 function Invoke-SecondaryUiProbe([string] $FilePath, [string] $Name) {
-    $marker = Join-Path $env:TEMP 'SNAPVERE/secondary-ui-probe.ready'
+    $sessionId = [Guid]::NewGuid().ToString('N')
+    $markerFileName = "secondary-ui-probe.$sessionId.ready"
+    $marker = Join-Path $env:TEMP "SNAPVERE/$markerFileName"
+    $surfaces = @(
+        [pscustomobject]@{ Stem = 'secondary-tray'; State = 'SECONDARY_TRAY_READY' },
+        [pscustomobject]@{ Stem = 'secondary-options'; State = 'SECONDARY_OPTIONS_READY' },
+        [pscustomobject]@{ Stem = 'secondary-language'; State = 'SECONDARY_LANGUAGE_READY' },
+        [pscustomobject]@{ Stem = 'secondary-about'; State = 'SECONDARY_ABOUT_READY' }
+    )
     Remove-Item -LiteralPath $marker -Force -ErrorAction SilentlyContinue
+    foreach ($surface in $surfaces) {
+        Remove-Item -LiteralPath (Join-Path $env:TEMP "SNAPVERE/$($surface.Stem).$sessionId.ready") -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath (Join-Path $env:TEMP "SNAPVERE/$($surface.Stem).$sessionId.captured") -Force -ErrorAction SilentlyContinue
+    }
     $env:SNAPVERE_SECONDARY_UI_PROBE = '1'
+    $env:SNAPVERE_PROBE_SESSION_ID = $sessionId
     $process = $null
 
     try {
         $process = Start-Process -FilePath $FilePath -ArgumentList @('--secondary-ui-probe') -PassThru
-        if (-not $process.WaitForExit(25000)) {
+        $escapedVersion = [Regex]::Escape($Version)
+
+        foreach ($surface in $surfaces) {
+            $readyFileName = "$($surface.Stem).$sessionId.ready"
+            $readyPath = Join-Path $env:TEMP "SNAPVERE/$readyFileName"
+            $deadline = (Get-Date).AddSeconds(15)
+            while (-not (Test-Path -LiteralPath $readyPath -PathType Leaf) -and (Get-Date) -lt $deadline) {
+                if ($process.HasExited) {
+                    Write-StartupLogIfPresent
+                    throw "$Name secondary-UI probe exited before $readyFileName was created (code $($process.ExitCode))."
+                }
+                Start-Sleep -Milliseconds 20
+            }
+
+            if (-not (Test-Path -LiteralPath $readyPath -PathType Leaf)) {
+                Write-StartupLogIfPresent
+                throw "$Name secondary-UI probe did not publish $readyFileName within 15 seconds."
+            }
+
+            $readyText = Get-Content -LiteralPath $readyPath -Raw
+            if ($readyText -notmatch "SNAPVERE $escapedVersion $([Regex]::Escape($surface.State))") {
+                throw "$Name secondary-UI marker is invalid: $readyText"
+            }
+
+            $acknowledgementPath = Join-Path $env:TEMP "SNAPVERE/$($surface.Stem).$sessionId.captured"
+            Set-Content -LiteralPath $acknowledgementPath -Value "LIFECYCLE_ACK session=$sessionId" -Encoding utf8
+        }
+
+        if (-not $process.WaitForExit(10000)) {
             Write-StartupLogIfPresent
-            try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
-            throw "$Name secondary-UI probe timed out after 25 seconds."
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            throw "$Name secondary-UI probe did not exit after all four acknowledgements."
         }
 
         if ($process.ExitCode -ne 0) {
@@ -210,11 +251,10 @@ function Invoke-SecondaryUiProbe([string] $FilePath, [string] $Name) {
 
         if (-not (Test-Path -LiteralPath $marker)) {
             Write-StartupLogIfPresent
-            throw "$Name exited successfully but did not materialize tray flyout, Options and About."
+            throw "$Name exited successfully but did not complete all secondary UI surfaces."
         }
 
         $markerText = Get-Content -LiteralPath $marker -Raw
-        $escapedVersion = [Regex]::Escape($Version)
         if ($markerText -notmatch "SNAPVERE $escapedVersion SECONDARY_UI_READY") {
             throw "$Name secondary-UI marker is invalid: $markerText"
         }
@@ -223,7 +263,12 @@ function Invoke-SecondaryUiProbe([string] $FilePath, [string] $Name) {
     }
     finally {
         Remove-Item Env:SNAPVERE_SECONDARY_UI_PROBE -ErrorAction SilentlyContinue
+        Remove-Item Env:SNAPVERE_PROBE_SESSION_ID -ErrorAction SilentlyContinue
         Remove-Item -LiteralPath $marker -Force -ErrorAction SilentlyContinue
+        foreach ($surface in $surfaces) {
+            Remove-Item -LiteralPath (Join-Path $env:TEMP "SNAPVERE/$($surface.Stem).$sessionId.ready") -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath (Join-Path $env:TEMP "SNAPVERE/$($surface.Stem).$sessionId.captured") -Force -ErrorAction SilentlyContinue
+        }
         if ($null -ne $process) { $process.Dispose() }
     }
 }
@@ -234,6 +279,7 @@ function Clear-ProbeEnvironment {
     Remove-Item Env:SNAPVERE_REGION_OVERLAY_PROBE -ErrorAction SilentlyContinue
     Remove-Item Env:SNAPVERE_WINDOW_OVERLAY_PROBE -ErrorAction SilentlyContinue
     Remove-Item Env:SNAPVERE_SECONDARY_UI_PROBE -ErrorAction SilentlyContinue
+    Remove-Item Env:SNAPVERE_PROBE_SESSION_ID -ErrorAction SilentlyContinue
 }
 
 function Invoke-NormalAppLaunch([string] $FilePath, [string] $Name) {

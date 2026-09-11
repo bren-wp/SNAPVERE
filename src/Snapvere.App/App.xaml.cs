@@ -25,6 +25,7 @@ public partial class App : Microsoft.UI.Xaml.Application
     private const string WindowOverlayProbeMarkerFileName = "window-overlay-probe.ready";
     private const string SecondaryUiProbeEnvironmentVariable = "SNAPVERE_SECONDARY_UI_PROBE";
     private const string SecondaryUiProbeMarkerFileName = "secondary-ui-probe.ready";
+    private const string ProbeSessionEnvironmentVariable = "SNAPVERE_PROBE_SESSION_ID";
 
     private readonly ServiceProvider _services;
     private CaptureCenterWindow? _window;
@@ -447,7 +448,7 @@ public partial class App : Microsoft.UI.Xaml.Application
             _aboutWindow?.Close();
             _aboutWindow = null;
             WriteProbeMarker(
-                SecondaryUiProbeMarkerFileName,
+                ScopeSecondaryProbeMarkerFileName(SecondaryUiProbeMarkerFileName),
                 "SECONDARY_UI_READY",
                 "Secondary UI probe captured tray flyout, Options, Language and About surfaces.");
         }
@@ -465,8 +466,10 @@ public partial class App : Microsoft.UI.Xaml.Application
         string surface)
     {
         await WaitForSecondarySurfaceReadyAsync(root, surface);
+        var scopedReadyMarkerFileName = ScopeSecondaryProbeMarkerFileName(readyMarkerFileName);
+        var scopedCapturedMarkerFileName = ScopeSecondaryProbeMarkerFileName(capturedMarkerFileName);
         WriteProbeMarker(
-            readyMarkerFileName,
+            scopedReadyMarkerFileName,
             readyState,
             $"Secondary UI probe rendered {surface} surface.",
             exitProcess: false);
@@ -474,7 +477,7 @@ public partial class App : Microsoft.UI.Xaml.Application
         var acknowledgementPath = Path.Combine(
             Path.GetTempPath(),
             "SNAPVERE",
-            capturedMarkerFileName);
+            scopedCapturedMarkerFileName);
         var stopwatch = Stopwatch.StartNew();
         while (stopwatch.ElapsedMilliseconds < 5000)
         {
@@ -508,9 +511,29 @@ public partial class App : Microsoft.UI.Xaml.Application
             $"Secondary UI probe surface '{surface}' did not reach a capturable rendered size within 5 seconds.");
     }
 
+    private static string ScopeSecondaryProbeMarkerFileName(string fileName)
+    {
+        var sessionId = Environment.GetEnvironmentVariable(ProbeSessionEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(sessionId) ||
+            sessionId.Length > 64 ||
+            sessionId.Any(character => !char.IsAsciiLetterOrDigit(character) && character != '-'))
+        {
+            throw new InvalidOperationException(
+                "Secondary UI probe requires a safe SNAPVERE_PROBE_SESSION_ID value.");
+        }
+
+        var extensionIndex = fileName.LastIndexOf('.');
+        if (extensionIndex <= 0)
+        {
+            throw new InvalidOperationException($"Secondary UI probe marker '{fileName}' has no extension.");
+        }
+
+        return $"{fileName[..extensionIndex]}.{sessionId}{fileName[extensionIndex..]}";
+    }
+
     private static void FailSecondaryUiProbe(string surface, Exception exception)
     {
-        StartupDiagnostics.ShowFatal($"Secondary UI probe: {surface}", exception);
+        StartupDiagnostics.WriteLine($"Secondary UI probe failed at {surface}: {exception}");
         Environment.Exit(1);
     }
 
