@@ -1,6 +1,8 @@
 package com.snapvere.android;
 
 final class CaptureBufferLayout {
+    private static final int RGBA_BYTES_PER_PIXEL = 4;
+
     private CaptureBufferLayout() {
     }
 
@@ -8,8 +10,8 @@ final class CaptureBufferLayout {
         if (width <= 0) {
             throw new IllegalArgumentException("Capture width must be positive.");
         }
-        if (pixelStride <= 0) {
-            throw new IllegalArgumentException("Pixel stride must be positive.");
+        if (pixelStride != RGBA_BYTES_PER_PIXEL) {
+            throw new IllegalArgumentException("Unexpected RGBA pixel stride.");
         }
         if (rowStride <= 0) {
             throw new IllegalArgumentException("Row stride must be positive.");
