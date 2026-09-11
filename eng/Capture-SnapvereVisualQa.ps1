@@ -75,6 +75,9 @@ public static class SnapvereVisualQaNative
     [DllImport("user32.dll")]
     public static extern bool SetForegroundWindow(IntPtr hWnd);
 
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
+
     public static SnapvereVisualQaWindowInfo[] GetVisibleWindows(int processId)
     {
         var windows = new List<SnapvereVisualQaWindowInfo>();
@@ -172,33 +175,51 @@ function Save-WindowSnapshot {
     $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
 
     try {
-        [void][SnapvereVisualQaNative]::SetForegroundWindow($Window.Handle)
-        Start-Sleep -Milliseconds 35
+        $hasVisualContent = $false
 
-        $hdc = $graphics.GetHdc()
-        try {
-            $printed = [SnapvereVisualQaNative]::PrintWindow($Window.Handle, $hdc, 2)
-        }
-        finally {
-            $graphics.ReleaseHdc($hdc)
-        }
-
-        $hasVisualContent = $printed -and (Test-BitmapHasVisualContent -Bitmap $bitmap)
-        if (-not $hasVisualContent) {
+        # WinUI/DirectComposition can expose an HWND slightly before PrintWindow
+        # can return painted pixels. Retry the target-owned capture instead of
+        # immediately accepting whatever happens to be underneath it on screen.
+        for ($attempt = 0; $attempt -lt 5 -and -not $hasVisualContent; $attempt++) {
             $graphics.Clear([System.Drawing.Color]::Black)
-            Start-Sleep -Milliseconds 35
-            $graphics.CopyFromScreen(
-                $Window.Left,
-                $Window.Top,
-                0,
-                0,
-                [System.Drawing.Size]::new($Window.Width, $Window.Height),
-                [System.Drawing.CopyPixelOperation]::SourceCopy)
-            $hasVisualContent = Test-BitmapHasVisualContent -Bitmap $bitmap
+            [void][SnapvereVisualQaNative]::SetForegroundWindow($Window.Handle)
+            Start-Sleep -Milliseconds (30 + ($attempt * 20))
+
+            $hdc = $graphics.GetHdc()
+            try {
+                $printed = [SnapvereVisualQaNative]::PrintWindow($Window.Handle, $hdc, 2)
+            }
+            finally {
+                $graphics.ReleaseHdc($hdc)
+            }
+
+            $hasVisualContent = $printed -and (Test-BitmapHasVisualContent -Bitmap $bitmap)
         }
 
         if (-not $hasVisualContent) {
-            throw "Rendered window '$($Window.Title)' produced a visually empty frame."
+            # CopyFromScreen is only trustworthy when Windows confirms that the
+            # exact SNAPVERE HWND is foreground. Without this ownership check a
+            # hosted runner console/desktop can be captured and later promoted
+            # to a false visual-regression baseline.
+            [void][SnapvereVisualQaNative]::SetForegroundWindow($Window.Handle)
+            Start-Sleep -Milliseconds 70
+            $foregroundWindow = [SnapvereVisualQaNative]::GetForegroundWindow()
+            if ($foregroundWindow -eq $Window.Handle) {
+                $graphics.Clear([System.Drawing.Color]::Black)
+                $graphics.CopyFromScreen(
+                    $Window.Left,
+                    $Window.Top,
+                    0,
+                    0,
+                    [System.Drawing.Size]::new($Window.Width, $Window.Height),
+                    [System.Drawing.CopyPixelOperation]::SourceCopy)
+                $hasVisualContent = Test-BitmapHasVisualContent -Bitmap $bitmap
+            }
+        }
+
+        if (-not $hasVisualContent) {
+            $foreground = [SnapvereVisualQaNative]::GetForegroundWindow().ToInt64()
+            throw "Rendered SNAPVERE window '$($Window.Title)' did not produce a target-owned visual frame. Target HWND=$($Window.Handle.ToInt64()), foreground HWND=$foreground."
         }
 
         $bitmap.Save($DestinationPath, [System.Drawing.Imaging.ImageFormat]::Png)
@@ -280,6 +301,7 @@ function Invoke-SingleSurfaceProbe {
     Remove-ProbeMarker -FileName $MarkerFileName
     $process = Start-ProbeProcess -EnvironmentVariable $EnvironmentVariable
     $snapshot = $null
+    $lastCaptureError = $null
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
     try {
@@ -289,20 +311,30 @@ function Invoke-SingleSurfaceProbe {
                 Select-Object -First 1
 
             if ($null -ne $window) {
-                Start-Sleep -Milliseconds 55
+                Start-Sleep -Milliseconds 45
                 $current = Get-CapturableWindows -Process $process |
                     Where-Object { $_.Handle -eq $window.Handle } |
                     Select-Object -First 1
                 if ($null -ne $current) {
-                    $snapshot = Save-WindowSnapshot -Window $current -DestinationPath (Join-Path $resolvedOutputDirectory $SnapshotFileName)
-                    break
+                    try {
+                        $snapshot = Save-WindowSnapshot -Window $current -DestinationPath (Join-Path $resolvedOutputDirectory $SnapshotFileName)
+                        break
+                    }
+                    catch {
+                        $lastCaptureError = $_.Exception
+                        Remove-Item -LiteralPath (Join-Path $resolvedOutputDirectory $SnapshotFileName) -Force -ErrorAction SilentlyContinue
+                    }
                 }
             }
 
-            Start-Sleep -Milliseconds 12
+            Start-Sleep -Milliseconds 15
         }
 
         if ($null -eq $snapshot) {
+            if ($null -ne $lastCaptureError) {
+                throw "No target-owned SNAPVERE window was captured for $EnvironmentVariable. Last capture error: $($lastCaptureError.Message)"
+            }
+
             throw "No rendered SNAPVERE window was captured for $EnvironmentVariable."
         }
 
@@ -331,11 +363,11 @@ function Invoke-SecondarySurfaceProbe {
         while (-not $process.HasExited -and $stopwatch.ElapsedMilliseconds -lt 15000 -and $snapshots.Count -lt $expectedNames.Count) {
             foreach ($window in (Get-CapturableWindows -Process $process)) {
                 $windowKey = "$($window.Handle.ToInt64())|$($window.Title)|$($window.Width)x$($window.Height)"
-                if (-not $seenWindows.Add($windowKey)) {
+                if ($seenWindows.Contains($windowKey)) {
                     continue
                 }
 
-                Start-Sleep -Milliseconds 45
+                Start-Sleep -Milliseconds 35
                 $current = Get-CapturableWindows -Process $process |
                     Where-Object { $_.Handle -eq $window.Handle } |
                     Select-Object -First 1
@@ -344,7 +376,15 @@ function Invoke-SecondarySurfaceProbe {
                 }
 
                 $snapshotName = $expectedNames[$snapshots.Count]
-                $snapshot = Save-WindowSnapshot -Window $current -DestinationPath (Join-Path $resolvedOutputDirectory $snapshotName)
+                try {
+                    $snapshot = Save-WindowSnapshot -Window $current -DestinationPath (Join-Path $resolvedOutputDirectory $snapshotName)
+                }
+                catch {
+                    Remove-Item -LiteralPath (Join-Path $resolvedOutputDirectory $snapshotName) -Force -ErrorAction SilentlyContinue
+                    continue
+                }
+
+                [void]$seenWindows.Add($windowKey)
                 $snapshots.Add($snapshot)
                 if ($snapshots.Count -ge $expectedNames.Count) {
                     break
@@ -358,7 +398,7 @@ function Invoke-SecondarySurfaceProbe {
         Assert-ProbeMarker -FileName $markerFileName -ExpectedState 'SECONDARY_UI_READY'
 
         if ($snapshots.Count -ne $expectedNames.Count) {
-            throw "Expected four rendered secondary UI surfaces but captured $($snapshots.Count)."
+            throw "Expected four target-owned rendered secondary UI surfaces but captured $($snapshots.Count)."
         }
 
         return $snapshots.ToArray()
@@ -408,7 +448,7 @@ $manifest = [pscustomobject]@{
 $manifestPath = Join-Path $resolvedOutputDirectory 'manifest.json'
 $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifestPath -Encoding utf8
 
-Write-Host "SNAPVERE visual QA captured six real rendered Windows surfaces:"
+Write-Host "SNAPVERE visual QA captured six target-owned rendered Windows surfaces:"
 foreach ($snapshot in $results) {
     Write-Host "  $($snapshot.File) $($snapshot.Width)x$($snapshot.Height) $([Math]::Round($snapshot.Bytes / 1KB, 1)) KB sha256:$($snapshot.Sha256)"
 }
