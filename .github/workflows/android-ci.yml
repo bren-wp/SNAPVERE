@@ -19,6 +19,9 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  SNAPVERE_ANDROID_VERSION: 0.1.0
+
 jobs:
   build-apk:
     runs-on: ubuntu-latest
@@ -41,12 +44,13 @@ jobs:
             echo 'Android source is not on this revision yet; build is intentionally skipped.'
           fi
 
-      - name: Validate Android privacy and service contract
+      - name: Validate Android privacy, version and service contract
         if: steps.project.outputs.exists == 'true'
         shell: bash
         run: |
           set -euo pipefail
           manifest='android/app/src/main/AndroidManifest.xml'
+          gradle_file='android/app/build.gradle'
           if grep -q 'android.permission.INTERNET' "$manifest"; then
             echo 'INTERNET permission is forbidden for the local-first Android app.' >&2
             exit 1
@@ -56,7 +60,9 @@ jobs:
           grep -q 'android:usesCleartextTraffic="false"' "$manifest"
           grep -q 'android:allowBackup="false"' "$manifest"
           grep -A4 'android:name=".CaptureService"' "$manifest" | grep -q 'android:exported="false"'
-          echo 'Android privacy/service manifest contract validated.'
+          grep -q "versionCode 10" "$gradle_file"
+          grep -q "versionName '$SNAPVERE_ANDROID_VERSION'" "$gradle_file"
+          echo 'Android privacy/version/service contract validated.'
 
       - name: Setup JDK 17
         if: steps.project.outputs.exists == 'true'
@@ -75,6 +81,7 @@ jobs:
         if: steps.project.outputs.exists == 'true'
         shell: bash
         run: |
+          set -euo pipefail
           test -n "${ANDROID_HOME:-}"
           test -d "$ANDROID_HOME/platforms/android-36"
           test -x "$ANDROID_HOME/build-tools/35.0.0/apksigner"
@@ -85,26 +92,29 @@ jobs:
         if: steps.project.outputs.exists == 'true'
         shell: bash
         run: |
+          set -euo pipefail
           gradle -p android --no-daemon clean lintDebug lintRelease testDebugUnitTest assembleDebug assembleRelease
-          cp android/app/build/outputs/apk/debug/app-debug.apk android/SNAPVERE-Android-0.0.9-debug.apk
+          test -s android/app/build/outputs/apk/release/app-release-unsigned.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk "android/SNAPVERE-Android-${SNAPVERE_ANDROID_VERSION}-debug.apk"
 
-      - name: Verify APK signature, alignment and digest
+      - name: Verify CI APK signature, alignment and digest
         if: steps.project.outputs.exists == 'true'
         shell: bash
         run: |
-          apk='android/SNAPVERE-Android-0.0.9-debug.apk'
+          set -euo pipefail
+          apk="android/SNAPVERE-Android-${SNAPVERE_ANDROID_VERSION}-debug.apk"
           test -s "$apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$apk"
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 -v 4 "$apk"
           sha256sum "$apk" | tee "$apk.sha256"
 
-      - name: Upload Android APK
+      - name: Upload Android CI APK
         if: steps.project.outputs.exists == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: snapvere-android-apk-${{ github.sha }}
+          name: snapvere-android-ci-apk-${{ github.sha }}
           path: |
-            android/SNAPVERE-Android-0.0.9-debug.apk
-            android/SNAPVERE-Android-0.0.9-debug.apk.sha256
+            android/SNAPVERE-Android-0.1.0-debug.apk
+            android/SNAPVERE-Android-0.1.0-debug.apk.sha256
           if-no-files-found: error
           retention-days: 30
