@@ -1,7 +1,6 @@
 package com.snapvere.android;
 
 import android.app.AlertDialog;
-import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -11,6 +10,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.RippleDrawable;
@@ -109,7 +109,11 @@ public final class MainActivity extends ComponentActivity {
             CaptureService.notifyAppTaskHidden();
         }
         if (receiverRegistered) {
-            unregisterReceiver(captureReceiver);
+            try {
+                unregisterReceiver(captureReceiver);
+            } catch (IllegalArgumentException ignored) {
+                // Android may already have removed the receiver during teardown.
+            }
             receiverRegistered = false;
         }
         super.onStop();
@@ -119,6 +123,7 @@ public final class MainActivity extends ComponentActivity {
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
         scroll.setClipToPadding(false);
+        scroll.setVerticalScrollBarEnabled(false);
         scroll.setBackgroundColor(getColor(R.color.snapvere_canvas));
         ViewCompat.setOnApplyWindowInsetsListener(scroll, (view, windowInsets) -> {
             Insets bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -219,7 +224,7 @@ public final class MainActivity extends ComponentActivity {
 
         TextView consent = text(
             getString(R.string.capture_consent_note),
-            11,
+            12,
             R.color.snapvere_text_muted,
             false);
         consent.setPadding(dp(2), dp(10), dp(2), 0);
@@ -237,22 +242,17 @@ public final class MainActivity extends ComponentActivity {
 
         latestDetailText = text(
             getString(R.string.latest_empty_description),
-            12,
+            13,
             R.color.snapvere_text_muted,
             false);
         latestDetailText.setPadding(0, dp(5), 0, dp(14));
         card.addView(latestDetailText);
 
-        LinearLayout actions = new LinearLayout(this);
-        actions.setOrientation(LinearLayout.HORIZONTAL);
         openLatestButton = actionButton(getString(R.string.open_latest), ButtonStyle.SECONDARY);
         openLatestButton.setOnClickListener(view -> openLatestCapture());
-        actions.addView(openLatestButton, weightedButtonParams(true));
-
         shareLatestButton = actionButton(getString(R.string.share_latest), ButtonStyle.SECONDARY);
         shareLatestButton.setOnClickListener(view -> shareLatestCapture());
-        actions.addView(shareLatestButton, weightedButtonParams(false));
-        card.addView(actions);
+        card.addView(buildActionPair(openLatestButton, shareLatestButton));
 
         deleteLatestButton = actionButton(getString(R.string.delete_latest), ButtonStyle.DESTRUCTIVE);
         LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(
@@ -281,7 +281,7 @@ public final class MainActivity extends ComponentActivity {
         description.setPadding(0, dp(6), 0, dp(10));
         card.addView(description);
 
-        TextView note = text(getString(R.string.privacy_note), 11, R.color.snapvere_text_muted, false);
+        TextView note = text(getString(R.string.privacy_note), 12, R.color.snapvere_text_muted, false);
         card.addView(note);
         return card;
     }
@@ -298,30 +298,44 @@ public final class MainActivity extends ComponentActivity {
         description.setPadding(0, dp(9), 0, dp(14));
         card.addView(description);
 
-        LinearLayout firstRow = new LinearLayout(this);
-        firstRow.setOrientation(LinearLayout.HORIZONTAL);
         Button website = actionButton(getString(R.string.website), ButtonStyle.TERTIARY);
         website.setOnClickListener(view -> openExternal(PRODUCT_WEBSITE));
-        firstRow.addView(website, weightedButtonParams(true));
         Button support = actionButton(getString(R.string.support), ButtonStyle.TERTIARY);
         support.setOnClickListener(view -> openSupport());
-        firstRow.addView(support, weightedButtonParams(false));
-        card.addView(firstRow);
+        card.addView(buildActionPair(website, support));
 
-        LinearLayout secondRow = new LinearLayout(this);
-        secondRow.setOrientation(LinearLayout.HORIZONTAL);
+        Button privacy = actionButton(getString(R.string.privacy_policy), ButtonStyle.TERTIARY);
+        privacy.setOnClickListener(view -> openExternal(PRIVACY_URL));
+        Button terms = actionButton(getString(R.string.terms_of_use), ButtonStyle.TERTIARY);
+        terms.setOnClickListener(view -> openExternal(TERMS_URL));
+        LinearLayout secondRow = buildActionPair(privacy, terms);
         LinearLayout.LayoutParams secondRowParams = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT);
         secondRowParams.topMargin = dp(8);
-        Button privacy = actionButton(getString(R.string.privacy_policy), ButtonStyle.TERTIARY);
-        privacy.setOnClickListener(view -> openExternal(PRIVACY_URL));
-        secondRow.addView(privacy, weightedButtonParams(true));
-        Button terms = actionButton(getString(R.string.terms_of_use), ButtonStyle.TERTIARY);
-        terms.setOnClickListener(view -> openExternal(TERMS_URL));
-        secondRow.addView(terms, weightedButtonParams(false));
         card.addView(secondRow, secondRowParams);
         return card;
+    }
+
+    private LinearLayout buildActionPair(Button first, Button second) {
+        LinearLayout actions = new LinearLayout(this);
+        boolean stacked = shouldStackActionPairs();
+        actions.setOrientation(stacked ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
+
+        if (stacked) {
+            actions.addView(first, fullWidthButtonParams(false));
+            actions.addView(second, fullWidthButtonParams(true));
+        } else {
+            actions.addView(first, weightedButtonParams(true));
+            actions.addView(second, weightedButtonParams(false));
+        }
+        return actions;
+    }
+
+    private boolean shouldStackActionPairs() {
+        Configuration configuration = getResources().getConfiguration();
+        int widthDp = configuration.screenWidthDp;
+        return (widthDp > 0 && widthDp < 360) || configuration.fontScale >= 1.25f;
     }
 
     private void requestScreenCapture() {
@@ -333,9 +347,20 @@ public final class MainActivity extends ComponentActivity {
         CaptureService.clearLastError();
         setCaptureButtonEnabled(false);
         showStatus(getString(R.string.capture_requesting), R.color.snapvere_warning);
-        MediaProjectionManager manager =
-            (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-        captureLauncher.launch(manager.createScreenCaptureIntent());
+
+        try {
+            MediaProjectionManager manager =
+                (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+            if (manager == null) {
+                throw new IllegalStateException("Android screen-capture service is unavailable.");
+            }
+            captureLauncher.launch(manager.createScreenCaptureIntent());
+        } catch (RuntimeException exception) {
+            setCaptureButtonEnabled(true);
+            showStatus(
+                getString(R.string.capture_failed, messageOf(exception)),
+                R.color.snapvere_danger);
+        }
     }
 
     private void handleCaptureResult(int resultCode, Intent data) {
@@ -366,13 +391,8 @@ public final class MainActivity extends ComponentActivity {
             captureTaskHidePending = false;
             CaptureService.cancelCaptureHandoff();
             refreshCaptureState();
-            String message = exception.getMessage();
             showStatus(
-                getString(
-                    R.string.capture_failed,
-                    message == null || message.isBlank()
-                        ? getString(R.string.unknown_error)
-                        : message),
+                getString(R.string.capture_failed, messageOf(exception)),
                 R.color.snapvere_danger);
         }
     }
@@ -445,7 +465,7 @@ public final class MainActivity extends ComponentActivity {
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         try {
             startActivity(viewIntent);
-        } catch (ActivityNotFoundException | SecurityException exception) {
+        } catch (RuntimeException exception) {
             showStatus(getString(R.string.open_failed), R.color.snapvere_danger);
         }
     }
@@ -465,7 +485,7 @@ public final class MainActivity extends ComponentActivity {
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         try {
             startActivity(Intent.createChooser(share, getString(R.string.share_latest)));
-        } catch (ActivityNotFoundException | SecurityException exception) {
+        } catch (RuntimeException exception) {
             showStatus(getString(R.string.share_failed), R.color.snapvere_danger);
         }
     }
@@ -496,8 +516,8 @@ public final class MainActivity extends ComponentActivity {
                 showStatus(getString(R.string.delete_capture_done), R.color.snapvere_success);
                 return;
             }
-        } catch (SecurityException exception) {
-            // A capture from a previous app installation may no longer be owned by this package.
+        } catch (RuntimeException exception) {
+            // A stale MediaStore provider/URI must not crash the application.
         }
         showStatus(getString(R.string.delete_capture_failed), R.color.snapvere_danger);
     }
@@ -507,7 +527,7 @@ public final class MainActivity extends ComponentActivity {
             .addCategory(Intent.CATEGORY_BROWSABLE);
         try {
             startActivity(intent);
-        } catch (ActivityNotFoundException | SecurityException exception) {
+        } catch (RuntimeException exception) {
             showStatus(getString(R.string.external_link_failed), R.color.snapvere_danger);
         }
     }
@@ -516,10 +536,19 @@ public final class MainActivity extends ComponentActivity {
         Intent intent = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + SUPPORT_EMAIL));
         try {
             startActivity(intent);
-        } catch (ActivityNotFoundException | SecurityException exception) {
+            return;
+        } catch (RuntimeException ignored) {
+        }
+
+        try {
             ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            if (clipboard == null) {
+                throw new IllegalStateException("Android clipboard service is unavailable.");
+            }
             clipboard.setPrimaryClip(ClipData.newPlainText(SUPPORT_EMAIL, SUPPORT_EMAIL));
             showStatus(getString(R.string.support_copied), R.color.snapvere_success);
+        } catch (RuntimeException exception) {
+            showStatus(getString(R.string.support_unavailable), R.color.snapvere_danger);
         }
     }
 
@@ -534,7 +563,7 @@ public final class MainActivity extends ComponentActivity {
     private boolean isReadableCapture(Uri uri) {
         try (ParcelFileDescriptor descriptor = getContentResolver().openFileDescriptor(uri, "r")) {
             return descriptor != null;
-        } catch (IOException | SecurityException exception) {
+        } catch (IOException | RuntimeException exception) {
             return false;
         }
     }
@@ -554,12 +583,17 @@ public final class MainActivity extends ComponentActivity {
         IntentFilter filter = new IntentFilter();
         filter.addAction(CaptureService.ACTION_CAPTURE_COMPLETED);
         filter.addAction(CaptureService.ACTION_CAPTURE_FAILED);
-        ContextCompat.registerReceiver(
-            this,
-            captureReceiver,
-            filter,
-            ContextCompat.RECEIVER_NOT_EXPORTED);
-        receiverRegistered = true;
+        try {
+            ContextCompat.registerReceiver(
+                this,
+                captureReceiver,
+                filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED);
+            receiverRegistered = true;
+        } catch (RuntimeException exception) {
+            receiverRegistered = false;
+            showStatus(getString(R.string.capture_receiver_failed), R.color.snapvere_danger);
+        }
     }
 
     private LinearLayout card(boolean emphasized) {
@@ -575,8 +609,8 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private TextView sectionLabel(String value, int colorRes) {
-        TextView label = text(value, 10, colorRes, true);
-        label.setLetterSpacing(0.12f);
+        TextView label = text(value, 11, colorRes, true);
+        label.setLetterSpacing(0.1f);
         return label;
     }
 
@@ -591,7 +625,7 @@ public final class MainActivity extends ComponentActivity {
     private Button actionButton(String label, ButtonStyle style) {
         Button button = new Button(this);
         button.setText(label);
-        button.setTextSize(13);
+        button.setTextSize(14);
         button.setTypeface(button.getTypeface(), Typeface.BOLD);
         button.setTextColor(getColor(style.textColor));
         button.setAllCaps(false);
@@ -659,6 +693,16 @@ public final class MainActivity extends ComponentActivity {
         return params;
     }
 
+    private LinearLayout.LayoutParams fullWidthButtonParams(boolean addTopMargin) {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT);
+        if (addTopMargin) {
+            params.topMargin = dp(8);
+        }
+        return params;
+    }
+
     private LinearLayout.LayoutParams marginBottom(int marginBottom) {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -675,6 +719,13 @@ public final class MainActivity extends ComponentActivity {
         } catch (PackageManager.NameNotFoundException exception) {
             return "0.0.9";
         }
+    }
+
+    private String messageOf(Throwable throwable) {
+        String message = throwable.getMessage();
+        return message == null || message.isBlank()
+            ? getString(R.string.unknown_error)
+            : message;
     }
 
     private int dp(int value) {
