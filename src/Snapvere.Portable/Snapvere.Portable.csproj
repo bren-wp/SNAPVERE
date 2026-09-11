@@ -26,4 +26,13 @@
   <ItemGroup Condition="'$(SnapverePayloadArm64Path)' != '' and Exists('$(SnapverePayloadArm64Path)')">
     <EmbeddedResource Include="$(SnapverePayloadArm64Path)" LogicalName="Snapvere.Payload.arm64.zip" />
   </ItemGroup>
+  <ItemGroup Condition="'$(SnapverePayloadX86IntegrityPath)' != '' and Exists('$(SnapverePayloadX86IntegrityPath)')">
+    <EmbeddedResource Include="$(SnapverePayloadX86IntegrityPath)" LogicalName="Snapvere.Payload.x86.integrity.json" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(SnapverePayloadX64IntegrityPath)' != '' and Exists('$(SnapverePayloadX64IntegrityPath)')">
+    <EmbeddedResource Include="$(SnapverePayloadX64IntegrityPath)" LogicalName="Snapvere.Payload.x64.integrity.json" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(SnapverePayloadArm64IntegrityPath)' != '' and Exists('$(SnapverePayloadArm64IntegrityPath)')">
+    <EmbeddedResource Include="$(SnapverePayloadArm64IntegrityPath)" LogicalName="Snapvere.Payload.arm64.integrity.json" />
+  </ItemGroup>
 </Project>
