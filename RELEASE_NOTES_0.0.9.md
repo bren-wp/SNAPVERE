@@ -35,7 +35,8 @@ The `/privacy` and `/terms` paths are stable product-owned canonical URLs. Their
 - Shared path-boundary logic now treats a protected directory itself and its descendants correctly, closing the exact-Windows-directory validation gap in Setup.
 - Embedded ZIP extraction uses bounded random staging filenames so valid long NTFS names cannot overflow because of an internal temporary suffix.
 - Embedded ZIP extraction rejects duplicate file destinations in addition to the existing absolute-path, traversal, expanded-size and entry-count protections.
-- The reusable Portable `%TEMP%` cache is verified byte-for-byte against the embedded architecture payload before execution. Missing, modified or unexpected files and reparse points invalidate the cache; SNAPVERE then rebuilds it transactionally and verifies the rebuilt cache again before launch.
+- CI generates architecture-specific integrity manifests from the exact published x86/x64/ARM64 payloads and embeds them in the universal Portable host. Before executing a reusable `%TEMP%` cache, Portable rejects reparse points, missing/unexpected files and any file whose length or SHA-256 differs from the trusted embedded manifest; invalid caches are rebuilt transactionally and verified again.
+- The first direct-ZIP comparison design was rejected by real lifecycle CI because redundant decompression could exceed the existing startup-probe window. The fix preserves the timeout and integrity gate while switching to a single sequential SHA-256 pass over cached files.
 - v0.0.9 contains no WebView/WebView2, HTML/JavaScript execution surface, first-party HTTP/socket client, telemetry client, cloud-upload client or remote command channel.
 
 The project does not claim that any software can be guaranteed free of every vulnerability. SNAPVERE is also not a sandbox against arbitrary malicious code already executing as the same Windows user.
@@ -45,7 +46,7 @@ The project does not claim that any software can be guaranteed free of every vul
 - Tray and global-hotkey hosts remain event-driven through blocking Win32 message loops; no periodic application polling timer is added.
 - Capture/D3D resources remain on-demand rather than resident solely for tray operation.
 - Recent-capture enumeration avoids an unnecessary explicit metadata refresh for every PNG and tolerates expected filesystem disappearance/access races without a watcher or resident cache.
-- Portable cache validation intentionally adds foreground verification work at Portable launch; no launch-time claim is made without measurement, and package lifecycle CI remains the required regression gate.
+- Portable cache validation intentionally performs a foreground sequential SHA-256 read of cached payload files at Portable launch; it does not re-decompress the embedded ZIP solely to derive expected bytes, and no fixed launch-time claim is made without measurement.
 - No fixed CPU/RAM percentage is advertised; resource use depends on Windows, DPI, monitor topology, drivers and whether a capture/editor session is active.
 
 ## UX consistency
