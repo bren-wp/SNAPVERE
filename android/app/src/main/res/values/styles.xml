@@ -3,10 +3,10 @@
     <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:windowActionModeOverlay">true</item>
-        <item name="android:windowBackground">#07080D</item>
-        <item name="android:colorAccent">#8C5AF4</item>
-        <item name="android:navigationBarColor">#07080D</item>
-        <item name="android:statusBarColor">#07080D</item>
+        <item name="android:windowBackground">@color/snapvere_canvas</item>
+        <item name="android:colorAccent">@color/snapvere_accent</item>
+        <item name="android:navigationBarColor">@color/snapvere_canvas</item>
+        <item name="android:statusBarColor">@color/snapvere_canvas</item>
         <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
