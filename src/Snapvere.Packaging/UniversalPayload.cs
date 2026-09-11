@@ -82,8 +82,23 @@ public static class UniversalPayload
                 $"The SNAPVERE {GetToken(architecture)} application payload is missing from this universal package.");
     }
 
+    public static Stream OpenEmbeddedIntegrityManifest(
+        Assembly hostAssembly,
+        SnapverePayloadArchitecture architecture)
+    {
+        ArgumentNullException.ThrowIfNull(hostAssembly);
+
+        var resourceName = GetIntegrityManifestResourceName(architecture);
+        return hostAssembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException(
+                $"The SNAPVERE {GetToken(architecture)} payload integrity manifest is missing from this universal package.");
+    }
+
     public static string GetResourceName(SnapverePayloadArchitecture architecture)
         => $"Snapvere.Payload.{GetToken(architecture)}.zip";
+
+    public static string GetIntegrityManifestResourceName(SnapverePayloadArchitecture architecture)
+        => $"Snapvere.Payload.{GetToken(architecture)}.integrity.json";
 
     public static string GetToken(SnapverePayloadArchitecture architecture)
         => architecture switch
