@@ -1,0 +1,86 @@
+name: Android CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - '.github/workflows/android-ci.yml'
+
+concurrency:
+  group: snapvere-android-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Detect Android project
+        id: project
+        shell: bash
+        run: |
+          if [[ -f android/settings.gradle ]]; then
+            echo 'exists=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'exists=false' >> "$GITHUB_OUTPUT"
+            echo 'Android source is not on this revision yet; build is intentionally skipped.'
+          fi
+
+      - name: Setup JDK 17
+        if: steps.project.outputs.exists == 'true'
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle 8.11.1
+        if: steps.project.outputs.exists == 'true'
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Install Android SDK 36
+        if: steps.project.outputs.exists == 'true'
+        shell: bash
+        run: |
+          sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
+
+      - name: Lint and build debug APK
+        if: steps.project.outputs.exists == 'true'
+        shell: bash
+        run: |
+          gradle -p android --no-daemon clean lintDebug assembleDebug
+          cp android/app/build/outputs/apk/debug/app-debug.apk android/SNAPVERE-Android-0.0.9-debug.apk
+
+      - name: Verify APK
+        if: steps.project.outputs.exists == 'true'
+        shell: bash
+        run: |
+          test -s android/SNAPVERE-Android-0.0.9-debug.apk
+          sha256sum android/SNAPVERE-Android-0.0.9-debug.apk | tee android/SNAPVERE-Android-0.0.9-debug.apk.sha256
+
+      - name: Upload Android APK
+        if: steps.project.outputs.exists == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: snapvere-android-apk-${{ github.sha }}
+          path: |
+            android/SNAPVERE-Android-0.0.9-debug.apk
+            android/SNAPVERE-Android-0.0.9-debug.apk.sha256
+          if-no-files-found: error
+          retention-days: 30
