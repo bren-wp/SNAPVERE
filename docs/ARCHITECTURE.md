@@ -228,7 +228,7 @@ about.png
 
 CI rejects empty/unexpectedly small output and records dimensions, byte sizes and SHA-256.
 
-Android CI validates manifest privacy/version/service requirements, `lintDebug`, `lintRelease`, JVM tests, debug/release builds, debug APK signature/alignment and SHA-256. Public-release automation additionally validates stable Android release signing and source-archive structure.
+Android CI validates manifest privacy/version/service requirements, `lintDebug`, `lintRelease`, JVM tests, debug/release builds, debug APK signature/alignment and SHA-256. The v0.1.0 publication path additionally re-verifies the CI/debug APK signature and alignment, validates the Android source archive and carries SHA-256 values through final publication. It does not claim a production/Google Play signing identity.
 
 ## Packaging and public release architecture
 
@@ -240,7 +240,9 @@ Hosted x64 CI executes universal x64/x86 package lifecycle. ARM64 is cross-build
 
 ### Android
 
-The public APK is built from the minified/shrunk release variant, ZIP-aligned and signed with SNAPVERE's stable private release identity. Signing material remains outside Git source. Release fails before tag creation if signing cannot be verified.
+The public v0.1.0 `SNAPVERE.apk` is the validated CI/debug-signed APK. It is produced from the same Android source that also passes release-variant lint/build validation, and publication verifies its signature, ZIP alignment and SHA-256 identity. v0.1.0 does not require or embed a private production Android keystore and is not represented as production/Play-signed.
+
+A future production-signed Android channel must use a deliberately managed stable signing identity. If that identity differs from the v0.1.0 CI/debug identity, Android may require uninstall/reinstall rather than an in-place update; signature compatibility must not be assumed.
 
 `SNAPVERE-Android-Source.zip` is generated directly from the exact validated `android/` Git tree and excludes generated build/cache output and signing secrets.
 
