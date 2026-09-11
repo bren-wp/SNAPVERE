@@ -11,7 +11,7 @@ SNAPVERE.apk
 SNAPVERE-Android-Source.zip
 ```
 
-The two Windows hosts are universal x86/x64/ARM64 launchers. The Android APK is a release build signed with SNAPVERE's stable Android release identity. The Android source ZIP is generated from the exact validated Git tree.
+The two Windows hosts are universal x86/x64/ARM64 launchers. The public Android APK is the validated CI/debug-signed package produced from the same 0.1.0 Android source that also passes `lintRelease` and release-variant build validation. It is not represented as Google Play/production-signed. The Android source ZIP is generated from the exact validated Git tree.
 
 Historical releases keep their historical asset contracts and are not rewritten.
 
@@ -126,13 +126,13 @@ Portable protections include:
 
 ## Android APK installation
 
-`SNAPVERE.apk` targets Android 10 / API 29 or newer. It is produced from the minified/shrunk release variant and is accepted for public release only after `zipalign` and `apksigner` verification.
+`SNAPVERE.apk` targets Android 10 / API 29 or newer. In v0.1.0 the public file is the validated CI/debug-signed APK. The same source also passes debug/release lint, JVM tests and release-variant build validation before publication. The public APK itself is accepted only after `apksigner` signature verification, `zipalign` verification and SHA-256 transfer/final-asset checks.
 
 The Android package intentionally requests no `INTERNET` permission. Screen capture requires Android's system MediaProjection approval for every capture session.
 
 When installing outside an app store, Android may require the user to explicitly allow installation from the chosen package/file source. SNAPVERE does not attempt to bypass Android package-installation policy.
 
-A future Android update must use the same stable release signing identity as the installed public APK. For that reason the release workflow never substitutes an ephemeral CI debug key when release signing material is missing.
+The v0.1.0 APK does **not** establish a stable production/Google Play signing lineage. If a future Android release switches to a separately managed production signing identity, Android may require uninstall/reinstall rather than accepting that package as an in-place update. That transition must be documented explicitly instead of assuming signature compatibility.
 
 ## Android source package
 
@@ -151,7 +151,7 @@ Before `v0.1.0` publication, automation requires:
 3. ARM64 cross-build;
 4. root `Snapvere.exe` in all three native payloads;
 5. valid architecture integrity manifests;
-6. six real rendered WinUI surfaces;
+6. six real rendered WinUI surfaces in the normal CI path for the release commit;
 7. universal Setup and Portable generation;
 8. x64 and x86 Setup+Portable lifecycle and tray-first probes;
 9. uninstall cleanup while preserving user captures.
@@ -161,9 +161,9 @@ Before `v0.1.0` publication, automation requires:
 1. privacy/service/version manifest contract;
 2. `lintDebug` and `lintRelease` with warnings as errors;
 3. JVM unit tests;
-4. debug and minified release build;
-5. stable release signing material available outside Git source;
-6. ZIP alignment and cryptographic APK-signature verification;
+4. debug and release-variant builds;
+5. validated CI/debug APK signature;
+6. ZIP alignment and APK-signature verification;
 7. structurally valid Android source ZIP;
 8. SHA-256 transfer verification from Android job to final release job.
 
