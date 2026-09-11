@@ -16,6 +16,13 @@
     <string name="capture_saved">Saved locally: %1$s</string>
     <string name="capture_failed">Capture failed: %1$s</string>
     <string name="capture_receiver_failed">Android could not attach the local status listener. Your capture still remains local; reopen SNAPVERE to refresh the result.</string>
+    <string name="capture_error_permission">Android did not provide a valid capture approval. Please start the capture again.</string>
+    <string name="capture_error_service_unavailable">Android could not start the screen-capture service. Please try again.</string>
+    <string name="capture_error_stopped">Android ended the capture before the image was saved.</string>
+    <string name="capture_error_hidden">SNAPVERE could not move fully behind the screen in time. Please try again.</string>
+    <string name="capture_error_frame_timeout">Android did not provide a screen frame in time. Please try again.</string>
+    <string name="capture_error_frame">Android returned an invalid or unavailable screen frame. Please try again.</string>
+    <string name="capture_error_save">Android could not save the PNG to Pictures/SNAPVERE.</string>
     <string name="unknown_error">Unexpected Android error</string>
 
     <string name="latest_section">LATEST CAPTURE</string>
