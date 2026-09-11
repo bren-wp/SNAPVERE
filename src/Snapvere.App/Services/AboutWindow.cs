@@ -125,7 +125,7 @@ public sealed class AboutWindow : Window
 
         content.Children.Add(BuildShortcutRow("Print Screen", L("CaptureRegion")));
         content.Children.Add(BuildShortcutRow("Ctrl + Shift + 2", L("CaptureWindow")));
-        content.Children.Add(BuildShortcutRow("Ctrl + Shift + 4", L("CaptureScreen")));
+        content.Children.Add(BuildShortcutRow("Ctrl + Shift + 3", L("CaptureScreen")));
 
         content.Children.Add(Text(L("CommercialSoftware"), 9.5, Subtle));
 
