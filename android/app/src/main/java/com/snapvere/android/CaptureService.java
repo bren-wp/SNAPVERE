@@ -256,13 +256,8 @@ public final class CaptureService extends Service {
             .putExtra(EXTRA_CAPTURE_URI, saved.uri.toString());
         sendBroadcast(result);
 
-        NotificationManager notifications = getSystemService(NotificationManager.class);
-        notifications.notify(
-            NOTIFICATION_ID,
-            buildNotification(getString(R.string.notification_saved), true));
-
         cleanupCapture(true);
-        stopForeground(STOP_FOREGROUND_DETACH);
+        stopForeground(STOP_FOREGROUND_REMOVE);
         stopSelf();
     }
 
@@ -276,13 +271,8 @@ public final class CaptureService extends Service {
             .putExtra(EXTRA_ERROR_MESSAGE, message);
         sendBroadcast(result);
 
-        NotificationManager notifications = getSystemService(NotificationManager.class);
-        notifications.notify(
-            NOTIFICATION_ID,
-            buildNotification(getString(R.string.notification_failed), true));
-
         cleanupCapture(true);
-        stopForeground(STOP_FOREGROUND_DETACH);
+        stopForeground(STOP_FOREGROUND_REMOVE);
         stopSelf();
     }
 
