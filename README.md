@@ -8,35 +8,11 @@
 
 **Capture. Edit. Done. — fast, local-first screen capture for Windows by Brendigo.**
 
-[Hrvatski README](README.hr.md) · [Official product site](https://snapvere.com) · [Developer: Brendigo](https://brendigo.com)
+[Hrvatski README](README.hr.md) · [Official product site](https://snapvere.com) · [Support](mailto:info@snapvere.com) · [Developer: Brendigo](https://brendigo.com)
 
 SNAPVERE is a tray-first Windows screenshot application focused on fast Region, Window and Screen capture, lightweight annotation and local PNG output. English is the default product language; Croatian and more than 20 additional languages are available from the in-app Language picker.
 
-> The current published release is **v0.0.8**. Changes on `main` after the v0.0.8 release are unreleased hardening work. Published tags, releases and assets are treated as immutable and are not rewritten by later development.
-
-## Product UI
-
-The repository UI references below are the visual contract for the real WinUI application. The tray flyout and Region editor implementation are maintained against these layouts instead of the former Capture Center design.
-
-### Tray-first Region Capture
-
-Left-click the SNAPVERE tray icon or press **Print Screen** to start Region Capture immediately.
-
-![SNAPVERE tray-first Region Capture reference](docs/images/tray-first-region.svg)
-
-### Branded tray menu
-
-Right-click the tray icon for capture actions, local files, settings, language, About and Exit.
-
-![SNAPVERE tray menu UI reference](docs/images/tray-menu.svg)
-
-### Region editor
-
-The editor works directly over the frozen capture frame with physical-pixel selection, eight resize handles, a vertical tool rail and a separate Copy / Save / Close action bar.
-
-![SNAPVERE Region editor UI reference](docs/images/region-editor.svg)
-
-The SVG files above are maintained UI reference artwork, not synthetic claims of a Windows screenshot. Current CI also launches the real x64 WinUI application and captures six rendered PNG surfaces — Region, Window, Tray, Options, Language and About — before universal packaging is allowed to pass. Those PNGs plus a manifest containing dimensions, byte sizes and SHA-256 digests are uploaded as a short-lived GitHub Actions visual-QA artifact. Repository screenshots are committed only when they come from a reproducible real application capture path.
+> **v0.0.9 is the current release milestone being validated.** Published historical tags, releases and assets are immutable and are never rewritten by later development.
 
 ## Capture controls
 
@@ -44,16 +20,24 @@ The SVG files above are maintained UI reference artwork, not synthetic claims of
 | --- | --- | --- |
 | Region Capture | Left-click tray or **Print Screen** | `Ctrl+Shift+1` |
 | Window Capture | Right-click tray → Capture window | `Ctrl+Shift+2` |
-| Screen Capture | Right-click tray → Capture screen | `Ctrl+Shift+4` |
+| Screen Capture | Right-click tray → Capture screen | `Ctrl+Shift+3` |
 | Settings / recent captures | Right-click tray | — |
 | Language | Tray language control or Options | — |
 | About / Exit | Right-click tray | — |
 
+Scrolling Capture does not reserve a global shortcut until that workflow is actually implemented.
+
+## Save location
+
+Region, Window and Screen captures are first completed safely as PNG files in the normal SNAPVERE capture location. After a successful save, SNAPVERE can open the native Windows **Save As** picker so the user chooses the final folder and filename.
+
+Cancelling the picker keeps the completed PNG in `Pictures\SNAPVERE`, so a capture is not lost. Relocation uses asynchronous copying, destination-local staging, final atomic replacement, PNG-only destination validation and Windows file-identity checks. Alias or uncertain-identity cases preserve the source as a recovery copy. Clipboard-only Copy remains unchanged.
+
+See [Save location](docs/SAVE-LOCATION.md).
+
 ## Region Capture
 
 Implemented behavior includes a frozen frame, physical-pixel drag selection, move/resize, eight handles, live dimensions, Pen, Line, Arrow, Box and Highlight tools, four annotation colors, Undo, `Ctrl+Z`, `Ctrl+C`, Copy, Save, Enter/double-click save and Esc cancel. Annotations are rendered into the final PNG.
-
-The editor UI follows the graphite/violet SNAPVERE reference: vertical tools beside the selection and a separate action bar below it. Text, blur/pixelate, ellipse and numbered-step tools stay absent until they are implemented and tested.
 
 ## Window Capture
 
@@ -63,11 +47,21 @@ SNAPVERE discovers visible top-level windows before overlays appear, uses DWM ex
 
 Windows.Graphics.Capture + Direct3D 11 is preferred where supported. Expected monitor-acquisition failures can fall back to the resilient GDI monitor path. Capture resources are lazy and are not initialized merely because SNAPVERE is idle in the tray.
 
+## About and support
+
+The About surface exposes user-initiated destinations for:
+
+- official product site: `https://snapvere.com`;
+- support: `info@snapvere.com`;
+- Privacy: `https://snapvere.com/privacy`;
+- Terms: `https://snapvere.com/terms`;
+- developer: `https://brendigo.com`.
+
+Support, Privacy and Terms use the shared localization catalog. If Windows has no registered mail client, the support action falls back to copying `info@snapvere.com` to the local clipboard. About content is scrollable so Windows text scaling does not make the new controls unreachable. The desktop application does not prefetch these destinations.
+
 ## Languages
 
-English (`en`) is the canonical default and fallback. The built-in language catalog currently exposes 28 language choices, including Croatian (`hr`), German, French, Spanish, Italian, Portuguese, Dutch, Polish, Czech, Slovak, Slovenian, Hungarian, Romanian, Bulgarian, Greek, Swedish, Danish, Norwegian, Finnish, Estonian, Latvian, Lithuanian, Ukrainian, Turkish, Japanese, Korean and Simplified Chinese.
-
-Croatian includes dedicated text for current capture and secondary product surfaces. Languages without a dedicated translation for a particular string fall back to canonical English instead of displaying an unknown resource key.
+English (`en`) is the canonical default and fallback. The built-in language catalog exposes 28 choices, including Croatian (`hr`). Languages without a dedicated translation for a particular string fall back to canonical English rather than displaying an unknown resource key.
 
 Language preference is stored locally in:
 
@@ -79,82 +73,57 @@ The localization layer uses static in-process tables only: no translation API, p
 
 ## Options and defaults
 
-Implemented preferences include:
+Implemented preferences include **Start SNAPVERE with Windows**, **Include cursor on capture**, and **Language**. Windows startup is per-user and launches the same tray-first application without a dashboard window.
 
-- **Start SNAPVERE with Windows**;
-- **Include cursor on capture**;
-- **Language**.
+## Security posture for v0.0.9
 
-Setup defaults are intentionally user-friendly but opt-out:
+Static review of the current desktop codebase found no WebView/WebView2, HTML renderer, JavaScript execution path or first-party HTTP/socket client. Browser-style XSS is therefore not an applicable runtime surface in this release line. This is not a claim that software can be guaranteed free of every vulnerability.
 
-- Start menu shortcut: **On**;
-- Desktop icon: **On**;
-- Start SNAPVERE with Windows: **On**;
-- Launch after installation: **On** on the completion screen.
+v0.0.9 hardening includes:
 
-Users can turn the optional defaults off in Setup. Windows startup is per-user and launches the normal tray-first application without a dashboard window.
+- NuGet audit for direct and transitive dependencies at `low` severity and above;
+- `NU1901`–`NU1904` treated as build failures;
+- GitHub Actions pinned to full commit SHAs in CI/release automation;
+- non-persistent repository credentials for ordinary CI checkout;
+- weekly Dependabot checks for NuGet and GitHub Actions;
+- exact-or-descendant path-boundary validation for protected Setup paths;
+- bounded random staging names for embedded ZIP extraction while retaining traversal and expanded-size protections;
+- no telemetry, cloud-upload client, remote command channel or automatic updater in v0.0.9.
+
+SNAPVERE is not represented as a sandbox against arbitrary malicious code already executing as the same Windows user. See [Security Policy](SECURITY.md) and [v0.0.9 security/performance hardening](docs/SECURITY-PERFORMANCE-0.0.9.md).
+
+## Performance and stability
+
+SNAPVERE is designed for low idle overhead:
+
+- tray and global-hotkey hosts block on Win32 message loops rather than periodic application polling;
+- capture/D3D resources are created for capture work instead of remaining resident solely for tray operation;
+- secondary windows are on-demand;
+- recent-capture discovery is bounded and local; v0.0.9 removes a redundant per-file metadata refresh;
+- no telemetry worker, language network worker, file watcher or idle capture loop is added.
+
+No fixed CPU/RAM percentage is promised because Windows version, DPI, monitor count, graphics drivers and active capture/editor sessions materially affect resource use.
 
 ## Universal packaging
 
-From **v0.0.7 onward**, the public release contract contains exactly two downloads:
+The public release contract contains exactly two downloads:
 
 ```text
 SNAPVERE-Setup.exe
 SNAPVERE-Portable.exe
 ```
 
-There is no architecture-specific download list and no Demo executable. Each public host is built to start on 32-bit Windows and embeds native application payloads for:
+Each host embeds native application payloads for x86, x64 and ARM64 and selects a compatible payload automatically. The application target remains Windows 10 version 1809 / build 17763 or later; WGC-dependent capture paths require Windows 10 version 2004 / build 19041 or later.
 
-- x86 / x32 / 32-bit Windows;
-- x64 / AMD64 Windows;
-- ARM64 Windows.
-
-At runtime the host selects a compatible native payload automatically. Users do not need to decide whether to download x86 or x64.
-
-This does **not** mean every historical Windows release is supported. The application target remains Windows 10 version 1809 / build 17763 or later; WGC-dependent capture paths require Windows 10 version 2004 / build 19041 or later. Current Windows 10/11 x86, x64 and ARM64 architecture handling is part of the release contract.
-
-### Same-Setup uninstall
-
-SNAPVERE intentionally installs no separate uninstaller executable. Windows Installed apps points to the installed copy of:
-
-```text
-SNAPVERE-Setup.exe --uninstall
-```
-
-The same Setup binary owns install/update/remove, validates an installation marker before recursive deletion and preserves screenshots under `Pictures\SNAPVERE`.
-
-## Performance and privacy
-
-SNAPVERE is designed for low idle overhead:
-
-- tray/hotkey operation is event-driven rather than timer-polled;
-- capture/D3D resources are lazy;
-- language support is static and local;
-- settings are small and atomically written;
-- capture history is local and queried on demand;
-- no account, telemetry, cloud upload or screenshot analytics are required by current capture workflows.
-
-No fixed RAM/CPU number is promised because Windows version, DPI, display count, graphics drivers and an active capture session materially affect working set and CPU usage. CI protects against functional regressions; performance work avoids adding periodic idle tasks.
+SNAPVERE intentionally installs no separate uninstaller executable. Windows Installed apps points to the installed `SNAPVERE-Setup.exe --uninstall`; the same Setup binary validates the installation before removal and preserves user screenshots.
 
 ## Automated QA
 
-GitHub Actions builds/tests x64 and x86 and cross-builds ARM64. The universal package gate also verifies:
+GitHub Actions builds/tests x64 and x86 and cross-builds ARM64. The universal package gate additionally validates all three embedded payloads, real rendered WinUI surfaces, the exact two-file public package contract, and x64/x86 Setup/Portable lifecycle and tray-first behavior.
 
-- exactly two public EXE outputs;
-- all three embedded native payloads contain `Snapvere.exe`;
-- x64 and x86 Setup/Portable runtime lifecycle;
-- explicit commercial-license acceptance for silent Setup;
-- default Desktop shortcut and current-user startup registration;
-- same-Setup uninstall and cleanup;
-- tray-first startup;
-- Region editor materialization;
-- Window picker materialization;
-- Tray / Options / Language / About materialization;
-- six real rendered x64 WinUI PNG snapshots: Region, Window, Tray, Options, Language and About;
-- a visual-QA manifest containing each captured surface's dimensions, byte size and SHA-256 digest;
-- unit tests for payload architecture selection, safe ZIP extraction and language/settings fallback.
+The visual-QA pipeline captures Region, Window, Tray, Options, Language and About surfaces. v0.0.9 hardens capture provenance after a hosted runner desktop was discovered in an earlier successful-main Region baseline. Visual regression thresholds are not lowered to hide this issue.
 
-A visually empty or unexpectedly small rendered UI snapshot fails CI. ARM64 is cross-built and package-validated on the hosted x64 runner; that runner is not treated as a real ARM64 runtime device.
+ARM64 validation on the hosted x64 runner is cross-build/package evidence, not a real ARM64 hardware runtime test.
 
 ## Architecture
 
@@ -171,14 +140,15 @@ CaptureFrame (physical BGRA8 pixels)
     ↓
 Crop / annotation render / PNG encode
     ↓
-Pictures\SNAPVERE or Windows Clipboard
+Safe default PNG → optional Save As relocation
+                 └→ Windows Clipboard for Copy
 ```
 
 ## Documentation
 
 English documentation lives in [`docs/`](docs/) and Croatian documentation in [`docs/hr/`](docs/hr/).
 
-Key documents: [Architecture](docs/ARCHITECTURE.md), [Tray UX](docs/TRAY-UX.md), [Capture engine](docs/CAPTURE-ENGINE.md), [Region Capture](docs/REGION-CAPTURE.md), [Window Capture](docs/WINDOW-CAPTURE.md), [Multi-monitor](docs/MULTI-MONITOR.md), [Settings](docs/SETTINGS.md), [Installation](docs/INSTALLATION.md), [Branding](docs/BRANDING.md) and [Image pipeline](docs/IMAGE-PIPELINE.md).
+Key documents: [Architecture](docs/ARCHITECTURE.md), [Tray UX](docs/TRAY-UX.md), [Capture engine](docs/CAPTURE-ENGINE.md), [Region Capture](docs/REGION-CAPTURE.md), [Window Capture](docs/WINDOW-CAPTURE.md), [Save location](docs/SAVE-LOCATION.md), [Settings](docs/SETTINGS.md), [Security/performance 0.0.9](docs/SECURITY-PERFORMANCE-0.0.9.md), [Installation](docs/INSTALLATION.md), [Branding](docs/BRANDING.md) and [Image pipeline](docs/IMAGE-PIPELINE.md).
 
 ## Technology
 
@@ -197,15 +167,13 @@ Local startup diagnostics:
 %LOCALAPPDATA%\SNAPVERE\Logs\startup.log
 ```
 
-Screenshot pixels are not written to the startup log.
+Screenshot pixels are not intentionally written to the startup log.
 
 ## License and ownership
 
-**SNAPVERE 0.0.7 and later are distributed under the SNAPVERE Commercial Software License Agreement included in [`LICENSE`](LICENSE).** SNAPVERE is the product brand. Brendigo is the developer and publisher. The official product website is **snapvere.com** and the developer website is **brendigo.com**.
-
-Earlier published versions remain governed by the license distributed with those versions; changing the current repository license does not retroactively revoke rights already granted for historical releases.
+**SNAPVERE 0.0.7 and later are distributed under the SNAPVERE Commercial Software License Agreement included in [`LICENSE`](LICENSE).** SNAPVERE is the product brand. Brendigo is the developer and publisher. The official product website is **snapvere.com** and support is **info@snapvere.com**.
 
 ---
 
 **SNAPVERE — Capture. Edit. Done.**  
-Developed and published by **Brendigo** · [snapvere.com](https://snapvere.com) · [brendigo.com](https://brendigo.com)
+Developed and published by **Brendigo** · [snapvere.com](https://snapvere.com) · [info@snapvere.com](mailto:info@snapvere.com) · [brendigo.com](https://brendigo.com)
