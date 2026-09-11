@@ -1,0 +1,17 @@
+SNAPVERE v0.1.0 CI-signed release trigger
+
+This trigger publishes the already validated 0.1.0 Windows + Android source without requiring a private Android production keystore.
+
+Android public APK contract:
+- build and test debug + release variants
+- publish the verified CI/debug-signed debug APK as SNAPVERE.apk
+- verify APK signature and ZIP alignment
+- publish SNAPVERE-Android-Source.zip from the validated Git tree
+
+Windows public contract remains:
+- SNAPVERE-Setup.exe
+- SNAPVERE-Portable.exe
+- x86/x64/ARM64 embedded payloads
+- x64/x86 lifecycle and tray-first validation
+
+The release must contain exactly four public assets and verify their SHA-256 digests after publication.
