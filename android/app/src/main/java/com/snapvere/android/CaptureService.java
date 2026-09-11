@@ -1,5 +1,6 @@
 package com.snapvere.android;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -99,7 +100,9 @@ public final class CaptureService extends Service {
 
     @Override
     public void onDestroy() {
-        cleanupCapture(false);
+        // If Android destroys the service before our normal completion path,
+        // explicitly stop MediaProjection as well as releasing local surfaces.
+        cleanupCapture(true);
         super.onDestroy();
     }
 
@@ -224,7 +227,10 @@ public final class CaptureService extends Service {
 
             ContentValues complete = new ContentValues();
             complete.put(MediaStore.Images.Media.IS_PENDING, 0);
-            resolver.update(uri, complete, null, null);
+            int updated = resolver.update(uri, complete, null, null);
+            if (updated != 1) {
+                throw new IOException("Android MediaStore did not finalize the PNG destination.");
+            }
             committed = true;
             return new SavedCapture(uri, name);
         } finally {
@@ -306,6 +312,8 @@ public final class CaptureService extends Service {
         }
     }
 
+    @SuppressLint("deprecation") // Android 10 fallback; API 30+ uses WindowMetrics above.
+    @SuppressWarnings("deprecation")
     private CaptureSize getCaptureSize() {
         WindowManager windowManager = getSystemService(WindowManager.class);
         int width;

@@ -1,6 +1,6 @@
 package com.snapvere.android;
 
-import android.app.ActivityNotFoundException;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -30,6 +30,7 @@ public final class MainActivity extends ComponentActivity {
     private static final String PREF_LATEST_URI = "latest_capture_uri";
 
     private TextView statusText;
+    private Button captureButton;
     private Button openLatestButton;
     private Button shareLatestButton;
     private boolean receiverRegistered;
@@ -38,6 +39,8 @@ public final class MainActivity extends ComponentActivity {
     private final BroadcastReceiver captureReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            captureButton.setEnabled(true);
+            captureButton.setAlpha(1.0f);
             if (CaptureService.ACTION_CAPTURE_COMPLETED.equals(intent.getAction())) {
                 String name = intent.getStringExtra(CaptureService.EXTRA_CAPTURE_NAME);
                 statusText.setText(getString(R.string.capture_saved, name == null ? "PNG" : name));
@@ -46,7 +49,7 @@ public final class MainActivity extends ComponentActivity {
                 String message = intent.getStringExtra(CaptureService.EXTRA_ERROR_MESSAGE);
                 statusText.setText(getString(
                     R.string.capture_failed,
-                    message == null || message.isBlank() ? "Unknown error" : message));
+                    message == null || message.isBlank() ? getString(R.string.unknown_error) : message));
             }
         }
     };
@@ -96,15 +99,13 @@ public final class MainActivity extends ComponentActivity {
             ScrollView.LayoutParams.MATCH_PARENT,
             ScrollView.LayoutParams.WRAP_CONTENT));
 
-        TextView brand = text("SNAPVERE", 28, 0xFFF6F5FB, true);
-        root.addView(brand);
+        root.addView(text("SNAPVERE", 28, 0xFFF6F5FB, true));
         TextView tagline = text(getString(R.string.tagline), 14, 0xFF8E96AA, false);
         tagline.setPadding(0, dp(2), 0, dp(24));
         root.addView(tagline);
 
         LinearLayout privacyCard = card();
-        TextView localFirst = text(getString(R.string.local_first), 11, 0xFF72D8B4, true);
-        privacyCard.addView(localFirst);
+        privacyCard.addView(text(getString(R.string.local_first), 11, 0xFF72D8B4, true));
         TextView privacy = text(getString(R.string.local_first_description), 14, 0xFFB8C0D1, false);
         privacy.setPadding(0, dp(6), 0, 0);
         privacyCard.addView(privacy);
@@ -116,7 +117,7 @@ public final class MainActivity extends ComponentActivity {
         captureDescription.setPadding(0, dp(6), 0, dp(14));
         captureCard.addView(captureDescription);
 
-        Button captureButton = actionButton(getString(R.string.capture_screen), true);
+        captureButton = actionButton(getString(R.string.capture_screen), true);
         captureButton.setOnClickListener(view -> requestScreenCapture());
         captureCard.addView(captureButton);
         root.addView(captureCard, marginBottom(dp(14)));
@@ -149,6 +150,8 @@ public final class MainActivity extends ComponentActivity {
     }
 
     private void requestScreenCapture() {
+        captureButton.setEnabled(false);
+        captureButton.setAlpha(0.65f);
         statusText.setText(R.string.capture_requesting);
         MediaProjectionManager manager =
             (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
@@ -157,6 +160,8 @@ public final class MainActivity extends ComponentActivity {
 
     private void handleCaptureResult(int resultCode, Intent data) {
         if (resultCode != RESULT_OK || data == null) {
+            captureButton.setEnabled(true);
+            captureButton.setAlpha(1.0f);
             statusText.setText(R.string.capture_cancelled);
             return;
         }
@@ -169,10 +174,12 @@ public final class MainActivity extends ComponentActivity {
         try {
             ContextCompat.startForegroundService(this, serviceIntent);
         } catch (RuntimeException exception) {
+            captureButton.setEnabled(true);
+            captureButton.setAlpha(1.0f);
             String message = exception.getMessage();
             statusText.setText(getString(
                 R.string.capture_failed,
-                message == null || message.isBlank() ? exception.getClass().getSimpleName() : message));
+                message == null || message.isBlank() ? getString(R.string.unknown_error) : message));
         }
     }
 

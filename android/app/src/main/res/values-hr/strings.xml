@@ -13,6 +13,7 @@
     <string name="capture_cancelled">Snimanje zaslona je otkazano.</string>
     <string name="capture_saved">Spremljeno u Pictures/SNAPVERE: %1$s</string>
     <string name="capture_failed">Snimanje zaslona nije uspjelo: %1$s</string>
+    <string name="unknown_error">Nepoznata pogreška</string>
     <string name="no_capture">Još nije izrađena nijedna SNAPVERE snimka.</string>
     <string name="open_failed">Android ne može otvoriti spremljenu snimku.</string>
     <string name="share_failed">Android ne može podijeliti spremljenu snimku.</string>

@@ -13,6 +13,7 @@
     <string name="capture_cancelled">Screen capture was cancelled.</string>
     <string name="capture_saved">Saved to Pictures/SNAPVERE: %1$s</string>
     <string name="capture_failed">Screen capture failed: %1$s</string>
+    <string name="unknown_error">Unknown error</string>
     <string name="no_capture">No SNAPVERE capture has been created yet.</string>
     <string name="open_failed">Android could not open the saved capture.</string>
     <string name="share_failed">Android could not share the saved capture.</string>
