@@ -1,8 +1,7 @@
 diff --git a/src/Snapvere.App/App.xaml.cs b/src/Snapvere.App/App.xaml.cs
 --- a/src/Snapvere.App/App.xaml.cs
 +++ b/src/Snapvere.App/App.xaml.cs
-@@ -480,10 +480,18 @@
-     private async void RegionOverlayProbeRoot_Loaded(object sender, RoutedEventArgs e)
+@@ -2,11 +2,19 @@
      {
          try
          {
@@ -24,8 +23,7 @@ diff --git a/src/Snapvere.App/App.xaml.cs b/src/Snapvere.App/App.xaml.cs
          }
          catch (Exception exception)
          {
-@@ -497,10 +505,18 @@
-     private async void WindowOverlayProbeRoot_Loaded(object sender, RoutedEventArgs e)
+@@ -19,11 +27,19 @@
      {
          try
          {
@@ -47,7 +45,7 @@ diff --git a/src/Snapvere.App/App.xaml.cs b/src/Snapvere.App/App.xaml.cs
          }
          catch (Exception exception)
          {
-@@ -512,7 +528,44 @@
+@@ -32,7 +48,49 @@
          }
      }
  
@@ -98,7 +96,7 @@ diff --git a/src/Snapvere.App/App.xaml.cs b/src/Snapvere.App/App.xaml.cs
      {
          var probeDirectory = Path.Combine(Path.GetTempPath(), "SNAPVERE");
          Directory.CreateDirectory(probeDirectory);
-@@ -523,7 +576,10 @@
+@@ -43,5 +101,8 @@
              $"SNAPVERE {version} {state} | PID={Environment.ProcessId} | ARCH={RuntimeInformation.ProcessArchitecture} | {DateTimeOffset.UtcNow:O}");
  
          StartupDiagnostics.WriteLine($"{logMessage} Marker={markerPath}");
@@ -108,14 +106,10 @@ diff --git a/src/Snapvere.App/App.xaml.cs b/src/Snapvere.App/App.xaml.cs
 +            Environment.Exit(0);
 +        }
      }
- 
-     private void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
 diff --git a/eng/Capture-SnapvereVisualQa.ps1 b/eng/Capture-SnapvereVisualQa.ps1
 --- a/eng/Capture-SnapvereVisualQa.ps1
 +++ b/eng/Capture-SnapvereVisualQa.ps1
-@@ -329,6 +329,17 @@ function Invoke-SingleSurfaceProbe {
-     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
- 
+@@ -1,3 +1,14 @@
      try {
 +        $markerPath = Get-ProbeMarkerPath -FileName $MarkerFileName
 +        while (-not $process.HasExited -and $stopwatch.ElapsedMilliseconds -lt 10000 -and -not (Test-Path -LiteralPath $markerPath -PathType Leaf)) {
@@ -130,4 +124,3 @@ diff --git a/eng/Capture-SnapvereVisualQa.ps1 b/eng/Capture-SnapvereVisualQa.ps1
 +
          while (-not $process.HasExited -and $stopwatch.ElapsedMilliseconds -lt 12000) {
              $window = Get-CapturableWindows -Process $process |
-                 Sort-Object { $_.Width * $_.Height } -Descending |
