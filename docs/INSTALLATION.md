@@ -1,42 +1,46 @@
-# Installation and Universal Portable Builds
+# Installation and release packages
 
-## Public release contract
+## Public v0.1.0 release contract
 
-Starting with SNAPVERE **0.0.7**, each public release contains exactly two user-facing downloads:
+A valid SNAPVERE **0.1.0** GitHub Release contains exactly four user-facing assets:
 
 ```text
 SNAPVERE-Setup.exe
 SNAPVERE-Portable.exe
+SNAPVERE.apk
+SNAPVERE-Android-Source.zip
 ```
 
-There are no separate x86/x64 downloads, no public ZIP payloads and no Demo executable in the v0.0.7+ release contract. The latest published release is **v0.0.8**; later `main` changes are unreleased until separately published.
+The two Windows hosts are universal x86/x64/ARM64 launchers. The Android APK is a release build signed with SNAPVERE's stable Android release identity. The Android source ZIP is generated from the exact validated Git tree.
 
-## Architecture selection
+Historical releases keep their historical asset contracts and are not rewritten.
 
-Each public host is intentionally built as an x86-compatible Windows executable and embeds native application payloads for:
+## Windows architecture selection
 
-- **x86 / x32 / 32-bit Windows**;
-- **x64 / AMD64 Windows**;
-- **ARM64 Windows**.
+`SNAPVERE-Setup.exe` and `SNAPVERE-Portable.exe` embed native application payloads for:
 
-At runtime the host resolves the Windows architecture and launches/extracts the compatible native application payload. Users do not need to choose an architecture-specific download.
+- x86 / x32 / 32-bit Windows;
+- x64 / AMD64 Windows;
+- ARM64 Windows.
 
-Architecture support does not imply support for every historical Windows release. The application target remains Windows 10 version 1809 / build 17763 or later. WGC-dependent capture paths require Windows 10 version 2004 / build 19041 or later.
+The host resolves the running Windows architecture and selects the compatible native payload automatically. Users do not choose a separate architecture download.
+
+The application target remains Windows 10 version 1809 / build 17763 or later. WGC-dependent capture paths require Windows 10 version 2004 / build 19041 or later.
 
 ## Tray-first startup
 
-A normal SNAPVERE launch initializes its capture coordinator, global hotkeys and notification-area icon without opening the former Capture Center as a normal user surface.
+Normal Windows launch initializes the capture coordinator, global hotkeys and notification-area icon without opening a launcher dashboard.
 
 - left-click tray → Region Capture;
-- right-click tray → branded quick-actions flyout;
+- right-click tray → quick actions;
 - Print Screen → Region Capture when available;
-- `Ctrl+Shift+1` → Region fallback;
+- `Ctrl+Shift+1` → Region Capture fallback;
 - `Ctrl+Shift+2` → Window Capture;
-- `Ctrl+Shift+4` → Screen Capture.
+- `Ctrl+Shift+3` → Screen Capture.
 
 Options, Language, Recent Captures and About are created only when requested.
 
-## Setup
+## Windows Setup
 
 Default install directory:
 
@@ -44,17 +48,15 @@ Default install directory:
 %LOCALAPPDATA%\Programs\SNAPVERE
 ```
 
-The default install is per-user and does not require Program Files administration.
+The default install is per-user and does not require Program Files elevation.
 
-Interactive Setup requires acceptance of the **SNAPVERE Commercial Software License Agreement**. Setup defaults are opt-out, not forced:
+Interactive Setup requires acceptance of the **SNAPVERE Commercial Software License Agreement**. Optional defaults are opt-out rather than forced:
 
-- Start menu shortcut — **On**;
-- Desktop icon — **On**;
-- Start SNAPVERE with Windows — **On**.
+- Start menu shortcut — On;
+- Desktop icon — On;
+- Start SNAPVERE with Windows — On.
 
-The user can clear any optional checkbox before installation.
-
-The installed maintenance binary is copied to:
+The installed maintenance binary is:
 
 ```text
 %LOCALAPPDATA%\Programs\SNAPVERE\SNAPVERE-Setup.exe
@@ -68,21 +70,19 @@ The same binary owns install/update/remove.
 SNAPVERE-Setup.exe --silent --accept-license
 ```
 
-A silent install without `--accept-license` exits with code `2`. Silent installation uses the same default Start menu, Desktop and Start-with-Windows choices.
+Silent install without `--accept-license` exits with code `2`.
 
 ## Start with Windows
 
-The per-user startup registration lives under:
+Per-user startup registration:
 
 ```text
 HKCU\Software\Microsoft\Windows\CurrentVersion\Run\SNAPVERE
 ```
 
-It points to the stable SNAPVERE executable. Normal launch is tray-first, so no separate startup-only executable is required.
+It points to the stable SNAPVERE launcher. Portable mode uses the original Portable launcher path rather than a versioned child inside the extraction cache.
 
-Portable builds use the original stable Portable launcher path for this preference rather than a versioned child path inside the extraction cache.
-
-## Same-Setup uninstall contract
+## Same-Setup uninstall
 
 Windows Installed apps invokes:
 
@@ -90,79 +90,116 @@ Windows Installed apps invokes:
 SNAPVERE-Setup.exe --uninstall
 ```
 
-Quiet removal uses:
+Quiet removal:
 
 ```text
 SNAPVERE-Setup.exe --uninstall --silent
 ```
 
-SNAPVERE intentionally installs no separate `uninstall.exe`, `uninstaller.exe` or Inno-style `unins*.exe`.
+SNAPVERE installs no separate `uninstall.exe`, `uninstaller.exe` or `unins*.exe`.
 
-Before recursive deletion, Setup validates the SNAPVERE installation marker and expected files. Uninstall removes application files, Setup-created shortcuts, Installed apps metadata and the startup registration only when it belongs to the validated installation.
+Before recursive install-directory deletion, Setup validates the SNAPVERE installation marker and expected files. Uninstall removes app files, Setup-created shortcuts, Installed apps metadata and the startup registration only when it belongs to the validated installation.
 
-User screenshots remain in:
+User screenshots remain outside the installation under:
 
 ```text
 Pictures\SNAPVERE
 ```
 
-## Portable
+## Windows Portable
 
-`SNAPVERE-Portable.exe` embeds all supported native payloads and extracts only the compatible one into the controlled SNAPVERE Portable cache.
+`SNAPVERE-Portable.exe` embeds all supported native payloads and extracts only the compatible one into the controlled Portable cache.
 
-Portable guarantees include:
+Portable protections include:
 
 - no Installed apps registration;
-- no forced Start menu/Desktop shortcut creation;
+- no forced Start menu/Desktop shortcuts;
 - self-contained application payload;
-- rejection of archive path traversal and absolute extraction targets;
-- bounded archive extraction;
-- version/architecture cache reuse;
-- best-effort cleanup of stale SNAPVERE Portable caches;
-- launcher preparation mutex;
-- stable original Portable path for optional Windows startup registration;
-- startup diagnostics when the child cannot be launched.
+- archive traversal/absolute-target rejection;
+- bounded extraction and duplicate-destination rejection;
+- trusted architecture-specific embedded SHA-256 integrity manifest;
+- validation of expected paths, lengths and hashes before cached execution;
+- reparse-point and unexpected-file rejection;
+- transactional rebuild/revalidation of invalid reusable cache;
+- version/architecture cache reuse only after validation;
+- launcher-preparation mutex and local startup diagnostics.
 
-## Runtime release gate
+## Android APK installation
 
-CI and release QA require:
+`SNAPVERE.apk` targets Android 10 / API 29 or newer. It is produced from the minified/shrunk release variant and is accepted for public release only after `zipalign` and `apksigner` verification.
 
-1. x64 build/test succeeds;
-2. x86 build succeeds;
-3. ARM64 cross-build succeeds;
-4. all three embedded payload archives contain root `Snapvere.exe`;
-5. the public package directory contains exactly `SNAPVERE-Setup.exe` and `SNAPVERE-Portable.exe`;
-6. silent Setup rejects missing commercial-license acceptance;
-7. silent Setup installs successfully with license acceptance;
-8. default Desktop shortcut and Start-with-Windows registration exist after install;
-9. Installed apps metadata points to the installed `SNAPVERE-Setup.exe`;
-10. tray, Region, Window, Options, Language and About runtime probes materialize successfully;
-11. the x64 WinUI visual gate captures real rendered Region, Window, Tray, Options, Language and About PNG surfaces and rejects empty/unexpectedly small frames;
-12. the visual-QA manifest records dimensions, byte sizes and SHA-256 digests for those six surfaces and is uploaded as a GitHub Actions artifact;
-13. installed and Portable x64/x86 runtime lifecycle succeeds;
-14. same-Setup uninstall removes installed files, Desktop shortcut, startup registration and Installed apps metadata;
-15. user capture files remain outside uninstall scope.
+The Android package intentionally requests no `INTERNET` permission. Screen capture requires Android's system MediaProjection approval for every capture session.
 
-ARM64 is cross-built/package-validated on the hosted x64 Windows runner. That runner is not represented as a real ARM64 runtime device. SHA-256 values are integrity metadata; they are not represented as Authenticode signatures.
+When installing outside an app store, Android may require the user to explicitly allow installation from the chosen package/file source. SNAPVERE does not attempt to bypass Android package-installation policy.
+
+A future Android update must use the same stable release signing identity as the installed public APK. For that reason the release workflow never substitutes an ephemeral CI debug key when release signing material is missing.
+
+## Android source package
+
+`SNAPVERE-Android-Source.zip` is generated from the validated release commit's tracked `android/` tree with `git archive`.
+
+The release gate verifies expected Gradle, manifest and MainActivity paths and rejects generated `build/` / `.gradle/` cache content. The archive does not contain private signing material.
+
+## Release validation gate
+
+Before `v0.1.0` publication, automation requires:
+
+### Windows
+
+1. audited x64 restore/build/tests;
+2. x86 build;
+3. ARM64 cross-build;
+4. root `Snapvere.exe` in all three native payloads;
+5. valid architecture integrity manifests;
+6. six real rendered WinUI surfaces;
+7. universal Setup and Portable generation;
+8. x64 and x86 Setup+Portable lifecycle and tray-first probes;
+9. uninstall cleanup while preserving user captures.
+
+### Android
+
+1. privacy/service/version manifest contract;
+2. `lintDebug` and `lintRelease` with warnings as errors;
+3. JVM unit tests;
+4. debug and minified release build;
+5. stable release signing material available outside Git source;
+6. ZIP alignment and cryptographic APK-signature verification;
+7. structurally valid Android source ZIP;
+8. SHA-256 transfer verification from Android job to final release job.
+
+### Publication
+
+The final release directory must contain exactly:
+
+```text
+SNAPVERE-Android-Source.zip
+SNAPVERE-Portable.exe
+SNAPVERE-Setup.exe
+SNAPVERE.apk
+```
+
+Only then may the immutable `v0.1.0` tag be created. After publication GitHub's SHA-256 asset digest for every file must match the locally validated digest.
+
+ARM64 Windows evidence on the hosted x64 runner is cross-build/package validation, not physical ARM64 runtime evidence. Android automation is not a claim of exhaustive testing across every physical OEM device.
 
 ## Diagnostics
 
-Startup diagnostics are local:
+Windows startup diagnostics:
 
 ```text
 %LOCALAPPDATA%\SNAPVERE\Logs\startup.log
 ```
 
-Preferences are local:
+Windows preferences:
 
 ```text
 %LOCALAPPDATA%\SNAPVERE\settings.json
 ```
 
-Screenshot pixels are not written to the startup log.
+Screenshot pixels are not intentionally written to the startup log.
 
 ## License and product identity
 
-SNAPVERE 0.0.7 and later use the commercial license shipped in the repository root `LICENSE` file. Product: **SNAPVERE**. Developer/publisher: **Brendigo**. Product site: **https://snapvere.com**. Developer site: **https://brendigo.com**.
+SNAPVERE 0.0.7 and later use the commercial license in the repository root `LICENSE`. Product: **SNAPVERE**. Developer/publisher: **Brendigo**. Product site: **https://snapvere.com**. Developer site: **https://brendigo.com**.
 
-Historical releases remain under the terms distributed with those versions.
+Historical releases remain under the terms shipped with those versions.

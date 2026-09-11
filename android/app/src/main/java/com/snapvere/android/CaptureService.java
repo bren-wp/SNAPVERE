@@ -74,6 +74,7 @@ public final class CaptureService extends Service {
     private MediaProjection.Callback projectionCallback;
     private VirtualDisplay virtualDisplay;
     private ImageReader imageReader;
+    private String initializationError;
 
     public static boolean isCaptureActive() {
         return CAPTURE_ACTIVE.get();
@@ -106,7 +107,11 @@ public final class CaptureService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        createNotificationChannel();
+        try {
+            createNotificationChannel();
+        } catch (RuntimeException exception) {
+            initializationError = getString(R.string.capture_error_service_unavailable);
+        }
     }
 
     @Override
@@ -127,6 +132,11 @@ public final class CaptureService extends Service {
         captureStarted.set(false);
         lastError = null;
 
+        if (initializationError != null) {
+            failCapture(initializationError);
+            return START_NOT_STICKY;
+        }
+
         try {
             startForeground(
                 NOTIFICATION_ID,
@@ -136,21 +146,21 @@ public final class CaptureService extends Service {
             int resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, Activity.RESULT_CANCELED);
             Intent resultData = getProjectionData(intent);
             if (resultCode != Activity.RESULT_OK || resultData == null) {
-                failCapture("Android did not provide a valid screen-capture token.");
+                failCapture(getString(R.string.capture_error_permission));
                 return START_NOT_STICKY;
             }
 
             startCapture(resultCode, resultData);
         } catch (RuntimeException exception) {
-            failCapture(messageOf(exception));
+            failCapture(getString(R.string.capture_error_service_unavailable));
         }
         return START_NOT_STICKY;
     }
 
     @Override
     public void onDestroy() {
-        if (CAPTURE_ACTIVE.get() && completed.compareAndSet(false, true)) {
-            lastError = "Android stopped the capture service before the image was completed.";
+        if (CAPTURE_ACTIVE.get() && activeService == this && completed.compareAndSet(false, true)) {
+            lastError = getString(R.string.capture_error_stopped);
             sendFailureBroadcastBestEffort(lastError);
         }
         cleanupAfterDestroy();
@@ -166,12 +176,12 @@ public final class CaptureService extends Service {
         MediaProjectionManager manager =
             (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         if (manager == null) {
-            throw new IllegalStateException("Android screen-capture service is unavailable.");
+            throw new IllegalStateException("MediaProjectionManager unavailable");
         }
 
         mediaProjection = manager.getMediaProjection(resultCode, resultData);
         if (mediaProjection == null) {
-            throw new IllegalStateException("Android could not create a MediaProjection session.");
+            throw new IllegalStateException("MediaProjection session unavailable");
         }
 
         captureThread = new HandlerThread("SnapvereCapture");
@@ -182,7 +192,7 @@ public final class CaptureService extends Service {
             @Override
             public void onStop() {
                 if (!completed.get()) {
-                    failCapture("Android ended the screen-capture session before an image was saved.");
+                    failCapture(getString(R.string.capture_error_stopped));
                 }
             }
         };
@@ -194,10 +204,12 @@ public final class CaptureService extends Service {
         // visible; the timeout is failure protection, not a transition delay.
         taskHideTimeout = () -> {
             if (!completed.get() && !captureStarted.get()) {
-                failCapture("SNAPVERE did not become fully hidden before capture could start.");
+                failCapture(getString(R.string.capture_error_hidden));
             }
         };
-        captureHandler.postDelayed(taskHideTimeout, TASK_HIDE_TIMEOUT_MS);
+        if (!captureHandler.postDelayed(taskHideTimeout, TASK_HIDE_TIMEOUT_MS)) {
+            throw new IllegalStateException("Capture handler rejected task-hide timeout");
+        }
 
         if (APP_TASK_HIDDEN.get()) {
             onAppTaskHidden();
@@ -209,7 +221,13 @@ public final class CaptureService extends Service {
         if (handler == null || completed.get()) {
             return;
         }
-        handler.post(this::beginCaptureAfterTaskHidden);
+        try {
+            if (!handler.post(this::beginCaptureAfterTaskHidden)) {
+                failCapture(getString(R.string.capture_error_service_unavailable));
+            }
+        } catch (RuntimeException exception) {
+            failCapture(getString(R.string.capture_error_service_unavailable));
+        }
     }
 
     private void beginCaptureAfterTaskHidden() {
@@ -221,7 +239,7 @@ public final class CaptureService extends Service {
         try {
             beginVirtualDisplayCapture();
         } catch (RuntimeException exception) {
-            failCapture(messageOf(exception));
+            failCapture(getString(R.string.capture_error_frame));
         }
     }
 
@@ -237,15 +255,17 @@ public final class CaptureService extends Service {
     private void scheduleFrameTimeout() {
         Handler handler = captureHandler;
         if (handler == null) {
-            throw new IllegalStateException("Capture thread ended before the frame timeout could be scheduled.");
+            throw new IllegalStateException("Capture handler unavailable");
         }
 
         frameTimeout = () -> {
             if (!completed.get()) {
-                failCapture("Android did not deliver a screen-capture frame in time.");
+                failCapture(getString(R.string.capture_error_frame_timeout));
             }
         };
-        handler.postDelayed(frameTimeout, FRAME_TIMEOUT_MS);
+        if (!handler.postDelayed(frameTimeout, FRAME_TIMEOUT_MS)) {
+            throw new IllegalStateException("Capture handler rejected frame timeout");
+        }
     }
 
     private void cancelFrameTimeout() {
@@ -259,7 +279,7 @@ public final class CaptureService extends Service {
 
     private void beginVirtualDisplayCapture() {
         if (mediaProjection == null || captureHandler == null) {
-            throw new IllegalStateException("Screen-capture session ended before the display became ready.");
+            throw new IllegalStateException("Capture session ended before display setup");
         }
 
         CaptureSize size = getCaptureSize();
@@ -280,7 +300,7 @@ public final class CaptureService extends Service {
             null,
             captureHandler);
         if (virtualDisplay == null) {
-            throw new IllegalStateException("Android could not create a virtual display for the capture.");
+            throw new IllegalStateException("Virtual display unavailable");
         }
 
         scheduleFrameTimeout();
@@ -295,7 +315,7 @@ public final class CaptureService extends Service {
         try {
             image = reader.acquireLatestImage();
         } catch (RuntimeException exception) {
-            failCapture(messageOf(exception));
+            failCapture(getString(R.string.capture_error_frame));
             return;
         }
 
@@ -304,29 +324,41 @@ public final class CaptureService extends Service {
         }
 
         cancelFrameTimeout();
+        Bitmap bitmap = null;
+        SavedCapture saved = null;
+        String failure = null;
         try {
-            Bitmap bitmap = bitmapFromImage(image, size.width, size.height);
-            try {
-                SavedCapture saved = saveBitmap(bitmap);
-                finishSuccess(saved);
-            } finally {
-                bitmap.recycle();
-            }
-        } catch (IOException | RuntimeException exception) {
-            failCapture(messageOf(exception));
+            bitmap = bitmapFromImage(image, size.width, size.height);
+            saved = saveBitmap(bitmap);
+        } catch (IOException exception) {
+            failure = getString(R.string.capture_error_save);
+        } catch (RuntimeException | OutOfMemoryError exception) {
+            failure = getString(R.string.capture_error_frame);
         } finally {
+            if (bitmap != null) {
+                try {
+                    bitmap.recycle();
+                } catch (RuntimeException ignored) {
+                }
+            }
             try {
                 image.close();
             } catch (RuntimeException ignored) {
-                // Capture completion/failure must not be replaced by a close failure.
+                // Completion/failure must not be replaced by an image-close failure.
             }
+        }
+
+        if (saved != null) {
+            finishSuccess(saved);
+        } else {
+            failCapture(failure == null ? getString(R.string.unknown_error) : failure);
         }
     }
 
     private static Bitmap bitmapFromImage(Image image, int width, int height) {
         Image.Plane[] planes = image.getPlanes();
         if (planes.length == 0) {
-            throw new IllegalStateException("Android returned a screen-capture image without a pixel plane.");
+            throw new IllegalStateException("Capture image has no pixel plane");
         }
 
         Image.Plane plane = planes[0];
@@ -334,6 +366,18 @@ public final class CaptureService extends Service {
         int pixelStride = plane.getPixelStride();
         int rowStride = plane.getRowStride();
         int paddedWidth = CaptureBufferLayout.paddedWidth(width, pixelStride, rowStride);
+
+        long requiredBytes;
+        try {
+            requiredBytes = Math.multiplyExact((long) rowStride, (long) height);
+        } catch (ArithmeticException exception) {
+            throw new IllegalArgumentException("Capture buffer size overflow", exception);
+        }
+
+        buffer.rewind();
+        if (requiredBytes > buffer.remaining()) {
+            throw new IllegalArgumentException("Capture buffer is smaller than the declared row layout");
+        }
 
         Bitmap padded = Bitmap.createBitmap(paddedWidth, height, Bitmap.Config.ARGB_8888);
         try {
@@ -364,14 +408,14 @@ public final class CaptureService extends Service {
         ContentResolver resolver = getContentResolver();
         Uri uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
         if (uri == null) {
-            throw new IOException("Android MediaStore did not create a destination for the PNG.");
+            throw new IOException("MediaStore destination unavailable");
         }
 
         boolean committed = false;
         try {
             try (OutputStream output = resolver.openOutputStream(uri, "w")) {
                 if (output == null || !bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)) {
-                    throw new IOException("The PNG stream could not be written.");
+                    throw new IOException("PNG stream unavailable");
                 }
                 output.flush();
             }
@@ -380,7 +424,7 @@ public final class CaptureService extends Service {
             complete.put(MediaStore.Images.Media.IS_PENDING, 0);
             int updated = resolver.update(uri, complete, null, null);
             if (updated != 1) {
-                throw new IOException("Android MediaStore did not finalize the PNG destination.");
+                throw new IOException("MediaStore did not finalize capture");
             }
             committed = true;
             return new SavedCapture(uri, name);
@@ -539,8 +583,8 @@ public final class CaptureService extends Service {
         if (activeService == this) {
             activeService = null;
             APP_TASK_HIDDEN.set(false);
+            CAPTURE_ACTIVE.set(false);
         }
-        CAPTURE_ACTIVE.set(false);
     }
 
     @SuppressLint("deprecation") // Android 10 fallback; API 30+ uses WindowMetrics above.
@@ -548,7 +592,7 @@ public final class CaptureService extends Service {
     private CaptureSize getCaptureSize() {
         WindowManager windowManager = getSystemService(WindowManager.class);
         if (windowManager == null) {
-            throw new IllegalStateException("Android window service is unavailable.");
+            throw new IllegalStateException("WindowManager unavailable");
         }
 
         int width;
@@ -569,7 +613,7 @@ public final class CaptureService extends Service {
         }
 
         if (width <= 0 || height <= 0 || densityDpi <= 0) {
-            throw new IllegalStateException("Android reported invalid display metrics.");
+            throw new IllegalStateException("Invalid display metrics");
         }
         return new CaptureSize(width, height, densityDpi);
     }
@@ -597,7 +641,7 @@ public final class CaptureService extends Service {
     private void createNotificationChannel() {
         NotificationManager manager = getSystemService(NotificationManager.class);
         if (manager == null) {
-            throw new IllegalStateException("Android notification service is unavailable.");
+            throw new IllegalStateException("NotificationManager unavailable");
         }
 
         NotificationChannel channel = new NotificationChannel(
@@ -614,13 +658,6 @@ public final class CaptureService extends Service {
             return source.getParcelableExtra(EXTRA_RESULT_DATA, Intent.class);
         }
         return source.getParcelableExtra(EXTRA_RESULT_DATA);
-    }
-
-    private static String messageOf(Throwable throwable) {
-        String message = throwable.getMessage();
-        return message == null || message.isBlank()
-            ? throwable.getClass().getSimpleName()
-            : message;
     }
 
     private record CaptureSize(int width, int height, int densityDpi) { }

@@ -79,13 +79,12 @@ public sealed class CaptureFileWriter
                 File.Delete(path);
             }
         }
-        catch (IOException)
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
         {
-            // Best-effort cleanup. A future startup cleanup pass handles leftovers.
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // Best-effort cleanup. Do not hide the original capture failure.
+            // Best-effort cleanup. Never replace the original capture failure
+            // with a secondary cleanup error; a future cleanup pass can remove
+            // any leftover temporary file.
         }
     }
 }

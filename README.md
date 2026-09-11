@@ -10,11 +10,9 @@
 
 [Hrvatski README](README.hr.md) · [Official product site](https://snapvere.com) · [Support](mailto:info@snapvere.com) · [Developer: Brendigo](https://brendigo.com)
 
-SNAPVERE is a tray-first Windows screenshot application focused on fast Region, Window and Screen capture, lightweight annotation and local PNG output. English is the default product language; Croatian and more than 20 additional languages are available from the in-app Language picker.
+SNAPVERE 0.1.0 combines the production tray-first Windows capture application and the native Android companion under one validated release contract. Published historical tags/releases remain immutable.
 
-> **v0.0.9 is the current release milestone being validated.** Published historical tags, releases and assets are immutable and are never rewritten by later development.
-
-## Capture controls
+## Windows capture
 
 | Action | Primary input | Alternate |
 | --- | --- | --- |
@@ -22,170 +20,170 @@ SNAPVERE is a tray-first Windows screenshot application focused on fast Region, 
 | Window Capture | Right-click tray → Capture window | `Ctrl+Shift+2` |
 | Screen Capture | Right-click tray → Capture screen | `Ctrl+Shift+3` |
 | Settings / recent captures | Right-click tray | — |
-| Language | Tray language control or Options | — |
-| About / Exit | Right-click tray | — |
+| Language / About / Exit | Right-click tray | — |
 
-Scrolling Capture does not reserve a global shortcut until that workflow is actually implemented.
+Region Capture provides frozen-frame physical-pixel selection, resize/move handles, Pen, Line, Arrow, Box and Highlight tools, four annotation colors, Undo, Copy and Save. Window Capture uses native top-level-window discovery plus Windows.Graphics.Capture `CreateForWindow`; it does not silently substitute a screen crop. Screen Capture prefers Windows.Graphics.Capture/Direct3D and retains the resilient monitor fallback for expected acquisition failures.
 
-## Save location
+Captures are safely completed as PNG files before optional relocation with the native Windows **Save As** picker. Cancelling Save As preserves the completed PNG in `Pictures\SNAPVERE`. See [Save location](docs/SAVE-LOCATION.md).
 
-Region, Window and Screen captures are first completed safely as PNG files in the normal SNAPVERE capture location. After a successful save, SNAPVERE can open the native Windows **Save As** picker so the user chooses the final folder and filename.
+## Tray-first Windows UX
 
-Cancelling the picker keeps the completed PNG in `Pictures\SNAPVERE`, so a capture is not lost. Relocation uses asynchronous copying, destination-local staging, final atomic replacement, PNG-only destination validation and Windows file-identity checks. Alias or uncertain-identity cases preserve the source as a recovery copy. Clipboard-only Copy remains unchanged.
+Normal startup keeps the app in the Windows notification area instead of opening a launcher dashboard. The native tray host uses the `NOTIFYICON_VERSION_4` contract, re-applies the version after Explorer/taskbar recreation, retains the standard tooltip and supports pointer plus keyboard activation. Region activation is debounced so duplicate notification events cannot start duplicate capture workflows.
 
-See [Save location](docs/SAVE-LOCATION.md).
+Implemented preferences are **Start SNAPVERE with Windows**, **Include cursor on capture**, and **Language**. Recent Captures is local and bounded. The application contains no telemetry worker, cloud-upload client, remote command channel or automatic updater.
 
-## Region Capture
+## Android 0.1.0
 
-Implemented behavior includes a frozen frame, physical-pixel drag selection, move/resize, eight handles, live dimensions, Pen, Line, Arrow, Box and Highlight tools, four annotation colors, Undo, `Ctrl+Z`, `Ctrl+C`, Copy, Save, Enter/double-click save and Esc cancel. Annotations are rendered into the final PNG.
+SNAPVERE for Android 10+ is a native Java 17 application built around Android MediaProjection and MediaStore. Every capture requires a fresh Android system-consent flow. Consent tokens are never cached/reused and SNAPVERE never records continuously in the background.
 
-## Window Capture
+The implemented Android workflow provides:
 
-SNAPVERE discovers visible top-level windows before overlays appear, uses DWM extended-frame bounds, filters SNAPVERE/tool/cloaked/invisible windows, renders DPI-aware frozen picker surfaces and performs the final window acquisition with Windows.Graphics.Capture `CreateForWindow`. Window Capture does not silently fall back to a screen crop.
+- explicit full-screen capture;
+- local PNG storage in `Pictures/SNAPVERE`;
+- validated **Open / Share / Delete** actions for the latest capture;
+- English and Croatian resources;
+- user-initiated Website / Support / Privacy / Terms actions;
+- responsive action stacking, large touch targets, system-inset handling and a deliberate dark theme;
+- no account, telemetry, analytics, advertising SDK, cloud upload or `INTERNET` permission.
 
-## Screen Capture
+### Android stability hardening
 
-Windows.Graphics.Capture + Direct3D 11 is preferred where supported. Expected monitor-acquisition failures can fall back to the resilient GDI monitor path. Capture resources are lazy and are not initialized merely because SNAPVERE is idle in the tray.
+0.1.0 adds stricter capture lifecycle and pixel-buffer handling:
 
-## Windows tray reliability and accessibility
+- bounded five-second Activity-hide and seven-second first-frame guards;
+- guarded Handler scheduling and `ImageReader.acquireLatestImage()`;
+- controlled foreground-service initialization failure;
+- per-resource exception-safe MediaProjection / VirtualDisplay / ImageReader / HandlerThread teardown;
+- owner-aware process capture lock release so stale teardown cannot clear another active owner;
+- `RGBA_8888` pixel-stride, row-stride, row-padding and buffer-size validation before bitmap copy;
+- buffer rewind before copy and deterministic Image/Bitmap cleanup ordering;
+- contained conversion/provider/allocation failures with localized recovery status rather than raw internal exception text.
 
-The native notification-area host uses the modern `NOTIFYICON_VERSION_4` callback contract. SNAPVERE calls `NIM_SETVERSION` after every tray-icon add, including Explorer/taskbar recreation, preserves the normal tooltip with `NIF_SHOWTIP`, decodes callback events from the low word required by the version-4 protocol, and handles keyboard selection/context-menu notifications in addition to pointer input. Region capture remains debounced so duplicate activation notifications cannot start duplicate workflows.
+Android CI runs `lintDebug`, `lintRelease`, JVM tests, debug/release builds, signature/alignment checks and SHA-256 generation. The CI APK is deliberately debug-signed development evidence; the public release APK uses the separate stable release-signing gate described below.
 
-## Android
+See [Android architecture and QA](docs/ANDROID.md) and [Android source/build guide](android/README.md).
 
-SNAPVERE also ships a native Android 10+ companion built around Android's official MediaProjection model. It uses the same local-first privacy contract and the same core dark SNAPVERE design tokens as the Windows distribution: near-black canvas, layered dark surfaces, violet `#7C6CFF` accent and green `#45D6A2` success state.
+## Privacy and security
 
-The Android application provides user-approved full-screen capture, local PNG storage in `Pictures/SNAPVERE`, validated Open / Share / Delete actions for the latest capture, English and Croatian UI resources, and user-initiated Website / Support / Privacy / Terms actions. It requests no `INTERNET` permission and contains no account, telemetry, analytics or cloud-upload client.
+Windows capture processing is local. Static review of the desktop runtime has no first-party HTTP/socket client, WebView/WebView2 or JavaScript execution path. Android's manifest intentionally has no `android.permission.INTERNET`; cleartext traffic and app backup are disabled and the MediaProjection service is non-exported.
 
-For v0.0.9 the capture lifecycle is hardened with separate bounded task-hide and frame-delivery failure guards, exception-safe per-resource teardown, guarded `ImageReader.acquireLatestImage()`, validated row/pixel stride before bitmap allocation, safe MediaStore cleanup and deterministic release of the process-local capture lock. A stalled display producer therefore fails and cleans up instead of leaving capture permanently active.
+0.1.0 keeps strict dependency/build controls:
 
-The Android UI also stacks paired actions vertically on narrow screens or at 1.25x+ font scale, disables OEM `forceDark` transformation of the already-dark theme and contains system/provider failures for Capture, Open, Share, Delete, Website, Support, Privacy and Terms so those actions surface status instead of terminating the Activity.
+- NuGet audit for direct/transitive dependencies at `low` severity and above;
+- `NU1901`–`NU1904` as build failures;
+- full-SHA-pinned GitHub Actions;
+- deterministic/analyzer-enforced .NET builds;
+- architecture-specific trusted SHA-256 manifests embedded in the Portable host;
+- transactional Portable cache rebuild when content is missing, modified, unexpected or a reparse-point risk;
+- Android manifest privacy/version/service validation and lint warnings as errors;
+- release publication gated by exact asset names and post-publication GitHub digest verification.
 
-Android CI validates the manifest privacy/service contract, debug and release lint, JVM unit tests, debug and release builds, APK signature, ZIP alignment and SHA-256, then publishes the installable debug APK as a GitHub Actions artifact for the exact source commit. Generated APK binaries are deliberately not committed to Git.
+This is not a claim that software can be guaranteed free of every vulnerability. See [Security Policy](SECURITY.md), [0.1.0 security/performance](docs/SECURITY-PERFORMANCE-0.1.0.md), and the historical [0.0.9 hardening report](docs/SECURITY-PERFORMANCE-0.0.9.md).
 
-Android 14+ requires fresh user consent for each MediaProjection session and a single `createVirtualDisplay()` use per projection. SNAPVERE follows that contract and registers `MediaProjection.Callback.onStop()` for controlled resource release.
+## Performance and stability
 
-Android does not expose the same general top-level-window capture primitive used by SNAPVERE on Windows, so Windows-style Window Capture is not claimed on Android. See [Android application](docs/ANDROID.md) and [Android source/build guide](android/README.md).
+SNAPVERE remains event-driven while idle. Tray and hotkey hosts use native message loops rather than polling; capture/D3D resources are created for active capture work; secondary windows are on demand; recent-capture discovery is bounded; Android has no idle capture loop or network worker.
 
-## About and support
+No fixed CPU/RAM percentage is promised because OS version, monitor count/DPI, graphics driver, Android OEM behavior, resolution and active editor/capture work materially change resource use.
 
-The About surface exposes user-initiated destinations for:
+## v0.1.0 public release contract
 
-- official product site: `https://snapvere.com`;
-- support: `info@snapvere.com`;
-- Privacy: `https://snapvere.com/privacy`;
-- Terms: `https://snapvere.com/terms`;
-- developer: `https://brendigo.com`.
+A valid v0.1.0 GitHub Release contains **exactly four public assets**:
 
-Support, Privacy and Terms use the shared localization catalog. If Windows has no registered mail client, the support action falls back to copying `info@snapvere.com` to the local clipboard. About content is scrollable so Windows text scaling does not make the new controls unreachable. The desktop application does not prefetch these destinations.
+```text
+SNAPVERE-Setup.exe
+SNAPVERE-Portable.exe
+SNAPVERE.apk
+SNAPVERE-Android-Source.zip
+```
+
+`SNAPVERE-Setup.exe` and `SNAPVERE-Portable.exe` embed native x86, x64 and ARM64 Windows payloads and select a compatible payload automatically. Windows targets Windows 10 version 1809/build 17763 or later; WGC-dependent paths require Windows 10 version 2004/build 19041 or later.
+
+`SNAPVERE.apk` is the minified/shrunk Android release package. The release workflow only publishes it after ZIP alignment and verification against SNAPVERE's stable Android release signing identity. Required private signing values are GitHub secrets and are never committed. The workflow does **not** replace a missing release key with an ephemeral debug key.
+
+`SNAPVERE-Android-Source.zip` is generated directly from the validated Git `android/` tree. It excludes generated build output, Gradle caches and signing material.
+
+## Automated QA
+
+### Windows
+
+GitHub Actions:
+
+- restores with NuGet audit;
+- builds/tests x64;
+- builds x86 and cross-builds ARM64;
+- validates native payload structure and embedded integrity manifests;
+- captures six real rendered surfaces: Region, Window, Tray, Options, Language and About;
+- compares PR UI against the successful-main baseline;
+- builds universal Setup and Portable;
+- enforces package naming/shape;
+- runs x64/x86 Setup+Portable lifecycle and tray-first probes.
+
+ARM64 evidence on the hosted x64 runner is cross-build/package validation, not physical ARM64 runtime proof.
+
+### Android
+
+Android Actions validates the manifest privacy/service/version contract, SDK/tooling, debug/release lint, JVM tests, debug/release builds, debug APK signing/alignment and SHA-256. The v0.1.0 release workflow additionally verifies the stable release signature, validates the source archive, carries hashes through the Actions artifact transfer, and verifies all four published GitHub digests.
+
+A green Android workflow is automated build/package evidence, not a claim of exhaustive runtime coverage across every physical OEM device.
+
+## Release signing
+
+Public Android v0.1.0 publication requires these repository secrets:
+
+```text
+SNAPVERE_ANDROID_KEYSTORE_BASE64
+SNAPVERE_ANDROID_KEY_ALIAS
+SNAPVERE_ANDROID_KEYSTORE_PASSWORD
+SNAPVERE_ANDROID_KEY_PASSWORD
+```
+
+If any are absent/invalid, the release fails before the immutable tag is created. See [Android documentation](docs/ANDROID.md).
 
 ## Languages
 
-English (`en`) is the canonical default and fallback. The built-in language catalog exposes 28 choices, including Croatian (`hr`). Languages without a dedicated translation for a particular string fall back to canonical English rather than displaying an unknown resource key.
+English is the canonical default/fallback. Windows exposes 28 built-in language choices including Croatian. Android currently provides dedicated English and Croatian resources and follows normal Android fallback for other locales.
 
-Language preference is stored locally in:
+Windows language preference is stored locally in:
 
 ```text
 %LOCALAPPDATA%\SNAPVERE\settings.json
 ```
 
-The localization layer uses static in-process tables only: no translation API, polling service, network dependency or background language worker.
-
-## Options and defaults
-
-Implemented preferences include **Start SNAPVERE with Windows**, **Include cursor on capture**, and **Language**. Windows startup is per-user and launches the same tray-first application without a dashboard window.
-
-## Security posture for v0.0.9
-
-Static review of the current desktop codebase found no WebView/WebView2, HTML renderer, JavaScript execution path or first-party HTTP/socket client. Browser-style XSS is therefore not an applicable runtime surface in this release line. This is not a claim that software can be guaranteed free of every vulnerability.
-
-v0.0.9 hardening includes:
-
-- NuGet audit for direct and transitive dependencies at `low` severity and above;
-- `NU1901`–`NU1904` treated as build failures;
-- GitHub Actions pinned to full commit SHAs in CI/release automation;
-- non-persistent repository credentials for ordinary CI checkout;
-- weekly Dependabot checks for NuGet and GitHub Actions;
-- exact-or-descendant path-boundary validation for protected Setup paths;
-- bounded random staging names for embedded ZIP extraction while retaining traversal and expanded-size protections;
-- architecture-specific embedded SHA-256 manifests for reusable Portable payload-cache verification before execution;
-- invalid/missing/modified/unexpected/reparse-point Portable cache content triggers transactional rebuild and revalidation;
-- Android manifest CI forbids `INTERNET`, cleartext traffic and exported capture service regressions;
-- Android frame/cleanup hardening prevents stuck MediaProjection ownership after timeout or cleanup faults;
-- no telemetry, cloud-upload client, remote command channel or automatic updater in v0.0.9.
-
-SNAPVERE is not represented as a sandbox against arbitrary malicious code already executing as the same Windows user. See [Security Policy](SECURITY.md) and [v0.0.9 security/performance hardening](docs/SECURITY-PERFORMANCE-0.0.9.md).
-
-## Performance and stability
-
-SNAPVERE is designed for low idle overhead and bounded failure behavior:
-
-- tray and global-hotkey hosts block on Win32 message loops rather than periodic application polling;
-- capture/D3D resources are created for capture work instead of remaining resident solely for tray operation;
-- secondary windows are on-demand;
-- recent-capture discovery is bounded and local; v0.0.9 removes a redundant per-file metadata refresh;
-- Portable integrity validation performs one sequential SHA-256 read of cached files rather than re-decompressing the embedded payload merely to validate reuse;
-- Android capture uses bounded handoff/frame waits and releases resources independently when a platform cleanup call fails;
-- no telemetry worker, language network worker, file watcher or idle capture loop is added.
-
-No fixed CPU/RAM percentage is promised because Windows version, DPI, monitor count, graphics drivers, Android OEM behavior and active capture/editor sessions materially affect resource use.
-
-## Universal packaging
-
-The public Windows release contract contains exactly two downloads:
-
-```text
-SNAPVERE-Setup.exe
-SNAPVERE-Portable.exe
-```
-
-Each host embeds native application payloads for x86, x64 and ARM64 and selects a compatible payload automatically. The application target remains Windows 10 version 1809 / build 17763 or later; WGC-dependent capture paths require Windows 10 version 2004 / build 19041 or later.
-
-SNAPVERE intentionally installs no separate uninstaller executable. Windows Installed apps points to the installed `SNAPVERE-Setup.exe --uninstall`; the same Setup binary validates the installation before removal and preserves user screenshots.
-
-## Automated QA
-
-Windows GitHub Actions builds/tests x64 and x86 and cross-builds ARM64. The universal package gate additionally validates all three embedded payloads and integrity manifests, real rendered WinUI surfaces, the exact two-file public package contract, and x64/x86 Setup/Portable lifecycle and tray-first behavior.
-
-The visual-QA pipeline captures Region, Window, Tray, Options, Language and About surfaces. v0.0.9 hardens capture provenance after a hosted runner desktop was discovered in an earlier successful-main Region baseline. Visual regression thresholds are not lowered to hide this issue.
-
-Android GitHub Actions separately validates the privacy/service manifest contract, `lintDebug`, `lintRelease`, `testDebugUnitTest`, debug/release APK builds, APK signing, ZIP alignment and SHA-256 artifact generation. Capture-buffer layout arithmetic has direct JVM unit coverage.
-
-ARM64 Windows validation on the hosted x64 runner is cross-build/package evidence, not a real ARM64 hardware runtime test. A green Android CI is compile/lint/unit/package evidence, not a claim of runtime testing on every physical OEM device.
+No translation API or background language network service is used.
 
 ## Architecture
+
+Windows:
 
 ```text
 Tray / Print Screen / hotkeys
     ↓
 Hidden WinUI runtime coordinator
     ↓
-Snapvere.Application workflows
-    ├── Region / Screen → resilient monitor capture
-    └── Window → geometric picker → WGC CreateForWindow
+Region / Window / Screen workflows
     ↓
 CaptureFrame (physical BGRA8 pixels)
     ↓
-Crop / annotation render / PNG encode
+Crop / annotation / PNG encode
     ↓
-Safe default PNG → optional Save As relocation
-                 └→ Windows Clipboard for Copy
+Local PNG → optional Save As / Clipboard
 ```
 
-Android uses a separate native flow:
+Android:
 
 ```text
 Explicit Capture tap
     ↓
-Android MediaProjection consent
+MediaProjection consent
     ↓
 Foreground mediaProjection service
     ↓
 Activity hidden confirmation
     ↓
-VirtualDisplay + ImageReader + bounded first-frame wait
+VirtualDisplay + ImageReader + bounded frame wait
     ↓
-Stride validation / bitmap conversion
+RGBA stride/buffer validation
     ↓
 MediaStore PNG → Open / Share / Delete
 ```
@@ -194,7 +192,7 @@ MediaStore PNG → Open / Share / Delete
 
 English documentation lives in [`docs/`](docs/) and Croatian documentation in [`docs/hr/`](docs/hr/).
 
-Key documents: [Architecture](docs/ARCHITECTURE.md), [Tray UX](docs/TRAY-UX.md), [Capture engine](docs/CAPTURE-ENGINE.md), [Region Capture](docs/REGION-CAPTURE.md), [Window Capture](docs/WINDOW-CAPTURE.md), [Save location](docs/SAVE-LOCATION.md), [Settings](docs/SETTINGS.md), [Security/performance 0.0.9](docs/SECURITY-PERFORMANCE-0.0.9.md), [Installation](docs/INSTALLATION.md), [Branding](docs/BRANDING.md), [Image pipeline](docs/IMAGE-PIPELINE.md) and [Android application](docs/ANDROID.md).
+Key documents: [Architecture](docs/ARCHITECTURE.md), [Tray UX](docs/TRAY-UX.md), [Capture engine](docs/CAPTURE-ENGINE.md), [Region Capture](docs/REGION-CAPTURE.md), [Window Capture](docs/WINDOW-CAPTURE.md), [Save location](docs/SAVE-LOCATION.md), [Settings](docs/SETTINGS.md), [Installation](docs/INSTALLATION.md), [Android](docs/ANDROID.md), [0.1.0 security/performance](docs/SECURITY-PERFORMANCE-0.1.0.md), [Branding](docs/BRANDING.md), and [Image pipeline](docs/IMAGE-PIPELINE.md).
 
 ## Technology
 
@@ -202,23 +200,23 @@ Key documents: [Architecture](docs/ARCHITECTURE.md), [Tray UX](docs/TRAY-UX.md),
 - WinUI 3 / Windows App SDK 1.8 stable line
 - Windows.Graphics.Capture + Direct3D 11
 - Win32 / DWM / GDI interoperability
-- Java 17 / native Android APIs / MediaProjection / MediaStore
+- Java 17 / Android MediaProjection / MediaStore
 - deterministic builds, nullable/analyzer enforcement and central NuGet management
 - xUnit + JUnit 4 + GitHub Actions
 
 ## Diagnostics
 
-Local Windows startup diagnostics:
+Windows startup diagnostics:
 
 ```text
 %LOCALAPPDATA%\SNAPVERE\Logs\startup.log
 ```
 
-Screenshot pixels are not intentionally written to the startup log.
+Screenshot pixels are not intentionally written to this log.
 
 ## License and ownership
 
-**SNAPVERE 0.0.7 and later are distributed under the SNAPVERE Commercial Software License Agreement included in [`LICENSE`](LICENSE).** SNAPVERE is the product brand. Brendigo is the developer and publisher. The official product website is **snapvere.com** and support is **info@snapvere.com**.
+**SNAPVERE 0.0.7 and later are distributed under the SNAPVERE Commercial Software License Agreement in [`LICENSE`](LICENSE).** SNAPVERE is the product brand. Brendigo is the developer and publisher. Official site: **snapvere.com**. Support: **info@snapvere.com**.
 
 ---
 

@@ -2,46 +2,53 @@
 <resources>
     <string name="app_name">SNAPVERE</string>
     <string name="tagline">Capture fast. Keep it local.</string>
-    <string name="android_local_badge">ANDROID · LOCAL</string>
+    <string name="android_local_badge">ANDROID · PRIVATE · LOCAL</string>
 
     <string name="capture_section">CAPTURE</string>
     <string name="capture_screen">Capture screen</string>
-    <string name="capture_screen_description">Android asks for system screen-capture consent every time. SNAPVERE moves behind your current screen before it creates the image.</string>
-    <string name="capture_consent_note">One tap starts one user-approved capture. No automatic or background recording.</string>
-    <string name="capture_ready">Ready for a local screen capture.</string>
-    <string name="capture_requesting">Waiting for Android screen-capture consent…</string>
-    <string name="capture_in_progress">Capture in progress…</string>
-    <string name="capture_cancelled">Screen capture was cancelled.</string>
-    <string name="capture_background_failed">SNAPVERE could not move behind the screen you want to capture.</string>
-    <string name="capture_saved">Saved to Pictures/SNAPVERE: %1$s</string>
-    <string name="capture_failed">Screen capture failed: %1$s</string>
-    <string name="capture_receiver_failed">Android could not attach the local capture-status listener. Capture remains local; reopen SNAPVERE after the capture to refresh its status.</string>
-    <string name="unknown_error">Unknown error</string>
+    <string name="capture_screen_description">Tap once, approve Android’s system prompt, and SNAPVERE captures the screen behind the app. The PNG is saved directly to this device.</string>
+    <string name="capture_consent_note">Every capture requires fresh Android system consent. SNAPVERE never records continuously or starts capture in the background.</string>
+    <string name="capture_ready">Ready for a private local capture.</string>
+    <string name="capture_requesting">Waiting for Android screen-capture approval…</string>
+    <string name="capture_in_progress">Capturing and saving locally…</string>
+    <string name="capture_cancelled">Screen capture cancelled.</string>
+    <string name="capture_background_failed">SNAPVERE could not move behind the screen you want to capture. Please try again.</string>
+    <string name="capture_saved">Saved locally: %1$s</string>
+    <string name="capture_failed">Capture failed: %1$s</string>
+    <string name="capture_receiver_failed">Android could not attach the local status listener. Your capture still remains local; reopen SNAPVERE to refresh the result.</string>
+    <string name="capture_error_permission">Android did not provide a valid capture approval. Please start the capture again.</string>
+    <string name="capture_error_service_unavailable">Android could not start the screen-capture service. Please try again.</string>
+    <string name="capture_error_stopped">Android ended the capture before the image was saved.</string>
+    <string name="capture_error_hidden">SNAPVERE could not move fully behind the screen in time. Please try again.</string>
+    <string name="capture_error_frame_timeout">Android did not provide a screen frame in time. Please try again.</string>
+    <string name="capture_error_frame">Android returned an invalid or unavailable screen frame. Please try again.</string>
+    <string name="capture_error_save">Android could not save the PNG to Pictures/SNAPVERE.</string>
+    <string name="unknown_error">Unexpected Android error</string>
 
     <string name="latest_section">LATEST CAPTURE</string>
     <string name="latest_empty">No capture yet</string>
-    <string name="latest_empty_description">Your next PNG will appear here after Android finishes the capture.</string>
-    <string name="latest_location">Pictures/SNAPVERE · PNG</string>
+    <string name="latest_empty_description">Your latest SNAPVERE PNG will appear here after Android finishes saving it.</string>
+    <string name="latest_location">Pictures/SNAPVERE · local PNG</string>
     <string name="open_latest">Open</string>
     <string name="share_latest">Share</string>
     <string name="delete_latest">Delete</string>
-    <string name="no_capture">No SNAPVERE capture has been created yet.</string>
+    <string name="no_capture">There is no readable SNAPVERE capture on this device yet.</string>
     <string name="open_failed">Android could not open the saved capture.</string>
     <string name="share_failed">Android could not share the saved capture.</string>
     <string name="delete_capture_title">Delete latest capture?</string>
-    <string name="delete_capture_message">This removes the PNG from Pictures/SNAPVERE on this device.</string>
+    <string name="delete_capture_message">This permanently removes the PNG from Pictures/SNAPVERE on this device.</string>
     <string name="delete_capture_confirm">Delete</string>
     <string name="delete_capture_cancel">Cancel</string>
     <string name="delete_capture_done">Latest capture deleted.</string>
     <string name="delete_capture_failed">Android could not delete the latest capture.</string>
 
     <string name="privacy_section">PRIVATE BY DESIGN</string>
-    <string name="local_first">Local-first capture</string>
-    <string name="local_first_description">Screenshots stay on this device. SNAPVERE has no account, cloud upload, analytics, telemetry or INTERNET permission.</string>
-    <string name="privacy_note">SNAPVERE never starts screen capture in the background. Each capture requires Android system consent.</string>
+    <string name="local_first">Local-first by default</string>
+    <string name="local_first_description">Screenshots stay on this device. SNAPVERE has no account, cloud upload, analytics, telemetry, advertising SDK, or INTERNET permission.</string>
+    <string name="privacy_note">Sharing happens only after you explicitly tap Share and choose an Android target.</string>
 
     <string name="about_section">SNAPVERE FOR ANDROID</string>
-    <string name="about_description">Native Android screen capture with a focused dark interface, local MediaStore saving and explicit user-controlled sharing.</string>
+    <string name="about_description">A focused native Android capture app with local MediaStore saving, explicit sharing, large touch targets, and no background tracking.</string>
     <string name="website">Website</string>
     <string name="support">Support</string>
     <string name="privacy_policy">Privacy</string>
@@ -52,6 +59,6 @@
     <string name="version_format">Version %1$s · Android 10+</string>
 
     <string name="notification_channel_name">Screen capture</string>
-    <string name="notification_channel_description">Visible only while SNAPVERE completes a user-approved screen capture.</string>
-    <string name="notification_capturing">Capturing screen…</string>
+    <string name="notification_channel_description">Visible only while SNAPVERE completes a capture you explicitly approved.</string>
+    <string name="notification_capturing">Capturing and saving locally…</string>
 </resources>

@@ -715,9 +715,9 @@ public final class MainActivity extends ComponentActivity {
     private String resolveVersionName() {
         try {
             String value = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
-            return value == null || value.isBlank() ? "0.0.9" : value;
+            return value == null || value.isBlank() ? "0.1.0" : value;
         } catch (PackageManager.NameNotFoundException exception) {
-            return "0.0.9";
+            return "0.1.0";
         }
     }
 

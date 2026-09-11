@@ -2,6 +2,51 @@
 
 All notable SNAPVERE changes are documented here. Published release tags and assets are immutable; later documentation may clarify evidence boundaries but does not rewrite historical binaries.
 
+## [0.1.0] - 2026-09-11
+
+### Unified Windows + Android release
+
+- Introduces the first SNAPVERE release contract containing Windows Setup, Windows Portable, a public Android APK and an Android source archive together.
+- Public v0.1.0 assets are exactly `SNAPVERE-Setup.exe`, `SNAPVERE-Portable.exe`, `SNAPVERE.apk` and `SNAPVERE-Android-Source.zip`.
+- Windows Setup/Portable remain universal hosts with x86, x64 and ARM64 native application payloads.
+- Android moves to versionName `0.1.0` / versionCode `10`.
+
+### Android stability and correctness
+
+- Foreground-service notification initialization failure is contained and returned as a controlled capture failure instead of intentionally escaping service creation.
+- Handler scheduling for task-hide and first-frame work is checked so a dead/rejected capture thread cannot leave a session stuck indefinitely.
+- Five-second Activity-hide and seven-second first-frame bounds remain unchanged.
+- Capture teardown is owner-aware: stale service teardown cannot clear global capture ownership belonging to another active owner.
+- Image conversion now rewinds the ImageReader ByteBuffer and validates available bytes before bitmap copy.
+- `RGBA_8888` input requires the expected 4-byte pixel stride and complete-pixel row padding; invalid OEM/provider layouts fail cleanly instead of risking corrupt copy semantics.
+- Image/Bitmap release ordering is tightened so the acquired Image is closed before final success/failure cleanup completes.
+- Conversion/provider and allocation failures are contained by the capture session recovery path.
+- User-facing capture recovery errors are localized in English and Croatian instead of exposing raw provider exception messages.
+- `CaptureBufferLayoutTest` adds regression coverage for unexpected pixel stride and partial-pixel row padding.
+
+### Windows reliability
+
+- Local preferences now contain filesystem policy/`SecurityException` failures while loading and best-effort temp cleanup.
+- Recent capture discovery also contains filesystem security-policy failures and preserves any valid metadata already collected.
+- Temporary PNG cleanup cannot replace the original capture failure when a security policy prevents deleting the staging file.
+- Existing v0.0.9 tray protocol, package-integrity and lifecycle hardening remains in place.
+
+### Android CI and public signing
+
+- Android CI validates 0.1.0 versionCode/versionName in addition to the privacy/service manifest contract.
+- CI continues `lintDebug`, `lintRelease`, JVM tests and debug/release builds; the debug APK remains an internal development artifact.
+- Public `SNAPVERE.apk` is generated from the minified release variant and requires SNAPVERE's stable private Android signing identity.
+- Release signing uses repository secrets and fails closed when signing material is absent/invalid; the workflow never substitutes an ephemeral debug identity.
+- The Android source ZIP is created with `git archive` from the exact validated release commit and structurally checked for expected source files and absence of generated build/cache content.
+
+### v0.1.0 release automation
+
+- A separate Android release job validates the manifest, lints/tests/builds, ZIP-aligns, release-signs and verifies `SNAPVERE.apk`, generates `SNAPVERE-Android-Source.zip` and records transfer SHA-256 values.
+- The Windows release job depends on successful Android validation, then re-runs audited Windows builds/tests, architecture payload integrity, rendered UI QA and x64/x86 Setup+Portable lifecycle/tray-first checks.
+- Android assets are re-hashed after Actions artifact transfer before being admitted into the final release directory.
+- The exact four-file public contract is enforced before the immutable tag is created.
+- Post-publication verification checks exact asset names and compares GitHub's published SHA-256 digest for every asset with the locally validated value.
+
 ## [0.0.9] - 2026-09-11
 
 ### Windows capture, save and UX
@@ -9,7 +54,7 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 - Region, Window and Full Screen capture can open the native Windows **Save As** picker after a PNG is safely created in the default SNAPVERE capture location.
 - Save relocation uses asynchronous copy, destination-local staging, atomic replacement, PNG-only destination validation and Windows file-identity checks; cancellation preserves the already-completed PNG.
 - About exposes the official SNAPVERE site, `info@snapvere.com`, Privacy, Terms and Brendigo destinations. Support falls back to copying the address when Windows has no mail client.
-- The native notification-area host now negotiates `NOTIFYICON_VERSION_4` after every icon add/re-add, preserves the tooltip through `NIF_SHOWTIP`, decodes the version-4 low-word callback event and supports keyboard select/context-menu activation.
+- The native notification-area host negotiates `NOTIFYICON_VERSION_4` after every icon add/re-add, preserves the tooltip through `NIF_SHOWTIP`, decodes the version-4 low-word callback event and supports keyboard select/context-menu activation.
 - Region Capture remains Print Screen / `Ctrl+Shift+1`, Window Capture `Ctrl+Shift+2`, and Screen Capture `Ctrl+Shift+3`. Scrolling Capture does not reserve a shortcut until implemented.
 
 ### Windows package security and reliability
@@ -25,16 +70,16 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 ### Android application
 
 - Android 10+ native full-screen capture remains based on explicit, fresh MediaProjection consent for every capture; consent tokens are not cached or reused.
-- A five-second Activity-hide guard and new seven-second first-frame guard bound capture ownership so a stalled VirtualDisplay/ImageReader path cannot leave the foreground service or capture lock active indefinitely.
+- A five-second Activity-hide guard and seven-second first-frame guard bound capture ownership so a stalled VirtualDisplay/ImageReader path cannot leave the foreground service or capture lock active indefinitely.
 - MediaProjection, VirtualDisplay, ImageReader, acquired Image, callbacks and HandlerThread cleanup is exception-safe per resource and idempotent.
 - `ImageReader.acquireLatestImage()` and MediaStore cleanup paths are guarded against framework/provider runtime failures.
 - `CaptureBufferLayout` validates capture width, pixel stride, row stride and integer arithmetic before padded-bitmap allocation; JVM unit tests cover tight, padded, invalid and overflow cases.
-- Capture, Open, Share, Delete, Website, Support, Privacy and Terms actions now contain controlled error paths instead of allowing system/provider/intent failures to terminate the Activity.
+- Capture, Open, Share, Delete, Website, Support, Privacy and Terms actions contain controlled error paths instead of allowing system/provider/intent failures to terminate the Activity.
 - Latest-capture actions revalidate the MediaStore URI and clear stale local metadata when the image no longer exists.
 - Paired actions stack vertically on narrow screens or at 1.25x+ font scale; buttons retain at least 52 dp touch height; system insets and scrolling remain supported.
 - OEM `forceDark` is disabled because SNAPVERE already supplies a deliberate dark palette.
 - English and Croatian recovery/status resources are updated together.
-- The Android manifest still contains no `INTERNET` permission, cleartext remains disabled, backup remains disabled and the MediaProjection service remains non-exported.
+- The Android manifest contains no `INTERNET` permission, cleartext remains disabled, backup remains disabled and the MediaProjection service remains non-exported.
 
 ### Android CI and evidence
 
@@ -52,16 +97,7 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 - The v0.0.9 release workflow builds/validates x86, x64 and ARM64 payloads plus integrity manifests, produces exactly two universal public Windows executables, runs x64/x86 Setup+Portable lifecycle/tray-first checks, creates an immutable tag and verifies published GitHub asset SHA-256 digests.
 - The first v0.0.9 publication attempt stopped before publication because missing-tag detection relied on PowerShell exception behavior while `gh api` returned a nonzero HTTP 404 result instead. No v0.0.9 GitHub Release was published by that attempt.
-- Tag lookup is now fail-closed: only an actual HTTP 404 means “tag absent”; other API failures abort. Annotated-tag resolution, tag-object creation and tag-ref creation each require successful exit codes and usable SHAs.
-
-### Public Windows release contract
-
-Exactly two public Windows downloads are permitted:
-
-- `SNAPVERE-Setup.exe`
-- `SNAPVERE-Portable.exe`
-
-Each embeds x86, x64 and ARM64 native application payloads and selects a compatible payload at runtime. Android CI artifacts remain separate from this exact two-file Windows GitHub Release contract.
+- Tag lookup was corrected fail-closed before the successful release.
 
 ## [0.0.8] - 2026-09-10
 

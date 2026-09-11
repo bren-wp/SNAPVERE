@@ -99,7 +99,7 @@ public sealed class CapturePreferencesService
             };
         }
         catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException or JsonException)
+            exception is IOException or UnauthorizedAccessException or System.Security.SecurityException or JsonException)
         {
             return new CapturePreferences();
         }
@@ -130,7 +130,8 @@ public sealed class CapturePreferencesService
                     File.Delete(temporaryPath);
                 }
             }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            catch (Exception exception) when (
+                exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
             {
             }
         }

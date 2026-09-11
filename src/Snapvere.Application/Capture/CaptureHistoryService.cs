@@ -73,10 +73,11 @@ public sealed class CaptureHistoryService
             }
         }
         catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException or DirectoryNotFoundException)
+            exception is IOException or UnauthorizedAccessException or DirectoryNotFoundException or System.Security.SecurityException)
         {
-            // The Pictures directory may disappear or become unavailable while
-            // it is being enumerated. Preserve any metadata already collected.
+            // The Pictures directory may disappear, become unavailable or be
+            // blocked by policy while it is being enumerated. Preserve any
+            // metadata already collected instead of taking down the UI.
         }
 
         return newest.UnorderedItems
@@ -120,12 +121,8 @@ public sealed class CaptureHistoryService
                 file.Length);
             return true;
         }
-        catch (IOException)
-        {
-            item = null!;
-            return false;
-        }
-        catch (UnauthorizedAccessException)
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
         {
             item = null!;
             return false;
