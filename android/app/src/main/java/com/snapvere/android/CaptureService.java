@@ -28,6 +28,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.view.WindowManager;
@@ -53,16 +54,20 @@ public final class CaptureService extends Service {
 
     private static final String CHANNEL_ID = "snapvere_capture";
     private static final int NOTIFICATION_ID = 42;
-    private static final long CAPTURE_SETTLE_DELAY_MS = 300L;
+    private static final long TASK_HIDE_TIMEOUT_MS = 5000L;
     private static final String PREFS = "snapvere_android";
     private static final String PREF_LATEST_URI = "latest_capture_uri";
     private static final String PREF_LATEST_NAME = "latest_capture_name";
     private static final AtomicBoolean CAPTURE_ACTIVE = new AtomicBoolean();
+    private static final AtomicBoolean APP_TASK_HIDDEN = new AtomicBoolean();
+    private static volatile CaptureService activeService;
     private static volatile String lastError;
 
     private final AtomicBoolean completed = new AtomicBoolean();
+    private final AtomicBoolean captureStarted = new AtomicBoolean();
     private HandlerThread captureThread;
     private Handler captureHandler;
+    private Runnable taskHideTimeout;
     private MediaProjection mediaProjection;
     private MediaProjection.Callback projectionCallback;
     private VirtualDisplay virtualDisplay;
@@ -78,6 +83,22 @@ public final class CaptureService extends Service {
 
     public static void clearLastError() {
         lastError = null;
+    }
+
+    public static void prepareForCaptureHandoff() {
+        APP_TASK_HIDDEN.set(false);
+    }
+
+    public static void cancelCaptureHandoff() {
+        APP_TASK_HIDDEN.set(false);
+    }
+
+    public static void notifyAppTaskHidden() {
+        APP_TASK_HIDDEN.set(true);
+        CaptureService service = activeService;
+        if (service != null) {
+            service.onAppTaskHidden();
+        }
     }
 
     @Override
@@ -99,7 +120,9 @@ public final class CaptureService extends Service {
             return START_NOT_STICKY;
         }
 
+        activeService = this;
         completed.set(false);
+        captureStarted.set(false);
         lastError = null;
 
         try {
@@ -124,11 +147,10 @@ public final class CaptureService extends Service {
 
     @Override
     public void onDestroy() {
-        if (CAPTURE_ACTIVE.get() && !completed.get()) {
+        if (CAPTURE_ACTIVE.get() && completed.compareAndSet(false, true)) {
             lastError = "Android stopped the capture service before the image was completed.";
         }
-        cleanupCapture(true);
-        CAPTURE_ACTIVE.set(false);
+        cleanupAfterDestroy();
         super.onDestroy();
     }
 
@@ -159,19 +181,50 @@ public final class CaptureService extends Service {
         };
         mediaProjection.registerCallback(projectionCallback, captureHandler);
 
-        // MainActivity moves its task behind the previously visible task as soon
-        // as consent returns. This one-shot delay gives that transition a frame
-        // to settle before VirtualDisplay starts; there is no polling or timer loop.
-        captureHandler.postDelayed(() -> {
-            if (completed.get()) {
-                return;
+        // MainActivity starts this foreground service while it is still visible,
+        // then moves its task behind the previously visible task. Capture starts
+        // only after MainActivity.onStop() confirms that SNAPVERE is no longer
+        // visible; the timeout is failure protection, not a transition delay.
+        taskHideTimeout = () -> {
+            if (!completed.get() && !captureStarted.get()) {
+                failCapture("SNAPVERE did not become fully hidden before capture could start.");
             }
-            try {
-                beginVirtualDisplayCapture();
-            } catch (RuntimeException exception) {
-                failCapture(messageOf(exception));
-            }
-        }, CAPTURE_SETTLE_DELAY_MS);
+        };
+        captureHandler.postDelayed(taskHideTimeout, TASK_HIDE_TIMEOUT_MS);
+
+        if (APP_TASK_HIDDEN.get()) {
+            onAppTaskHidden();
+        }
+    }
+
+    private void onAppTaskHidden() {
+        Handler handler = captureHandler;
+        if (handler == null || completed.get()) {
+            return;
+        }
+        handler.post(this::beginCaptureAfterTaskHidden);
+    }
+
+    private void beginCaptureAfterTaskHidden() {
+        if (completed.get() || !APP_TASK_HIDDEN.get() || !captureStarted.compareAndSet(false, true)) {
+            return;
+        }
+
+        cancelTaskHideTimeout();
+        try {
+            beginVirtualDisplayCapture();
+        } catch (RuntimeException exception) {
+            failCapture(messageOf(exception));
+        }
+    }
+
+    private void cancelTaskHideTimeout() {
+        Handler handler = captureHandler;
+        Runnable timeout = taskHideTimeout;
+        if (handler != null && timeout != null) {
+            handler.removeCallbacks(timeout);
+        }
+        taskHideTimeout = null;
     }
 
     private void beginVirtualDisplayCapture() {
@@ -304,7 +357,7 @@ public final class CaptureService extends Service {
         sendBroadcast(result);
 
         cleanupCapture(true);
-        CAPTURE_ACTIVE.set(false);
+        releaseCaptureOwnership();
         stopForeground(STOP_FOREGROUND_REMOVE);
         stopSelf();
     }
@@ -321,12 +374,29 @@ public final class CaptureService extends Service {
         sendBroadcast(result);
 
         cleanupCapture(true);
-        CAPTURE_ACTIVE.set(false);
+        releaseCaptureOwnership();
         stopForeground(STOP_FOREGROUND_REMOVE);
         stopSelf();
     }
 
+    private void cleanupAfterDestroy() {
+        Handler handler = captureHandler;
+        if (handler != null && Looper.myLooper() != handler.getLooper()) {
+            boolean posted = handler.post(() -> {
+                cleanupCapture(true);
+                releaseCaptureOwnership();
+            });
+            if (posted) {
+                return;
+            }
+        }
+
+        cleanupCapture(true);
+        releaseCaptureOwnership();
+    }
+
     private void cleanupCapture(boolean stopProjection) {
+        cancelTaskHideTimeout();
         if (captureHandler != null) {
             captureHandler.removeCallbacksAndMessages(null);
         }
@@ -354,6 +424,14 @@ public final class CaptureService extends Service {
             captureThread.quitSafely();
             captureThread = null;
         }
+    }
+
+    private void releaseCaptureOwnership() {
+        if (activeService == this) {
+            activeService = null;
+            APP_TASK_HIDDEN.set(false);
+        }
+        CAPTURE_ACTIVE.set(false);
     }
 
     @SuppressLint("deprecation") // Android 10 fallback; API 30+ uses WindowMetrics above.
