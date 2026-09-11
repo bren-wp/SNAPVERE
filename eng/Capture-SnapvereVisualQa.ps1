@@ -328,6 +328,17 @@ function Invoke-SingleSurfaceProbe {
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
     try {
+        $markerPath = Get-ProbeMarkerPath -FileName $MarkerFileName
+        while (-not $process.HasExited -and $stopwatch.ElapsedMilliseconds -lt 10000 -and -not (Test-Path -LiteralPath $markerPath -PathType Leaf)) {
+            Start-Sleep -Milliseconds 10
+        }
+
+        if (-not (Test-Path -LiteralPath $markerPath -PathType Leaf)) {
+            throw "SNAPVERE render-ready marker '$MarkerFileName' was not created before capture."
+        }
+
+        Assert-ProbeMarker -FileName $MarkerFileName -ExpectedState $ExpectedMarkerState
+
         while (-not $process.HasExited -and $stopwatch.ElapsedMilliseconds -lt 12000) {
             $window = Get-CapturableWindows -Process $process |
                 Sort-Object { $_.Width * $_.Height } -Descending |

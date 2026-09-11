@@ -480,11 +480,19 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         try
         {
-            await Task.Delay(250);
+            if (sender is not FrameworkElement root)
+            {
+                throw new InvalidOperationException("Region overlay probe could not resolve its rendered root.");
+            }
+
+            await WaitForProbeVisualReadyAsync(root);
             WriteProbeMarker(
                 RegionOverlayProbeMarkerFileName,
                 "REGION_OVERLAY_READY",
-                "Region overlay probe loaded editor surface.");
+                "Region overlay probe rendered frozen editor surface.",
+                exitProcess: false);
+            await Task.Delay(1200);
+            Environment.Exit(0);
         }
         catch (Exception exception)
         {
@@ -497,11 +505,19 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         try
         {
-            await Task.Delay(250);
+            if (sender is not FrameworkElement root)
+            {
+                throw new InvalidOperationException("Window overlay probe could not resolve its rendered root.");
+            }
+
+            await WaitForProbeVisualReadyAsync(root);
             WriteProbeMarker(
                 WindowOverlayProbeMarkerFileName,
                 "WINDOW_OVERLAY_READY",
-                "Window overlay probe loaded target-selection surface.");
+                "Window overlay probe rendered frozen target-selection surface.",
+                exitProcess: false);
+            await Task.Delay(1200);
+            Environment.Exit(0);
         }
         catch (Exception exception)
         {
@@ -510,7 +526,49 @@ public partial class App : Microsoft.UI.Xaml.Application
         }
     }
 
-    private static void WriteProbeMarker(string fileName, string state, string logMessage)
+    private static async Task WaitForProbeVisualReadyAsync(FrameworkElement root)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        while (stopwatch.ElapsedMilliseconds < 5000)
+        {
+            if (HasReadyProbeImage(root))
+            {
+                // Let one compositor frame pass after the frozen bitmap becomes
+                // observable in the visual tree before external QA reads it.
+                await Task.Delay(50);
+                return;
+            }
+
+            await Task.Delay(20);
+        }
+
+        throw new TimeoutException("SNAPVERE probe surface did not publish its frozen image within 5 seconds.");
+    }
+
+    private static bool HasReadyProbeImage(DependencyObject node)
+    {
+        if (node is Microsoft.UI.Xaml.Controls.Image { Source: not null })
+        {
+            return true;
+        }
+
+        var childCount = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(node);
+        for (var index = 0; index < childCount; index++)
+        {
+            if (HasReadyProbeImage(Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(node, index)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void WriteProbeMarker(
+        string fileName,
+        string state,
+        string logMessage,
+        bool exitProcess = true)
     {
         var probeDirectory = Path.Combine(Path.GetTempPath(), "SNAPVERE");
         Directory.CreateDirectory(probeDirectory);
@@ -521,7 +579,10 @@ public partial class App : Microsoft.UI.Xaml.Application
             $"SNAPVERE {version} {state} | PID={Environment.ProcessId} | ARCH={RuntimeInformation.ProcessArchitecture} | {DateTimeOffset.UtcNow:O}");
 
         StartupDiagnostics.WriteLine($"{logMessage} Marker={markerPath}");
-        Environment.Exit(0);
+        if (exitProcess)
+        {
+            Environment.Exit(0);
+        }
     }
 
     private void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
