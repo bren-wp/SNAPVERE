@@ -22,27 +22,45 @@ Podržana osnova:
 6. SNAPVERE poziva `moveTaskToBack(true)`.
 7. `MainActivity.onStop()` potvrđuje da SNAPVERE više nije vidljiv.
 8. Tek tada servis stvara VirtualDisplay i ImageReader.
-9. Prvi dovršeni frame pretvara se iz RGBA image plane podataka u obrezani ARGB bitmap i sprema kao PNG kroz MediaStore.
+9. Prvi dovršeni frame se validira, pretvara iz RGBA image plane podataka u obrezani ARGB bitmap i sprema kao PNG kroz MediaStore.
 10. URI i naziv zadnje snimke čuvaju se u privatnom SharedPreferences spremištu radi Open/Share/Delete radnji.
 11. Projection/display/reader/thread resursi se oslobađaju i foreground service se zaustavlja.
 
-Ograničeni timeout od pet sekundi služi samo kao zaštita od greške. Nikad sam ne pokreće snimanje.
+Ograničeni timeout od pet sekundi sprječava da handoff ostane beskonačno aktivan. Nakon stvaranja VirtualDisplaya zaseban timeout od sedam sekundi za isporuku framea sprječava da zastoj ImageReadera ili drivera ostavi foreground service i globalni capture lock aktivnima. Nijedan timeout ne pokreće novu snimku niti zaobilazi Android dopuštenje.
+
+Android 14+ zahtijeva novo korisničko dopuštenje za svaku MediaProjection capture sesiju i jedan `createVirtualDisplay()` poziv po MediaProjection instanci. SNAPVERE ne cacheira niti ponovno koristi consent token; svaka snimka dobiva novu projection instancu. Registriran je i `MediaProjection.Callback.onStop()` za kontrolirano oslobađanje resursa kada Android prekine projekciju.
 
 ## Konkurentnost i gašenje resursa
 
 `CaptureService` koristi procesni single-active-capture guard. Drugi slučajni start ne može preklopiti postojeću MediaProjection sesiju.
 
-Servis koristi atomsko stanje dovršetka i početka snimanja. Ako Android uništi servis dok capture work još traje, cleanup se po mogućnosti serializira kroz capture handler. Vlasništvo sesije oslobađa se tek nakon cleanupa kako nova sesija ne bi preklopila gašenje prethodne.
+Servis koristi atomsko stanje dovršetka i početka snimanja. Cleanup je idempotentan, a svaki platformski resurs oslobađa se neovisno. Ako vendor/API cleanup poziv baci iznimku, čišćenje preostalih resursa i globalnog capture ownershipa ipak se nastavlja. Neočekivano uništenje servisa bilježi i best-effort šalje lokalni status pogreške.
 
-Deterministički se oslobađaju:
+Deterministički se obrađuju:
 
+- task-hide i frame-delivery timeout callbackovi
 - MediaProjection callback
 - MediaProjection
 - VirtualDisplay
-- ImageReader
+- ImageReader i dohvaćeni Image
 - handler callbackovi
 - HandlerThread
 - foreground notification/service ownership
+- procesni capture ownership
+
+`ImageReader.acquireLatestImage()` je zaštićen jer Android može baciti iznimku pri iscrpljenom redu ili određenim producer/format mismatch slučajevima. Svaka uspješno dohvaćena slika zatvara se i kada konverzija ili spremanje ne uspije.
+
+## Validacija capture buffera
+
+Prije alokacije padded bitmapa SNAPVERE provjerava:
+
+- da je vidljiva širina pozitivna;
+- da je pixel stride pozitivan;
+- da row stride sadrži najmanje potreban broj bajtova za vidljivi red;
+- da aritmetika vidljivog reda ne prelijeva `int`;
+- da izračun padded širine ne prelijeva.
+
+Čisti `CaptureBufferLayout` helper pokriven je JVM unit testovima za tight row, padded row, neispravne dimenzije/stride i overflow slučajeve.
 
 ## Spremanje
 
@@ -52,15 +70,13 @@ Snimke se kroz Android MediaStore spremaju kao `image/png` u:
 Pictures/SNAPVERE
 ```
 
-Aplikacija ne traži široka storage dopuštenja. Provjerava se završetak MediaStore pending stanja; ako finalizacija ne uspije, nepotpuna stavka se briše.
+Aplikacija ne traži široka storage dopuštenja. Provjerava se završetak MediaStore pending stanja; ako finalizacija ne uspije, brisanje nepotpune stavke je best-effort i ne smije sakriti izvornu grešku spremanja.
 
-UI zadnje snimke provjerava je li spremljeni URI još čitljiv prije nego omogući Open, Share ili Delete. Zastarjeli URI uklanja se iz privatnih postavki umjesto da ostanu neispravni gumbi.
+UI zadnje snimke provjerava je li spremljeni URI još čitljiv prije nego omogući Otvori, Podijeli ili Izbriši. Zastarjeli URI uklanja se iz privatnih postavki. MediaStore/provider pogreške prikazuju se korisniku umjesto da ruše proces.
 
-## Tamni dizajn sustav
+## Tamni dizajn i responzivni UI
 
-Android distribucija sada dijeli ključnu SNAPVERE dark paletu s Windows distribucijom umjesto zasebnog vizualnog identiteta. Canonical desktop tokeni definirani su u `src/Snapvere.App/App.xaml`, a Android ih preslikava u `android/app/src/main/res/values/colors.xml`.
-
-Zajednički ključni tokeni:
+Android distribucija dijeli ključnu SNAPVERE dark paletu s Windows distribucijom. Canonical desktop tokeni definirani su u `src/Snapvere.App/App.xaml`, a Android ih preslikava u `android/app/src/main/res/values/colors.xml`.
 
 | Token | Vrijednost |
 | --- | --- |
@@ -74,11 +90,11 @@ Zajednički ključni tokeni:
 | Primarni accent | `#7C6CFF` |
 | Success | `#45D6A2` |
 
-Android-specific strong-border, strong-accent, warning i destructive tokeni nadograđuju tu osnovu bez mijenjanja zajedničkog identiteta proizvoda.
+OEM `forceDark` je izričito isključen kako sustav ne bi ponovno transformirao već dizajniranu tamnu paletu.
 
-`MainActivity` koristi resource tokene umjesto hardkodirane nepovezane palete. UI hijerarhija:
+UI hijerarhija:
 
-- zaglavlje s SNAPVERE ikonom, taglineom i Android/local bedžom
+- zaglavlje sa SNAPVERE ikonom, taglineom i Android/local bedžom
 - naglašena Capture kartica
 - accessibility-aware status površina
 - Latest Capture kartica s validiranim Otvori / Podijeli / Izbriši radnjama
@@ -86,46 +102,32 @@ Android-specific strong-border, strong-accent, warning i destructive tokeni nado
 - About/support/legal kartica
 - footer s verzijom i platformom
 
-Stranica je vertikalno pomična i poštuje system-bar insete. Telefoni koriste kompaktniji horizontalni razmak, a tablet-class layout koristi 48 dp horizontalnog paddinga. Interaktivni gumbi imaju minimalnu visinu 52 dp, nativni ripple feedback i eksplicitno disabled stanje bez dodavanja teškog UI frameworka.
+Stranica je vertikalno pomična i poštuje system-bar insete. Telefoni koriste kompaktniji horizontalni razmak, a tablet layout 48 dp horizontalnog paddinga. Parovi akcijskih gumba automatski se slažu vertikalno na uskim ekranima ili kada je Android font scale 1,25x ili veći, čime se izbjegavaju odrezani natpisi i premali touch targeti. Gumbi zadržavaju minimalnu visinu 52 dp, ripple feedback i jasno disabled stanje.
 
-## Radnje nad zadnjom snimkom
+## Pouzdanost svih akcija
 
-### Otvori
+- **Snimi zaslon** obrađuje nedostupan MediaProjection servis i launcher failure bez trajno onemogućenog gumba.
+- **Otvori** i **Podijeli** ponovno validiraju MediaStore URI neposredno prije predaje Androidu.
+- **Izbriši** prvo traži potvrdu, podnosi stale/provider pogreške i ne ruši aplikaciju zbog neispravnog URI-ja.
+- **Web**, **Privatnost** i **Uvjeti** delegiraju se vanjskom pregledniku i prikazuju lokalnu pogrešku ako handler nije dostupan.
+- **Podrška** prvo pokušava `mailto:`, zatim kopira `info@snapvere.com`; ako ni clipboard nije dostupan, prikazuje se kontrolirana lokalna pogreška.
+- Registracija i odjava lokalnog capture status receivera zaštićene su od lifecycle rubnih slučajeva.
 
-MediaStore URI predaje se Android pregledniku slika putem `ACTION_VIEW` uz privremeno read dopuštenje.
-
-### Podijeli
-
-PNG se predaje Android share sheetu putem `ACTION_SEND` uz privremeno read dopuštenje. Dijeljenje uvijek pokreće korisnik.
-
-### Izbriši
-
-Prikazuje se nativni dijalog za potvrdu. Aplikacija briše samo spremljeni URI zadnje SNAPVERE snimke. Ako URI više ne postoji, zastarjela lokalna referenca se čisti.
-
-## Web, podrška i pravne poveznice
-
-Odredišta se otvaraju samo nakon korisničke radnje:
-
-- web: `https://snapvere.com`
-- podrška: `mailto:info@snapvere.com`
-- privatnost: `https://snapvere.com/privacy`
-- uvjeti: `https://snapvere.com/terms`
-
-Aplikacija ih ne dohvaća unaprijed i nema `INTERNET` dopuštenje. Android HTTP(S) poveznice predaje vanjskom pregledniku. Ako nema mail aplikacije za `mailto:`, adresa podrške kopira se u lokalni međuspremnik i korisniku se prikazuje vidljiva poruka.
+Nijedna od ovih radnji ne dodaje `INTERNET` dopuštenje niti first-party mrežni klijent. Vanjski URL otvara se samo nakon izričite korisničke radnje.
 
 ## Lokalizacija
 
-Engleski je zadani resource set. Hrvatski je dostupan u `values-hr`. Android koristi standardni fallback kada uređaj koristi drugi locale.
+Engleski je zadani resource set. Hrvatski je dostupan u `values-hr`. Novi statusi i recovery poruke održavaju se u oba skupa resursa. Android koristi standardni fallback za druge locale.
 
 ## Sigurnosni ugovor manifesta
 
 CI pada ako Android manifest dobije `android.permission.INTERNET`. CI dodatno provjerava:
 
-- deklaraciju `FOREGROUND_SERVICE_MEDIA_PROJECTION`
-- da `CaptureService` ostaje `android:exported="false"`
-- da `CaptureService` ostaje `android:foregroundServiceType="mediaProjection"`
-- da je cleartext promet onemogućen
-- da je app backup onemogućen
+- deklaraciju `FOREGROUND_SERVICE_MEDIA_PROJECTION`;
+- da `CaptureService` ostaje `android:exported="false"`;
+- da `CaptureService` ostaje `android:foregroundServiceType="mediaProjection"`;
+- da je cleartext promet onemogućen;
+- da je app backup onemogućen.
 
 U ovom Android milestoneu nema telemetrije, analytics SDK-a, oglasnog SDK-a, cloud upload klijenta, WebViewa ni remote-command kanala.
 
@@ -133,15 +135,17 @@ U ovom Android milestoneu nema telemetrije, analytics SDK-a, oglasnog SDK-a, clo
 
 `.github/workflows/android-ci.yml` je izvor istine za build. Za svaki Android PR i Android promjenu na `main` CI:
 
-1. provjerava manifest privacy/service ugovor
-2. postavlja JDK 17 i Gradle 8.11.1
-3. provjerava Android SDK 36 / Build Tools 35.0.0
-4. pokreće `clean lintDebug assembleDebug assembleRelease`
-5. lint warninge tretira kao greške
-6. provjerava debug APK s `apksigner`
-7. provjerava alignment s `zipalign`
-8. izračunava SHA-256
-9. prenosi APK i digest kao 30-dnevni Actions artifact
+1. provjerava manifest privacy/service ugovor;
+2. postavlja JDK 17 i Gradle 8.11.1;
+3. provjerava Android SDK 36 / Build Tools 35.0.0;
+4. pokreće `clean lintDebug lintRelease testDebugUnitTest assembleDebug assembleRelease`;
+5. lint warninge tretira kao greške;
+6. izvršava lokalne JVM unit testove, uključujući capture-buffer validaciju;
+7. gradi debug i minificirani/shrunk release variant;
+8. provjerava debug APK s `apksigner`;
+9. provjerava alignment s `zipalign`;
+10. izračunava SHA-256;
+11. prenosi APK i digest kao 30-dnevni Actions artifact.
 
 Naziv artifacta:
 
@@ -156,7 +160,7 @@ SNAPVERE-Android-0.0.9-debug.apk
 SNAPVERE-Android-0.0.9-debug.apk.sha256
 ```
 
-Generirani APK-ovi namjerno se ne commitaju u source tree kako promjena izvornog koda ne bi ostavila zastarjeli binarij pokraj novog sourcea.
+Generirani APK-ovi namjerno se ne commitaju u source tree.
 
 ## Potpisivanje
 
@@ -164,8 +168,10 @@ CI APK je debug-potpisan za razvojnu/internu distribuciju i može se instalirati
 
 ## Granice dokaza
 
-Zeleni Android CI dokazuje kompilaciju sourcea, Android lint, debug/release build, debug APK potpis, alignment i stvaranje artifacta. Sam po sebi ne dokazuje interakciju na fizičkom uređaju za svaki OEM/Android. Device/emulator runtime QA navodi se odvojeno samo kada je stvarno izveden.
+Zeleni Android CI dokazuje kompilaciju sourcea, debug/release lint, JVM unit testove, debug/release build, debug APK potpis, alignment i stvaranje artifacta. Sam po sebi ne dokazuje interakciju na fizičkom uređaju za svaki OEM/Android. Device/emulator runtime QA navodi se zasebno samo kada je stvarno izveden.
+
+Finalni PR dokaz mora pripadati finalnoj source reviziji koja se mergea. Zeleni run sa starijom bazom ostaje koristan povijesni dokaz, ali nije završni dokaz za merge.
 
 ## Granica platformske jednakosti
 
-Android aplikacija je dovršena za implementirani full-screen MediaProjection workflow. Android nema isti top-level-window capture primitive koji SNAPVERE koristi na Windowsu, zato se Windows-style Window Capture ne prikazuje kao implementiran na Androidu. Region selection i annotation jednakost ostaju buduće funkcije dok se stvarno ne implementiraju i device-testiraju.
+Android aplikacija je dovršena za implementirani full-screen MediaProjection workflow. Android nema isti opći top-level-window capture primitive koji SNAPVERE koristi na Windowsu, zato se Windows-style Window Capture ne prikazuje kao implementiran na Androidu. Region selection i annotation jednakost odvojene su funkcije i neće se lažno navoditi kao prisutne dok nisu implementirane i testirane na uređaju.

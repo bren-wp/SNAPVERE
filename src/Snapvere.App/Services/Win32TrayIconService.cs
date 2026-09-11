@@ -40,16 +40,23 @@ public sealed class Win32TrayIconService : ITrayIconService
     private const uint WindowMessageRefreshTooltip = 0x8000 + 0x54;
     private const uint WindowMessageClose = 0x0010;
     private const uint WindowMessageDestroy = 0x0002;
+    private const uint WindowMessageContextMenu = 0x007B;
     private const uint WindowMessageLeftButtonUp = 0x0202;
     private const uint WindowMessageLeftButtonDoubleClick = 0x0203;
     private const uint WindowMessageRightButtonUp = 0x0205;
+    private const uint NotificationSelect = 0x0400;
+    private const uint NotificationKeySelect = 0x0401;
 
     private const uint NotifyIconAdd = 0x00000000;
     private const uint NotifyIconModify = 0x00000001;
     private const uint NotifyIconDelete = 0x00000002;
+    private const uint NotifyIconSetVersion = 0x00000004;
     private const uint NotifyIconMessage = 0x00000001;
     private const uint NotifyIconIcon = 0x00000002;
     private const uint NotifyIconTip = 0x00000004;
+    private const uint NotifyIconShowTip = 0x00000080;
+    private const uint NotifyIconVersion4 = 4;
+    private const uint CallbackEventMask = 0x0000FFFF;
 
     private static readonly nint MessageOnlyWindowParent = new(-3);
 
@@ -235,6 +242,13 @@ public sealed class Win32TrayIconService : ITrayIconService
         {
             throw new Win32Exception(Marshal.GetLastWin32Error(), "Shell_NotifyIcon could not add the SNAPVERE tray icon.");
         }
+
+        data.TimeoutOrVersion = NotifyIconVersion4;
+        if (!NativeMethods.ShellNotifyIcon(NotifyIconSetVersion, ref data))
+        {
+            _ = NativeMethods.ShellNotifyIcon(NotifyIconDelete, ref data);
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Shell_NotifyIcon could not enable the version 4 tray protocol.");
+        }
     }
 
     private void RefreshNotificationIcon()
@@ -265,7 +279,7 @@ public sealed class Win32TrayIconService : ITrayIconService
             Size = (uint)Marshal.SizeOf<NativeMethods.NotifyIconData>(),
             Window = _windowHandle,
             Id = 1,
-            Flags = NotifyIconMessage | NotifyIconIcon | NotifyIconTip,
+            Flags = NotifyIconMessage | NotifyIconIcon | NotifyIconTip | NotifyIconShowTip,
             CallbackMessage = CallbackMessage,
             Icon = _iconHandle,
             Tip = $"SNAPVERE — {SnapvereLocalization.T("CaptureRegion", SnapvereLanguageState.CurrentLanguageCode)}",
@@ -297,14 +311,17 @@ public sealed class Win32TrayIconService : ITrayIconService
 
         if (message == CallbackMessage)
         {
-            var mouseMessage = unchecked((uint)lParam.ToInt64());
-            if (mouseMessage is WindowMessageLeftButtonUp or WindowMessageLeftButtonDoubleClick)
+            var notification = unchecked((uint)lParam.ToInt64()) & CallbackEventMask;
+            if (notification is WindowMessageLeftButtonUp
+                or WindowMessageLeftButtonDoubleClick
+                or NotificationSelect
+                or NotificationKeySelect)
             {
                 RaiseRegionCaptureDebounced();
                 return nint.Zero;
             }
 
-            if (mouseMessage == WindowMessageRightButtonUp)
+            if (notification is WindowMessageRightButtonUp or WindowMessageContextMenu)
             {
                 RaiseCommand(TrayCommand.ShowMenu);
                 return nint.Zero;

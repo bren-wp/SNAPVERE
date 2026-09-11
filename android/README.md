@@ -7,14 +7,17 @@ Native Android companion for SNAPVERE with the same local-first privacy model as
 - Native Android application under `android/`
 - Android 10+ (`minSdk 29`), compile/target SDK 36
 - Full-screen capture through the official Android `MediaProjection` API
+- Fresh system consent for every capture session; consent intents/tokens are never reused
 - Lifecycle handoff that waits for `MainActivity.onStop()` before creating the capture virtual display, so SNAPVERE is moved behind the screen being captured
 - Foreground media-projection service only while one user-approved capture is active
-- Single-active-capture guard and serialized teardown of MediaProjection, VirtualDisplay, ImageReader and capture thread resources
+- Single-active-capture guard with bounded task-hide and frame-delivery timeouts
+- Exception-safe teardown of MediaProjection, VirtualDisplay, ImageReader, Image, handler callbacks and capture-thread resources
+- Validated image-plane row/pixel stride before padded bitmap allocation
 - PNG output through `MediaStore` into `Pictures/SNAPVERE`
 - Latest-capture card with validated Open, Share and Delete actions
 - Stale MediaStore URI detection so buttons are disabled instead of pointing at a missing image
 - Native confirmation before deleting the latest capture
-- User-initiated Website, Support, Privacy and Terms links
+- User-initiated Website, Support, Privacy and Terms links with controlled fallback/error states
 - Support fallback copies `info@snapvere.com` when no mail client is registered
 - English and Croatian UI resources using Android's normal resource fallback model
 - No account, telemetry, analytics, cloud upload, automatic background capture or `INTERNET` permission
@@ -34,6 +37,8 @@ The Android app shares the core dark SNAPVERE palette with the Windows distribut
 - violet accent `#7C6CFF`
 - success `#45D6A2`
 
+OEM `forceDark` is disabled because SNAPVERE already supplies a deliberate dark palette.
+
 The interface is organized into five clear surfaces:
 
 1. SNAPVERE identity/header with Android-local badge
@@ -42,13 +47,31 @@ The interface is organized into five clear surfaces:
 4. private-by-design explanation
 5. About/support/legal actions
 
-Buttons use a minimum 52 dp touch height, native ripple feedback and explicit disabled states. The page is system-inset aware and scrollable for small screens and larger text. Phone layouts keep compact horizontal spacing while tablet-class layouts use 48 dp horizontal padding. Status changes use an accessibility live region.
+Buttons use a minimum 52 dp touch height, native ripple feedback and explicit disabled states. The page is system-inset aware and scrollable for small screens and larger text. Phone layouts keep compact horizontal spacing while tablet-class layouts use 48 dp horizontal padding. Paired actions automatically stack vertically on narrow displays or when font scale is 1.25x or greater. Status changes use an accessibility live region.
 
-## Capture behavior
+## Capture behavior and stability
 
-Each capture uses a fresh Android MediaProjection consent token. SNAPVERE starts the foreground service while the Activity is still visible, requests `moveTaskToBack(true)`, and starts the VirtualDisplay only after `MainActivity.onStop()` confirms that the SNAPVERE task is no longer visible. A bounded timeout is failure protection only; it never substitutes for the lifecycle handoff.
+Each capture uses a fresh Android MediaProjection consent token. SNAPVERE starts the foreground service while the Activity is still visible, requests `moveTaskToBack(true)`, and starts the VirtualDisplay only after `MainActivity.onStop()` confirms that the SNAPVERE task is no longer visible.
 
-A process-local guard prevents overlapping capture sessions. Destruction atomically closes the session and serializes cleanup onto the capture handler when required, preventing a new capture from racing teardown of the previous one.
+Two bounded failure guards are used:
+
+- 5 seconds for the Activity-to-background handoff;
+- 7 seconds after VirtualDisplay creation for first-frame delivery.
+
+These timeouts only fail/clean up a stuck session; they never create a capture or bypass consent.
+
+A process-local guard prevents overlapping capture sessions. Cleanup is idempotent and per-resource, so a vendor/API exception while releasing one Android object cannot prevent later objects and the global capture lock from being released. `ImageReader.acquireLatestImage()` failures are contained and every acquired `Image` is closed.
+
+`CaptureBufferLayout` validates row/pixel stride and arithmetic before bitmap allocation. JVM tests cover tight and padded rows plus invalid/overflow cases.
+
+## Action reliability
+
+- Capture handles unavailable MediaProjection services and launcher failures without leaving the UI disabled.
+- Open and Share revalidate the latest MediaStore URI immediately before delegation.
+- Delete handles stale/provider failures without crashing the Activity.
+- Website, Privacy and Terms are explicit browser intents with visible failure state.
+- Support uses `mailto:` first, then clipboard fallback; a missing clipboard service is also handled.
+- Capture status receiver lifecycle calls are guarded against teardown races.
 
 ## APK and source-of-truth policy
 
@@ -76,18 +99,19 @@ Pinned CI toolchain:
 CI performs all of the following:
 
 1. validates the manifest privacy/service contract (`INTERNET` forbidden, cleartext disabled, backup disabled, non-exported mediaProjection service required)
-2. runs Android lint with warnings treated as errors
-3. builds the debug APK
-4. builds the minified/shrunk release variant as compile/shrinker evidence
-5. verifies the debug APK with `apksigner`
-6. verifies APK alignment with `zipalign`
-7. computes SHA-256
-8. uploads the APK and digest as a GitHub Actions artifact
+2. runs debug and release Android lint with warnings treated as errors
+3. runs `testDebugUnitTest`, including capture-buffer layout tests
+4. builds the debug APK
+5. builds the minified/shrunk release variant as compile/shrinker evidence
+6. verifies the debug APK with `apksigner`
+7. verifies APK alignment with `zipalign`
+8. computes SHA-256
+9. uploads the APK and digest as a GitHub Actions artifact
 
-Equivalent local build command for a configured Android toolchain:
+Equivalent local build/validation command for a configured Android toolchain:
 
 ```bash
-gradle -p android --no-daemon clean lintDebug assembleDebug assembleRelease
+gradle -p android --no-daemon clean lintDebug lintRelease testDebugUnitTest assembleDebug assembleRelease
 ```
 
 The raw debug APK is written to:
@@ -102,8 +126,10 @@ The manifest intentionally contains no `android.permission.INTERNET`. SNAPVERE d
 
 The capture service is `android:exported="false"`, uses the `mediaProjection` foreground-service type and stops with the app task. Captures are stored through MediaStore without broad filesystem permissions.
 
-## Scope
+## Scope and evidence boundary
 
-This Android milestone is a complete, polished full-screen capture application for the implemented Android capture model. Android does not expose the same top-level-window capture primitive used by SNAPVERE on Windows, so Windows-style Window Capture is not represented as implemented on Android. Region selection/annotation parity remains a distinct future feature rather than being falsely documented as complete.
+This Android milestone is complete for the implemented full-screen MediaProjection workflow. Android does not expose the same general top-level-window capture primitive used by SNAPVERE on Windows, so Windows-style Window Capture is not represented as implemented on Android. Region selection/annotation parity remains a distinct future capability rather than being falsely documented as complete.
+
+A green Android CI proves lint, JVM tests, debug/release compilation, APK signing/alignment and artifact production. It is not a substitute for claiming physical-device coverage across every OEM/Android combination.
 
 For the detailed architecture, UI contract and QA evidence policy, see [`docs/ANDROID.md`](../docs/ANDROID.md) and [`docs/hr/ANDROID.md`](../docs/hr/ANDROID.md).

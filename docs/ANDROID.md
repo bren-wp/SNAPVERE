@@ -22,27 +22,45 @@ Supported baseline:
 6. SNAPVERE requests `moveTaskToBack(true)`.
 7. `MainActivity.onStop()` signals that the SNAPVERE task is no longer visible.
 8. Only then does the service create the VirtualDisplay and ImageReader.
-9. The first completed frame is converted from RGBA image planes into a cropped ARGB bitmap and written as PNG through MediaStore.
+9. The first completed frame is validated, converted from the RGBA image plane into a cropped ARGB bitmap and written as PNG through MediaStore.
 10. The URI/name of the latest capture are kept in private SharedPreferences for Open/Share/Delete convenience.
 11. Projection/display/reader/thread resources are released and the foreground service stops.
 
-A bounded five-second task-hide timeout is failure protection only. It never starts capture by itself.
+A bounded five-second task-hide timeout prevents a handoff from remaining active forever. After the VirtualDisplay starts, a separate bounded seven-second frame-delivery timeout prevents a stalled ImageReader/driver path from leaving the foreground service and global capture lock active indefinitely. Neither timeout starts another capture or bypasses Android consent.
+
+Android 14+ requires fresh user consent for each MediaProjection capture session and one `createVirtualDisplay()` invocation per MediaProjection instance. SNAPVERE follows that model: a consent token is not cached or reused and each capture receives a fresh projection instance. Android also recommends registering `MediaProjection.Callback.onStop()` and releasing capture resources when projection ends; SNAPVERE does so. See the Android platform documentation for MediaProjection behavior.
 
 ## Concurrency and teardown
 
 `CaptureService` owns a process-local single-active-capture guard. A second accidental start cannot overlap the existing MediaProjection session.
 
-The service uses atomic completion and capture-start state. If Android destroys the service while capture work is running, teardown is serialized through the capture handler when possible. Capture ownership is released only after cleanup, preventing a subsequent session from overlapping resource teardown from the previous session.
+The service uses atomic completion and capture-start state. Cleanup is idempotent and each platform resource is released independently, so a vendor/API exception while releasing one resource does not prevent later resources or the global capture ownership flag from being released. Unexpected service destruction also records and best-effort broadcasts a local failure status.
 
 Resources covered by deterministic cleanup:
 
+- task-hide and frame-delivery timeout callbacks
 - MediaProjection callback
 - MediaProjection
 - VirtualDisplay
-- ImageReader
+- ImageReader and acquired Image
 - handler callbacks
 - HandlerThread
 - foreground notification/service ownership
+- process-local capture ownership
+
+`ImageReader.acquireLatestImage()` is guarded because Android may throw when the queue is exhausted or when a producer/format mismatch occurs on affected API levels. Every successfully acquired image is closed even when conversion or saving fails.
+
+## Capture-buffer validation
+
+Before allocating the padded bitmap, SNAPVERE validates:
+
+- visible width is positive;
+- pixel stride is positive;
+- row stride is at least the number of bytes required by the visible row;
+- visible-row arithmetic does not overflow an `int`;
+- padded width addition does not overflow.
+
+The pure `CaptureBufferLayout` helper is covered by JVM unit tests for tight rows, padded rows, invalid dimensions/strides and overflow cases.
 
 ## Storage
 
@@ -52,13 +70,13 @@ Captures are saved through Android MediaStore as `image/png` with relative path:
 Pictures/SNAPVERE
 ```
 
-The app does not request broad storage access. MediaStore pending-state finalization is checked; if finalization fails, the incomplete item is deleted.
+The app does not request broad storage access. MediaStore pending-state finalization is checked; if finalization fails, cleanup of the incomplete item is best-effort and cannot mask the original save error.
 
-The latest-capture UI validates that the stored URI is still readable before enabling Open, Share or Delete. A stale URI is removed from app-private preferences instead of leaving broken actions visible.
+The latest-capture UI validates that the stored URI is still readable before enabling Open, Share or Delete. A stale URI is removed from app-private preferences instead of leaving broken actions visible. MediaStore/provider failures are handled as visible UI failures rather than process crashes.
 
-## Dark design system
+## Dark design system and responsive UI
 
-The Android distribution now shares the core dark SNAPVERE palette with the Windows distribution instead of maintaining a separate look. Canonical desktop tokens come from `src/Snapvere.App/App.xaml`; Android mirrors them in `android/app/src/main/res/values/colors.xml`.
+The Android distribution shares the core dark SNAPVERE palette with the Windows distribution. Canonical desktop tokens come from `src/Snapvere.App/App.xaml`; Android mirrors them in `android/app/src/main/res/values/colors.xml`.
 
 Core shared tokens:
 
@@ -74,9 +92,9 @@ Core shared tokens:
 | Primary accent | `#7C6CFF` |
 | Success | `#45D6A2` |
 
-Android-specific strong-border, strong-accent, warning and destructive tokens extend that base without changing the shared product identity.
+Android-specific strong-border, strong-accent, warning and destructive tokens extend that base without changing the shared product identity. OEM `forceDark` is explicitly disabled so SNAPVERE's already-dark palette is not transformed a second time.
 
-`MainActivity` consumes resource tokens rather than embedding an unrelated palette. UI hierarchy:
+UI hierarchy:
 
 - identity header with SNAPVERE icon, tagline and Android/local badge
 - emphasized Capture card
@@ -86,46 +104,34 @@ Android-specific strong-border, strong-accent, warning and destructive tokens ex
 - About/support/legal card
 - version/platform footer
 
-The page is vertically scrollable and respects system-bar insets. Phone layouts use compact horizontal spacing; tablet-class layouts use wider 48 dp horizontal padding. Interactive buttons use a 52 dp minimum height, native ripple feedback and explicit disabled-state treatment so touch targets remain comfortable without adding a heavyweight UI framework.
+The page is vertically scrollable and respects system-bar insets. Phone layouts use compact horizontal spacing; tablet-class layouts use wider 48 dp horizontal padding. Action pairs automatically stack vertically on narrow displays or when Android font scale is 1.25x or greater, preventing clipped labels and undersized touch targets. Buttons keep a 52 dp minimum touch height, ripple feedback and explicit disabled states.
 
-## Latest capture actions
+## Action reliability
 
-### Open
+All user-facing actions have explicit failure paths:
 
-Delegates the MediaStore URI to an Android image viewer using `ACTION_VIEW` and a temporary read grant.
+- **Capture** handles unavailable MediaProjection services and launcher failures without leaving the Capture button disabled.
+- **Open** and **Share** revalidate the MediaStore URI immediately before delegating to Android.
+- **Delete** confirms first, handles stale/provider failures and never crashes on a bad URI.
+- **Website**, **Privacy** and **Terms** delegate to external browser handlers and surface a local error if none is available.
+- **Support** tries `mailto:` first, then copies `info@snapvere.com`; a missing clipboard service also produces a visible local error instead of an exception escaping the UI.
+- Local capture-result receiver registration/unregistration is guarded against lifecycle/provider edge cases.
 
-### Share
-
-Delegates the PNG to Android's share sheet with `ACTION_SEND` and a temporary read grant. Sharing is always initiated by the user.
-
-### Delete
-
-Displays a native confirmation dialog. The app deletes only the stored latest-capture MediaStore URI. If the URI is already gone, the stale local reference is cleared.
-
-## Website, support and legal actions
-
-Destinations are explicit user actions:
-
-- website: `https://snapvere.com`
-- support: `mailto:info@snapvere.com`
-- privacy: `https://snapvere.com/privacy`
-- terms: `https://snapvere.com/terms`
-
-The application does not prefetch them and has no `INTERNET` permission. Android delegates HTTP(S) links to an external browser. If no mail application handles `mailto:`, the support address is copied to the local clipboard and the app shows a visible status message.
+None of these actions add an `INTERNET` permission or a first-party networking client. External URLs open only after explicit user input.
 
 ## Localization
 
-English is the default resource set. Croatian is provided in `values-hr`. Android performs the normal resource fallback when the device uses another locale.
+English is the default resource set. Croatian is provided in `values-hr`. New recovery/status messages are maintained in both resource sets. Android performs normal resource fallback when the device uses another locale.
 
 ## Manifest security contract
 
 CI fails if the Android manifest adds `android.permission.INTERNET`. CI also verifies that:
 
-- `FOREGROUND_SERVICE_MEDIA_PROJECTION` is declared
-- CaptureService remains `android:exported="false"`
-- CaptureService remains `android:foregroundServiceType="mediaProjection"`
-- cleartext traffic remains disabled
-- app backup remains disabled
+- `FOREGROUND_SERVICE_MEDIA_PROJECTION` is declared;
+- CaptureService remains `android:exported="false"`;
+- CaptureService remains `android:foregroundServiceType="mediaProjection"`;
+- cleartext traffic remains disabled;
+- app backup remains disabled.
 
 No telemetry, analytics SDK, advertising SDK, cloud upload client, WebView or remote command channel is part of this Android milestone.
 
@@ -133,15 +139,17 @@ No telemetry, analytics SDK, advertising SDK, cloud upload client, WebView or re
 
 `.github/workflows/android-ci.yml` is the build source of truth. For every Android PR and Android change on `main`, CI:
 
-1. validates the manifest privacy/service contract
-2. sets up JDK 17 and Gradle 8.11.1
-3. verifies Android SDK 36 / Build Tools 35.0.0
-4. runs `clean lintDebug assembleDebug assembleRelease`
-5. treats lint warnings as errors
-6. verifies the debug APK with `apksigner`
-7. verifies alignment with `zipalign`
-8. computes SHA-256
-9. uploads APK + digest as a 30-day Actions artifact
+1. validates the manifest privacy/service contract;
+2. sets up JDK 17 and Gradle 8.11.1;
+3. verifies Android SDK 36 / Build Tools 35.0.0;
+4. runs `clean lintDebug lintRelease testDebugUnitTest assembleDebug assembleRelease`;
+5. treats lint warnings as errors;
+6. executes local JVM unit tests, including capture-buffer layout validation;
+7. builds both debug and minified/shrunk release variants;
+8. verifies the debug APK with `apksigner`;
+9. verifies alignment with `zipalign`;
+10. computes SHA-256;
+11. uploads APK + digest as a 30-day Actions artifact.
 
 Artifact name:
 
@@ -164,10 +172,10 @@ The CI APK is debug-signed for development/internal distribution and can be inst
 
 ## Evidence boundaries
 
-A green Android CI run proves source compilation, Android lint, debug/release variant build, debug APK signature, APK alignment and artifact generation. It does not by itself prove physical-device interaction on every OEM/Android combination. Device/emulator runtime QA should be cited separately when actually performed.
+A green Android CI run proves source compilation, debug/release lint, JVM unit tests, debug/release variant build, debug APK signature, APK alignment and artifact generation. It does not by itself prove physical-device interaction on every OEM/Android combination. Device/emulator runtime QA should be cited separately when actually performed.
 
-Final pull-request evidence must be generated from a merge-ref against the current `main`. A green run whose base predates another merged QA or packaging fix is useful historical evidence, but it is not accepted as the final Android merge proof.
+Final pull-request evidence must be generated from the final source revision being merged. A green run whose base predates another merged QA or packaging fix is useful historical evidence, but it is not accepted as the final Android merge proof.
 
 ## Platform parity boundary
 
-The Android application is complete for its implemented full-screen MediaProjection workflow. Android does not expose the same top-level-window capture primitive that SNAPVERE uses on Windows; therefore Windows-style Window Capture is not claimed on Android. Region selection and annotation parity remain future features until implemented and device-tested.
+The Android application is complete for its implemented full-screen MediaProjection workflow. Android does not expose the same general top-level-window capture primitive that SNAPVERE uses on Windows; therefore Windows-style Window Capture is not claimed on Android. Region selection and annotation parity are separate product capabilities and are not falsely described as present until implemented and device-tested.

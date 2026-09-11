@@ -81,11 +81,11 @@ jobs:
           test -x "$ANDROID_HOME/build-tools/35.0.0/zipalign"
           echo "ANDROID_HOME=$ANDROID_HOME"
 
-      - name: Lint and build debug and release variants
+      - name: Lint, test and build debug and release variants
         if: steps.project.outputs.exists == 'true'
         shell: bash
         run: |
-          gradle -p android --no-daemon clean lintDebug assembleDebug assembleRelease
+          gradle -p android --no-daemon clean lintDebug lintRelease testDebugUnitTest assembleDebug assembleRelease
           cp android/app/build/outputs/apk/debug/app-debug.apk android/SNAPVERE-Android-0.0.9-debug.apk
 
       - name: Verify APK signature, alignment and digest

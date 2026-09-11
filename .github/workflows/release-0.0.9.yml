@@ -263,36 +263,71 @@ jobs:
           $tag = "v$env:SNAPVERE_VERSION"
           $encodedTag = [Uri]::EscapeDataString($tag)
 
+          $lookupOutput = @(& gh api "repos/$repository/git/ref/tags/$encodedTag" 2>&1)
+          $lookupExitCode = $LASTEXITCODE
           $existing = $null
-          try {
-            $existing = gh api "repos/$repository/git/ref/tags/$encodedTag" | ConvertFrom-Json
+
+          if ($lookupExitCode -eq 0) {
+            $existingJson = ($lookupOutput | ForEach-Object { $_.ToString() }) -join "`n"
+            if ([string]::IsNullOrWhiteSpace($existingJson)) {
+              throw "GitHub returned an empty response while querying immutable tag $tag."
+            }
+            $existing = $existingJson | ConvertFrom-Json
           }
-          catch {
-            $existing = $null
+          else {
+            $lookupText = ($lookupOutput | ForEach-Object { $_.ToString() }) -join "`n"
+            if ($lookupText -notmatch 'HTTP 404') {
+              throw "Could not query immutable tag $tag. gh exit code $lookupExitCode. $lookupText"
+            }
+            Write-Host "$tag does not exist yet; it will be created only after all release validation gates have passed."
           }
 
           if ($null -ne $existing) {
             $object = $existing.object
+            if ($null -eq $object -or [string]::IsNullOrWhiteSpace($object.sha)) {
+              throw "GitHub returned an invalid ref object for immutable tag $tag."
+            }
+
             $targetSha = $object.sha
             if ($object.type -eq 'tag') {
-              $tagObject = gh api "repos/$repository/git/tags/$targetSha" | ConvertFrom-Json
+              $tagObjectOutput = @(& gh api "repos/$repository/git/tags/$targetSha" 2>&1)
+              if ($LASTEXITCODE -ne 0) {
+                $tagObjectError = ($tagObjectOutput | ForEach-Object { $_.ToString() }) -join "`n"
+                throw "Could not resolve annotated tag object $targetSha for $tag. $tagObjectError"
+              }
+              $tagObjectJson = ($tagObjectOutput | ForEach-Object { $_.ToString() }) -join "`n"
+              $tagObject = $tagObjectJson | ConvertFrom-Json
               $targetSha = $tagObject.object.sha
             }
-            if ($targetSha -ne $env:GITHUB_SHA) {
+
+            if ([string]::IsNullOrWhiteSpace($targetSha) -or $targetSha -ne $env:GITHUB_SHA) {
               throw "Immutable tag $tag already targets $targetSha instead of validated commit $env:GITHUB_SHA."
             }
             Write-Host "$tag already targets this validated release commit."
           }
           else {
-            $tagObject = gh api --method POST "repos/$repository/git/tags" `
+            $tagCreateOutput = @(& gh api --method POST "repos/$repository/git/tags" `
               -f tag="$tag" `
               -f message="SNAPVERE $tag" `
               -f object="$env:GITHUB_SHA" `
-              -f type='commit' | ConvertFrom-Json
-            gh api --method POST "repos/$repository/git/refs" `
+              -f type='commit' 2>&1)
+            if ($LASTEXITCODE -ne 0) {
+              $tagCreateError = ($tagCreateOutput | ForEach-Object { $_.ToString() }) -join "`n"
+              throw "Could not create annotated tag object for $tag. $tagCreateError"
+            }
+            $tagCreateJson = ($tagCreateOutput | ForEach-Object { $_.ToString() }) -join "`n"
+            $tagObject = $tagCreateJson | ConvertFrom-Json
+            if ([string]::IsNullOrWhiteSpace($tagObject.sha)) {
+              throw "GitHub created no usable annotated tag object for $tag."
+            }
+
+            $refCreateOutput = @(& gh api --method POST "repos/$repository/git/refs" `
               -f ref="refs/tags/$tag" `
-              -f sha="$($tagObject.sha)" | Out-Null
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              -f sha="$($tagObject.sha)" 2>&1)
+            if ($LASTEXITCODE -ne 0) {
+              $refCreateError = ($refCreateOutput | ForEach-Object { $_.ToString() }) -join "`n"
+              throw "Could not create immutable tag ref $tag. $refCreateError"
+            }
             Write-Host "Created annotated immutable tag $tag at $env:GITHUB_SHA."
           }
 

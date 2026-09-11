@@ -15,6 +15,7 @@
     <string name="capture_background_failed">SNAPVERE se nije mogao premjestiti iza zaslona koji želite snimiti.</string>
     <string name="capture_saved">Spremljeno u Pictures/SNAPVERE: %1$s</string>
     <string name="capture_failed">Snimanje zaslona nije uspjelo: %1$s</string>
+    <string name="capture_receiver_failed">Android nije mogao uključiti lokalno praćenje statusa snimke. Snimanje i dalje ostaje lokalno; ponovno otvorite SNAPVERE nakon snimanja za osvježavanje statusa.</string>
     <string name="unknown_error">Nepoznata pogreška</string>
 
     <string name="latest_section">ZADNJA SNIMKA</string>
@@ -47,6 +48,7 @@
     <string name="terms_of_use">Uvjeti</string>
     <string name="external_link_failed">Android ne može otvoriti ovu poveznicu.</string>
     <string name="support_copied">Nema dostupne aplikacije za e-poštu. info@snapvere.com kopiran je u međuspremnik.</string>
+    <string name="support_unavailable">Android ne može otvoriti e-poštu niti kopirati adresu podrške.</string>
     <string name="version_format">Verzija %1$s · Android 10+</string>
 
     <string name="notification_channel_name">Snimanje zaslona</string>
