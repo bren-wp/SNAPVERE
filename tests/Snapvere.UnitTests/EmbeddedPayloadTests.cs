@@ -48,6 +48,27 @@ public sealed class EmbeddedPayloadTests
         }
     }
 
+    [Fact]
+    public void ExtractZipSafely_AllowsLongValidFilenameWithoutOverflowingStagingComponent()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"snapvere-payload-{Guid.NewGuid():N}");
+        var fileName = $"{new string('a', 220)}.txt";
+
+        try
+        {
+            using var payload = BuildZip(($"data/{fileName}", "long-name"));
+
+            EmbeddedPayload.ExtractZipSafely(payload, directory);
+
+            Assert.Equal("long-name", File.ReadAllText(Path.Combine(directory, "data", fileName)));
+            Assert.Empty(Directory.EnumerateFiles(Path.Combine(directory, "data"), ".snapvere-*.tmp"));
+        }
+        finally
+        {
+            EmbeddedPayload.DeleteDirectoryBestEffort(directory);
+        }
+    }
+
     private static MemoryStream BuildZip(params (string Name, string Content)[] entries)
     {
         var stream = new MemoryStream();
