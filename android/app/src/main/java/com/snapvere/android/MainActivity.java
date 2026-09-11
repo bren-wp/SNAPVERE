@@ -1,18 +1,27 @@
 package com.snapvere.android;
 
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -25,15 +34,25 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import java.io.IOException;
+
 public final class MainActivity extends ComponentActivity {
     private static final String PREFS = "snapvere_android";
     private static final String PREF_LATEST_URI = "latest_capture_uri";
     private static final String PREF_LATEST_NAME = "latest_capture_name";
 
+    private static final String PRODUCT_WEBSITE = "https://snapvere.com";
+    private static final String PRIVACY_URL = "https://snapvere.com/privacy";
+    private static final String TERMS_URL = "https://snapvere.com/terms";
+    private static final String SUPPORT_EMAIL = "info@snapvere.com";
+
     private TextView statusText;
+    private TextView latestNameText;
+    private TextView latestDetailText;
     private Button captureButton;
     private Button openLatestButton;
     private Button shareLatestButton;
+    private Button deleteLatestButton;
     private boolean receiverRegistered;
     private boolean captureTaskHidePending;
     private ActivityResultLauncher<Intent> captureLauncher;
@@ -44,13 +63,19 @@ public final class MainActivity extends ComponentActivity {
             refreshCaptureState();
             if (CaptureService.ACTION_CAPTURE_COMPLETED.equals(intent.getAction())) {
                 String name = intent.getStringExtra(CaptureService.EXTRA_CAPTURE_NAME);
-                statusText.setText(getString(R.string.capture_saved, name == null ? "PNG" : name));
+                showStatus(
+                    getString(R.string.capture_saved, name == null ? "PNG" : name),
+                    R.color.snapvere_success);
                 refreshLatestState();
             } else if (CaptureService.ACTION_CAPTURE_FAILED.equals(intent.getAction())) {
                 String message = intent.getStringExtra(CaptureService.EXTRA_ERROR_MESSAGE);
-                statusText.setText(getString(
-                    R.string.capture_failed,
-                    message == null || message.isBlank() ? getString(R.string.unknown_error) : message));
+                showStatus(
+                    getString(
+                        R.string.capture_failed,
+                        message == null || message.isBlank()
+                            ? getString(R.string.unknown_error)
+                            : message),
+                    R.color.snapvere_danger);
             }
         }
     };
@@ -93,7 +118,8 @@ public final class MainActivity extends ComponentActivity {
     private View buildContent() {
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
-        scroll.setBackgroundColor(0xFF07080D);
+        scroll.setClipToPadding(false);
+        scroll.setBackgroundColor(getColor(R.color.snapvere_canvas));
         ViewCompat.setOnApplyWindowInsetsListener(scroll, (view, windowInsets) -> {
             Insets bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
             view.setPadding(bars.left, bars.top, bars.right, bars.bottom);
@@ -102,59 +128,197 @@ public final class MainActivity extends ComponentActivity {
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(24), dp(30), dp(24), dp(30));
+        root.setPadding(dp(20), dp(24), dp(20), dp(32));
         scroll.addView(root, new ScrollView.LayoutParams(
             ScrollView.LayoutParams.MATCH_PARENT,
             ScrollView.LayoutParams.WRAP_CONTENT));
 
-        root.addView(text("SNAPVERE", 28, 0xFFF6F5FB, true));
-        TextView tagline = text(getString(R.string.tagline), 14, 0xFF8E96AA, false);
-        tagline.setPadding(0, dp(2), 0, dp(24));
-        root.addView(tagline);
+        root.addView(buildHeader(), marginBottom(dp(22)));
+        root.addView(buildCaptureCard(), marginBottom(dp(14)));
+        root.addView(buildLatestCard(), marginBottom(dp(14)));
+        root.addView(buildPrivacyCard(), marginBottom(dp(14)));
+        root.addView(buildAboutCard(), marginBottom(dp(18)));
 
-        LinearLayout privacyCard = card();
-        privacyCard.addView(text(getString(R.string.local_first), 11, 0xFF72D8B4, true));
-        TextView privacy = text(getString(R.string.local_first_description), 14, 0xFFB8C0D1, false);
-        privacy.setPadding(0, dp(6), 0, 0);
-        privacyCard.addView(privacy);
-        root.addView(privacyCard, marginBottom(dp(18)));
-
-        LinearLayout captureCard = card();
-        captureCard.addView(text(getString(R.string.capture_screen), 21, 0xFFF6F5FB, true));
-        TextView captureDescription = text(getString(R.string.capture_screen_description), 13, 0xFFAEB5C6, false);
-        captureDescription.setPadding(0, dp(6), 0, dp(14));
-        captureCard.addView(captureDescription);
-
-        captureButton = actionButton(getString(R.string.capture_screen), true);
-        captureButton.setOnClickListener(view -> requestScreenCapture());
-        captureCard.addView(captureButton);
-        root.addView(captureCard, marginBottom(dp(14)));
-
-        LinearLayout recentCard = card();
-        openLatestButton = actionButton(getString(R.string.open_latest), false);
-        openLatestButton.setOnClickListener(view -> openLatestCapture());
-        recentCard.addView(openLatestButton);
-
-        shareLatestButton = actionButton(getString(R.string.share_latest), false);
-        LinearLayout.LayoutParams shareParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT);
-        shareParams.topMargin = dp(8);
-        shareLatestButton.setLayoutParams(shareParams);
-        shareLatestButton.setOnClickListener(view -> shareLatestCapture());
-        recentCard.addView(shareLatestButton);
-        root.addView(recentCard, marginBottom(dp(14)));
-
-        statusText = text(getString(R.string.capture_ready), 13, 0xFF72D8B4, false);
-        statusText.setPadding(dp(4), dp(4), dp(4), dp(14));
-        statusText.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
-        root.addView(statusText);
-
-        TextView privacyNote = text(getString(R.string.privacy_note), 12, 0xFF7D879E, false);
-        privacyNote.setPadding(dp(4), dp(4), dp(4), 0);
-        root.addView(privacyNote);
+        TextView footer = text(
+            getString(R.string.version_format, resolveVersionName()),
+            11,
+            R.color.snapvere_text_muted,
+            false);
+        footer.setGravity(Gravity.CENTER);
+        footer.setPadding(dp(4), dp(4), dp(4), 0);
+        root.addView(footer);
 
         return scroll;
+    }
+
+    private View buildHeader() {
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+
+        ImageView logo = new ImageView(this);
+        logo.setImageResource(R.drawable.ic_snapvere);
+        logo.setContentDescription(getString(R.string.app_name));
+        LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(dp(56), dp(56));
+        logoParams.setMarginEnd(dp(14));
+        header.addView(logo, logoParams);
+
+        LinearLayout copy = new LinearLayout(this);
+        copy.setOrientation(LinearLayout.VERTICAL);
+        copy.setGravity(Gravity.START);
+        copy.addView(text(getString(R.string.app_name), 27, R.color.snapvere_text_primary, true));
+
+        TextView tagline = text(getString(R.string.tagline), 13, R.color.snapvere_text_secondary, false);
+        tagline.setPadding(0, dp(1), 0, dp(8));
+        copy.addView(tagline);
+        copy.addView(badge(getString(R.string.android_local_badge)));
+
+        header.addView(copy, new LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f));
+        return header;
+    }
+
+    private View buildCaptureCard() {
+        LinearLayout card = card(true);
+        card.addView(sectionLabel(getString(R.string.capture_section), R.color.snapvere_cyan));
+
+        TextView title = text(getString(R.string.capture_screen), 22, R.color.snapvere_text_primary, true);
+        title.setPadding(0, dp(9), 0, 0);
+        card.addView(title);
+
+        TextView description = text(
+            getString(R.string.capture_screen_description),
+            13,
+            R.color.snapvere_text_secondary,
+            false);
+        description.setPadding(0, dp(7), 0, dp(14));
+        card.addView(description);
+
+        LinearLayout statusPanel = new LinearLayout(this);
+        statusPanel.setOrientation(LinearLayout.VERTICAL);
+        statusPanel.setPadding(dp(14), dp(12), dp(14), dp(12));
+        statusPanel.setBackground(shape(
+            R.color.snapvere_surface_high,
+            R.color.snapvere_border,
+            1,
+            12));
+
+        statusText = text(getString(R.string.capture_ready), 13, R.color.snapvere_success, true);
+        statusText.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+        statusPanel.addView(statusText);
+        card.addView(statusPanel, marginBottom(dp(12)));
+
+        captureButton = actionButton(getString(R.string.capture_screen), ButtonStyle.PRIMARY);
+        captureButton.setOnClickListener(view -> requestScreenCapture());
+        card.addView(captureButton);
+
+        TextView consent = text(
+            getString(R.string.capture_consent_note),
+            11,
+            R.color.snapvere_text_muted,
+            false);
+        consent.setPadding(dp(2), dp(10), dp(2), 0);
+        card.addView(consent);
+        return card;
+    }
+
+    private View buildLatestCard() {
+        LinearLayout card = card(false);
+        card.addView(sectionLabel(getString(R.string.latest_section), R.color.snapvere_accent_strong));
+
+        latestNameText = text(getString(R.string.latest_empty), 18, R.color.snapvere_text_primary, true);
+        latestNameText.setPadding(0, dp(9), 0, 0);
+        card.addView(latestNameText);
+
+        latestDetailText = text(
+            getString(R.string.latest_empty_description),
+            12,
+            R.color.snapvere_text_muted,
+            false);
+        latestDetailText.setPadding(0, dp(5), 0, dp(14));
+        card.addView(latestDetailText);
+
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        openLatestButton = actionButton(getString(R.string.open_latest), ButtonStyle.SECONDARY);
+        openLatestButton.setOnClickListener(view -> openLatestCapture());
+        actions.addView(openLatestButton, weightedButtonParams(true));
+
+        shareLatestButton = actionButton(getString(R.string.share_latest), ButtonStyle.SECONDARY);
+        shareLatestButton.setOnClickListener(view -> shareLatestCapture());
+        actions.addView(shareLatestButton, weightedButtonParams(false));
+        card.addView(actions);
+
+        deleteLatestButton = actionButton(getString(R.string.delete_latest), ButtonStyle.DESTRUCTIVE);
+        LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT);
+        deleteParams.topMargin = dp(8);
+        deleteLatestButton.setLayoutParams(deleteParams);
+        deleteLatestButton.setOnClickListener(view -> confirmDeleteLatestCapture());
+        card.addView(deleteLatestButton);
+        return card;
+    }
+
+    private View buildPrivacyCard() {
+        LinearLayout card = card(false);
+        card.addView(sectionLabel(getString(R.string.privacy_section), R.color.snapvere_success));
+
+        TextView title = text(getString(R.string.local_first), 18, R.color.snapvere_text_primary, true);
+        title.setPadding(0, dp(9), 0, 0);
+        card.addView(title);
+
+        TextView description = text(
+            getString(R.string.local_first_description),
+            13,
+            R.color.snapvere_text_secondary,
+            false);
+        description.setPadding(0, dp(6), 0, dp(10));
+        card.addView(description);
+
+        TextView note = text(getString(R.string.privacy_note), 11, R.color.snapvere_text_muted, false);
+        card.addView(note);
+        return card;
+    }
+
+    private View buildAboutCard() {
+        LinearLayout card = card(false);
+        card.addView(sectionLabel(getString(R.string.about_section), R.color.snapvere_cyan));
+
+        TextView description = text(
+            getString(R.string.about_description),
+            13,
+            R.color.snapvere_text_secondary,
+            false);
+        description.setPadding(0, dp(9), 0, dp(14));
+        card.addView(description);
+
+        LinearLayout firstRow = new LinearLayout(this);
+        firstRow.setOrientation(LinearLayout.HORIZONTAL);
+        Button website = actionButton(getString(R.string.website), ButtonStyle.TERTIARY);
+        website.setOnClickListener(view -> openExternal(PRODUCT_WEBSITE));
+        firstRow.addView(website, weightedButtonParams(true));
+        Button support = actionButton(getString(R.string.support), ButtonStyle.TERTIARY);
+        support.setOnClickListener(view -> openSupport());
+        firstRow.addView(support, weightedButtonParams(false));
+        card.addView(firstRow);
+
+        LinearLayout secondRow = new LinearLayout(this);
+        secondRow.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams secondRowParams = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT);
+        secondRowParams.topMargin = dp(8);
+        Button privacy = actionButton(getString(R.string.privacy_policy), ButtonStyle.TERTIARY);
+        privacy.setOnClickListener(view -> openExternal(PRIVACY_URL));
+        secondRow.addView(privacy, weightedButtonParams(true));
+        Button terms = actionButton(getString(R.string.terms_of_use), ButtonStyle.TERTIARY);
+        terms.setOnClickListener(view -> openExternal(TERMS_URL));
+        secondRow.addView(terms, weightedButtonParams(false));
+        card.addView(secondRow, secondRowParams);
+        return card;
     }
 
     private void requestScreenCapture() {
@@ -164,9 +328,8 @@ public final class MainActivity extends ComponentActivity {
         }
 
         CaptureService.clearLastError();
-        captureButton.setEnabled(false);
-        captureButton.setAlpha(0.65f);
-        statusText.setText(R.string.capture_requesting);
+        setCaptureButtonEnabled(false);
+        showStatus(getString(R.string.capture_requesting), R.color.snapvere_warning);
         MediaProjectionManager manager =
             (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         captureLauncher.launch(manager.createScreenCaptureIntent());
@@ -175,7 +338,7 @@ public final class MainActivity extends ComponentActivity {
     private void handleCaptureResult(int resultCode, Intent data) {
         if (resultCode != RESULT_OK || data == null) {
             refreshCaptureState();
-            statusText.setText(R.string.capture_cancelled);
+            showStatus(getString(R.string.capture_cancelled), R.color.snapvere_text_secondary);
             return;
         }
 
@@ -188,21 +351,26 @@ public final class MainActivity extends ComponentActivity {
         captureTaskHidePending = true;
         try {
             ContextCompat.startForegroundService(this, serviceIntent);
+            showStatus(getString(R.string.capture_in_progress), R.color.snapvere_warning);
             if (!moveTaskToBack(true)) {
                 captureTaskHidePending = false;
                 CaptureService.cancelCaptureHandoff();
                 stopService(new Intent(this, CaptureService.class));
                 refreshCaptureState();
-                statusText.setText(R.string.capture_background_failed);
+                showStatus(getString(R.string.capture_background_failed), R.color.snapvere_danger);
             }
         } catch (RuntimeException exception) {
             captureTaskHidePending = false;
             CaptureService.cancelCaptureHandoff();
             refreshCaptureState();
             String message = exception.getMessage();
-            statusText.setText(getString(
-                R.string.capture_failed,
-                message == null || message.isBlank() ? getString(R.string.unknown_error) : message));
+            showStatus(
+                getString(
+                    R.string.capture_failed,
+                    message == null || message.isBlank()
+                        ? getString(R.string.unknown_error)
+                        : message),
+                R.color.snapvere_danger);
         }
     }
 
@@ -211,21 +379,34 @@ public final class MainActivity extends ComponentActivity {
             return;
         }
         boolean active = CaptureService.isCaptureActive();
-        captureButton.setEnabled(!active);
-        captureButton.setAlpha(active ? 0.65f : 1.0f);
+        setCaptureButtonEnabled(!active);
+        if (active && statusText != null) {
+            showStatus(getString(R.string.capture_in_progress), R.color.snapvere_warning);
+        }
     }
 
     private void refreshLatestState() {
-        if (openLatestButton == null || shareLatestButton == null) {
+        if (openLatestButton == null || shareLatestButton == null || deleteLatestButton == null) {
             return;
         }
-        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-        String latest = prefs.getString(PREF_LATEST_URI, "");
-        boolean hasLatest = latest != null && !latest.isBlank();
-        openLatestButton.setEnabled(hasLatest);
-        shareLatestButton.setEnabled(hasLatest);
-        openLatestButton.setAlpha(hasLatest ? 1.0f : 0.5f);
-        shareLatestButton.setAlpha(hasLatest ? 1.0f : 0.5f);
+
+        LatestCapture latest = getLatestCapture();
+        boolean hasLatest = latest.uri != null && isReadableCapture(latest.uri);
+        if (!hasLatest && latest.uri != null) {
+            clearLatestCapturePreference();
+        }
+
+        if (hasLatest) {
+            latestNameText.setText(latest.name == null || latest.name.isBlank() ? "PNG" : latest.name);
+            latestDetailText.setText(R.string.latest_location);
+        } else {
+            latestNameText.setText(R.string.latest_empty);
+            latestDetailText.setText(R.string.latest_empty_description);
+        }
+
+        setButtonEnabled(openLatestButton, hasLatest);
+        setButtonEnabled(shareLatestButton, hasLatest);
+        setButtonEnabled(deleteLatestButton, hasLatest);
     }
 
     private void refreshStatusFromLastCapture() {
@@ -235,56 +416,132 @@ public final class MainActivity extends ComponentActivity {
 
         String lastError = CaptureService.getLastError();
         if (lastError != null && !lastError.isBlank()) {
-            statusText.setText(getString(R.string.capture_failed, lastError));
+            showStatus(getString(R.string.capture_failed, lastError), R.color.snapvere_danger);
             return;
         }
 
-        String latestName = getSharedPreferences(PREFS, MODE_PRIVATE)
-            .getString(PREF_LATEST_NAME, "");
-        if (latestName != null && !latestName.isBlank()) {
-            statusText.setText(getString(R.string.capture_saved, latestName));
+        LatestCapture latest = getLatestCapture();
+        if (latest.name != null && !latest.name.isBlank() && latest.uri != null && isReadableCapture(latest.uri)) {
+            showStatus(getString(R.string.capture_saved, latest.name), R.color.snapvere_success);
+        } else {
+            showStatus(getString(R.string.capture_ready), R.color.snapvere_success);
         }
     }
 
     private void openLatestCapture() {
-        Uri uri = getLatestCaptureUri();
-        if (uri == null) {
-            statusText.setText(R.string.no_capture);
+        LatestCapture latest = getLatestCapture();
+        if (latest.uri == null || !isReadableCapture(latest.uri)) {
+            clearLatestCapturePreference();
+            refreshLatestState();
+            showStatus(getString(R.string.no_capture), R.color.snapvere_text_secondary);
             return;
         }
 
         Intent viewIntent = new Intent(Intent.ACTION_VIEW)
-            .setDataAndType(uri, "image/png")
+            .setDataAndType(latest.uri, "image/png")
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         try {
             startActivity(viewIntent);
         } catch (ActivityNotFoundException | SecurityException exception) {
-            statusText.setText(R.string.open_failed);
+            showStatus(getString(R.string.open_failed), R.color.snapvere_danger);
         }
     }
 
     private void shareLatestCapture() {
-        Uri uri = getLatestCaptureUri();
-        if (uri == null) {
-            statusText.setText(R.string.no_capture);
+        LatestCapture latest = getLatestCapture();
+        if (latest.uri == null || !isReadableCapture(latest.uri)) {
+            clearLatestCapturePreference();
+            refreshLatestState();
+            showStatus(getString(R.string.no_capture), R.color.snapvere_text_secondary);
             return;
         }
 
         Intent share = new Intent(Intent.ACTION_SEND)
             .setType("image/png")
-            .putExtra(Intent.EXTRA_STREAM, uri)
+            .putExtra(Intent.EXTRA_STREAM, latest.uri)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         try {
             startActivity(Intent.createChooser(share, getString(R.string.share_latest)));
         } catch (ActivityNotFoundException | SecurityException exception) {
-            statusText.setText(R.string.share_failed);
+            showStatus(getString(R.string.share_failed), R.color.snapvere_danger);
         }
     }
 
-    private Uri getLatestCaptureUri() {
-        String value = getSharedPreferences(PREFS, MODE_PRIVATE)
-            .getString(PREF_LATEST_URI, "");
-        return value == null || value.isBlank() ? null : Uri.parse(value);
+    private void confirmDeleteLatestCapture() {
+        LatestCapture latest = getLatestCapture();
+        if (latest.uri == null || !isReadableCapture(latest.uri)) {
+            clearLatestCapturePreference();
+            refreshLatestState();
+            showStatus(getString(R.string.no_capture), R.color.snapvere_text_secondary);
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.delete_capture_title)
+            .setMessage(R.string.delete_capture_message)
+            .setNegativeButton(R.string.delete_capture_cancel, null)
+            .setPositiveButton(R.string.delete_capture_confirm, (dialog, which) -> deleteLatestCapture(latest.uri))
+            .show();
+    }
+
+    private void deleteLatestCapture(Uri uri) {
+        try {
+            int deleted = getContentResolver().delete(uri, null, null);
+            if (deleted > 0 || !isReadableCapture(uri)) {
+                clearLatestCapturePreference();
+                refreshLatestState();
+                showStatus(getString(R.string.delete_capture_done), R.color.snapvere_success);
+                return;
+            }
+        } catch (SecurityException exception) {
+            // A capture from a previous app installation may no longer be owned by this package.
+        }
+        showStatus(getString(R.string.delete_capture_failed), R.color.snapvere_danger);
+    }
+
+    private void openExternal(String url) {
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            .addCategory(Intent.CATEGORY_BROWSABLE);
+        try {
+            startActivity(intent);
+        } catch (ActivityNotFoundException | SecurityException exception) {
+            showStatus(getString(R.string.external_link_failed), R.color.snapvere_danger);
+        }
+    }
+
+    private void openSupport() {
+        Intent intent = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + SUPPORT_EMAIL));
+        try {
+            startActivity(intent);
+        } catch (ActivityNotFoundException | SecurityException exception) {
+            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            clipboard.setPrimaryClip(ClipData.newPlainText(SUPPORT_EMAIL, SUPPORT_EMAIL));
+            showStatus(getString(R.string.support_copied), R.color.snapvere_success);
+        }
+    }
+
+    private LatestCapture getLatestCapture() {
+        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        String uriValue = prefs.getString(PREF_LATEST_URI, "");
+        String name = prefs.getString(PREF_LATEST_NAME, "");
+        Uri uri = uriValue == null || uriValue.isBlank() ? null : Uri.parse(uriValue);
+        return new LatestCapture(uri, name);
+    }
+
+    private boolean isReadableCapture(Uri uri) {
+        try (ParcelFileDescriptor descriptor = getContentResolver().openFileDescriptor(uri, "r")) {
+            return descriptor != null;
+        } catch (IOException | SecurityException exception) {
+            return false;
+        }
+    }
+
+    private void clearLatestCapturePreference() {
+        getSharedPreferences(PREFS, MODE_PRIVATE)
+            .edit()
+            .remove(PREF_LATEST_URI)
+            .remove(PREF_LATEST_NAME)
+            .apply();
     }
 
     private void registerCaptureReceiver() {
@@ -302,44 +559,100 @@ public final class MainActivity extends ComponentActivity {
         receiverRegistered = true;
     }
 
-    private LinearLayout card() {
+    private LinearLayout card(boolean emphasized) {
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(dp(18), dp(18), dp(18), dp(18));
-        GradientDrawable background = new GradientDrawable();
-        background.setColor(0xFF0F1320);
-        background.setCornerRadius(dp(18));
-        background.setStroke(dp(1), 0xFF303A50);
-        layout.setBackground(background);
+        layout.setBackground(shape(
+            emphasized ? R.color.snapvere_surface_high : R.color.snapvere_surface,
+            emphasized ? R.color.snapvere_border_strong : R.color.snapvere_border,
+            1,
+            18));
         return layout;
     }
 
-    private Button actionButton(String label, boolean primary) {
+    private TextView sectionLabel(String value, int colorRes) {
+        TextView label = text(value, 10, colorRes, true);
+        label.setLetterSpacing(0.12f);
+        return label;
+    }
+
+    private TextView badge(String value) {
+        TextView badge = text(value, 10, R.color.snapvere_accent_strong, true);
+        badge.setLetterSpacing(0.08f);
+        badge.setPadding(dp(10), dp(5), dp(10), dp(5));
+        badge.setBackground(shape(R.color.snapvere_surface_high, R.color.snapvere_border_strong, 1, 999));
+        return badge;
+    }
+
+    private Button actionButton(String label, ButtonStyle style) {
         Button button = new Button(this);
         button.setText(label);
-        button.setTextSize(14);
-        button.setTextColor(0xFFF6F5FB);
+        button.setTextSize(13);
+        button.setTypeface(button.getTypeface(), Typeface.BOLD);
+        button.setTextColor(getColor(style.textColor));
         button.setAllCaps(false);
         button.setGravity(Gravity.CENTER);
-        button.setPadding(dp(16), dp(10), dp(16), dp(10));
-        GradientDrawable background = new GradientDrawable();
-        background.setColor(primary ? 0xFF6847D8 : 0xFF171C2A);
-        background.setCornerRadius(dp(12));
-        background.setStroke(dp(1), primary ? 0xFF9D86FF : 0xFF344057);
-        button.setBackground(background);
+        button.setMinHeight(dp(46));
+        button.setPadding(dp(14), dp(9), dp(14), dp(9));
+
+        GradientDrawable content = shape(style.backgroundColor, style.borderColor, 1, 12);
+        button.setBackground(new RippleDrawable(
+            ColorStateList.valueOf(getColor(R.color.snapvere_ripple)),
+            content,
+            null));
         return button;
     }
 
-    private TextView text(String value, float sizeSp, int color, boolean bold) {
+    private GradientDrawable shape(int fillColorRes, int strokeColorRes, int strokeDp, int radiusDp) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(getColor(fillColorRes));
+        drawable.setCornerRadius(dp(radiusDp));
+        drawable.setStroke(dp(strokeDp), getColor(strokeColorRes));
+        return drawable;
+    }
+
+    private TextView text(String value, float sizeSp, int colorRes, boolean bold) {
         TextView view = new TextView(this);
         view.setText(value);
         view.setTextSize(sizeSp);
-        view.setTextColor(color);
-        view.setLineSpacing(0, 1.12f);
+        view.setTextColor(getColor(colorRes));
+        view.setLineSpacing(0, 1.14f);
         if (bold) {
-            view.setTypeface(view.getTypeface(), android.graphics.Typeface.BOLD);
+            view.setTypeface(view.getTypeface(), Typeface.BOLD);
         }
         return view;
+    }
+
+    private void showStatus(String value, int colorRes) {
+        if (statusText == null) {
+            return;
+        }
+        statusText.setText(value);
+        statusText.setTextColor(getColor(colorRes));
+    }
+
+    private void setCaptureButtonEnabled(boolean enabled) {
+        setButtonEnabled(captureButton, enabled);
+    }
+
+    private static void setButtonEnabled(Button button, boolean enabled) {
+        if (button == null) {
+            return;
+        }
+        button.setEnabled(enabled);
+        button.setAlpha(enabled ? 1.0f : 0.45f);
+    }
+
+    private LinearLayout.LayoutParams weightedButtonParams(boolean addEndMargin) {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f);
+        if (addEndMargin) {
+            params.setMarginEnd(dp(8));
+        }
+        return params;
     }
 
     private LinearLayout.LayoutParams marginBottom(int marginBottom) {
@@ -350,7 +663,44 @@ public final class MainActivity extends ComponentActivity {
         return params;
     }
 
+    @SuppressWarnings("deprecation")
+    private String resolveVersionName() {
+        try {
+            String value = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            return value == null || value.isBlank() ? "0.0.9" : value;
+        } catch (PackageManager.NameNotFoundException exception) {
+            return "0.0.9";
+        }
+    }
+
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private static final class LatestCapture {
+        final Uri uri;
+        final String name;
+
+        LatestCapture(Uri uri, String name) {
+            this.uri = uri;
+            this.name = name;
+        }
+    }
+
+    private enum ButtonStyle {
+        PRIMARY(R.color.snapvere_accent, R.color.snapvere_accent_strong, R.color.snapvere_text_primary),
+        SECONDARY(R.color.snapvere_surface_high, R.color.snapvere_border_strong, R.color.snapvere_text_primary),
+        TERTIARY(R.color.snapvere_surface, R.color.snapvere_border, R.color.snapvere_text_secondary),
+        DESTRUCTIVE(R.color.snapvere_surface, R.color.snapvere_border, R.color.snapvere_danger);
+
+        final int backgroundColor;
+        final int borderColor;
+        final int textColor;
+
+        ButtonStyle(int backgroundColor, int borderColor, int textColor) {
+            this.backgroundColor = backgroundColor;
+            this.borderColor = borderColor;
+            this.textColor = textColor;
+        }
     }
 }
