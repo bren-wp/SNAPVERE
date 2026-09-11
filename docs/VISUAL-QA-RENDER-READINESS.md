@@ -7,8 +7,11 @@ The gate therefore follows these rules:
 - `CopyFromScreen` is not used as a fallback. Desktop pixels cannot be treated as application-owned merely because a window is foreground or topmost.
 - Region Capture and Window Capture publish their ready marker only after an `Image` with a non-null `Source` is observable in the probe visual tree.
 - The external PowerShell probe waits for that application-side marker before trying to capture the HWND.
-- Tray menu, Options, Language and About are tested sequentially with a per-surface ready/acknowledgement handshake. The application keeps the current surface alive until PowerShell has captured a stable frame and written that surface's acknowledgement marker; only then does the probe advance to the next surface.
-- Secondary-surface readiness requires a real rendered root size before the ready marker is published. Both the application-side acknowledgement wait and external capture wait are bounded and fail closed on timeout.
+- Tray menu, Options, Language and About are tested sequentially with a per-surface ready/acknowledgement handshake. The application keeps the current surface alive until its caller acknowledges that exact surface; only then does the probe advance.
+- Every secondary-UI probe invocation creates a new GUID session ID. Ready, acknowledgement and final-completion marker filenames are scoped to that session, so a file left by an earlier process cannot satisfy a later visual or package-lifecycle run.
+- Both secondary-UI callers participate in the protocol: rendered visual QA writes an acknowledgement only after a stable HWND-owned image was saved, while Setup/Portable lifecycle validation explicitly acknowledges each rendered surface before continuing.
+- Secondary-surface readiness requires a real rendered root size before the ready marker is published. Application-side and external waits are bounded and fail closed on timeout.
+- Secondary probe failures are diagnostic-log + nonzero-exit events; CI probe failures do not open an interactive fatal MessageBox that could block an unattended runner.
 - `PrintWindow` is the only pixel source accepted for rendered snapshots.
 - A non-empty frame is not enough: the sampled visual fingerprint must match on three consecutive captures separated by a short bounded delay.
 - Probe-only readiness polling is bounded and exists only when an explicit visual-QA probe mode is active. It does not run during normal SNAPVERE startup or capture use.
