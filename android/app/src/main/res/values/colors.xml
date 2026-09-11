@@ -3,7 +3,6 @@
     <color name="snapvere_canvas">#07080D</color>
     <color name="snapvere_surface">#0D1018</color>
     <color name="snapvere_surface_high">#121725</color>
-    <color name="snapvere_surface_pressed">#1A2132</color>
     <color name="snapvere_border">#262E41</color>
     <color name="snapvere_border_strong">#3B4661</color>
     <color name="snapvere_text_primary">#F7F8FC</color>
