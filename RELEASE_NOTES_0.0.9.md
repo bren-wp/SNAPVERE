@@ -34,7 +34,8 @@ The `/privacy` and `/terms` paths are stable product-owned canonical URLs. Their
 - Dependabot monitors NuGet and GitHub Actions dependencies weekly.
 - Shared path-boundary logic now treats a protected directory itself and its descendants correctly, closing the exact-Windows-directory validation gap in Setup.
 - Embedded ZIP extraction uses bounded random staging filenames so valid long NTFS names cannot overflow because of an internal temporary suffix.
-- Existing absolute-path, traversal, expanded-size and entry-count ZIP protections remain in place.
+- Embedded ZIP extraction rejects duplicate file destinations in addition to the existing absolute-path, traversal, expanded-size and entry-count protections.
+- The reusable Portable `%TEMP%` cache is verified byte-for-byte against the embedded architecture payload before execution. Missing, modified or unexpected files and reparse points invalidate the cache; SNAPVERE then rebuilds it transactionally and verifies the rebuilt cache again before launch.
 - v0.0.9 contains no WebView/WebView2, HTML/JavaScript execution surface, first-party HTTP/socket client, telemetry client, cloud-upload client or remote command channel.
 
 The project does not claim that any software can be guaranteed free of every vulnerability. SNAPVERE is also not a sandbox against arbitrary malicious code already executing as the same Windows user.
@@ -44,6 +45,7 @@ The project does not claim that any software can be guaranteed free of every vul
 - Tray and global-hotkey hosts remain event-driven through blocking Win32 message loops; no periodic application polling timer is added.
 - Capture/D3D resources remain on-demand rather than resident solely for tray operation.
 - Recent-capture enumeration avoids an unnecessary explicit metadata refresh for every PNG and tolerates expected filesystem disappearance/access races without a watcher or resident cache.
+- Portable cache validation intentionally adds foreground verification work at Portable launch; no launch-time claim is made without measurement, and package lifecycle CI remains the required regression gate.
 - No fixed CPU/RAM percentage is advertised; resource use depends on Windows, DPI, monitor topology, drivers and whether a capture/editor session is active.
 
 ## UX consistency
