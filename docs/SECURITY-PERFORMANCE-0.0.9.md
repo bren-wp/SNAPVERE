@@ -23,7 +23,7 @@ These controls reduce dependency and CI supply-chain risk. They do not replace p
 
 ## Package and filesystem hardening
 
-Embedded ZIP extraction continues to reject absolute paths and parent traversal, canonicalizes destinations, limits entry count and expanded size, and writes through a staging file before replacement.
+Embedded ZIP extraction continues to reject absolute paths and parent traversal, canonicalizes destinations, limits entry count and expanded size, rejects duplicate file destinations, and writes through a staging file before replacement.
 
 v0.0.9 changes the staging filename to a fixed bounded form:
 
@@ -32,6 +32,8 @@ v0.0.9 changes the staging filename to a fixed bounded form:
 ```
 
 The user- or package-supplied destination basename is no longer extended with additional staging suffixes. This prevents a valid long NTFS filename from failing merely because the temporary filename would exceed the component limit.
+
+The Portable host no longer treats the user-writable `%TEMP%` extraction cache as trusted merely because `.ready` and `Snapvere.exe` exist. Before launching the extracted application it compares every expected payload file byte-for-byte with the embedded architecture-specific ZIP, rejects missing or unexpected files and reparse points, and rebuilds an invalid cache transactionally from the embedded payload. The rebuilt cache is verified again before execution. This reduces persistence/tampering risk in the reusable Portable cache without claiming to sandbox malicious code already running as the same Windows user.
 
 Shared path-boundary logic now treats the protected directory itself and its descendants as inside the boundary while rejecting parents and sibling names that only share a prefix. Setup uses this logic when rejecting the Windows system directory and when identifying its own installed files/processes.
 
@@ -58,6 +60,8 @@ SNAPVERE's tray and global-hotkey hosts use blocking Win32 `GetMessage` loops. T
 Capture and Direct3D resources are created for capture work instead of being kept active solely for tray residency. Secondary windows are created on demand.
 
 Recent-capture enumeration remains bounded and on demand. v0.0.9 removes an unnecessary explicit metadata refresh for every discovered PNG and tolerates expected directory access/disappearance races without adding a file watcher, database or resident cache.
+
+Portable cache validation adds foreground work when the public Portable executable is launched because the reusable extracted payload is compared with its embedded source before execution. No startup-time claim is made here; CI lifecycle validation must remain green, and real launch-time benchmarking is separate from static review.
 
 The project deliberately does not publish invented RAM or CPU percentages. Working set and CPU depend on Windows version, DPI, monitor count, graphics driver and whether a capture/editor session is active. The performance contract is architectural: no unnecessary periodic idle loop, no telemetry worker, no language/network worker and no always-live capture GPU pipeline.
 
