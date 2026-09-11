@@ -11,7 +11,7 @@ SNAPVERE.apk
 SNAPVERE-Android-Source.zip
 ```
 
-Dva Windows hosta su universal x86/x64/ARM64 launcheri. Android APK je release build potpisan stabilnim SNAPVERE Android release identitetom. Android source ZIP generira se iz točno validiranog Git treea.
+Dva Windows hosta su universal x86/x64/ARM64 launcheri. Javni Android APK je validirani CI/debug-potpisani paket iz istog 0.1.0 Android sourcea koji prolazi i `lintRelease` te release-variant build provjeru. Ne predstavlja se kao Google Play/produkcijski potpisan paket. Android source ZIP generira se iz točno validiranog Git treea.
 
 Povijesna izdanja zadržavaju vlastite povijesne asset ugovore i ne prepisuju se.
 
@@ -126,13 +126,13 @@ Portable zaštite uključuju:
 
 ## Instalacija Android APK-a
 
-`SNAPVERE.apk` cilja Android 10 / API 29 ili noviji. Nastaje iz minificiranog/shrunk release varianta i prihvaća se za javno izdanje tek nakon `zipalign` i `apksigner` provjere.
+`SNAPVERE.apk` cilja Android 10 / API 29 ili noviji. U v0.1.0 javni paket je validirani CI/debug-potpisani APK. Isti source prije objave prolazi debug/release lint, JVM testove i release-variant build. Javni APK dodatno mora proći `apksigner` provjeru potpisa, `zipalign` provjeru te SHA-256 provjeru pri prijenosu i u finalnom releaseu.
 
 Android paket namjerno ne traži `INTERNET` permission. Snimanje zaslona zahtijeva Android sustavsko MediaProjection odobrenje za svaku capture sesiju.
 
 Kod instalacije izvan app storea Android može zahtijevati da korisnik izričito dopusti instalaciju iz odabranog izvora. SNAPVERE ne pokušava zaobići Android package-installation policy.
 
-Budući Android update mora biti potpisan istim stabilnim release identitetom kao instalirani javni APK. Zato release workflow nikada ne zamjenjuje nedostajući release key ephemeral CI debug ključem.
+APK iz v0.1.0 **ne** uspostavlja stabilni produkcijski/Google Play signing lineage. Ako buduća Android verzija prijeđe na zasebno upravljani produkcijski signing identitet, Android može zahtijevati uninstall/reinstall umjesto prihvaćanja paketa kao in-place nadogradnje. Taj prijelaz mora biti jasno dokumentiran i ne smije se pretpostaviti kompatibilnost potpisa.
 
 ## Android source paket
 
@@ -151,7 +151,7 @@ Prije objave `v0.1.0` automatizacija zahtijeva:
 3. ARM64 cross-build;
 4. root `Snapvere.exe` u sva tri native payloada;
 5. valjane architecture integrity manifeste;
-6. šest stvarno renderiranih WinUI površina;
+6. šest stvarno renderiranih WinUI površina u normalnom CI putu za release commit;
 7. universal Setup i Portable build;
 8. x64/x86 Setup+Portable lifecycle i tray-first probeove;
 9. uninstall cleanup uz očuvanje korisničkih snimki.
@@ -161,9 +161,9 @@ Prije objave `v0.1.0` automatizacija zahtijeva:
 1. privacy/service/version manifest ugovor;
 2. `lintDebug` i `lintRelease` uz warnings-as-errors;
 3. JVM unit testove;
-4. debug i minificirani release build;
-5. stabilni release signing materijal izvan Git sourcea;
-6. ZIP alignment i kriptografsku APK-signature provjeru;
+4. debug i release-variant build;
+5. validirani CI/debug APK potpis;
+6. ZIP alignment i APK-signature provjeru;
 7. strukturno valjan Android source ZIP;
 8. SHA-256 transfer provjeru iz Android joba u finalni release job.
 
