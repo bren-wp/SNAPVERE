@@ -2,36 +2,33 @@
 
 ## Status
 
-The current `main` line is post-**v0.0.8** hardening. The latest published release is v0.0.8; later commits on `main` are not a new release until a separately validated release workflow publishes a new tag and assets.
+The current release line is **0.1.0**. SNAPVERE consists of a tray-first Windows capture application and a separate native Android 10+ companion. Published historical tags/releases are immutable and are not rewritten by later development.
 
-Normal launch is tray-first: the application creates its WinUI capture coordinator without showing it, starts the global-hotkey and notification-area hosts, and remains available in the background. Region, Window and Screen Capture are implemented. Tray, Options/Recent Captures, Language and About are user-facing secondary surfaces created only when needed.
+Windows normal launch creates a hidden WinUI capture coordinator, global-hotkey host and notification-area host, then remains tray-first. Region, Window and Screen Capture are implemented. Tray, Options/Recent Captures, Language and About are secondary surfaces created on demand.
 
-Published release tags and assets are treated as immutable. Development after v0.0.8 does not rewrite the v0.0.8 release.
+Android implements explicit user-approved full-screen capture through MediaProjection and MediaStore. It is not a port of the Windows top-level-window capture engine and does not claim Windows-only capabilities that Android does not provide.
 
 ## Design goals
 
-SNAPVERE prioritizes capture latency, physical-pixel accuracy, mixed-DPI correctness, deterministic native resource cleanup, local-first privacy, predictable tray startup and a small understandable dependency surface.
+SNAPVERE prioritizes capture latency, physical-pixel accuracy, mixed-DPI correctness, deterministic native resource cleanup, local-first privacy, bounded failure behavior, predictable tray/service startup and a small understandable dependency surface.
 
-## Project boundaries
+## Windows project boundaries
 
 ### Snapvere.App
 
 WinUI 3 composition root and presentation layer.
 
-- `App` owns dependency injection, UI-thread command routing, runtime/visual probes and window lifetime.
-- `CaptureCenterWindow` is retained as a hidden capture coordinator. It is not the normal-launch user experience.
-- `TrayMenuWindow` is the compact branded right-click command surface.
-- `OptionsWindow` exposes only implemented local preferences and recent captures.
-- `LanguagePickerWindow` persists the selected built-in language locally.
-- `AboutWindow` is a factual secondary product-information surface.
-- `RegionCaptureWindow` owns interactive Region selection and inline annotations.
-- `WindowTargetPicker` coordinates one frozen picker overlay per monitor.
+- `App` owns dependency injection, UI-thread routing, runtime/visual probes and window lifetime.
+- `CaptureCenterWindow` remains a hidden capture coordinator, not the normal-launch UI.
+- `TrayMenuWindow`, `OptionsWindow`, `LanguagePickerWindow` and `AboutWindow` are on-demand user surfaces.
+- `RegionCaptureWindow` owns interactive Region selection/annotation.
+- `WindowTargetPicker` coordinates DPI-aware target overlays.
 
-Programmatic WinUI trees are preferred for these secondary windows because they have proven more stable than additional Window XAML resource paths in package/runtime probes.
+Programmatic WinUI trees remain preferred for secondary windows because they are exercised by package/runtime probes without additional XAML resource-loading dependencies.
 
 ### Snapvere.Application
 
-UI-independent application workflows and persistence coordination.
+UI-independent Windows workflows/persistence:
 
 - `RegionCaptureWorkflow`
 - `WindowCaptureWorkflow`
@@ -40,178 +37,185 @@ UI-independent application workflows and persistence coordination.
 - `CaptureHistoryService`
 - `CapturePreferencesService`
 
-Capture preferences are local-only and are consumed by workflows rather than by native backends directly.
+Preferences and capture history remain local. 0.1.0 additionally contains filesystem-policy/security failures in load/enumeration/temp-cleanup paths rather than allowing secondary local I/O cleanup faults to terminate the UI path.
 
 ### Snapvere.Domain
 
-Stable pixel geometry and capture-domain value objects. Capture boundaries are expressed explicitly in physical pixels so logical WinUI coordinates cannot silently leak into backend geometry.
+Physical-pixel capture geometry/value objects without UI dependencies.
 
 ### Snapvere.Capture
 
-Windows capture and desktop-integration primitives:
+Windows acquisition/desktop integration:
 
 - monitor/window discovery;
-- DPI conversion and virtual-desktop geometry;
+- DPI and virtual-desktop geometry;
 - global hotkey host;
-- WGC/D3D11 capture backend;
-- GDI compatibility monitor backend;
-- window Z-order filtering and targeting.
+- Windows.Graphics.Capture / D3D11;
+- GDI monitor compatibility backend;
+- native window Z-order filtering and targeting.
 
 ### Snapvere.Imaging
 
-Deterministic image operations: BGRA8 crop, annotation rendering and PNG encoding. Region annotations are rendered into the resulting frame rather than existing only as visual overlay controls.
+Deterministic BGRA8 crop, annotation rendering and PNG encoding.
 
 ### Snapvere.Packaging / Snapvere.Setup / Snapvere.Portable
 
-Guarded embedded-payload handling, universal architecture selection, per-user Setup lifecycle, Installed apps registration, same-Setup uninstall maintenance mode and single-file Portable extraction/launch.
+Guarded embedded-payload handling, architecture selection, per-user Setup lifecycle, same-Setup uninstall and Portable extraction/launch. Portable reusable cache content is verified against trusted architecture-specific SHA-256 manifests embedded in the host before execution.
 
 ### Snapvere.Shared
 
-Small cross-cutting primitives including the built-in localization catalog and process-local language state. Product workflows and platform behavior remain in their owning layers.
+Small shared primitives such as localization and process-local language state.
 
-## Tray-first startup architecture
+## Windows tray-first startup
 
 ```text
 Snapvere.exe
     ↓
-initialize diagnostics + DI services
+startup diagnostics + DI
     ↓
-create hidden CaptureCenterWindow coordinator
+hidden CaptureCenterWindow coordinator
     ↓
-start Win32 global-hotkey host
+Win32 global-hotkey host
     ↓
-start Win32 notification-area icon host
+Win32 notification-area icon host
     ↓
-remain alive with coordinator hidden
+coordinator stays hidden while app remains resident
 ```
 
-Normal launch must not activate or flash the Capture Center.
+Native tray/hotkey threads do not manipulate WinUI controls directly. Commands are marshalled through WinUI `DispatcherQueue`. The tray host uses `NOTIFYICON_VERSION_4`, handles Explorer/taskbar recreation and retains pointer/keyboard activation support.
 
-The native tray message thread never manipulates WinUI controls directly. It raises a `TrayCommand`; `App` marshals that command through the WinUI `DispatcherQueue` before creating/activating flyouts, options windows or capture overlays.
+## Windows capture pipelines
 
-## Tray command flow
-
-```text
-left-click tray
-    → WM_LBUTTONUP
-    → TrayCommand.RegionCapture
-    → UI DispatcherQueue
-    → Region Capture
-
-right-click tray
-    → TrayCommand.ShowMenu
-    → UI DispatcherQueue
-    → TrayMenuWindow
-```
-
-The tray service also handles notification icon lifetime and Explorer/taskbar recreation. Single-click behavior is protected from duplicate double-click activation.
-
-## Monitor capture pipeline
+### Region / Screen
 
 ```text
-Region / Screen workflow
+command
     ↓
 ResilientScreenCaptureService
-    ├── preferred: WindowsGraphicsCaptureService
-    │   Windows.Graphics.Capture + D3D11 readback
-    └── fallback: GdiScreenCaptureService
-        BitBlt + GetDIBits
+    ├── Windows.Graphics.Capture + D3D11
+    └── expected monitor-acquisition failure → GDI fallback
     ↓
 CaptureFrame (physical BGRA8)
     ↓
-optional Region crop + annotation render
+optional crop + annotation render
     ↓
-clipboard or CaptureFileWriter
-    ↓
-Pictures\SNAPVERE
+CaptureFileWriter / Clipboard
 ```
 
-WGC/D3D resources are created lazily when a capture is requested; the tray-first startup path does not initialize the GPU capture stack merely to stay resident.
+WGC/D3D resources are created lazily for capture work. Caller cancellation and unexpected programming failures are not hidden by unrelated fallback work.
 
-Expected unsupported/platform/native/timeout monitor-capture failures may fall back to GDI. Caller cancellation and unexpected programmer failures are propagated rather than hidden behind fallback.
-
-## Window Capture pipeline
+### Window
 
 ```text
 Window command / Ctrl+Shift+2
     ↓
-snapshot capturable top-level windows in native Z-order
+snapshot eligible top-level windows in Z-order
     ↓
-freeze each display before overlays appear
+freeze displays before overlays
     ↓
-show one DPI-aware picker overlay per monitor
+DPI-aware picker overlays
     ↓
-geometric hit-test against frozen Z-order snapshot
-    ↓
-left-click selected HWND / Esc cancel
+geometric hit test against frozen snapshot
     ↓
 WindowsGraphicsCaptureService.CreateForWindow
     ↓
-CaptureFileWriter → Pictures\SNAPVERE
+local PNG
 ```
 
-The picker does not depend on `WindowFromPoint` after SNAPVERE's always-on-top overlays exist, preventing the overlay itself from becoming the selected target.
+The picker does not depend on `WindowFromPoint` after SNAPVERE overlays exist, preventing self-selection.
 
-## Region Capture pipeline
+### Region editor
 
 ```text
-tray left-click / Print Screen / Ctrl+Shift+1
+tray / Print Screen / Ctrl+Shift+1
     ↓
-freeze primary display
+frozen frame
     ↓
-RegionCaptureWindow
+physical-pixel selection / move / eight-handle resize
     ↓
-physical-pixel drag / move / eight-handle resize
+Pen / Line / Arrow / Box / Highlight
     ↓
-Pen / Line / Arrow / Box / Highlight annotations
-    ↓
-render annotations into selected frozen frame
+render annotations into selected frame
     ↓
 Copy or Save
 ```
 
-The preview, selection crop and output all derive from the same frozen frame. The desktop is not recaptured after the user makes a selection.
+Preview/selection/output derive from the same frozen frame.
 
-## Coordinate systems
+## Windows coordinates and frame contract
 
-Windows virtual-desktop coordinates may be negative. Every display owns physical bounds plus effective DPI. WinUI pointer coordinates cross an explicit `DpiCoordinateTransformer` boundary before entering capture geometry.
+Virtual-desktop coordinates may be negative. Display geometry uses physical bounds/effective DPI. WinUI logical pointer positions cross an explicit DPI conversion boundary before capture geometry.
 
-Window picker overlays use each monitor's own transform. Region Capture remains intentionally single-display today; coordinated cross-monitor Region composition is still deferred.
+`CaptureFrame` is validated BGRA8 data containing physical dimensions, stride, UTC timestamp and source identifier. Empty dimensions, invalid stride and undersized buffers are rejected before downstream processing.
 
-## Capture frame contract
+## Windows local state
 
-`CaptureFrame` is a validated BGRA8 buffer containing physical width/height, explicit stride, UTC timestamp and source identifier. Empty dimensions, invalid stride and undersized buffers are rejected before downstream work.
-
-## Local settings and localization architecture
-
-`CapturePreferencesService` stores implemented preferences under:
+Preferences live at:
 
 ```text
 %LOCALAPPDATA%\SNAPVERE\settings.json
 ```
 
-Current persisted state includes cursor composition preference and language code. Writes use a temporary file followed by an atomic replacement/move. Malformed or unreadable settings fall back to safe defaults.
+Writes use temporary-file + atomic move. Malformed/unreadable state falls back to safe defaults. Localization is static/in-process; English is canonical fallback. Windows startup registration is per-user and owned by `StartupRegistrationService`.
 
-`SnapvereLocalization` uses a built-in static catalog with English as the canonical fallback. Croatian contains dedicated strings for the current capture and secondary UI surfaces. Localization performs no network translation calls, file watching or background polling.
+## Android architecture
 
-`StartupRegistrationService` owns the per-user Windows `Run` registration. Installed builds register the installed `Snapvere.exe`; Portable builds receive the stable Portable launcher path from the launcher so a startup entry never points at the temporary extraction cache.
+Android source lives under `android/` and is intentionally independent from the WinUI/.NET application boundary.
+
+Core components:
+
+- `MainActivity` — responsive native home UI, explicit Capture/Open/Share/Delete and support/legal actions;
+- `CaptureService` — foreground `mediaProjection` service that owns one approved capture session;
+- `CaptureBufferLayout` — pure validated RGBA row-layout arithmetic;
+- Android resources — dark theme, English/Croatian strings and native vector/icon assets.
+
+Android manifest policy keeps `INTERNET` absent, cleartext disabled, backup disabled and `CaptureService` non-exported with `foregroundServiceType="mediaProjection"`.
+
+## Android capture pipeline
+
+```text
+explicit Capture tap
+    ↓
+Android MediaProjection consent
+    ↓
+start foreground CaptureService
+    ↓
+move Activity behind target screen
+    ↓
+MainActivity.onStop() confirms hidden state
+    ↓
+VirtualDisplay + RGBA_8888 ImageReader
+    ↓
+bounded first-frame wait
+    ↓
+validate pixel stride / row stride / padding / buffer length
+    ↓
+bitmap conversion
+    ↓
+MediaStore PNG → Pictures/SNAPVERE
+    ↓
+Open / Share / Delete
+```
+
+Each capture uses a fresh consent token/projection instance. A five-second task-hide guard and seven-second first-frame guard bound ownership. Handler scheduling and image acquisition are checked. Resource teardown is idempotent/per-resource and capture ownership is service-instance-aware to prevent stale teardown races.
+
+The RGBA buffer path requires a 4-byte pixel stride, sufficient row stride, whole-pixel padding, overflow-safe arithmetic and enough ByteBuffer bytes for `rowStride × height`. JVM unit tests cover valid and invalid layouts.
+
+## Android UI/UX boundary
+
+The Android surface shares SNAPVERE's dark identity but uses native Android layout behavior. It is vertically scrollable, system-inset aware, keeps at least 52 dp touch targets and stacks paired actions vertically on narrow displays or font scale >= 1.25x.
+
+System/provider failures for Capture/Open/Share/Delete/Website/Support/Privacy/Terms are converted into visible recovery state where practical instead of raw exception text escaping the Activity.
 
 ## Resource lifetime
 
-Native GDI objects, HWND/message hosts, tray icons, D3D devices/textures/frame pools, capture frames, file streams and temporary files require deterministic ownership. Long-lived tray/hotkey services must not retain full-resolution capture frames.
+Heavy capture resources are demand-driven on both platforms. Windows does not keep full-resolution frames/D3D capture resources resident solely for tray operation. Android creates MediaProjection, VirtualDisplay, ImageReader and capture thread only for an explicit approved session and stops them after success/failure.
 
-## Startup, runtime and visual probes
+Neither platform adds a telemetry worker, cloud-upload worker or continuous capture loop.
 
-Package QA separates technical probes from the real normal-launch contract:
+## Runtime and visual QA
 
-1. `READY` — explicitly activates the hidden coordinator only for a technical WinUI construction probe.
-2. `TRAY_READY` — proves services, hotkey host and tray host initialized while the Capture Center remained hidden.
-3. `REGION_OVERLAY_READY` — proves the Region editor materialized.
-4. `WINDOW_OVERLAY_READY` — proves the Window picker materialized.
-5. `SECONDARY_UI_READY` — sequentially materializes Tray, Options, Language and About surfaces.
-6. normal-launch survival — proves installed and Portable tray-first processes remain alive rather than crashing immediately.
-
-In addition to marker-based materialization, `eng/Capture-SnapvereVisualQa.ps1` launches the real x64 application and captures six rendered PNGs:
+Windows technical probes include `READY`, `TRAY_READY`, `REGION_OVERLAY_READY`, `WINDOW_OVERLAY_READY`, `SECONDARY_UI_READY` and normal-launch survival. Visual QA captures six rendered x64 surfaces:
 
 ```text
 region-capture.png
@@ -222,39 +226,58 @@ language.png
 about.png
 ```
 
-The visual gate rejects a visually empty frame and unexpectedly small PNG output. It also writes a manifest containing surface title, pixel dimensions, byte size and SHA-256 digest. GitHub Actions uploads those files as a short-lived CI artifact.
+CI rejects empty/unexpectedly small output and records dimensions, byte sizes and SHA-256.
 
-The tray-only probe is the authoritative normal-startup model; visible-main-window activation is not a normal-launch requirement. A rendered-UI snapshot proves the surface actually painted on the hosted Windows runner, but it is not a substitute for end-user hardware testing or protected-content capture testing.
+Android CI validates manifest privacy/version/service requirements, `lintDebug`, `lintRelease`, JVM tests, debug/release builds, debug APK signature/alignment and SHA-256. Public-release automation additionally validates stable Android release signing and source-archive structure.
 
-## Universal packaging architecture
+## Packaging and public release architecture
 
-Starting with v0.0.7, the public release contract contains exactly two user-facing executables:
+### Windows
+
+`SNAPVERE-Setup.exe` and `SNAPVERE-Portable.exe` each embed x86, x64 and ARM64 native payloads and select the compatible architecture automatically. Setup owns per-user install/update/uninstall. Portable uses a versioned cache with bounded/path-safe extraction, integrity verification, mutex protection and child-startup validation.
+
+Hosted x64 CI executes universal x64/x86 package lifecycle. ARM64 is cross-build/package validation, not physical ARM64 runtime proof.
+
+### Android
+
+The public APK is built from the minified/shrunk release variant, ZIP-aligned and signed with SNAPVERE's stable private release identity. Signing material remains outside Git source. Release fails before tag creation if signing cannot be verified.
+
+`SNAPVERE-Android-Source.zip` is generated directly from the exact validated `android/` Git tree and excludes generated build/cache output and signing secrets.
+
+### v0.1.0 release assets
+
+The final GitHub Release must contain exactly:
 
 ```text
 SNAPVERE-Setup.exe
 SNAPVERE-Portable.exe
+SNAPVERE.apk
+SNAPVERE-Android-Source.zip
 ```
 
-Each host is built as an x86-compatible Windows executable and embeds native application payloads for x86, x64 and ARM64. At runtime the shared architecture resolver selects the compatible native payload; users do not choose an architecture-specific download.
+All four assets receive locally calculated SHA-256 values and post-publication GitHub digest verification before the release is accepted.
 
-Setup is per-user and owns install/update/repair-style replacement and uninstall through the same installed `SNAPVERE-Setup.exe`. Uninstall validates the installation marker before destructive removal and removes a Windows startup registration only when that registration points exactly to the validated installed `Snapvere.exe`.
+## Security/privacy boundary
 
-Portable is a single-file launcher with a versioned temporary cache, bounded/path-safe extraction, mutex protection, stale-cache cleanup and child-startup validation. The launcher does not report normal-startup success if the child exits immediately.
+Screenshot pixels, clipboard contents and user files are not routine diagnostic payloads. Capture is local-first. Package extraction is path-constrained/size-bounded. Uninstall preserves `Pictures\SNAPVERE`. Android contains no first-party network capture path.
 
-CI cross-builds all three application payload architectures. Hosted x64 runners execute the universal Setup/Portable lifecycle with x64 and x86 payload selection. ARM64 is package/cross-build validated there but is not represented as a real ARM64 hardware runtime test.
-
-## Security and privacy boundaries
-
-Screenshot pixels, clipboard contents and user files are not routine log payloads. Core capture has no telemetry, cloud-upload or credential dependency. Startup diagnostics remain local. Package extraction is path-constrained and size-bounded, and uninstall never removes `Pictures\SNAPVERE` captures.
+See `SECURITY.md`, `docs/SECURITY-PERFORMANCE-0.1.0.md` and `docs/ANDROID.md`.
 
 ## Deliberately deferred
 
-- coordinated cross-monitor Region selection/composition;
+Windows:
+
+- coordinated cross-monitor Region composition;
 - text, blur/pixelate and numbered-step annotations;
 - scrolling capture;
-- expanded History/favorites/Pin to Screen;
+- expanded history/favorites/pin-to-screen;
 - OCR;
 - automatic updater;
 - Authenticode signing.
 
-Deferred functionality must remain absent from product UI until it is implemented and release-gated.
+Android:
+
+- Windows-style arbitrary top-level Window Capture;
+- Region-selection/annotation parity with the desktop editor.
+
+Deferred functionality stays out of production UI/documentation until implemented and release-gated.
