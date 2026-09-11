@@ -268,15 +268,23 @@ function Save-WindowSnapshot {
 }
 
 function Start-ProbeProcess {
-    param([Parameter(Mandatory = $true)][string]$EnvironmentVariable)
+    param(
+        [Parameter(Mandatory = $true)][string]$EnvironmentVariable,
+        [string]$SessionId = ''
+    )
 
     $previous = [Environment]::GetEnvironmentVariable($EnvironmentVariable, 'Process')
+    $previousSession = [Environment]::GetEnvironmentVariable('SNAPVERE_PROBE_SESSION_ID', 'Process')
     try {
         [Environment]::SetEnvironmentVariable($EnvironmentVariable, '1', 'Process')
+        if (-not [string]::IsNullOrWhiteSpace($SessionId)) {
+            [Environment]::SetEnvironmentVariable('SNAPVERE_PROBE_SESSION_ID', $SessionId, 'Process')
+        }
         Start-Process -FilePath $resolvedAppPath -WorkingDirectory (Split-Path -Parent $resolvedAppPath) -PassThru
     }
     finally {
         [Environment]::SetEnvironmentVariable($EnvironmentVariable, $previous, 'Process')
+        [Environment]::SetEnvironmentVariable('SNAPVERE_PROBE_SESSION_ID', $previousSession, 'Process')
     }
 }
 
@@ -385,35 +393,38 @@ function Invoke-SingleSurfaceProbe {
 }
 
 function Invoke-SecondarySurfaceProbe {
-    $markerFileName = 'secondary-ui-probe.ready'
+    $sessionId = [Guid]::NewGuid().ToString('N')
+    $markerFileName = "secondary-ui-probe.$sessionId.ready"
     $surfaces = @(
-        [pscustomobject]@{ Snapshot = 'tray-menu.png'; Ready = 'secondary-tray.ready'; State = 'SECONDARY_TRAY_READY'; Acknowledgement = 'secondary-tray.captured' },
-        [pscustomobject]@{ Snapshot = 'options.png'; Ready = 'secondary-options.ready'; State = 'SECONDARY_OPTIONS_READY'; Acknowledgement = 'secondary-options.captured' },
-        [pscustomobject]@{ Snapshot = 'language.png'; Ready = 'secondary-language.ready'; State = 'SECONDARY_LANGUAGE_READY'; Acknowledgement = 'secondary-language.captured' },
-        [pscustomobject]@{ Snapshot = 'about.png'; Ready = 'secondary-about.ready'; State = 'SECONDARY_ABOUT_READY'; Acknowledgement = 'secondary-about.captured' }
+        [pscustomobject]@{ Snapshot = 'tray-menu.png'; Stem = 'secondary-tray'; State = 'SECONDARY_TRAY_READY' },
+        [pscustomobject]@{ Snapshot = 'options.png'; Stem = 'secondary-options'; State = 'SECONDARY_OPTIONS_READY' },
+        [pscustomobject]@{ Snapshot = 'language.png'; Stem = 'secondary-language'; State = 'SECONDARY_LANGUAGE_READY' },
+        [pscustomobject]@{ Snapshot = 'about.png'; Stem = 'secondary-about'; State = 'SECONDARY_ABOUT_READY' }
     )
 
     Remove-ProbeMarker -FileName $markerFileName
     foreach ($surface in $surfaces) {
-        Remove-ProbeMarker -FileName $surface.Ready
-        Remove-ProbeMarker -FileName $surface.Acknowledgement
+        Remove-ProbeMarker -FileName "$($surface.Stem).$sessionId.ready"
+        Remove-ProbeMarker -FileName "$($surface.Stem).$sessionId.captured"
     }
 
-    $process = Start-ProbeProcess -EnvironmentVariable 'SNAPVERE_SECONDARY_UI_PROBE'
+    $process = Start-ProbeProcess -EnvironmentVariable 'SNAPVERE_SECONDARY_UI_PROBE' -SessionId $sessionId
     $snapshots = [System.Collections.Generic.List[object]]::new()
 
     try {
         foreach ($surface in $surfaces) {
-            $readyPath = Get-ProbeMarkerPath -FileName $surface.Ready
+            $readyFileName = "$($surface.Stem).$sessionId.ready"
+            $acknowledgementFileName = "$($surface.Stem).$sessionId.captured"
+            $readyPath = Get-ProbeMarkerPath -FileName $readyFileName
             $readyWait = [System.Diagnostics.Stopwatch]::StartNew()
             while (-not $process.HasExited -and $readyWait.ElapsedMilliseconds -lt 6000 -and -not (Test-Path -LiteralPath $readyPath -PathType Leaf)) {
                 Start-Sleep -Milliseconds 10
             }
 
             if (-not (Test-Path -LiteralPath $readyPath -PathType Leaf)) {
-                throw "Secondary UI surface '$($surface.Snapshot)' did not publish render-ready marker '$($surface.Ready)'."
+                throw "Secondary UI surface '$($surface.Snapshot)' did not publish render-ready marker '$readyFileName'."
             }
-            Assert-ProbeMarker -FileName $surface.Ready -ExpectedState $surface.State
+            Assert-ProbeMarker -FileName $readyFileName -ExpectedState $surface.State
 
             $snapshot = $null
             $lastCaptureError = $null
@@ -451,10 +462,10 @@ function Invoke-SecondarySurfaceProbe {
             }
 
             $snapshots.Add($snapshot)
-            $acknowledgementPath = Get-ProbeMarkerPath -FileName $surface.Acknowledgement
+            $acknowledgementPath = Get-ProbeMarkerPath -FileName $acknowledgementFileName
             $acknowledgementDirectory = Split-Path -Parent $acknowledgementPath
             New-Item -ItemType Directory -Force -Path $acknowledgementDirectory | Out-Null
-            Set-Content -LiteralPath $acknowledgementPath -Value "CAPTURED $($surface.Snapshot)" -Encoding utf8
+            Set-Content -LiteralPath $acknowledgementPath -Value "CAPTURED $($surface.Snapshot) session=$sessionId" -Encoding utf8
         }
 
         Wait-ForProcessExit -Process $process
@@ -470,6 +481,11 @@ function Invoke-SecondarySurfaceProbe {
         if (-not $process.HasExited) {
             Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
         }
+        foreach ($surface in $surfaces) {
+            Remove-ProbeMarker -FileName "$($surface.Stem).$sessionId.ready"
+            Remove-ProbeMarker -FileName "$($surface.Stem).$sessionId.captured"
+        }
+        Remove-ProbeMarker -FileName $markerFileName
         $process.Dispose()
     }
 }
