@@ -58,30 +58,35 @@ The latest-capture UI validates that the stored URI is still readable before ena
 
 ## Dark design system
 
-The Android distribution follows the same SNAPVERE dark visual direction as the desktop product rather than relying on stock light Android controls.
+The Android distribution now shares the core dark SNAPVERE palette with the Windows distribution instead of maintaining a separate look. Canonical desktop tokens come from `src/Snapvere.App/App.xaml`; Android mirrors them in `android/app/src/main/res/values/colors.xml`.
 
-Central design tokens are in `android/app/src/main/res/values/colors.xml`:
+Core shared tokens:
 
-- canvas: near-black background
-- surface / elevated surface hierarchy
-- subtle and strong borders
-- primary and secondary text hierarchy
-- violet SNAPVERE accent
-- cyan secondary accent
-- success, warning and destructive semantic colors
-- ripple feedback token
+| Token | Value |
+| --- | --- |
+| Canvas | `#0B0D12` |
+| Surface | `#12151C` |
+| Raised surface | `#181C25` |
+| Border | `#2A3140` |
+| Primary text | `#F6F7FB` |
+| Secondary text | `#98A2B3` |
+| Muted text | `#727C90` |
+| Primary accent | `#7C6CFF` |
+| Success | `#45D6A2` |
 
-`MainActivity` consumes these resource tokens. UI hierarchy:
+Android-specific strong-border, strong-accent, warning and destructive tokens extend that base without changing the shared product identity.
+
+`MainActivity` consumes resource tokens rather than embedding an unrelated palette. UI hierarchy:
 
 - identity header with SNAPVERE icon, tagline and Android/local badge
 - emphasized Capture card
 - live accessibility-aware status panel
-- Latest Capture card with validated actions
+- Latest Capture card with validated Open / Share / Delete actions
 - Private by Design card
 - About/support/legal card
 - version/platform footer
 
-The page is vertically scrollable and system-bar insets are respected. Buttons expose disabled state, use touch ripple feedback and preserve readable contrast in the fixed dark theme.
+The page is vertically scrollable and respects system-bar insets. Phone layouts use compact horizontal spacing; tablet-class layouts use wider 48 dp horizontal padding. Interactive buttons use a 52 dp minimum height, native ripple feedback and explicit disabled-state treatment so touch targets remain comfortable without adding a heavyweight UI framework.
 
 ## Latest capture actions
 
