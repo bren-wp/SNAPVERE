@@ -118,18 +118,11 @@ Security or telemetry work must not add hidden periodic network requests, high-f
 
 ## Android release signing
 
-The development Actions APK is debug-signed evidence only. The public `SNAPVERE.apk` in v0.1.0 must be the minified/shrunk release variant aligned and signed with SNAPVERE's stable private Android release identity.
+The public `SNAPVERE.apk` in v0.1.0 is intentionally the validated CI/debug-signed APK. It is built from the same validated 0.1.0 Android source that also passes `lintDebug`, `lintRelease`, JVM tests, debug build and release-variant build checks. The publication workflow verifies the APK signature and ZIP alignment before release.
 
-The release workflow requires these secrets, managed outside the repository:
+This signature establishes package integrity for the published APK, but the signing identity is **not** represented as a stable production/Google Play publisher identity. The v0.1.0 release does not require or embed a private production Android keystore.
 
-```text
-SNAPVERE_ANDROID_KEYSTORE_BASE64
-SNAPVERE_ANDROID_KEY_ALIAS
-SNAPVERE_ANDROID_KEYSTORE_PASSWORD
-SNAPVERE_ANDROID_KEY_PASSWORD
-```
-
-If signing material is missing/invalid, release automation fails before tag creation. It never falls back to an ephemeral debug identity for the public package.
+A future production/Play-signed Android channel must use a deliberately managed stable private signing identity outside Git source. If that identity differs from the v0.1.0 CI/debug identity, Android may require users to uninstall/reinstall rather than accept an in-place update. That transition must be documented explicitly rather than being treated as signature-compatible by assumption.
 
 `SNAPVERE-Android-Source.zip` is generated from the validated Git tree and must not contain keystores, secrets, generated build output or Gradle caches.
 
@@ -144,17 +137,17 @@ SNAPVERE.apk
 SNAPVERE-Android-Source.zip
 ```
 
-Windows publication remains gated by audited build/tests, x86 build, ARM64 cross-build, payload/integrity-manifest validation, six rendered UI surfaces and x64/x86 Setup+Portable lifecycle/tray-first probes.
+Windows publication remains gated by audited build/tests, x86 build, ARM64 cross-build, payload/integrity-manifest validation, six rendered UI surfaces in the normal CI path and x64/x86 Setup+Portable lifecycle/tray-first probes.
 
-Android publication is gated by manifest/version/privacy checks, lint, JVM tests, debug/release builds, release APK alignment/signature verification and Android source-archive validation.
+Android publication is gated by manifest/version/privacy checks, lint, JVM tests, debug/release builds, CI/debug APK signature/alignment verification and Android source-archive validation.
 
 The workflow transfers Android candidates through a GitHub Actions artifact with recorded SHA-256 values and re-verifies those hashes before admitting them to the final release directory.
 
-The immutable `v0.1.0` tag is created only for the exact validated commit and only after all pre-publication gates pass. Missing-tag detection accepts only an actual HTTP 404 as absence; other GitHub API errors abort. Existing annotated tags must resolve to the exact commit.
+The immutable `v0.1.0` tag is created only for the exact validated commit and only after all pre-publication gates pass. Missing-tag detection accepts only an actual HTTP 404 as absence; other GitHub API errors abort. Existing tag refs must resolve to the exact commit.
 
 Post-publication validation requires exactly the four expected assets and compares each GitHub-reported SHA-256 digest with the locally validated candidate hash. Existing release assets are never replaced by the workflow.
 
-Windows binaries are not represented as Authenticode-signed unless a real certificate/signing gate is introduced and verified. SHA-256 establishes byte identity, not publisher identity. Android APK publisher identity is provided by its stable release key.
+Windows binaries are not represented as Authenticode-signed unless a real certificate/signing gate is introduced and verified. SHA-256 establishes byte identity, not publisher identity. The Android v0.1.0 APK uses a CI/debug signing identity and is not represented as production/Play-signed.
 
 ## Update security
 
