@@ -11,6 +11,9 @@ final class CaptureBufferLayout {
         if (pixelStride <= 0) {
             throw new IllegalArgumentException("Pixel stride must be positive.");
         }
+        if (rowStride <= 0) {
+            throw new IllegalArgumentException("Row stride must be positive.");
+        }
 
         long minimumRowBytes = (long) width * pixelStride;
         if (minimumRowBytes > Integer.MAX_VALUE || rowStride < minimumRowBytes) {
@@ -18,7 +21,15 @@ final class CaptureBufferLayout {
         }
 
         int rowPadding = rowStride - (int) minimumRowBytes;
+        if (rowPadding % pixelStride != 0) {
+            throw new IllegalArgumentException("Row padding is not aligned to the pixel stride.");
+        }
+
         int extraPixels = rowPadding / pixelStride;
-        return Math.addExact(width, extraPixels);
+        try {
+            return Math.addExact(width, extraPixels);
+        } catch (ArithmeticException exception) {
+            throw new IllegalArgumentException("Padded capture width exceeds the supported bitmap range.", exception);
+        }
     }
 }
