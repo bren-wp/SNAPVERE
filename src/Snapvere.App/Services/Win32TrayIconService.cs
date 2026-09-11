@@ -732,7 +732,7 @@ public sealed class Win32TrayIconService : ITrayIconService
         internal static extern bool TranslateMessage(ref Message message);
 
         [DllImport("user32.dll", EntryPoint = "DispatchMessageW")]
-        internal static extern nint DispatchMessage(ref message);
+        internal static extern nint DispatchMessage(ref Message message);
 
         [DllImport("user32.dll", EntryPoint = "DefWindowProcW")]
         internal static extern nint DefWindowProc(nint window, uint message, nuint wParam, nint lParam);
