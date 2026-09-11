@@ -29,7 +29,7 @@ Native Android companion for SNAPVERE with the same local-first privacy model as
 - rejected Handler scheduling cannot leave capture ownership indefinitely active;
 - acquired Images are closed before final completion cleanup;
 - the pixel buffer is rewound and its declared byte requirement is verified before copy;
-- `RGBA_8888` capture now rejects an unexpected pixel stride or partial-pixel row padding;
+- `RGBA_8888` capture rejects an unexpected pixel stride or partial-pixel row padding;
 - conversion/provider failures and allocation failure are contained by the capture session cleanup path;
 - only the owning service instance may release the global capture guard;
 - user-facing recovery text is localized instead of exposing internal provider exception messages.
@@ -61,26 +61,27 @@ SNAPVERE-Android-0.1.0-debug.apk.sha256
 
 inside `snapvere-android-ci-apk-<commit-sha>`.
 
-The CI APK is debug-signed development evidence. It is not the public release identity.
+## Public v0.1.0 APK
 
-## Public release APK
+For v0.1.0 the public `SNAPVERE.apk` deliberately uses the same CI/debug-signed APK path that is already validated by Android CI. No private production keystore or repository signing secret is required.
 
-The public v0.1.0 release workflow uses the minified/shrunk release APK, aligns it, signs it with SNAPVERE's stable private Android release key and verifies the result with `apksigner` + `zipalign` before publication as:
+The release workflow still builds **both** debug and release variants and requires:
+
+- `lintDebug` and `lintRelease`;
+- JVM unit tests;
+- successful debug and release builds;
+- a non-empty signed debug APK;
+- `apksigner` verification;
+- ZIP-alignment verification;
+- SHA-256 transfer and publication checks.
+
+The published file is:
 
 ```text
 SNAPVERE.apk
 ```
 
-Release signing secrets are never committed. The workflow requires:
-
-```text
-SNAPVERE_ANDROID_KEYSTORE_BASE64
-SNAPVERE_ANDROID_KEY_ALIAS
-SNAPVERE_ANDROID_KEYSTORE_PASSWORD
-SNAPVERE_ANDROID_KEY_PASSWORD
-```
-
-Missing/invalid signing material fails the release before tag creation. The workflow deliberately does not fall back to an ephemeral debug key because that would break a trustworthy Android update identity.
+This package is installable, but it is **not** represented as Google Play/production-signed. Its signing identity is not a supported long-term production upgrade contract. If a later Android channel uses a different stable production key, Android may require uninstall/reinstall before installing that differently signed package.
 
 ## Android source release asset
 

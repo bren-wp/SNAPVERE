@@ -19,7 +19,7 @@ Web, support i legal poveznice pokreće korisnik i delegiraju se OS handlerima; 
 - Portable cache prije izvršavanja provjerava architecture-specific trusted SHA-256 manifest ugrađen u host.
 - Missing, modified, unexpected ili reparse-point sadržaj uzrokuje transactional rebuild i ponovnu validaciju.
 - Capture zapis koristi privremenu datoteku i atomic move; sekundarna cleanup greška ne smije zamijeniti izvorni capture rezultat.
-- Capture History i preference putovi dodatno obrađuju `SecurityException`/policy failure na ograničenom filesystemu.
+- Capture History i preference putovi obrađuju `SecurityException`/policy failure na ograničenom filesystemu.
 
 Aplikacija se ne predstavlja kao sandbox protiv proizvoljnog zlonamjernog koda koji već radi kao isti Windows korisnik.
 
@@ -39,16 +39,7 @@ Aplikacija se ne predstavlja kao sandbox protiv proizvoljnog zlonamjernog koda k
 
 ## Android buffer sigurnost
 
-Capture reader koristi `RGBA_8888`. Prije bitmap kopiranja SNAPVERE provjerava:
-
-- vidljiva širina > 0;
-- pixel stride je točno 4 bajta;
-- row stride je pozitivan;
-- row stride sadrži cijeli vidljivi red;
-- row padding je cijeli broj piksela;
-- aritmetika širina ne prelijeva raspon;
-- ByteBuffer se vraća na početak prije kopiranja;
-- preostali buffer sadrži najmanje `rowStride × height` bajtova.
+Capture reader koristi `RGBA_8888`. Prije bitmap kopiranja SNAPVERE provjerava vidljivu širinu, pixel stride od točno 4 bajta, pozitivan i dovoljno velik row stride, whole-pixel row padding, overflow-safe aritmetiku, vraćen ByteBuffer položaj te dovoljan broj bajtova za `rowStride × height`.
 
 JVM regresijski testovi pokrivaju tight/padded row, neispravne dimenzije, neočekivani pixel stride, djelomični padding i overflow.
 
@@ -65,30 +56,30 @@ Automatizirana validacija pada ako se dogodi bilo koja regresija:
 
 U 0.1.0 Android sourceu nema telemetrije, analytics SDK-a, oglasnog SDK-a, cloud uploadera, WebViewa niti remote-control kanala.
 
-## Android release signing
+## Android potpisivanje paketa za v0.1.0
 
-CI debug APK je samo razvojni dokaz. Javni `SNAPVERE.apk` prihvaća se tek kada release workflow izgradi minificirani/shrunk release variant i verificira stabilni privatni Android release potpis.
+Javni `SNAPVERE.apk` namjerno koristi isti CI/debug-potpisani paketni put koji je već potvrđen Android CI-jem. Zbog toga v0.1.0 objava ne zahtijeva privatni production keystore niti repository signing secrete.
 
-Potrebni GitHub secreti:
+To **ne uklanja provjere potpisa**. Prije objave automatizacija i dalje zahtijeva:
 
-- `SNAPVERE_ANDROID_KEYSTORE_BASE64`
-- `SNAPVERE_ANDROID_KEY_ALIAS`
-- `SNAPVERE_ANDROID_KEYSTORE_PASSWORD`
-- `SNAPVERE_ANDROID_KEY_PASSWORD`
+- uspješan debug i release Android build;
+- `lintDebug`, `lintRelease` i JVM testove;
+- neprazan potpisani debug APK;
+- uspješnu `apksigner` provjeru;
+- ZIP-alignment provjeru;
+- SHA-256 provjeru kroz artifact prijenos i završnu objavu.
 
-Ako nedostaju ili nisu valjani, release pada prije stvaranja taga. Ephemeral debug identitet se ne objavljuje kao produkcijski APK.
+APK je instalabilan, ali se ne predstavlja kao Google Play/production-potpisani paket. CI/debug signing identitet nije podržani trajni production update lineage. Kasniji Android kanal s drugačijim stabilnim production ključem može zahtijevati deinstalaciju i novu instalaciju.
 
 ## Integritet source arhive
 
-`SNAPVERE-Android-Source.zip` nastaje kroz `git archive` iz točno validiranog release commita i njegova `android/` treea. Workflow provjerava očekivane Gradle/manifest/MainActivity putanje te odbija generirani `build/` ili `.gradle/` sadržaj.
-
-Signing materijal se ne nalazi u arhivi.
+`SNAPVERE-Android-Source.zip` nastaje kroz `git archive` iz točno validiranog release commita i njegova `android/` treea. Workflow provjerava očekivane Gradle/manifest/MainActivity putanje te odbija generirani `build/` ili `.gradle/` sadržaj. Signing materijal se ne nalazi u arhivi.
 
 ## Immutable release i four-asset ugovor
 
-0.1.0 release workflow pokreće se tek posebnim `main` triggerom nakon zelenog source CI-a. Prije taga ponovno gradi i validira oba platformna deliverablea.
+0.1.0 release workflow pokreće se posebnim `main` triggerom nakon zelenog source CI-a. Prije taga ponovno gradi i validira oba platformna deliverablea.
 
-Immutable `v0.1.0` tag nastaje tek nakon svih pre-publication gateova. Tag lookup je fail-closed: samo stvarni HTTP 404 znači da tag ne postoji. Postojeći annotated tag mora se razriješiti na točno validirani commit.
+Immutable `v0.1.0` tag nastaje tek nakon svih pre-publication gateova. Postojeći tag mora se razriješiti na točno validirani commit.
 
 Valjano v0.1.0 izdanje sadrži točno:
 
@@ -119,11 +110,11 @@ SNAPVERE izbjegava nepotreban rezidentni rad dok miruje:
 
 ### Windows
 
-Release/CI gateovi uključuju audited restore, x64 build/test, x86 build, ARM64 cross-build, payload-integrity provjere, šest renderiranih WinUI površina, universal Setup/Portable packaging i x64/x86 lifecycle/tray-first probeove.
+Release/CI gateovi uključuju audited restore, x64 build/test, x86 build, ARM64 cross-build, payload-integrity provjere, renderirani WinUI QA u normalnom CI putu, universal Setup/Portable packaging i x64/x86 lifecycle/tray-first probeove.
 
 ### Android
 
-CI pokreće debug/release lint, JVM testove i debug/release build plus debug APK signature/alignment/digest. Release job dodatno provjerava stabilni release potpis, Android source arhivu i transfer hashove.
+CI pokreće debug/release lint, JVM testove i debug/release build plus debug APK signature/alignment/digest. Release job dodatno provjerava javni CI/debug-potpisani APK, Android source arhivu i transfer hashove.
 
 ### Finalna objava
 
@@ -133,4 +124,5 @@ Objava se prihvaća tek nakon valjanih platformnih gateova i uspješne post-publ
 
 - ARM64 Windows na hosted x64 runneru je cross-build/package dokaz, ne fizički ARM64 runtime test.
 - Android CI/release automatizacija nije iscrpni fizički test svakog OEM skina, zaslona, memory-pressure stanja ili permission managera.
+- Javni 0.1.0 APK je CI/debug-potpisan, a ne production/Play signing tvrdnja.
 - Sigurnosne kontrole smanjuju poznate klase rizika, ali nisu univerzalno jamstvo protiv nepoznatih ranjivosti.

@@ -32,7 +32,7 @@ Android 14+ requires fresh user consent for each MediaProjection capture session
 
 ## 0.1.0 lifecycle hardening
 
-The service now treats platform/provider failures as controlled capture failures rather than allowing them to escape the service lifecycle where practical.
+The service treats platform/provider failures as controlled capture failures rather than allowing them to escape the service lifecycle where practical.
 
 - Notification-channel initialization failure is recorded and converted into a capture failure during start instead of intentionally escaping `onCreate()`.
 - Handler scheduling is checked: rejected task-hide/frame work fails the session instead of leaving capture ownership stuck.
@@ -129,15 +129,28 @@ SNAPVERE-Android-0.1.0-debug.apk.sha256
 
 inside the Actions artifact `snapvere-android-ci-apk-<commit-sha>`.
 
-This CI APK is development/debug-signed evidence. It is deliberately not represented as the public production APK.
-
 ## Public 0.1.0 Android release
 
-The v0.1.0 release workflow builds the minified/shrunk Android release variant, ZIP-aligns it, signs it with SNAPVERE's stable private Android release identity, verifies that signature with `apksigner`, and publishes it as:
+For v0.1.0 the public `SNAPVERE.apk` uses the same CI/debug-signed Android package path that is already validated by Android CI. The release path does **not** require a private production keystore or repository signing secret.
+
+The release workflow still builds both debug and release variants and requires:
+
+- Android privacy/service/version validation;
+- `lintDebug` and `lintRelease`;
+- JVM unit tests;
+- successful debug and release builds;
+- a signed, non-empty debug APK;
+- `apksigner` verification;
+- ZIP-alignment verification;
+- SHA-256 verification across the Actions artifact transfer and final publication.
+
+The verified debug-signed package is published as:
 
 ```text
 SNAPVERE.apk
 ```
+
+This APK is installable but is not represented as a Google Play/production-signed package. Its signing identity is not a supported long-term production update lineage. If a later Android channel uses a different stable production key, Android may require uninstall/reinstall before installing the differently signed package.
 
 The workflow also creates directly from the validated Git tree:
 
@@ -146,15 +159,6 @@ SNAPVERE-Android-Source.zip
 ```
 
 The source ZIP contains tracked `android/` source/configuration only and is structurally tested before publication. Generated `build/` output, Gradle caches and signing material are not included.
-
-Required release-signing secrets are managed outside Git source:
-
-- `SNAPVERE_ANDROID_KEYSTORE_BASE64`
-- `SNAPVERE_ANDROID_KEY_ALIAS`
-- `SNAPVERE_ANDROID_KEYSTORE_PASSWORD`
-- `SNAPVERE_ANDROID_KEY_PASSWORD`
-
-If any signing secret is unavailable or the signature cannot be verified, the release workflow fails **before** immutable tag creation/publication. The workflow never substitutes an ephemeral debug key for the public release identity.
 
 ## v0.1.0 public asset contract
 
@@ -171,7 +175,7 @@ The release workflow carries SHA-256 values across the Android Actions artifact 
 
 ## Evidence boundaries
 
-A green Android CI proves compilation, debug/release lint, JVM tests, debug/release builds, debug APK signature/alignment and artifact generation. A green v0.1.0 release job additionally proves release APK signing verification, source-archive structure and release-asset digest checks. Neither is a claim of exhaustive physical-device testing across every OEM, Android skin, resolution or permission implementation.
+A green Android CI proves compilation, debug/release lint, JVM tests, debug/release builds, debug APK signature/alignment and artifact generation. A green v0.1.0 release job additionally proves the public CI/debug-signed APK signature/alignment, source-archive structure, Windows package lifecycle checks and release-asset digest checks. Neither is a claim of exhaustive physical-device testing across every OEM, Android skin, resolution or permission implementation.
 
 ## Platform parity boundary
 

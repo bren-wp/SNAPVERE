@@ -59,7 +59,7 @@ The implemented Android workflow provides:
 - buffer rewind before copy and deterministic Image/Bitmap cleanup ordering;
 - contained conversion/provider/allocation failures with localized recovery status rather than raw internal exception text.
 
-Android CI runs `lintDebug`, `lintRelease`, JVM tests, debug/release builds, signature/alignment checks and SHA-256 generation. The CI APK is deliberately debug-signed development evidence; the public release APK uses the separate stable release-signing gate described below.
+Android CI runs `lintDebug`, `lintRelease`, JVM tests, debug/release builds, signature/alignment checks and SHA-256 generation. For v0.1.0 the public `SNAPVERE.apk` deliberately uses the same verified CI/debug-signed package path; no private production keystore is required.
 
 See [Android architecture and QA](docs/ANDROID.md) and [Android source/build guide](android/README.md).
 
@@ -99,7 +99,9 @@ SNAPVERE-Android-Source.zip
 
 `SNAPVERE-Setup.exe` and `SNAPVERE-Portable.exe` embed native x86, x64 and ARM64 Windows payloads and select a compatible payload automatically. Windows targets Windows 10 version 1809/build 17763 or later; WGC-dependent paths require Windows 10 version 2004/build 19041 or later.
 
-`SNAPVERE.apk` is the minified/shrunk Android release package. The release workflow only publishes it after ZIP alignment and verification against SNAPVERE's stable Android release signing identity. Required private signing values are GitHub secrets and are never committed. The workflow does **not** replace a missing release key with an ephemeral debug key.
+`SNAPVERE.apk` is the installable Android CI/debug-signed package from the validated 0.1.0 source. The release path still requires debug/release lint, JVM tests, successful debug/release builds, APK signature verification, ZIP alignment and SHA-256 verification. It is not represented as Google Play/production-signed, and it does not require private signing secrets.
+
+Because the v0.1.0 public APK uses the CI/debug signing identity, it is not a supported long-term production update lineage. A future Android channel using a different stable production key may require uninstall/reinstall before installation.
 
 `SNAPVERE-Android-Source.zip` is generated directly from the validated Git `android/` tree. It excludes generated build output, Gradle caches and signing material.
 
@@ -123,22 +125,15 @@ ARM64 evidence on the hosted x64 runner is cross-build/package validation, not p
 
 ### Android
 
-Android Actions validates the manifest privacy/service/version contract, SDK/tooling, debug/release lint, JVM tests, debug/release builds, debug APK signing/alignment and SHA-256. The v0.1.0 release workflow additionally verifies the stable release signature, validates the source archive, carries hashes through the Actions artifact transfer, and verifies all four published GitHub digests.
+Android Actions validates the manifest privacy/service/version contract, SDK/tooling, debug/release lint, JVM tests, debug/release builds, debug APK signing/alignment and SHA-256. The v0.1.0 release workflow additionally validates the public CI/debug-signed APK, validates the source archive, carries hashes through the Actions artifact transfer, and verifies all four published GitHub digests.
 
 A green Android workflow is automated build/package evidence, not a claim of exhaustive runtime coverage across every physical OEM device.
 
-## Release signing
+## Android package signing for v0.1.0
 
-Public Android v0.1.0 publication requires these repository secrets:
+The public 0.1.0 APK intentionally follows the CI/debug signing path and therefore requires **no private Android keystore secrets**. `apksigner` and ZIP-alignment checks remain mandatory before the APK can reach the release job.
 
-```text
-SNAPVERE_ANDROID_KEYSTORE_BASE64
-SNAPVERE_ANDROID_KEY_ALIAS
-SNAPVERE_ANDROID_KEYSTORE_PASSWORD
-SNAPVERE_ANDROID_KEY_PASSWORD
-```
-
-If any are absent/invalid, the release fails before the immutable tag is created. See [Android documentation](docs/ANDROID.md).
+This choice prioritizes an immediately installable APK without storing a private production key in GitHub. It should not be interpreted as a permanent production/Play signing strategy.
 
 ## Languages
 
@@ -217,8 +212,3 @@ Screenshot pixels are not intentionally written to this log.
 ## License and ownership
 
 **SNAPVERE 0.0.7 and later are distributed under the SNAPVERE Commercial Software License Agreement in [`LICENSE`](LICENSE).** SNAPVERE is the product brand. Brendigo is the developer and publisher. Official site: **snapvere.com**. Support: **info@snapvere.com**.
-
----
-
-**SNAPVERE — Capture. Edit. Done.**  
-Developed and published by **Brendigo** · [snapvere.com](https://snapvere.com) · [info@snapvere.com](mailto:info@snapvere.com) · [brendigo.com](https://brendigo.com)
