@@ -20,7 +20,5 @@
     <string name="notification_channel_name">Screen capture</string>
     <string name="notification_channel_description">Visible only while SNAPVERE completes a user-approved screen capture.</string>
     <string name="notification_capturing">Capturing screen…</string>
-    <string name="notification_saved">Capture saved locally</string>
-    <string name="notification_failed">Capture could not be completed</string>
     <string name="privacy_note">SNAPVERE never starts screen capture in the background. Each capture requires Android system consent.</string>
 </resources>
