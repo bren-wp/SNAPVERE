@@ -128,7 +128,10 @@ public final class MainActivity extends ComponentActivity {
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(20), dp(24), dp(20), dp(32));
+        int horizontalPadding = getResources().getConfiguration().smallestScreenWidthDp >= 600
+            ? dp(48)
+            : dp(20);
+        root.setPadding(horizontalPadding, dp(24), horizontalPadding, dp(32));
         scroll.addView(root, new ScrollView.LayoutParams(
             ScrollView.LayoutParams.MATCH_PARENT,
             ScrollView.LayoutParams.WRAP_CONTENT));
@@ -593,8 +596,9 @@ public final class MainActivity extends ComponentActivity {
         button.setTextColor(getColor(style.textColor));
         button.setAllCaps(false);
         button.setGravity(Gravity.CENTER);
-        button.setMinHeight(dp(46));
-        button.setPadding(dp(14), dp(9), dp(14), dp(9));
+        button.setMinHeight(dp(52));
+        button.setMinWidth(0);
+        button.setPadding(dp(14), dp(10), dp(14), dp(10));
 
         GradientDrawable content = shape(style.backgroundColor, style.borderColor, 1, 12);
         button.setBackground(new RippleDrawable(
