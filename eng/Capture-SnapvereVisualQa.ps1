@@ -386,52 +386,81 @@ function Invoke-SingleSurfaceProbe {
 
 function Invoke-SecondarySurfaceProbe {
     $markerFileName = 'secondary-ui-probe.ready'
+    $surfaces = @(
+        [pscustomobject]@{ Snapshot = 'tray-menu.png'; Ready = 'secondary-tray.ready'; State = 'SECONDARY_TRAY_READY'; Acknowledgement = 'secondary-tray.captured' },
+        [pscustomobject]@{ Snapshot = 'options.png'; Ready = 'secondary-options.ready'; State = 'SECONDARY_OPTIONS_READY'; Acknowledgement = 'secondary-options.captured' },
+        [pscustomobject]@{ Snapshot = 'language.png'; Ready = 'secondary-language.ready'; State = 'SECONDARY_LANGUAGE_READY'; Acknowledgement = 'secondary-language.captured' },
+        [pscustomobject]@{ Snapshot = 'about.png'; Ready = 'secondary-about.ready'; State = 'SECONDARY_ABOUT_READY'; Acknowledgement = 'secondary-about.captured' }
+    )
+
     Remove-ProbeMarker -FileName $markerFileName
+    foreach ($surface in $surfaces) {
+        Remove-ProbeMarker -FileName $surface.Ready
+        Remove-ProbeMarker -FileName $surface.Acknowledgement
+    }
+
     $process = Start-ProbeProcess -EnvironmentVariable 'SNAPVERE_SECONDARY_UI_PROBE'
-    $expectedNames = @('tray-menu.png', 'options.png', 'language.png', 'about.png')
-    $seenWindows = [System.Collections.Generic.HashSet[string]]::new()
     $snapshots = [System.Collections.Generic.List[object]]::new()
-    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
     try {
-        while (-not $process.HasExited -and $stopwatch.ElapsedMilliseconds -lt 15000 -and $snapshots.Count -lt $expectedNames.Count) {
-            foreach ($window in (Get-CapturableWindows -Process $process)) {
-                $windowKey = "$($window.Handle.ToInt64())|$($window.Title)|$($window.Width)x$($window.Height)"
-                if ($seenWindows.Contains($windowKey)) {
-                    continue
+        foreach ($surface in $surfaces) {
+            $readyPath = Get-ProbeMarkerPath -FileName $surface.Ready
+            $readyWait = [System.Diagnostics.Stopwatch]::StartNew()
+            while (-not $process.HasExited -and $readyWait.ElapsedMilliseconds -lt 6000 -and -not (Test-Path -LiteralPath $readyPath -PathType Leaf)) {
+                Start-Sleep -Milliseconds 10
+            }
+
+            if (-not (Test-Path -LiteralPath $readyPath -PathType Leaf)) {
+                throw "Secondary UI surface '$($surface.Snapshot)' did not publish render-ready marker '$($surface.Ready)'."
+            }
+            Assert-ProbeMarker -FileName $surface.Ready -ExpectedState $surface.State
+
+            $snapshot = $null
+            $lastCaptureError = $null
+            $captureWait = [System.Diagnostics.Stopwatch]::StartNew()
+            while (-not $process.HasExited -and $captureWait.ElapsedMilliseconds -lt 5000 -and $null -eq $snapshot) {
+                $windows = @(Get-CapturableWindows -Process $process | Sort-Object { $_.Width * $_.Height } -Descending)
+                foreach ($window in $windows) {
+                    $current = Get-CapturableWindows -Process $process |
+                        Where-Object { $_.Handle -eq $window.Handle } |
+                        Select-Object -First 1
+                    if ($null -eq $current) {
+                        continue
+                    }
+
+                    try {
+                        $snapshot = Save-WindowSnapshot -Window $current -DestinationPath (Join-Path $resolvedOutputDirectory $surface.Snapshot)
+                        break
+                    }
+                    catch {
+                        $lastCaptureError = $_.Exception
+                        Remove-Item -LiteralPath (Join-Path $resolvedOutputDirectory $surface.Snapshot) -Force -ErrorAction SilentlyContinue
+                    }
                 }
 
-                Start-Sleep -Milliseconds 20
-                $current = Get-CapturableWindows -Process $process |
-                    Where-Object { $_.Handle -eq $window.Handle } |
-                    Select-Object -First 1
-                if ($null -eq $current) {
-                    continue
-                }
-
-                $snapshotName = $expectedNames[$snapshots.Count]
-                try {
-                    $snapshot = Save-WindowSnapshot -Window $current -DestinationPath (Join-Path $resolvedOutputDirectory $snapshotName)
-                }
-                catch {
-                    Remove-Item -LiteralPath (Join-Path $resolvedOutputDirectory $snapshotName) -Force -ErrorAction SilentlyContinue
-                    continue
-                }
-
-                [void]$seenWindows.Add($windowKey)
-                $snapshots.Add($snapshot)
-                if ($snapshots.Count -ge $expectedNames.Count) {
-                    break
+                if ($null -eq $snapshot) {
+                    Start-Sleep -Milliseconds 10
                 }
             }
 
-            Start-Sleep -Milliseconds 8
+            if ($null -eq $snapshot) {
+                if ($null -ne $lastCaptureError) {
+                    throw "Secondary UI surface '$($surface.Snapshot)' did not produce a stable target-owned frame. Last capture error: $($lastCaptureError.Message)"
+                }
+                throw "Secondary UI surface '$($surface.Snapshot)' did not expose a capturable SNAPVERE window."
+            }
+
+            $snapshots.Add($snapshot)
+            $acknowledgementPath = Get-ProbeMarkerPath -FileName $surface.Acknowledgement
+            $acknowledgementDirectory = Split-Path -Parent $acknowledgementPath
+            New-Item -ItemType Directory -Force -Path $acknowledgementDirectory | Out-Null
+            Set-Content -LiteralPath $acknowledgementPath -Value "CAPTURED $($surface.Snapshot)" -Encoding utf8
         }
 
         Wait-ForProcessExit -Process $process
         Assert-ProbeMarker -FileName $markerFileName -ExpectedState 'SECONDARY_UI_READY'
 
-        if ($snapshots.Count -ne $expectedNames.Count) {
+        if ($snapshots.Count -ne $surfaces.Count) {
             throw "Expected four stable target-owned rendered secondary UI surfaces but captured $($snapshots.Count)."
         }
 
