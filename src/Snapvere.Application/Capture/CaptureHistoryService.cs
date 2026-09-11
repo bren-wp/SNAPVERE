@@ -55,18 +55,28 @@ public sealed class CaptureHistoryService
 
         var newest = new PriorityQueue<CaptureHistoryItem, long>();
 
-        foreach (var path in Directory.EnumerateFiles(directory, "SNAPVERE_*.png", SearchOption.TopDirectoryOnly))
+        try
         {
-            if (!TryReadCapture(path, out var item))
+            var directoryInfo = new DirectoryInfo(directory);
+            foreach (var file in directoryInfo.EnumerateFiles("SNAPVERE_*.png", SearchOption.TopDirectoryOnly))
             {
-                continue;
-            }
+                if (!TryReadCapture(file, out var item))
+                {
+                    continue;
+                }
 
-            newest.Enqueue(item, item.ModifiedAt.UtcTicks);
-            if (newest.Count > limit)
-            {
-                _ = newest.Dequeue();
+                newest.Enqueue(item, item.ModifiedAt.UtcTicks);
+                if (newest.Count > limit)
+                {
+                    _ = newest.Dequeue();
+                }
             }
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or DirectoryNotFoundException)
+        {
+            // The Pictures directory may disappear or become unavailable while
+            // it is being enumerated. Preserve any metadata already collected.
         }
 
         return newest.UnorderedItems
@@ -93,12 +103,10 @@ public sealed class CaptureHistoryService
     public string GetCaptureDirectory()
         => _pathProvider.GetDefaultCaptureDirectory();
 
-    private static bool TryReadCapture(string path, out CaptureHistoryItem item)
+    private static bool TryReadCapture(FileInfo file, out CaptureHistoryItem item)
     {
         try
         {
-            var file = new FileInfo(path);
-            file.Refresh();
             if (!file.Exists)
             {
                 item = null!;

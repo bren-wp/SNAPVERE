@@ -68,7 +68,12 @@ public static class EmbeddedPayload
                 ?? throw new InvalidDataException("A SNAPVERE package entry has no parent directory.");
             Directory.CreateDirectory(targetDirectory);
 
-            var temporaryPath = $"{targetPath}.snapvere-{Guid.NewGuid():N}.tmp";
+            // Keep the staging component bounded independently of the payload
+            // filename. A valid long NTFS filename must not become invalid just
+            // because extraction appends a GUID and suffix to that basename.
+            var temporaryPath = Path.Combine(
+                targetDirectory,
+                $".snapvere-{Guid.NewGuid():N}.tmp");
             try
             {
                 using (var source = entry.Open())

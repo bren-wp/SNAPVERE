@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  SNAPVERE_VERSION: 0.0.8
+  SNAPVERE_VERSION: 0.0.9
 
 permissions:
   contents: read
@@ -23,14 +23,16 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           global-json-file: global.json
 
-      - name: Restore solution
+      - name: Restore solution with NuGet audit
         run: dotnet restore SNAPVERE.sln
 
       - name: Build x64
@@ -44,12 +46,14 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           global-json-file: global.json
-      - name: Restore x86 app
+      - name: Restore x86 app with NuGet audit
         run: dotnet restore src/Snapvere.App/Snapvere.App.csproj --runtime win-x86
       - name: Build x86 app
         run: dotnet build src/Snapvere.App/Snapvere.App.csproj --configuration Release --runtime win-x86 --no-restore -p:Platform=x86
@@ -59,12 +63,14 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           global-json-file: global.json
-      - name: Restore ARM64 app
+      - name: Restore ARM64 app with NuGet audit
         run: dotnet restore src/Snapvere.App/Snapvere.App.csproj --runtime win-arm64
       - name: Build ARM64 app
         run: dotnet build src/Snapvere.App/Snapvere.App.csproj --configuration Release --runtime win-arm64 --no-restore -p:Platform=ARM64
@@ -74,10 +80,12 @@ jobs:
     timeout-minutes: 100
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           global-json-file: global.json
 
@@ -182,7 +190,7 @@ jobs:
 
       - name: Upload rendered UI snapshots
         if: ${{ !cancelled() && steps.visual_capture.outcome == 'success' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: snapvere-visual-qa-${{ github.sha }}
           path: |

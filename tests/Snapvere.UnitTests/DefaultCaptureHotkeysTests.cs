@@ -13,12 +13,11 @@ public sealed class DefaultCaptureHotkeysTests
             binding => AssertBinding(binding, CaptureMode.Region, 0x2C, "Print Screen", expectStandardModifiers: false),
             binding => AssertBinding(binding, CaptureMode.Region, 0x31, "Ctrl+Shift+1", expectStandardModifiers: true),
             binding => AssertBinding(binding, CaptureMode.Window, 0x32, "Ctrl+Shift+2", expectStandardModifiers: true),
-            binding => AssertBinding(binding, CaptureMode.Scrolling, 0x33, "Ctrl+Shift+3", expectStandardModifiers: true),
-            binding => AssertBinding(binding, CaptureMode.FullScreen, 0x34, "Ctrl+Shift+4", expectStandardModifiers: true));
+            binding => AssertBinding(binding, CaptureMode.FullScreen, 0x33, "Ctrl+Shift+3", expectStandardModifiers: true));
     }
 
     [Fact]
-    public void ImplementedNow_RegistersRegionWindowAndFullScreenBindings()
+    public void ImplementedNow_RegistersOnlyPublishedImplementedBindings()
     {
         var bindings = DefaultCaptureHotkeys.ImplementedNow;
 
@@ -30,7 +29,8 @@ public sealed class DefaultCaptureHotkeysTests
         Assert.Contains(bindings, binding => binding.GestureText == "Print Screen");
         Assert.Contains(bindings, binding => binding.GestureText == "Ctrl+Shift+1");
         Assert.Contains(bindings, binding => binding.GestureText == "Ctrl+Shift+2");
-        Assert.Contains(bindings, binding => binding.GestureText == "Ctrl+Shift+4");
+        Assert.Contains(bindings, binding => binding.GestureText == "Ctrl+Shift+3");
+        Assert.DoesNotContain(bindings, binding => binding.GestureText == "Ctrl+Shift+4");
     }
 
     [Fact]

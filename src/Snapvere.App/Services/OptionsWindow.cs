@@ -66,8 +66,9 @@ public sealed class OptionsWindow : Window
         BuildPreferencesPanel();
         BuildRecentPanel();
         Content = BuildContent();
-        LoadPreferences();
-        RefreshRecentCaptures();
+        // The active section owns its own data refresh. Avoid enumerating recent
+        // PNG files until the user actually opens Recent Captures, and avoid a
+        // duplicate preference load during construction.
         ShowSection(OptionsSection.Preferences);
         Activated += OptionsWindow_Activated;
     }

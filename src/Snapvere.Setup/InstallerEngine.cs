@@ -167,7 +167,7 @@ internal static class InstallerEngine
             DeleteInstalledStartupRegistration(installRoot);
 
             var currentSetupPath = Environment.ProcessPath;
-            if (currentSetupPath is not null && IsPathInside(currentSetupPath, installRoot))
+            if (currentSetupPath is not null && PathBoundary.IsSameOrDescendant(currentSetupPath, installRoot))
             {
                 StartDeferredCleanup(currentSetupPath, installRoot);
                 RemoveRegistrationsAndShortcuts();
@@ -288,7 +288,7 @@ internal static class InstallerEngine
         }
 
         var windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-        if (!string.IsNullOrWhiteSpace(windows) && IsPathInside(fullPath, windows))
+        if (!string.IsNullOrWhiteSpace(windows) && PathBoundary.IsSameOrDescendant(fullPath, windows))
         {
             throw new InvalidOperationException("SNAPVERE cannot be installed inside the Windows system directory.");
         }
@@ -335,7 +335,8 @@ internal static class InstallerEngine
                 try
                 {
                     var processPath = process.MainModule?.FileName;
-                    if (string.IsNullOrWhiteSpace(processPath) || !IsPathInside(processPath, installRoot))
+                    if (string.IsNullOrWhiteSpace(processPath) ||
+                        !PathBoundary.IsSameOrDescendant(processPath, installRoot))
                     {
                         continue;
                     }
@@ -358,13 +359,6 @@ internal static class InstallerEngine
 
         message = string.Empty;
         return true;
-    }
-
-    private static bool IsPathInside(string candidate, string parent)
-    {
-        var candidateFullPath = Path.GetFullPath(candidate);
-        var parentFullPath = Path.GetFullPath(parent).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-        return candidateFullPath.StartsWith(parentFullPath, StringComparison.OrdinalIgnoreCase);
     }
 
     private static void WriteUninstallRegistration(string installRoot)
