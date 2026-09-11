@@ -4,6 +4,5 @@ app/build/
 build/
 *.jks
 *.keystore
-
-# The requested generated APK is intentionally kept at android/ root.
-!SNAPVERE-Android-*.apk
+SNAPVERE-Android-*.apk
+SNAPVERE-Android-*.apk.sha256

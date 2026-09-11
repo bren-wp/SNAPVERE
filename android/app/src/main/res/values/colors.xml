@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="snapvere_canvas">#07080D</color>
+    <color name="snapvere_surface">#0D1018</color>
+    <color name="snapvere_surface_high">#121725</color>
+    <color name="snapvere_border">#262E41</color>
+    <color name="snapvere_border_strong">#3B4661</color>
+    <color name="snapvere_text_primary">#F7F8FC</color>
+    <color name="snapvere_text_secondary">#B2BACB</color>
+    <color name="snapvere_text_muted">#7D879C</color>
     <color name="snapvere_accent">#8C5AF4</color>
+    <color name="snapvere_accent_strong">#A789FF</color>
+    <color name="snapvere_cyan">#36B6D5</color>
+    <color name="snapvere_success">#55D6A8</color>
+    <color name="snapvere_warning">#F2C96D</color>
+    <color name="snapvere_danger">#FF6B7A</color>
+    <color name="snapvere_ripple">#338C5AF4</color>
 </resources>

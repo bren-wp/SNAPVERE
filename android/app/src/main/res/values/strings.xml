@@ -1,25 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">SNAPVERE</string>
-    <string name="tagline">Capture. Edit. Done.</string>
-    <string name="local_first">LOCAL-FIRST</string>
-    <string name="local_first_description">Screenshots stay on this device. No account, cloud upload, analytics or telemetry.</string>
+    <string name="tagline">Capture fast. Keep it local.</string>
+    <string name="android_local_badge">ANDROID · LOCAL</string>
+
+    <string name="capture_section">CAPTURE</string>
     <string name="capture_screen">Capture screen</string>
-    <string name="capture_screen_description">Android will show its system screen-capture consent before every capture.</string>
-    <string name="open_latest">Open latest capture</string>
-    <string name="share_latest">Share latest capture</string>
+    <string name="capture_screen_description">Android asks for system screen-capture consent every time. SNAPVERE moves behind your current screen before it creates the image.</string>
+    <string name="capture_consent_note">One tap starts one user-approved capture. No automatic or background recording.</string>
     <string name="capture_ready">Ready for a local screen capture.</string>
     <string name="capture_requesting">Waiting for Android screen-capture consent…</string>
+    <string name="capture_in_progress">Capture in progress…</string>
     <string name="capture_cancelled">Screen capture was cancelled.</string>
     <string name="capture_background_failed">SNAPVERE could not move behind the screen you want to capture.</string>
     <string name="capture_saved">Saved to Pictures/SNAPVERE: %1$s</string>
     <string name="capture_failed">Screen capture failed: %1$s</string>
     <string name="unknown_error">Unknown error</string>
+
+    <string name="latest_section">LATEST CAPTURE</string>
+    <string name="latest_empty">No capture yet</string>
+    <string name="latest_empty_description">Your next PNG will appear here after Android finishes the capture.</string>
+    <string name="latest_location">Pictures/SNAPVERE · PNG</string>
+    <string name="open_latest">Open</string>
+    <string name="share_latest">Share</string>
+    <string name="delete_latest">Delete</string>
     <string name="no_capture">No SNAPVERE capture has been created yet.</string>
     <string name="open_failed">Android could not open the saved capture.</string>
     <string name="share_failed">Android could not share the saved capture.</string>
+    <string name="delete_capture_title">Delete latest capture?</string>
+    <string name="delete_capture_message">This removes the PNG from Pictures/SNAPVERE on this device.</string>
+    <string name="delete_capture_confirm">Delete</string>
+    <string name="delete_capture_cancel">Cancel</string>
+    <string name="delete_capture_done">Latest capture deleted.</string>
+    <string name="delete_capture_failed">Android could not delete the latest capture.</string>
+
+    <string name="privacy_section">PRIVATE BY DESIGN</string>
+    <string name="local_first">Local-first capture</string>
+    <string name="local_first_description">Screenshots stay on this device. SNAPVERE has no account, cloud upload, analytics, telemetry or INTERNET permission.</string>
+    <string name="privacy_note">SNAPVERE never starts screen capture in the background. Each capture requires Android system consent.</string>
+
+    <string name="about_section">SNAPVERE FOR ANDROID</string>
+    <string name="about_description">Native Android screen capture with a focused dark interface, local MediaStore saving and explicit user-controlled sharing.</string>
+    <string name="website">Website</string>
+    <string name="support">Support</string>
+    <string name="privacy_policy">Privacy</string>
+    <string name="terms_of_use">Terms</string>
+    <string name="external_link_failed">Android could not open this link.</string>
+    <string name="support_copied">No mail app was available. info@snapvere.com was copied to the clipboard.</string>
+    <string name="version_format">Version %1$s · Android 10+</string>
+
     <string name="notification_channel_name">Screen capture</string>
     <string name="notification_channel_description">Visible only while SNAPVERE completes a user-approved screen capture.</string>
     <string name="notification_capturing">Capturing screen…</string>
-    <string name="privacy_note">SNAPVERE never starts screen capture in the background. Each capture requires Android system consent.</string>
 </resources>
