@@ -2,6 +2,50 @@
 
 All notable SNAPVERE changes are documented here. Published release tags and assets are immutable; later documentation may clarify evidence boundaries but does not rewrite historical binaries.
 
+## [0.1.1] - 2026-09-12
+
+### Browser extensions become public release assets
+
+- Adds official v0.1.1 packages for Google Chrome, Microsoft Edge, Opera and Mozilla Firefox.
+- Browser extensions provide local-first visible-area, bounded full-page and selected-region PNG capture.
+- Chromium variants use Manifest V3 service workers; Firefox uses the compatible Manifest V3 background-script model.
+- All browser variants request only `activeTab`, `scripting`, `downloads` and `storage`; there is no `<all_urls>` or broad host permission.
+- English and Croatian browser interfaces, local SNAPVERE icons and dark/violet product styling are included.
+
+### Browser security, reproducibility and store readiness
+
+- Cross-browser parity validation prevents shared runtime divergence between Chrome, Edge, Opera and Firefox.
+- Chrome/Edge/Opera manifests must remain identical and Firefox may differ only in expected background/Gecko metadata.
+- CI rejects remote runtime scripts, broad host access, unsafe dynamic-code patterns, inline runtime code and common development/cache artifacts.
+- Browser ZIP packaging is deterministic: CI runs two clean package passes and requires byte-for-byte identical ZIP files and checksum manifests.
+- Store listing metadata, permission justifications, privacy/data-practice declarations and EN/HR copy are validated against the actual manifests.
+- Deterministic store screenshots/promo graphics and reviewer notes are generated/prepared for external publisher submission.
+- Actual Chrome Web Store, Edge Add-ons, Opera Add-ons and Mozilla Add-ons publication remains an external authenticated review/signing process and is not inferred from repository CI.
+
+### Version alignment
+
+- Windows product/file/assembly version moves to `0.1.1` / `0.1.1.0`.
+- Android moves to `versionName 0.1.1` / `versionCode 11`.
+- Chrome, Edge, Opera and Firefox manifests move to `0.1.1` and canonical store metadata is aligned to the same release version.
+- Windows and Android CI version gates are updated so they validate/package 0.1.1 rather than the previous 0.1.0 line.
+
+### v0.1.1 release automation
+
+- Adds a dedicated v0.1.1 release workflow with separate Android and browser validation/package jobs plus a Windows final release job.
+- Android continues the transparent validated CI/debug-signed public APK path while still requiring debug/release lint, JVM tests, debug/release builds, signature/alignment and SHA-256 checks.
+- Browser release packaging repeats manifest/privacy/parity/store-readiness validation and deterministic packaging on the exact release commit.
+- Windows release validation re-runs audited x64 build/tests, x86 build, ARM64 cross-build, architecture payload integrity and x64/x86 Setup/Portable lifecycle/tray-first checks.
+- The immutable `v0.1.1` tag is created only after Android, browser and Windows release gates pass.
+- The public v0.1.1 contract contains exactly eight assets: Windows Setup/Portable, Android APK/source archive and four browser ZIP packages.
+- SHA-256 is verified through artifact transfer and again against GitHub's published digest for all eight public assets.
+- Historical v0.1.0 remains immutable with exactly its original four public Windows/Android assets.
+
+### Documentation
+
+- Updates English and Croatian root documentation for v0.1.1.
+- Updates Android and browser-extension architecture/QA documentation.
+- Adds v0.1.1 release notes and English/Croatian security/privacy/performance evidence documents.
+
 ## [0.1.0] - 2026-09-11
 
 ### Unified Windows + Android release
