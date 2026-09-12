@@ -1,22 +1,37 @@
 # Browser ekstenzije
 
-SNAPVERE sadrži post-v0.1.0 razvoj browser ekstenzija za Chrome, Edge, Operu i Firefox u mapi [`ekstenzije/`](../../ekstenzije/).
+SNAPVERE 0.1.1 uključuje službene javne browser-extension pakete za Chrome, Edge, Operu i Firefox u mapi [`ekstenzije/`](../../ekstenzije/). Browser kod razvijen je nakon v0.1.0, a v0.1.1 je prvo izdanje koje ga uključuje u javni GitHub Release ugovor.
+
+## Release verzija i asseti
+
+Sva četiri manifesta i kanonski store listing koriste verziju **0.1.1**.
+
+v0.1.1 GitHub Release sadrži:
+
+```text
+SNAPVERE-Chrome.zip
+SNAPVERE-Edge.zip
+SNAPVERE-Opera.zip
+SNAPVERE-Firefox.zip
+```
+
+Ta četiri browser paketa dio su novog osmo-assetnog v0.1.1 release ugovora. Povijesni v0.1.0 ostaje nepromijenjen sa svojim originalnim Windows/Android assetima.
 
 ## Arhitektura
 
-Chromium varijante koriste Manifest V3 i `background.service_worker`. Firefox ostaje Manifest V3 WebExtension, ali koristi Firefox-kompatibilni `background.scripts`. Sve varijante dijele isti capture kod, popup/options UI, lokalizacijske ključeve i local-first model privatnosti.
+Chromium varijante koriste Manifest V3 i `background.service_worker`. Firefox koristi Manifest V3 s Firefox-kompatibilnim `background.scripts`. Sve varijante dijele isti capture kod, popup/options UI, lokalizacijske ključeve i local-first model privatnosti.
 
-Browser paket nema vanjske runtime ovisnosti.
+Browser paketi nemaju vanjske runtime ovisnosti.
 
 ### Vidljivo područje
 
-Background kontekst zaključava jednu capture operaciju, snima viewport aktivnog taba browser screenshot API-jem i lokalno sprema PNG preko downloads API-ja.
+Background kontekst zaključava jednu bounded capture operaciju, snima viewport aktivnog taba browser screenshot API-jem i sprema PNG preko downloads API-ja.
 
 ### Odabrano područje
 
-Prije umetanja lokalnog region selectora background zapisuje capture token, tab/window identitet i vrijeme početka u `storage.local`. Time region workflow ne ovisi samo o RAM stanju MV3 service workera dok korisnik bira područje.
+Prije umetanja lokalnog region selectora background zapisuje capture token, tab/window identitet i vrijeme početka u `storage.local`, pa workflow ne ovisi samo o RAM stanju MV3 service workera dok korisnik bira područje.
 
-Content helper uklanja overlay prije stvarne snimke. Viewport se zatim lokalno reže u canvasu. Escape prekida postupak, a pointer/keyboard listeneri i svi overlay DOM elementi čiste se u završnim putovima.
+Content helper uklanja overlay prije stvarne snimke. Viewport se lokalno reže u canvasu. Escape prekida postupak, a pointer/keyboard listeneri i overlay DOM elementi čiste se u završnim putovima.
 
 ### Cijela stranica
 
@@ -28,66 +43,66 @@ Full-page capture:
 4. računa ograničenu mrežu viewport tileova;
 5. kontrolirano scrolla uz čekanje rendera;
 6. snima i prenosi svaki tile content helperu;
-7. nakon prvog tilea skriva floating elemente kako se ne bi ponavljali;
+7. nakon prvog tilea skriva floating elemente da se ne ponavljaju;
 8. slaže tileove u ograničeni završni canvas;
 9. lokalno preuzima PNG;
 10. vraća floating elemente i početnu scroll poziciju.
 
-Sigurnosni limiti prekidaju snimanje kontroliranom greškom ako stranica prelazi maksimalnu dimenziju canvasa, broj piksela ili broj tileova.
+Sigurnosni limiti prekidaju snimanje ako stranica prelazi podržanu canvas dimenziju, broj piksela ili broj tileova. Content-side watchdog vraća stanje stranice ako orkestracija neočekivano nestane.
 
-Content-side watchdog vraća stanje stranice ako orkestracija neočekivano nestane.
+## Sigurnosne kontrole
 
-## Sigurnost
+Prihvaćaju se samo izričito definirani tipovi poruka. Kod završetka region capturea provjeravaju se token i identitet taba/prozora. Tekst se ne umeće preko `innerHTML`; lokalizirane poruke/statusi koriste `textContent`.
 
-Prihvaćaju se samo izričito definirani tipovi poruka. Kod završetka region capturea provjeravaju se token i identitet taba/prozora. Tekst se ne umeće preko `innerHTML`; statusi i lokalizirane poruke koriste `textContent`.
-
-Nema `<all_urls>` dozvole niti pokušaja zaobilaženja browser-protected stranica.
+Nema `<all_urls>` niti širokog `host_permissions` unosa i ekstenzija ne pokušava zaobići browser-protected stranice.
 
 ## Privatnost
 
-Nema telemetrije, analyticsa, oglasnog SDK-a, cloud uploada, automatskog slanja snimki ni background mrežnog klijenta. Postavke i aktivni capture metapodaci ostaju u lokalnoj browser pohrani.
+Nema telemetrije, analyticsa, oglasnog SDK-a, cloud uploada, automatskog slanja snimki, remote runtime koda ni background mrežnog klijenta. Postavke i aktivni capture metapodaci ostaju u lokalnoj browser pohrani.
 
-Verzionirana javna politika privatnosti browser ekstenzija nalazi se u [`ekstenzije/PRIVACY.md`](../../ekstenzije/PRIVACY.md).
+Javna politika privatnosti je [`ekstenzije/PRIVACY.md`](../../ekstenzije/PRIVACY.md).
 
 ## Lokalizacija
 
-English je default/fallback. Svaka distributivna browser mapa sadrži zasebne English i Hrvatski locale kataloge.
+English je default/fallback. Svaki distributivni browser paket sadrži English i Hrvatski locale katalog.
 
 ## Reproducibilno pakiranje
 
-`ekstenzije/tools/package-extensions.sh` izrađuje četiri ZIP paketa iz zasebno staged izvora. Skripta normalizira timestampove staged datoteka i mapa na prijenosni ZIP epoch, sortira putanje u arhivi te koristi `zip -X` kako bi uklonila nepotrebne host metapodatke. Uz ZIP-ove se generira `SHA256SUMS.txt`.
+`ekstenzije/tools/package-extensions.sh` izrađuje četiri release ZIP-a iz staged sourcea. Normalizira timestampove datoteka/mapa na prijenosni ZIP epoch, sortira putanje i koristi `zip -X` za uklanjanje nepotrebnih host metapodataka. Uz pakete se generira `SHA256SUMS.txt`.
 
-CI pokreće isti packaging helper dvaput u dva odvojena izlazna direktorija. Svaki odgovarajući ZIP mora biti byte-for-byte identičan, a oba SHA-256 manifesta moraju biti ista prije uploada CI artefakta.
+CI i 0.1.1 release workflow pokreću pakiranje dvaput u odvojenim direktorijima. Odgovarajući ZIP-ovi i checksum manifesti moraju biti byte-for-byte identični prije objave.
 
 ## Kontrola pariteta između browsera
 
-`ekstenzije/tools/verify-extension-parity.mjs` sprječava tiho razilaženje browser varijanti. Provjerava da:
+`ekstenzije/tools/verify-extension-parity.mjs` sprječava tiho razilaženje provjeravajući:
 
-- sve zajedničke runtime datoteke imaju iste putanje i SHA-256 sadržaj u Chromeu, Edgeu, Operi i Firefoxu;
-- Chrome, Edge i Opera imaju identične manifeste;
-- Firefox se od Chromium manifesta razlikuje samo u očekivanom background/Gecko dijelu;
-- verzija ostaje usklađena u sva četiri manifesta;
-- PNG ikone imaju točne dimenzije 16/32/48/128 i identične byteove u svim browserima;
-- popup/options HTML nema inline script/style blokove, inline event handlere ni udaljene runtime resurse.
+- identične putanje i SHA-256 sadržaj zajedničkog runtime sourcea u Chromeu, Edgeu, Operi i Firefoxu;
+- identične Chrome/Edge/Opera manifeste;
+- samo očekivane background/Gecko razlike u Firefoxu;
+- usklađene verzije manifesta;
+- točne dimenzije i identične byteove ikona;
+- izostanak inline script/style blokova, inline event handlera i remote HTML runtime resursa.
 
-Ove provjere nadopunjuju postojeći validator permissiona, localea, source-policy pravila i manifesta.
+Ove provjere nadopunjuju validator permissiona, localea, source-policy pravila i manifesta.
 
-## Spremnost za objavu u browser storeovima
+## Spremnost za browser storeove
 
-`ekstenzije/store/listing.json` je kanonski strojno čitljiv store ugovor. Usklađuje EN/HR listing tekst, izjavu o jedinoj namjeni ekstenzije, obrazloženja permissiona, local-first privacy/data-practice izjave, točne nazive ZIP paketa i reference na store vizuale za Chrome Web Store, Microsoft Edge Add-ons, Opera Add-ons i Mozilla Add-ons.
+`ekstenzije/store/listing.json` je kanonski strojno čitljiv store ugovor s EN/HR listing tekstom, single-purpose izjavom, obrazloženjem permissiona, local-first privacy/data-practice izjavama, točnim ZIP imenima i referencama na store assete.
 
-`ekstenzije/store/reviewer-notes.md` vanjskom revieweru daje determinističan funkcionalni testni postupak te dokumentira očekivano ponašanje na zaštićenim browser stranicama, upotrebu permissiona, mrežno/privacy ponašanje, full-page limite i Firefox granicu vezanu uz izvorni kod i signing. `ekstenzije/store/README.md` opisuje završne ručne korake objave i povezuje službenu dokumentaciju publisher portala.
+`ekstenzije/store/reviewer-notes.md` daje vanjskim reviewerima deterministične funkcionalne korake i dokumentira protected-page ponašanje, upotrebu permissiona, network/privacy ponašanje, full-page limite i Firefox source/signing granicu.
 
-`ekstenzije/tools/generate-store-assets.py` deterministički generira tri listing screenshota 1280×800, dva Opera screenshota 612×408, mali promo tile 440×280 i veliki/marquee promo tile 1400×560 iz SNAPVERE tamno-ljubičastog UI modela. Generirani PNG-ovi su CI artefakti, a ne commitani binarni izvori.
+`ekstenzije/tools/generate-store-assets.py` deterministički generira listing screenshotove i promo tileove. Generirani PNG-ovi ostaju CI artefakti, a ne commitani binarni source.
 
-`ekstenzije/tools/validate-store-readiness.mjs` provjerava store materijal prema stvarnim manifestima ekstenzija. Između ostalog zahtijeva usklađenu verziju, točan allow-list od četiri permissiona, izostanak širokih host permissiona, local-first privacy zastavice, potpune EN/HR metapodatke, točne nazive paketa, obavezne asset putanje i točne PNG dimenzije.
+`ekstenzije/tools/validate-store-readiness.mjs` validira store materijal prema stvarnim manifestima, uključujući verziju, allow-list od četiri permissiona, izostanak širokih host permissiona, local-first privacy zastavice, EN/HR metapodatke, točne nazive paketa, potrebne asset reference i PNG dimenzije.
 
-Extension CI zato proizvodi dva odvojena artefakta: četiri deterministička ZIP-a ekstenzija sa SHA-256 manifestom te zaseban `snapvere-browser-store-kit-<sha>` paket s politikom privatnosti, kanonskim listing metapodacima, reviewer bilješkama i generiranim store vizualima.
+Sama store objava je vanjski proces. Autentificirani publisher pristup, store-side submission, certifikacija/review i Firefox signing ne mogu se zaključiti iz GitHub releasea ili zelenog repozitorijskog CI-ja.
 
-Sama objava u storeu ostaje vanjska granica. Autentificirani publisher pristup, store-side submission, certifikacija/review i Firefox signing ne mogu se zaključiti iz zelenog repozitorijskog CI-ja i ne smiju se prikazivati kao završeni dok ih odgovarajući store stvarno ne potvrdi.
+## Release i QA granica
 
-## Granica QA tvrdnji
+`.github/workflows/extensions-ci.yml` provjerava syntax, manifest, permission, locale, cross-browser parity, source-policy, store-readiness, generirane assete, determinističko pakiranje, SHA-256 i sadržaj paketa.
 
-`extensions-ci.yml` daje syntax, manifest, permission, locale, cross-browser parity, source-policy, store-readiness, provjeru dimenzija generiranih vizuala, reproducible packaging, SHA-256 i package-content validaciju. Zeleni CI nije tvrdnja da su sve četiri ekstenzije ručno testirane u stvarnom browser GUI-ju ili odobrene u vanjskim storeovima.
+`.github/workflows/release-0.1.1.yml` ponavlja browser validaciju i reproducibilno pakiranje na točnom release commitu, prenosi četiri ZIP-a u finalni release job, ponovno računa hashove i nakon objave uspoređuje GitHub digeste.
 
-Za development load, pakiranje, store-submission materijal i poznata ograničenja vidi [`ekstenzije/README.md`](../../ekstenzije/README.md).
+Zeleni workflow je automatizirani static/package dokaz; nije tvrdnja da je svaki browser build/web aplikacija ručno testirana niti da je vanjski store odobrio ekstenziju.
+
+Za development load, pakiranje, privatnost, store-submission materijal i poznata ograničenja vidi [`ekstenzije/README.md`](../../ekstenzije/README.md).
