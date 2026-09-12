@@ -212,3 +212,13 @@ Screenshot pixels are not intentionally written to this log.
 ## License and ownership
 
 **SNAPVERE 0.0.7 and later are distributed under the SNAPVERE Commercial Software License Agreement in [`LICENSE`](LICENSE).** SNAPVERE is the product brand. Brendigo is the developer and publisher. Official site: **snapvere.com**. Support: **info@snapvere.com**.
+
+## Browser Extensions — post-v0.1.0 development
+
+SNAPVERE now includes source-ready browser extensions for **Google Chrome, Microsoft Edge, Opera and Mozilla Firefox** under [`ekstenzije/`](ekstenzije/). They provide local-first visible-area, full-page and selected-region PNG capture with English/Croatian UI, bounded capture state, SNAPVERE branding and a dedicated validation/package workflow.
+
+Chromium-family variants use Manifest V3 service workers. Firefox uses an MV3 WebExtension manifest with Firefox-compatible background scripts. The source does not request `<all_urls>` and does not add telemetry, analytics, cloud upload or remote runtime dependencies.
+
+See [Browser Extensions](docs/BROWSER-EXTENSIONS.md) and [`ekstenzije/README.md`](ekstenzije/README.md) for architecture, permissions, development loading, packaging and known browser limitations.
+
+These extensions are **post-v0.1.0 source development**. They are not retroactively part of the immutable v0.1.0 release or its exact four-asset public contract.
