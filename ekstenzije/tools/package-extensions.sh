@@ -7,6 +7,7 @@ output_root="${1:-$repo_root/artifacts/extensions}"
 
 rm -rf "$output_root"
 mkdir -p "$output_root"
+output_root="$(cd "$output_root" && pwd)"
 work_root="$(mktemp -d)"
 trap 'rm -rf "$work_root"' EXIT
 
