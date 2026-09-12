@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SNAPVERE</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main class="panel">
+    <header class="brand">
+      <img src="icons/icon-48.png" width="48" height="48" alt="">
+      <div>
+        <div class="wordmark">SNAPVERE</div>
+        <h1 data-i18n="optionsTitle"></h1>
+      </div>
+    </header>
+
+    <form id="settings-form" novalidate>
+      <label class="field">
+        <span data-i18n="fileNamePrefix"></span>
+        <input id="filename-prefix" name="filenamePrefix" maxlength="48" autocomplete="off" spellcheck="false">
+      </label>
+
+      <label class="check">
+        <input id="save-as" name="saveAs" type="checkbox">
+        <span data-i18n="askWhereToSave"></span>
+      </label>
+
+      <p class="privacy" data-i18n="privacyNote"></p>
+
+      <div class="actions">
+        <button type="submit" data-i18n="saveSettings"></button>
+        <span id="status" role="status" aria-live="polite"></span>
+      </div>
+    </form>
+  </main>
+  <script src="options.js"></script>
+</body>
+</html>

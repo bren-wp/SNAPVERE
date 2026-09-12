@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SNAPVERE</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="brand">
+      <img src="icons/icon-32.png" width="32" height="32" alt="">
+      <div>
+        <div class="wordmark">SNAPVERE</div>
+        <div class="tagline">Capture. Edit. Done.</div>
+      </div>
+    </header>
+
+    <section class="actions" data-i18n-aria-label="captureActions">
+      <button class="capture-button" type="button" data-action="CAPTURE_VISIBLE">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v12H4zM7 19h10M9 9h6v4H9z"/></svg>
+        <span class="copy">
+          <strong data-i18n="captureVisible"></strong>
+          <small data-i18n="captureVisibleHint"></small>
+        </span>
+      </button>
+
+      <button class="capture-button" type="button" data-action="CAPTURE_FULL">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v18H7zM9 7h6M9 11h6M9 15h6"/></svg>
+        <span class="copy">
+          <strong data-i18n="captureFull"></strong>
+          <small data-i18n="captureFullHint"></small>
+        </span>
+      </button>
+
+      <button class="capture-button" type="button" data-action="CAPTURE_REGION">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5M8 8h8v8H8z"/></svg>
+        <span class="copy">
+          <strong data-i18n="captureRegion"></strong>
+          <small data-i18n="captureRegionHint"></small>
+        </span>
+      </button>
+    </section>
+
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+
+    <footer class="footer">
+      <button id="settings" class="settings-button" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM19 12l2-1-2-3-2 .5-1-1L15.5 5h-7L8 7.5l-1 1L5 8l-2 3 2 1v1l-2 1 2 3 2-.5 1 1 .5 2.5h7l.5-2.5 1-1 2 .5 2-3-2-1z"/></svg>
+        <span data-i18n="settings"></span>
+      </button>
+      <p data-i18n="fullPageLimitNote"></p>
+    </footer>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>

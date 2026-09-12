@@ -210,6 +210,16 @@ Pikseli snimke ne zapisuju se namjerno u taj log.
 
 **SNAPVERE 0.0.7 i noviji distribuiraju se pod SNAPVERE Commercial Software License Agreement licencom u [`LICENSE`](LICENSE).** SNAPVERE je naziv proizvoda; Brendigo je developer i izdavač. Službena stranica: **snapvere.com**. Podrška: **info@snapvere.com**.
 
+## Browser ekstenzije — post-v0.1.0 razvoj
+
+SNAPVERE sada sadrži source-ready browser ekstenzije za **Google Chrome, Microsoft Edge, Operu i Mozilla Firefox** u mapi [`ekstenzije/`](ekstenzije/). Omogućuju lokalno snimanje vidljivog područja, cijele stranice i odabranog područja u PNG, English/Hrvatski sučelje, ograničeno capture stanje, SNAPVERE branding i zaseban validation/package workflow.
+
+Chromium varijante koriste Manifest V3 service worker, a Firefox MV3 WebExtension s Firefox-kompatibilnim background skriptama. Source ne traži `<all_urls>` i ne uvodi telemetriju, analytics, cloud upload ni vanjske runtime ovisnosti.
+
+Za arhitekturu, dozvole, development loading, pakiranje i poznata ograničenja vidi [Browser ekstenzije](docs/hr/BROWSER-EXTENSIONS.md) i [`ekstenzije/README.md`](ekstenzije/README.md).
+
+Ove ekstenzije su **post-v0.1.0 source development** i nisu retroaktivno dio nepromjenjivog v0.1.0 izdanja niti njegova točno četvero-assetnog javnog ugovora.
+
 ---
 
 **SNAPVERE — Capture. Edit. Done.**  

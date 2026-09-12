@@ -1,0 +1,97 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0d1120;
+  color: #f7f4ff;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-width: 340px; background: #0d1120; }
+body {
+  background:
+    radial-gradient(circle at 80% -10%, rgba(140, 92, 255, .2), transparent 38%),
+    linear-gradient(180deg, #121426 0%, #0d1120 100%);
+}
+button { font: inherit; }
+.shell { padding: 18px; }
+.brand { display: flex; align-items: center; gap: 11px; margin-bottom: 16px; }
+.brand img {
+  border-radius: 9px;
+  box-shadow: 0 8px 24px rgba(101, 71, 246, .25);
+}
+.wordmark { font-size: 15px; font-weight: 800; letter-spacing: .12em; }
+.tagline { margin-top: 2px; color: #9fa4bd; font-size: 11px; }
+.actions { display: grid; gap: 9px; }
+.capture-button,
+.settings-button {
+  width: 100%;
+  border: 1px solid rgba(155, 122, 255, .2);
+  color: inherit;
+  background: rgba(255,255,255,.035);
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+.capture-button {
+  min-height: 66px;
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 11px;
+  align-items: center;
+  padding: 12px 13px;
+  border-radius: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.capture-button:hover,
+.settings-button:hover {
+  border-color: rgba(179, 141, 255, .55);
+  background: rgba(132, 88, 255, .09);
+}
+.capture-button:active { transform: translateY(1px); }
+.capture-button:focus-visible,
+.settings-button:focus-visible {
+  outline: 3px solid rgba(193, 139, 255, .8);
+  outline-offset: 2px;
+}
+.capture-button:disabled { opacity: .55; cursor: progress; }
+.capture-button svg,
+.settings-button svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: #b68cff;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.copy { min-width: 0; display: grid; gap: 3px; }
+.copy strong { font-size: 13px; line-height: 1.2; }
+.copy small { color: #a7adc4; font-size: 11px; line-height: 1.35; }
+.status {
+  min-height: 18px;
+  margin: 12px 2px 0;
+  color: #c4b3ff;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.status.error { color: #ffb7c0; }
+.status.success { color: #b9f6d0; }
+.footer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,.07);
+}
+.settings-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  border-radius: 11px;
+  cursor: pointer;
+}
+.settings-button svg { width: 17px; height: 17px; }
+.footer p {
+  margin: 10px 2px 0;
+  color: #777f9c;
+  font-size: 10px;
+  line-height: 1.45;
+}
