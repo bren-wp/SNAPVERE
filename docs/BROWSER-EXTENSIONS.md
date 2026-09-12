@@ -47,6 +47,8 @@ No `<all_urls>` permission is requested. The extension does not bypass browser-p
 
 There is no telemetry, analytics, ad SDK, cloud upload, automatic screenshot transfer or background network client. Settings and active capture metadata stay in browser-local storage.
 
+The version-controlled public browser-extension privacy policy is maintained at [`ekstenzije/PRIVACY.md`](../ekstenzije/PRIVACY.md).
+
 ## Localization
 
 English is the default/fallback locale. Dedicated English and Croatian catalogs are included in every distributable browser folder.
@@ -70,8 +72,22 @@ CI executes the packaging helper twice in separate output directories. Every cor
 
 These checks complement the existing permission, locale, source-policy and manifest validator.
 
+## Store submission readiness
+
+`ekstenzije/store/listing.json` is the canonical machine-readable store contract. It keeps the EN/HR listing copy, single-purpose statement, permission justifications, local-first privacy/data-practice declarations, exact ZIP names and store asset references aligned for Chrome Web Store, Microsoft Edge Add-ons, Opera Add-ons and Mozilla Add-ons.
+
+`ekstenzije/store/reviewer-notes.md` gives external reviewers a deterministic functional test path and documents expected protected-page behavior, permission usage, network/privacy behavior, full-page limits and the Firefox source/signing boundary. `ekstenzije/store/README.md` describes the final manual submission steps and links to the official publisher documentation.
+
+`ekstenzije/tools/generate-store-assets.py` deterministically generates three 1280×800 listing screenshots, two Opera 612×408 screenshots, a 440×280 small promotional tile and a 1400×560 large/marquee promotional tile from the SNAPVERE dark/violet UI model. These generated PNGs are CI artifacts rather than committed binaries.
+
+`ekstenzije/tools/validate-store-readiness.mjs` validates the store material against the actual extension manifests. Among other checks it enforces version alignment, the exact four-permission allow-list, no broad host permissions, local-first privacy flags, EN/HR metadata completeness, exact package names, required asset paths and exact PNG dimensions.
+
+Extension CI therefore produces two independently scoped artifacts: the four deterministic extension ZIPs plus their SHA-256 manifest, and a separate `snapvere-browser-store-kit-<sha>` bundle containing the privacy policy, canonical listing metadata, reviewer notes and generated store graphics.
+
+Store publication itself remains an external boundary. Authenticated publisher access, store-side submission, certification/review and Firefox signing cannot be inferred from a green repository CI run and must not be claimed until the corresponding store completes them.
+
 ## QA boundary
 
-`extensions-ci.yml` provides syntax, manifest, permission, locale, cross-browser parity, source-policy, deterministic packaging, SHA-256 and package-content validation. A green CI run is not a claim that all four extensions were manually exercised in real browser GUIs.
+`extensions-ci.yml` provides syntax, manifest, permission, locale, cross-browser parity, source-policy, store-readiness, generated-asset dimension, deterministic packaging, SHA-256 and package-content validation. A green CI run is not a claim that all four extensions were manually exercised in real browser GUIs or approved by external stores.
 
-See [`ekstenzije/README.md`](../ekstenzije/README.md) for development loading, packaging and known limitations.
+See [`ekstenzije/README.md`](../ekstenzije/README.md) for development loading, packaging, store-submission material and known limitations.
