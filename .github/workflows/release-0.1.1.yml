@@ -1,0 +1,458 @@
+name: Release 0.1.1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/release-triggers/v0.1.1'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: snapvere-release-0.1.1
+  cancel-in-progress: false
+
+env:
+  SNAPVERE_VERSION: 0.1.1
+
+jobs:
+  android-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout validated source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate Android 0.1.1 source contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == 'refs/heads/main' ]]
+          test -f android/settings.gradle
+          test -f android/app/build.gradle
+          test -f android/app/src/main/AndroidManifest.xml
+          grep -q "versionCode 11" android/app/build.gradle
+          grep -q "versionName '$SNAPVERE_VERSION'" android/app/build.gradle
+          if grep -q 'android.permission.INTERNET' android/app/src/main/AndroidManifest.xml; then
+            echo 'INTERNET permission is forbidden for the local-first Android build.' >&2
+            exit 1
+          fi
+          grep -q 'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION' android/app/src/main/AndroidManifest.xml
+          grep -q 'android:foregroundServiceType="mediaProjection"' android/app/src/main/AndroidManifest.xml
+          grep -q 'android:usesCleartextTraffic="false"' android/app/src/main/AndroidManifest.xml
+          grep -q 'android:allowBackup="false"' android/app/src/main/AndroidManifest.xml
+          grep -A4 'android:name=".CaptureService"' android/app/src/main/AndroidManifest.xml | grep -q 'android:exported="false"'
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Verify Android SDK 36
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${ANDROID_HOME:-}"
+          test -d "$ANDROID_HOME/platforms/android-36"
+          test -x "$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          test -x "$ANDROID_HOME/build-tools/35.0.0/zipalign"
+
+      - name: Lint test and build Android variants
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle -p android --no-daemon clean lintDebug lintRelease testDebugUnitTest assembleDebug assembleRelease
+          test -s android/app/build/outputs/apk/debug/app-debug.apk
+          test -s android/app/build/outputs/apk/release/app-release-unsigned.apk
+
+      - name: Prepare and verify public SNAPVERE.apk
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-android
+          cp android/app/build/outputs/apk/debug/app-debug.apk release-android/SNAPVERE.apk
+          test -s release-android/SNAPVERE.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs release-android/SNAPVERE.apk
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 -v 4 release-android/SNAPVERE.apk
+          echo 'SNAPVERE.apk uses the validated Android CI/debug signing identity; no private production keystore is claimed.'
+
+      - name: Build and validate Android source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          git archive \
+            --format=zip \
+            --prefix="SNAPVERE-Android-${SNAPVERE_VERSION}/" \
+            --output=release-android/SNAPVERE-Android-Source.zip \
+            HEAD:android
+          test -s release-android/SNAPVERE-Android-Source.zip
+          unzip -t release-android/SNAPVERE-Android-Source.zip >/dev/null
+          listing="$(unzip -Z1 release-android/SNAPVERE-Android-Source.zip)"
+          grep -Fq "SNAPVERE-Android-${SNAPVERE_VERSION}/app/build.gradle" <<< "$listing"
+          grep -Fq "SNAPVERE-Android-${SNAPVERE_VERSION}/app/src/main/AndroidManifest.xml" <<< "$listing"
+          grep -Fq "SNAPVERE-Android-${SNAPVERE_VERSION}/app/src/main/java/com/snapvere/android/MainActivity.java" <<< "$listing"
+          if grep -Eq '/(build|\.gradle)/' <<< "$listing"; then
+            echo 'Android source archive unexpectedly contains generated build/cache output.' >&2
+            exit 1
+          fi
+
+      - name: Record Android transfer digests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release-android
+          apk_hash="$(sha256sum SNAPVERE.apk | awk '{print $1}')"
+          source_hash="$(sha256sum SNAPVERE-Android-Source.zip | awk '{print $1}')"
+          printf '{"SNAPVERE.apk":"%s","SNAPVERE-Android-Source.zip":"%s"}\n' \
+            "$apk_hash" "$source_hash" > android-release-hashes.json
+
+      - name: Upload validated Android payload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: snapvere-android-release-${{ github.sha }}
+          path: |
+            release-android/SNAPVERE.apk
+            release-android/SNAPVERE-Android-Source.zip
+            release-android/android-release-hashes.json
+          if-no-files-found: error
+          retention-days: 7
+
+  browser-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout validated source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Validate browser 0.1.1 source and store contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node ekstenzije/tools/validate-extensions.mjs
+          node ekstenzije/tools/verify-extension-parity.mjs
+          for manifest in \
+            ekstenzije/chrome/manifest.json \
+            ekstenzije/edge/manifest.json \
+            ekstenzije/opera/manifest.json \
+            ekstenzije/firefox/manifest.json; do
+            grep -Eq '"version"[[:space:]]*:[[:space:]]*"0\.1\.1"' "$manifest"
+          done
+          grep -Eq '"extensionVersion"[[:space:]]*:[[:space:]]*"0\.1\.1"' ekstenzije/store/listing.json
+          python -m pip install --disable-pip-version-check --no-cache-dir 'Pillow==11.3.0'
+          python ekstenzije/tools/generate-store-assets.py
+          node ekstenzije/tools/validate-store-readiness.mjs
+
+      - name: Build reproducible browser release packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash ekstenzije/tools/package-extensions.sh release-browser-pass-1
+          bash ekstenzije/tools/package-extensions.sh release-browser-pass-2
+          for name in Chrome Edge Opera Firefox; do
+            cmp "release-browser-pass-1/SNAPVERE-$name.zip" "release-browser-pass-2/SNAPVERE-$name.zip"
+          done
+          diff -u release-browser-pass-1/SHA256SUMS.txt release-browser-pass-2/SHA256SUMS.txt
+          mv release-browser-pass-1 release-browser
+          rm -rf release-browser-pass-2
+          (
+            cd release-browser
+            sha256sum -c SHA256SUMS.txt
+          )
+          shopt -s nullglob
+          packages=(release-browser/SNAPVERE-*.zip)
+          [[ "${#packages[@]}" -eq 4 ]]
+
+      - name: Upload validated browser payload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: snapvere-browser-release-${{ github.sha }}
+          path: |
+            release-browser/SNAPVERE-Chrome.zip
+            release-browser/SNAPVERE-Edge.zip
+            release-browser/SNAPVERE-Opera.zip
+            release-browser/SNAPVERE-Firefox.zip
+            release-browser/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    needs: [android-release, browser-release]
+    runs-on: windows-2022
+    timeout-minutes: 180
+    steps:
+      - name: Checkout validated source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: global.json
+
+      - name: Validate 0.1.1 release source contract
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -ne 'refs/heads/main') { throw "v0.1.1 release must run from main. Actual: $env:GITHUB_REF" }
+          if (-not (Test-Path -LiteralPath '.github/release-triggers/v0.1.1' -PathType Leaf)) { throw 'Missing v0.1.1 release trigger.' }
+          if (-not (Test-Path -LiteralPath 'RELEASE_NOTES_0.1.1.md' -PathType Leaf)) { throw 'Missing RELEASE_NOTES_0.1.1.md.' }
+          $props = Get-Content -Raw -LiteralPath 'Directory.Build.props'
+          foreach ($required in @(
+            '<VersionPrefix>0.1.1</VersionPrefix>',
+            '<AssemblyVersion>0.1.1.0</AssemblyVersion>',
+            '<FileVersion>0.1.1.0</FileVersion>',
+            '<NuGetAudit>true</NuGetAudit>',
+            '<NuGetAuditMode>all</NuGetAuditMode>'
+          )) {
+            if (-not $props.Contains($required, [StringComparison]::Ordinal)) { throw "Directory.Build.props missing: $required" }
+          }
+
+      - name: Restore audit build and test Windows source
+        shell: pwsh
+        run: |
+          dotnet restore SNAPVERE.sln
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet build SNAPVERE.sln --configuration Release --no-restore -p:Platform=x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet test tests/Snapvere.UnitTests/Snapvere.UnitTests.csproj --configuration Release --no-restore -p:Platform=x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($target in @(@{ Rid='win-x86'; Platform='x86' }, @{ Rid='win-arm64'; Platform='ARM64' })) {
+            dotnet restore src/Snapvere.App/Snapvere.App.csproj --runtime $target.Rid
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            dotnet build src/Snapvere.App/Snapvere.App.csproj --configuration Release --runtime $target.Rid --no-restore "-p:Platform=$($target.Platform)"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Build architecture payloads and integrity manifests
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          $platforms = @{ x86='x86'; x64='x64'; arm64='ARM64' }
+          foreach ($arch in @('x86','x64','arm64')) {
+            $rid = "win-$arch"
+            $output = "artifacts/app-$arch"
+            dotnet publish src/Snapvere.App/Snapvere.App.csproj --configuration Release --runtime $rid "-p:Platform=$($platforms[$arch])" -p:SelfContained=true -p:WindowsAppSDKSelfContained=true -p:PublishReadyToRun=true -p:DebugType=None -p:DebugSymbols=false "-p:Version=$env:SNAPVERE_VERSION" --output $output
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            $root = (Resolve-Path $output).Path
+            $files = @(Get-ChildItem -LiteralPath $root -Recurse -File | ForEach-Object {
+              $relative = [System.IO.Path]::GetRelativePath($root, $_.FullName).Replace('\\','/')
+              [pscustomobject]@{ Path=$relative; Length=$_.Length; Sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToUpperInvariant() }
+            } | Sort-Object Path)
+            [pscustomobject]@{ FormatVersion=1; Files=$files } | ConvertTo-Json -Depth 4 -Compress | Set-Content -LiteralPath "artifacts/SNAPVERE-payload-$arch.integrity.json" -Encoding utf8NoBOM
+            Compress-Archive -Path "$output/*" -DestinationPath "artifacts/SNAPVERE-payload-$arch.zip" -CompressionLevel Optimal
+          }
+
+      - name: Validate architecture payloads
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          foreach ($arch in @('x86','x64','arm64')) {
+            $zip = (Resolve-Path "artifacts/SNAPVERE-payload-$arch.zip").Path
+            if ((Get-Item $zip).Length -lt 20MB) { throw "$arch payload is unexpectedly small." }
+            $archive = [System.IO.Compression.ZipFile]::OpenRead($zip)
+            try {
+              $apps = @($archive.Entries | Where-Object { $_.FullName -ieq 'Snapvere.exe' })
+              if ($apps.Count -ne 1) { throw "$arch payload must contain one root Snapvere.exe." }
+            } finally { $archive.Dispose() }
+            $manifest = Get-Content -Raw -LiteralPath "artifacts/SNAPVERE-payload-$arch.integrity.json" | ConvertFrom-Json
+            if ($manifest.FormatVersion -ne 1 -or @($manifest.Files).Count -eq 0) { throw "$arch integrity manifest is invalid." }
+            if (-not ($manifest.Files | Where-Object { $_.Path -ieq 'Snapvere.exe' -and $_.Sha256 -match '^[0-9A-F]{64}$' })) { throw "$arch manifest lacks Snapvere.exe SHA-256." }
+          }
+
+      - name: Build universal Setup and Portable
+        shell: pwsh
+        run: |
+          $x86 = (Resolve-Path 'artifacts/SNAPVERE-payload-x86.zip').Path
+          $x64 = (Resolve-Path 'artifacts/SNAPVERE-payload-x64.zip').Path
+          $arm64 = (Resolve-Path 'artifacts/SNAPVERE-payload-arm64.zip').Path
+          $x86Integrity = (Resolve-Path 'artifacts/SNAPVERE-payload-x86.integrity.json').Path
+          $x64Integrity = (Resolve-Path 'artifacts/SNAPVERE-payload-x64.integrity.json').Path
+          $arm64Integrity = (Resolve-Path 'artifacts/SNAPVERE-payload-arm64.integrity.json').Path
+          dotnet publish src/Snapvere.Setup/Snapvere.Setup.csproj --configuration Release --runtime win-x86 -p:Platform=x86 -p:SelfContained=true "-p:Version=$env:SNAPVERE_VERSION" "-p:SnapverePayloadX86Path=$x86" "-p:SnapverePayloadX64Path=$x64" "-p:SnapverePayloadArm64Path=$arm64" --output artifacts/setup-universal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet publish src/Snapvere.Portable/Snapvere.Portable.csproj --configuration Release --runtime win-x86 -p:Platform=x86 -p:SelfContained=true "-p:Version=$env:SNAPVERE_VERSION" "-p:SnapverePayloadX86Path=$x86" "-p:SnapverePayloadX64Path=$x64" "-p:SnapverePayloadArm64Path=$arm64" "-p:SnapverePayloadX86IntegrityPath=$x86Integrity" "-p:SnapverePayloadX64IntegrityPath=$x64Integrity" "-p:SnapverePayloadArm64IntegrityPath=$arm64Integrity" --output artifacts/portable-universal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          Copy-Item artifacts/setup-universal/SNAPVERE-Setup.exe release/SNAPVERE-Setup.exe
+          Copy-Item artifacts/portable-universal/SNAPVERE-Portable.exe release/SNAPVERE-Portable.exe
+
+      - name: Download validated Android payload
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: snapvere-android-release-${{ github.sha }}
+          path: artifacts/android-release
+
+      - name: Download validated browser payload
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: snapvere-browser-release-${{ github.sha }}
+          path: artifacts/browser-release
+
+      - name: Verify transferred Android and browser assets
+        shell: pwsh
+        run: |
+          $androidRoot = (Resolve-Path 'artifacts/android-release').Path
+          $androidHashes = Get-Content -Raw -LiteralPath (Join-Path $androidRoot 'android-release-hashes.json') | ConvertFrom-Json -AsHashtable
+          foreach ($name in @('SNAPVERE.apk','SNAPVERE-Android-Source.zip')) {
+            $path = Join-Path $androidRoot $name
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Missing Android asset $name." }
+            $actual = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if (-not [string]::Equals($actual, $androidHashes[$name], [StringComparison]::OrdinalIgnoreCase)) { throw "Android transfer digest mismatch for $name." }
+            Copy-Item -LiteralPath $path -Destination (Join-Path release $name)
+          }
+
+          $browserRoot = (Resolve-Path 'artifacts/browser-release').Path
+          $checksumPath = Join-Path $browserRoot 'SHA256SUMS.txt'
+          if (-not (Test-Path -LiteralPath $checksumPath -PathType Leaf)) { throw 'Missing browser SHA256SUMS.txt.' }
+          $browserHashes = @{}
+          foreach ($line in Get-Content -LiteralPath $checksumPath) {
+            if ($line -match '^([0-9a-fA-F]{64})\s+\*?(SNAPVERE-(Chrome|Edge|Opera|Firefox)\.zip)$') {
+              $browserHashes[$matches[2]] = $matches[1].ToLowerInvariant()
+            }
+          }
+          $browserNames = @('SNAPVERE-Chrome.zip','SNAPVERE-Edge.zip','SNAPVERE-Opera.zip','SNAPVERE-Firefox.zip')
+          foreach ($name in $browserNames) {
+            $path = Join-Path $browserRoot $name
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Missing browser asset $name." }
+            if (-not $browserHashes.ContainsKey($name)) { throw "Missing browser transfer digest for $name." }
+            $actual = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if (-not [string]::Equals($actual, $browserHashes[$name], [StringComparison]::OrdinalIgnoreCase)) { throw "Browser transfer digest mismatch for $name." }
+            Copy-Item -LiteralPath $path -Destination (Join-Path release $name)
+          }
+
+      - name: Enforce exact eight-file 0.1.1 release contract and digests
+        shell: pwsh
+        run: |
+          $expected = @(
+            'SNAPVERE-Android-Source.zip',
+            'SNAPVERE-Chrome.zip',
+            'SNAPVERE-Edge.zip',
+            'SNAPVERE-Firefox.zip',
+            'SNAPVERE-Opera.zip',
+            'SNAPVERE-Portable.exe',
+            'SNAPVERE-Setup.exe',
+            'SNAPVERE.apk'
+          )
+          $actual = @(Get-ChildItem release -File | Select-Object -ExpandProperty Name | Sort-Object)
+          if ($actual.Count -ne 8 -or @(Compare-Object $expected $actual).Count -ne 0) { throw "Release must contain exactly eight approved assets. Actual: $($actual -join ', ')" }
+          $hashes = @{}
+          foreach ($name in $expected) {
+            $file = Get-Item (Join-Path release $name)
+            if ($name -like '*.exe' -and $file.Length -lt 50MB) { throw "$name is unexpectedly small." }
+            if ($name -eq 'SNAPVERE.apk' -and $file.Length -lt 50KB) { throw "$name is unexpectedly small." }
+            if ($name -eq 'SNAPVERE-Android-Source.zip' -and $file.Length -lt 10KB) { throw "$name is unexpectedly small." }
+            if ($name -match '^SNAPVERE-(Chrome|Edge|Opera|Firefox)\.zip$' -and $file.Length -lt 10KB) { throw "$name is unexpectedly small." }
+            $hashes[$name] = (Get-FileHash $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          }
+          Copy-Item 'RELEASE_NOTES_0.1.1.md' 'artifacts/release-notes-final.md'
+          Add-Content -LiteralPath 'artifacts/release-notes-final.md' -Value "`n## SHA-256 digests`n"
+          foreach ($name in $expected) { Add-Content -LiteralPath 'artifacts/release-notes-final.md' -Value "- ``$name``: ``$($hashes[$name])``" }
+          $hashes | ConvertTo-Json | Set-Content -LiteralPath 'artifacts/release-hashes.json' -Encoding utf8
+
+      - name: Validate universal x64 and x86 runtime contracts
+        shell: pwsh
+        run: |
+          $setup = (Resolve-Path 'release/SNAPVERE-Setup.exe').Path
+          $portable = (Resolve-Path 'release/SNAPVERE-Portable.exe').Path
+          try {
+            foreach ($arch in @('x64','x86')) {
+              $env:SNAPVERE_PAYLOAD_ARCH = $arch
+              & ./eng/Test-SnapverePackageLifecycle.ps1 -SetupPath $setup -PortablePath $portable -Version $env:SNAPVERE_VERSION -Arch $arch
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              & ./eng/Test-SnapvereTrayFirstLaunch.ps1 -SetupPath $setup -PortablePath $portable -Version $env:SNAPVERE_VERSION -Arch $arch
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+          } finally { Remove-Item Env:SNAPVERE_PAYLOAD_ARCH -ErrorAction SilentlyContinue }
+
+      - name: Create or verify immutable v0.1.1 tag
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $repository = '${{ github.repository }}'
+          $tag = "v$env:SNAPVERE_VERSION"
+          $encoded = [Uri]::EscapeDataString($tag)
+          $lookup = @(& gh api "repos/$repository/git/ref/tags/$encoded" 2>&1)
+          $exit = $LASTEXITCODE
+          if ($exit -eq 0) {
+            $ref = (($lookup | ForEach-Object { $_.ToString() }) -join "`n") | ConvertFrom-Json
+            $target = $ref.object.sha
+            if ($ref.object.type -eq 'tag') {
+              $obj = (& gh api "repos/$repository/git/tags/$target") | ConvertFrom-Json
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              $target = $obj.object.sha
+            }
+            if ($target -ne $env:GITHUB_SHA) { throw "Immutable $tag already targets $target, not $env:GITHUB_SHA." }
+          } else {
+            $text = ($lookup | ForEach-Object { $_.ToString() }) -join "`n"
+            if ($text -notmatch 'HTTP 404') { throw "Could not query $tag. $text" }
+            & gh api --method POST "repos/$repository/git/refs" -f ref="refs/tags/$tag" -f sha="$env:GITHUB_SHA" | Out-Null
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Publish GitHub Release if absent
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "v$env:SNAPVERE_VERSION"
+          gh release view $tag --json tagName *> $null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "$tag already exists; release assets will not be replaced."
+          } else {
+            & gh release create $tag `
+              release/SNAPVERE-Setup.exe `
+              release/SNAPVERE-Portable.exe `
+              release/SNAPVERE.apk `
+              release/SNAPVERE-Android-Source.zip `
+              release/SNAPVERE-Chrome.zip `
+              release/SNAPVERE-Edge.zip `
+              release/SNAPVERE-Opera.zip `
+              release/SNAPVERE-Firefox.zip `
+              --title "SNAPVERE $tag" `
+              --notes-file artifacts/release-notes-final.md `
+              --latest `
+              --verify-tag
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Verify published v0.1.1 release and asset digests
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "v$env:SNAPVERE_VERSION"
+          $release = (& gh release view $tag --json tagName,isDraft,isPrerelease,assets,targetCommitish) | ConvertFrom-Json
+          if ($release.tagName -ne $tag -or $release.isDraft -or $release.isPrerelease) { throw 'Published release metadata is invalid.' }
+          $expected = @(
+            'SNAPVERE-Android-Source.zip',
+            'SNAPVERE-Chrome.zip',
+            'SNAPVERE-Edge.zip',
+            'SNAPVERE-Firefox.zip',
+            'SNAPVERE-Opera.zip',
+            'SNAPVERE-Portable.exe',
+            'SNAPVERE-Setup.exe',
+            'SNAPVERE.apk'
+          )
+          $published = @($release.assets | ForEach-Object { $_.name } | Sort-Object)
+          if ($published.Count -ne 8 -or @(Compare-Object $expected $published).Count -ne 0) { throw "Published $tag has invalid assets: $($published -join ', ')" }
+          $local = Get-Content -Raw -LiteralPath 'artifacts/release-hashes.json' | ConvertFrom-Json -AsHashtable
+          foreach ($asset in $release.assets) {
+            $expectedDigest = "sha256:$($local[$asset.name])"
+            if ([string]::IsNullOrWhiteSpace($asset.digest)) { throw "Published asset $($asset.name) has no GitHub digest." }
+            if (-not [string]::Equals($asset.digest, $expectedDigest, [StringComparison]::OrdinalIgnoreCase)) { throw "Digest mismatch for $($asset.name)." }
+          }
+          Write-Host "Verified $tag with exactly eight public assets and matching SHA-256 digests."
