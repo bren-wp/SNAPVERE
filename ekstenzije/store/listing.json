@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "product": "SNAPVERE",
+  "extensionVersion": "0.1.0",
+  "developmentChannel": "post-v0.1.0-source-development",
+  "category": "Productivity",
+  "singlePurpose": "Capture the visible area, a full page, or a user-selected region of the active browser tab and save the result locally as a PNG.",
+  "website": "https://github.com/bren-wp/SNAPVERE",
+  "supportUrl": "https://github.com/bren-wp/SNAPVERE/issues",
+  "privacyPolicyUrl": "https://github.com/bren-wp/SNAPVERE/blob/main/ekstenzije/PRIVACY.md",
+  "permissions": {
+    "activeTab": "Access only the tab on which the user explicitly invokes SNAPVERE so the requested screenshot can be captured.",
+    "scripting": "Inject the local region/full-page capture helper into the active page after an explicit capture action.",
+    "downloads": "Save user-requested screenshot PNG files to the local device.",
+    "storage": "Persist local settings and short-lived capture-session metadata needed to survive Manifest V3 background suspension."
+  },
+  "dataPractices": {
+    "collectsOffDevice": false,
+    "transmitsOffDevice": false,
+    "sellsData": false,
+    "usesAnalytics": false,
+    "usesTelemetry": false,
+    "usesAds": false,
+    "usesRemoteCode": false,
+    "requiresAccount": false,
+    "requiresPayment": false,
+    "localProcessing": [
+      "Pixels from the user-requested screenshot are processed in browser memory and saved only through a local download initiated by the user.",
+      "Filename settings and short-lived active capture metadata are stored in browser-local storage.",
+      "Full-page capture temporarily holds bounded image tiles in memory while stitching the final PNG."
+    ]
+  },
+  "locales": {
+    "en": {
+      "name": "SNAPVERE",
+      "shortDescription": "Local-first screenshot capture for visible areas, full pages and selected regions.",
+      "longDescription": "SNAPVERE is a focused screenshot extension for capturing exactly what you need from the active browser tab. Capture the visible viewport, create a bounded full-page screenshot, or drag over a precise region. Screenshot pixels are processed locally in the browser and saved as PNG files on your device. SNAPVERE does not upload captures, run analytics, use telemetry, display ads or require an account. English and Croatian interfaces are included, with a compact dark/violet UI and keyboard-accessible controls."
+    },
+    "hr": {
+      "name": "SNAPVERE",
+      "shortDescription": "Lokalno snimanje vidljivog dijela, cijele stranice ili odabranog područja.",
+      "longDescription": "SNAPVERE je fokusirana ekstenzija za snimanje točno onoga što trebate iz aktivne kartice preglednika. Snimite vidljivo područje, napravite ograničenu snimku cijele stranice ili povucite preko precizno odabranog područja. Pikseli snimke obrađuju se lokalno u pregledniku i spremaju kao PNG datoteke na vaš uređaj. SNAPVERE ne prenosi snimke u oblak, ne koristi analitiku ni telemetriju, ne prikazuje oglase i ne zahtijeva korisnički račun. Uključena su engleska i hrvatska sučelja s kompaktnim tamno-ljubičastim dizajnom i kontrolama dostupnima tipkovnicom."
+    }
+  },
+  "stores": {
+    "chrome": {
+      "package": "SNAPVERE-Chrome.zip",
+      "manifestVariant": "chromium-mv3",
+      "screenshots": [
+        "assets/screenshot-capture-1280x800.png",
+        "assets/screenshot-region-1280x800.png",
+        "assets/screenshot-settings-1280x800.png"
+      ],
+      "smallPromo": "assets/promo-small-440x280.png",
+      "marqueePromo": "assets/promo-marquee-1400x560.png"
+    },
+    "edge": {
+      "package": "SNAPVERE-Edge.zip",
+      "manifestVariant": "chromium-mv3",
+      "screenshots": [
+        "assets/screenshot-capture-1280x800.png",
+        "assets/screenshot-region-1280x800.png",
+        "assets/screenshot-settings-1280x800.png"
+      ],
+      "smallPromo": "assets/promo-small-440x280.png",
+      "largePromo": "assets/promo-marquee-1400x560.png"
+    },
+    "opera": {
+      "package": "SNAPVERE-Opera.zip",
+      "manifestVariant": "chromium-mv3",
+      "screenshots": [
+        "assets/opera-screenshot-capture-612x408.png",
+        "assets/opera-screenshot-region-612x408.png"
+      ]
+    },
+    "firefox": {
+      "package": "SNAPVERE-Firefox.zip",
+      "manifestVariant": "firefox-mv3",
+      "screenshots": [
+        "assets/screenshot-capture-1280x800.png",
+        "assets/screenshot-region-1280x800.png",
+        "assets/screenshot-settings-1280x800.png"
+      ],
+      "sourceCodePackageRequired": false,
+      "sourceCodeReason": "The submitted Firefox package contains the readable, unminified source directly and has no bundling, transpilation or generated runtime code."
+    }
+  },
+  "reviewerNotes": "reviewer-notes.md"
+}

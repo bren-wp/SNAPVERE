@@ -32,7 +32,7 @@ SNAPVERE browser extensions are local-first. Screenshot pixels are processed in 
 
 The extension source contains no telemetry, analytics, advertising SDK, cloud upload client, remote-control channel or background network client. It does not automatically send screenshots anywhere.
 
-No remote runtime dependencies or CDN scripts are used.
+No remote runtime dependencies or CDN scripts are used. The public browser-extension privacy policy is maintained in [`PRIVACY.md`](PRIVACY.md).
 
 ## Permissions
 
@@ -102,6 +102,25 @@ The packaging helper stages the browser source, normalizes ZIP timestamps to the
 
 Do not include `node_modules`, caches, source maps, `.DS_Store` or other development artifacts.
 
+## Store submission kit
+
+[`store/listing.json`](store/listing.json) is the canonical machine-readable store contract. It contains the EN/HR listing copy, the single-purpose statement, permission justifications, privacy/data-practice declarations, exact ZIP names and the required store-asset paths for all four browser variants.
+
+[`store/reviewer-notes.md`](store/reviewer-notes.md) contains the functional reviewer test path, expected protected-page behavior, privacy/network notes, permission rationale and the Firefox signing/source-code note. [`store/README.md`](store/README.md) documents the manual submission boundary and links to the official publisher documentation for Chrome Web Store, Microsoft Edge Add-ons, Opera Add-ons and Mozilla Add-ons.
+
+`tools/generate-store-assets.py` deterministically creates the submission graphics used by the store kit:
+
+- three 1280×800 listing screenshots;
+- two Opera 612×408 screenshots;
+- one 440×280 small promotional tile;
+- one 1400×560 large/marquee promotional tile.
+
+Generated PNGs live under `ekstenzije/store/assets/` during CI and are intentionally ignored by Git. The source generator is version-controlled so the visuals remain reproducible from the repository.
+
+`tools/validate-store-readiness.mjs` binds the store claims back to the implementation. It validates listing schema/version, manifest-version alignment, the exact permission set, the absence of broad host permissions, local-first privacy flags, EN/HR listing completeness, exact package names, prepared screenshot/promo paths and exact PNG dimensions.
+
+CI uploads a separate `snapvere-browser-store-kit-<sha>` artifact containing the privacy policy, canonical listing JSON, reviewer notes and generated graphics. This keeps the store-submission material separate from the four distributable extension ZIPs.
+
 ## Validation
 
 `.github/workflows/extensions-ci.yml` validates:
@@ -112,16 +131,18 @@ Do not include `node_modules`, caches, source maps, `.DS_Store` or other develop
 - absence of broad host permissions;
 - EN/HR locale parity and valid JSON;
 - referenced files/icons;
-- JavaScript syntax;
+- JavaScript and store-generator syntax;
 - absence of remote scripts, insecure `http://`, `eval`, `new Function` and common telemetry endpoints;
 - byte-identical shared runtime source across Chrome, Edge, Opera and Firefox, except for the expected manifest differences;
 - identical Chrome/Edge/Opera manifests and normalized Firefox manifest semantics;
 - exact 16/32/48/128 PNG icon dimensions and cross-browser icon parity;
 - absence of inline scripts, inline style blocks, inline event handlers and remote HTML runtime resources;
+- store listing/privacy/reviewer metadata against the actual manifests and declared behavior;
+- exact generated store-asset dimensions;
 - reproducible browser ZIP creation across two clean packaging passes;
 - SHA-256 verification and package cleanliness.
 
-The workflow performs static/package validation. It is **not** equivalent to manual GUI/runtime testing in four real browsers.
+The workflow performs automated static/package/store-readiness validation. It is **not** equivalent to manual GUI/runtime testing in four real browsers or approval by an external browser store.
 
 ## Known browser limitations
 
@@ -131,4 +152,6 @@ SNAPVERE restores the original scroll position and hidden floating elements in s
 
 ## Store submission
 
-The source and CI ZIPs are prepared for manual submission. This repository does not automatically publish to Chrome Web Store, Mozilla Add-ons, Microsoft Edge Add-ons or Opera Add-ons because those channels require external publisher accounts, review and credentials.
+The source, deterministic ZIPs, privacy policy, listing metadata, reviewer notes and generated store graphics are prepared for submission. This repository does not claim or automate publication to Chrome Web Store, Mozilla Add-ons, Microsoft Edge Add-ons or Opera Add-ons because those channels require external authenticated publisher accounts plus their own submission, review/certification and, for normal Firefox distribution, Mozilla signing.
+
+Do not claim a store item ID, signature, approval, certification or public listing URL until the corresponding external store has actually issued it.

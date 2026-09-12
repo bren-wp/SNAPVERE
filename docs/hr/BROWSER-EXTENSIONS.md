@@ -47,6 +47,8 @@ Nema `<all_urls>` dozvole niti pokušaja zaobilaženja browser-protected stranic
 
 Nema telemetrije, analyticsa, oglasnog SDK-a, cloud uploada, automatskog slanja snimki ni background mrežnog klijenta. Postavke i aktivni capture metapodaci ostaju u lokalnoj browser pohrani.
 
+Verzionirana javna politika privatnosti browser ekstenzija nalazi se u [`ekstenzije/PRIVACY.md`](../../ekstenzije/PRIVACY.md).
+
 ## Lokalizacija
 
 English je default/fallback. Svaka distributivna browser mapa sadrži zasebne English i Hrvatski locale kataloge.
@@ -70,8 +72,22 @@ CI pokreće isti packaging helper dvaput u dva odvojena izlazna direktorija. Sva
 
 Ove provjere nadopunjuju postojeći validator permissiona, localea, source-policy pravila i manifesta.
 
+## Spremnost za objavu u browser storeovima
+
+`ekstenzije/store/listing.json` je kanonski strojno čitljiv store ugovor. Usklađuje EN/HR listing tekst, izjavu o jedinoj namjeni ekstenzije, obrazloženja permissiona, local-first privacy/data-practice izjave, točne nazive ZIP paketa i reference na store vizuale za Chrome Web Store, Microsoft Edge Add-ons, Opera Add-ons i Mozilla Add-ons.
+
+`ekstenzije/store/reviewer-notes.md` vanjskom revieweru daje determinističan funkcionalni testni postupak te dokumentira očekivano ponašanje na zaštićenim browser stranicama, upotrebu permissiona, mrežno/privacy ponašanje, full-page limite i Firefox granicu vezanu uz izvorni kod i signing. `ekstenzije/store/README.md` opisuje završne ručne korake objave i povezuje službenu dokumentaciju publisher portala.
+
+`ekstenzije/tools/generate-store-assets.py` deterministički generira tri listing screenshota 1280×800, dva Opera screenshota 612×408, mali promo tile 440×280 i veliki/marquee promo tile 1400×560 iz SNAPVERE tamno-ljubičastog UI modela. Generirani PNG-ovi su CI artefakti, a ne commitani binarni izvori.
+
+`ekstenzije/tools/validate-store-readiness.mjs` provjerava store materijal prema stvarnim manifestima ekstenzija. Između ostalog zahtijeva usklađenu verziju, točan allow-list od četiri permissiona, izostanak širokih host permissiona, local-first privacy zastavice, potpune EN/HR metapodatke, točne nazive paketa, obavezne asset putanje i točne PNG dimenzije.
+
+Extension CI zato proizvodi dva odvojena artefakta: četiri deterministička ZIP-a ekstenzija sa SHA-256 manifestom te zaseban `snapvere-browser-store-kit-<sha>` paket s politikom privatnosti, kanonskim listing metapodacima, reviewer bilješkama i generiranim store vizualima.
+
+Sama objava u storeu ostaje vanjska granica. Autentificirani publisher pristup, store-side submission, certifikacija/review i Firefox signing ne mogu se zaključiti iz zelenog repozitorijskog CI-ja i ne smiju se prikazivati kao završeni dok ih odgovarajući store stvarno ne potvrdi.
+
 ## Granica QA tvrdnji
 
-`extensions-ci.yml` daje syntax, manifest, permission, locale, cross-browser parity, source-policy, reproducible packaging, SHA-256 i package-content validaciju. Zeleni CI nije tvrdnja da su sve četiri ekstenzije ručno testirane u stvarnom browser GUI-ju.
+`extensions-ci.yml` daje syntax, manifest, permission, locale, cross-browser parity, source-policy, store-readiness, provjeru dimenzija generiranih vizuala, reproducible packaging, SHA-256 i package-content validaciju. Zeleni CI nije tvrdnja da su sve četiri ekstenzije ručno testirane u stvarnom browser GUI-ju ili odobrene u vanjskim storeovima.
 
-Za development load, pakiranje i poznata ograničenja vidi [`ekstenzije/README.md`](../../ekstenzije/README.md).
+Za development load, pakiranje, store-submission materijal i poznata ograničenja vidi [`ekstenzije/README.md`](../../ekstenzije/README.md).
