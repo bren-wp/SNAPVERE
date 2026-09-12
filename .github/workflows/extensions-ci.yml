@@ -1,0 +1,98 @@
+name: Browser Extensions CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ekstenzije/**'
+      - '.github/workflows/extensions-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ekstenzije/**'
+      - '.github/workflows/extensions-ci.yml'
+
+concurrency:
+  group: snapvere-extensions-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Validate extension contract
+        run: node ekstenzije/tools/validate-extensions.mjs
+
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          find ekstenzije/chrome ekstenzije/edge ekstenzije/opera ekstenzije/firefox \
+            -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+          node --check ekstenzije/tools/validate-extensions.mjs
+
+      - name: Build browser ZIP packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf artifacts/extensions
+          mkdir -p artifacts/extensions
+
+          package() {
+            local browser="$1"
+            local label="$2"
+            (
+              cd "ekstenzije/$browser"
+              zip -q -r "../../artifacts/extensions/SNAPVERE-$label.zip" . \
+                -x '*.DS_Store' '*.map' '*/node_modules/*' '*/__pycache__/*' '*/.cache/*'
+            )
+          }
+
+          package chrome Chrome
+          package edge Edge
+          package opera Opera
+          package firefox Firefox
+
+          test -s artifacts/extensions/SNAPVERE-Chrome.zip
+          test -s artifacts/extensions/SNAPVERE-Edge.zip
+          test -s artifacts/extensions/SNAPVERE-Opera.zip
+          test -s artifacts/extensions/SNAPVERE-Firefox.zip
+
+      - name: Verify ZIP package contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          packages=(artifacts/extensions/SNAPVERE-*.zip)
+          [[ "${#packages[@]}" -eq 4 ]]
+
+          for package in "${packages[@]}"; do
+            listing="$(unzip -Z1 "$package")"
+            grep -qx 'manifest.json' <<<"$listing"
+            grep -qx 'background.js' <<<"$listing"
+            grep -qx '_locales/en/messages.json' <<<"$listing"
+            grep -qx '_locales/hr/messages.json' <<<"$listing"
+
+            if grep -E '(^|/)(node_modules|__pycache__|\.cache)(/|$)|\.DS_Store$|\.map$' <<<"$listing"; then
+              echo "Development/cache artifact found in $package" >&2
+              exit 1
+            fi
+          done
+
+      - name: Upload browser packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: snapvere-browser-extensions-${{ github.sha }}
+          path: artifacts/extensions/SNAPVERE-*.zip
+          if-no-files-found: error
+          retention-days: 30
