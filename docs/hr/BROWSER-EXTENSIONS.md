@@ -51,8 +51,27 @@ Nema telemetrije, analyticsa, oglasnog SDK-a, cloud uploada, automatskog slanja 
 
 English je default/fallback. Svaka distributivna browser mapa sadrži zasebne English i Hrvatski locale kataloge.
 
+## Reproducibilno pakiranje
+
+`ekstenzije/tools/package-extensions.sh` izrađuje četiri ZIP paketa iz zasebno staged izvora. Skripta normalizira timestampove staged datoteka i mapa na prijenosni ZIP epoch, sortira putanje u arhivi te koristi `zip -X` kako bi uklonila nepotrebne host metapodatke. Uz ZIP-ove se generira `SHA256SUMS.txt`.
+
+CI pokreće isti packaging helper dvaput u dva odvojena izlazna direktorija. Svaki odgovarajući ZIP mora biti byte-for-byte identičan, a oba SHA-256 manifesta moraju biti ista prije uploada CI artefakta.
+
+## Kontrola pariteta između browsera
+
+`ekstenzije/tools/verify-extension-parity.mjs` sprječava tiho razilaženje browser varijanti. Provjerava da:
+
+- sve zajedničke runtime datoteke imaju iste putanje i SHA-256 sadržaj u Chromeu, Edgeu, Operi i Firefoxu;
+- Chrome, Edge i Opera imaju identične manifeste;
+- Firefox se od Chromium manifesta razlikuje samo u očekivanom background/Gecko dijelu;
+- verzija ostaje usklađena u sva četiri manifesta;
+- PNG ikone imaju točne dimenzije 16/32/48/128 i identične byteove u svim browserima;
+- popup/options HTML nema inline script/style blokove, inline event handlere ni udaljene runtime resurse.
+
+Ove provjere nadopunjuju postojeći validator permissiona, localea, source-policy pravila i manifesta.
+
 ## Granica QA tvrdnji
 
-`extensions-ci.yml` daje syntax, manifest, permission, locale, source-policy i package validaciju. Zeleni CI nije tvrdnja da su sve četiri ekstenzije ručno testirane u stvarnom browser GUI-ju.
+`extensions-ci.yml` daje syntax, manifest, permission, locale, cross-browser parity, source-policy, reproducible packaging, SHA-256 i package-content validaciju. Zeleni CI nije tvrdnja da su sve četiri ekstenzije ručno testirane u stvarnom browser GUI-ju.
 
 Za development load, pakiranje i poznata ograničenja vidi [`ekstenzije/README.md`](../../ekstenzije/README.md).
