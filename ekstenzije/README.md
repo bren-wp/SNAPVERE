@@ -81,7 +81,7 @@ Firefox temporary add-ons are removed when Firefox restarts. Store signing/distr
 
 ## Packaging
 
-The extension CI creates:
+The extension CI creates exactly these browser ZIP packages:
 
 ```text
 SNAPVERE-Chrome.zip
@@ -90,15 +90,15 @@ SNAPVERE-Opera.zip
 SNAPVERE-Firefox.zip
 ```
 
-To create the same packages manually from the repository root on a system with `zip`:
+It also produces `SHA256SUMS.txt` inside the CI artifact so the four package digests can be checked independently.
+
+To create the same deterministic packages manually from the repository root on a Unix-like system with `bash`, `zip` and `sha256sum`:
 
 ```bash
-mkdir -p artifacts/extensions
-(cd ekstenzije/chrome  && zip -r ../../artifacts/extensions/SNAPVERE-Chrome.zip .)
-(cd ekstenzije/edge    && zip -r ../../artifacts/extensions/SNAPVERE-Edge.zip .)
-(cd ekstenzije/opera   && zip -r ../../artifacts/extensions/SNAPVERE-Opera.zip .)
-(cd ekstenzije/firefox && zip -r ../../artifacts/extensions/SNAPVERE-Firefox.zip .)
+bash ekstenzije/tools/package-extensions.sh
 ```
+
+The packaging helper stages the browser source, normalizes ZIP timestamps to the portable ZIP epoch, sorts all input paths and uses `zip -X`. CI runs the packaging process twice and requires every ZIP plus the checksum manifest to match byte-for-byte between the two builds.
 
 Do not include `node_modules`, caches, source maps, `.DS_Store` or other development artifacts.
 
@@ -114,7 +114,12 @@ Do not include `node_modules`, caches, source maps, `.DS_Store` or other develop
 - referenced files/icons;
 - JavaScript syntax;
 - absence of remote scripts, insecure `http://`, `eval`, `new Function` and common telemetry endpoints;
-- distributable ZIP creation and package cleanliness.
+- byte-identical shared runtime source across Chrome, Edge, Opera and Firefox, except for the expected manifest differences;
+- identical Chrome/Edge/Opera manifests and normalized Firefox manifest semantics;
+- exact 16/32/48/128 PNG icon dimensions and cross-browser icon parity;
+- absence of inline scripts, inline style blocks, inline event handlers and remote HTML runtime resources;
+- reproducible browser ZIP creation across two clean packaging passes;
+- SHA-256 verification and package cleanliness.
 
 The workflow performs static/package validation. It is **not** equivalent to manual GUI/runtime testing in four real browsers.
 

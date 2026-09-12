@@ -33,6 +33,9 @@ jobs:
       - name: Validate extension contract
         run: node ekstenzije/tools/validate-extensions.mjs
 
+      - name: Verify browser variant parity
+        run: node ekstenzije/tools/verify-extension-parity.mjs
+
       - name: Check JavaScript syntax
         shell: bash
         run: |
@@ -40,35 +43,29 @@ jobs:
           find ekstenzije/chrome ekstenzije/edge ekstenzije/opera ekstenzije/firefox \
             -type f -name '*.js' -print0 | xargs -0 -n1 node --check
           node --check ekstenzije/tools/validate-extensions.mjs
+          node --check ekstenzije/tools/verify-extension-parity.mjs
 
-      - name: Build browser ZIP packages
+      - name: Build reproducible browser ZIP packages
         shell: bash
         run: |
           set -euo pipefail
+          bash ekstenzije/tools/package-extensions.sh artifacts/extensions-pass-1
+          bash ekstenzije/tools/package-extensions.sh artifacts/extensions-pass-2
+
+          for name in Chrome Edge Opera Firefox; do
+            cmp \
+              "artifacts/extensions-pass-1/SNAPVERE-$name.zip" \
+              "artifacts/extensions-pass-2/SNAPVERE-$name.zip"
+          done
+          diff -u \
+            artifacts/extensions-pass-1/SHA256SUMS.txt \
+            artifacts/extensions-pass-2/SHA256SUMS.txt
+
           rm -rf artifacts/extensions
-          mkdir -p artifacts/extensions
+          mv artifacts/extensions-pass-1 artifacts/extensions
+          rm -rf artifacts/extensions-pass-2
 
-          package() {
-            local browser="$1"
-            local label="$2"
-            (
-              cd "ekstenzije/$browser"
-              zip -q -r "../../artifacts/extensions/SNAPVERE-$label.zip" . \
-                -x '*.DS_Store' '*.map' '*/node_modules/*' '*/__pycache__/*' '*/.cache/*'
-            )
-          }
-
-          package chrome Chrome
-          package edge Edge
-          package opera Opera
-          package firefox Firefox
-
-          test -s artifacts/extensions/SNAPVERE-Chrome.zip
-          test -s artifacts/extensions/SNAPVERE-Edge.zip
-          test -s artifacts/extensions/SNAPVERE-Opera.zip
-          test -s artifacts/extensions/SNAPVERE-Firefox.zip
-
-      - name: Verify ZIP package contents
+      - name: Verify ZIP package contents and digests
         shell: bash
         run: |
           set -euo pipefail
@@ -76,12 +73,28 @@ jobs:
           packages=(artifacts/extensions/SNAPVERE-*.zip)
           [[ "${#packages[@]}" -eq 4 ]]
 
+          (
+            cd artifacts/extensions
+            sha256sum -c SHA256SUMS.txt
+          )
+
           for package in "${packages[@]}"; do
             listing="$(unzip -Z1 "$package")"
             grep -qx 'manifest.json' <<<"$listing"
             grep -qx 'background.js' <<<"$listing"
+            grep -qx 'capture.js' <<<"$listing"
+            grep -qx 'popup.html' <<<"$listing"
+            grep -qx 'popup.css' <<<"$listing"
+            grep -qx 'popup.js' <<<"$listing"
+            grep -qx 'options.html' <<<"$listing"
+            grep -qx 'options.css' <<<"$listing"
+            grep -qx 'options.js' <<<"$listing"
             grep -qx '_locales/en/messages.json' <<<"$listing"
             grep -qx '_locales/hr/messages.json' <<<"$listing"
+            grep -qx 'icons/icon-16.png' <<<"$listing"
+            grep -qx 'icons/icon-32.png' <<<"$listing"
+            grep -qx 'icons/icon-48.png' <<<"$listing"
+            grep -qx 'icons/icon-128.png' <<<"$listing"
 
             if grep -E '(^|/)(node_modules|__pycache__|\.cache)(/|$)|\.DS_Store$|\.map$' <<<"$listing"; then
               echo "Development/cache artifact found in $package" >&2
@@ -93,6 +106,8 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: snapvere-browser-extensions-${{ github.sha }}
-          path: artifacts/extensions/SNAPVERE-*.zip
+          path: |
+            artifacts/extensions/SNAPVERE-*.zip
+            artifacts/extensions/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 30
