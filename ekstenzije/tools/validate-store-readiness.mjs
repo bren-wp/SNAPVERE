@@ -40,7 +40,12 @@ const listing = readJson(listingPath);
 if (listing.schemaVersion !== 1) fail('unsupported listing schemaVersion');
 if (listing.product !== 'SNAPVERE') fail('product must be SNAPVERE');
 if (!/^\d+\.\d+\.\d+$/.test(listing.extensionVersion ?? '')) fail('extensionVersion must use x.y.z');
-if (listing.developmentChannel !== 'post-v0.1.0-source-development') fail('developmentChannel must preserve the historical release boundary');
+const expectedDevelopmentChannel = listing.extensionVersion === '0.1.1'
+  ? 'v0.1.1-release'
+  : 'post-v0.1.0-source-development';
+if (listing.developmentChannel !== expectedDevelopmentChannel) {
+  fail(`developmentChannel must be ${expectedDevelopmentChannel} for extension version ${listing.extensionVersion}`);
+}
 if (listing.category !== 'Productivity') fail('category must be Productivity');
 if (typeof listing.singlePurpose !== 'string' || listing.singlePurpose.length < 80) fail('singlePurpose must clearly describe the extension');
 assertHttps(listing.website, 'website');

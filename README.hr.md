@@ -6,13 +6,17 @@
   <img alt="SNAPVERE — Capture. Edit. Done." src="assets/branding/readme/snapvere-logo-light.svg" width="560">
 </picture>
 
-**Capture. Edit. Done. — brza, lokalna i privatna aplikacija za snimanje zaslona za Windows i Android koju razvija Brendigo.**
+**Capture. Edit. Done. — lokalno i privatno snimanje zaslona za Windows, Android i moderne preglednike koje razvija Brendigo.**
 
 [English README](README.md) · [Službena stranica](https://snapvere.com) · [Podrška](mailto:info@snapvere.com) · [Developer: Brendigo](https://brendigo.com)
 
-SNAPVERE 0.1.0 objedinjuje produkcijsku tray-first Windows aplikaciju i nativni Android companion u jednom validiranom release ugovoru. Objavljeni povijesni tagovi i asseti ostaju nepromjenjivi.
+Trenutna verzija: **SNAPVERE 0.1.1**.
 
-## Windows capture
+0.1.1 zadržava validiranu tray-first Windows aplikaciju i nativni Android companion iz linije 0.1.0 te prvi put uključuje Chrome, Edge, Opera i Firefox ekstenzije u službeni javni GitHub Release ugovor. Već objavljeni povijesni tagovi i release asseti ostaju nepromijenjeni.
+
+## Windows
+
+SNAPVERE za Windows je tray-first .NET 10 / WinUI 3 aplikacija. Normalni start zadržava aplikaciju u notification area umjesto otvaranja launcher dashboarda.
 
 | Akcija | Primarni unos | Alternativa |
 | --- | --- | --- |
@@ -22,86 +26,118 @@ SNAPVERE 0.1.0 objedinjuje produkcijsku tray-first Windows aplikaciju i nativni 
 | Postavke / nedavne snimke | desni klik tray | — |
 | Jezik / About / Exit | desni klik tray | — |
 
-Region Capture nudi frozen-frame fizičku pixel selekciju, resize/pomicanje, Pen, Line, Arrow, Box i Highlight, četiri boje, Undo, Copy i Save. Window Capture koristi nativno otkrivanje top-level prozora i Windows.Graphics.Capture `CreateForWindow`; ne prelazi potajno na screen crop. Screen Capture preferira Windows.Graphics.Capture/Direct3D i zadržava resilient monitor fallback za očekivane probleme akvizicije.
+Region Capture koristi frozen-frame fizičku pixel selekciju, resize/pomicanje, Pen, Line, Arrow, Box i Highlight alate, boje, Undo, Copy i Save. Window Capture koristi nativno otkrivanje top-level prozora i Windows.Graphics.Capture, a ne skriveni screen crop. Screen Capture preferira Windows.Graphics.Capture/Direct3D uz fallback za očekivane acquisition probleme.
 
-PNG se prvo sigurno dovršava, a zatim se po potrebi otvara nativni Windows **Save As**. Odustajanje od Save As zadržava dovršenu snimku u `Pictures\SNAPVERE`. Detalji: [Spremanje](docs/hr/SAVE-LOCATION.md).
+PNG se dovršava lokalno prije opcionalnog premještanja kroz nativni **Save As**. Odustajanje od Save As zadržava gotovu sliku u `Pictures\SNAPVERE`.
 
-## Tray-first Windows UX
+Javni Windows paketi su universal hostovi s x86, x64 i ARM64 payloadima:
 
-Normalni start zadržava SNAPVERE u Windows notification area umjesto otvaranja launcher dashboarda. Nativni tray host koristi `NOTIFYICON_VERSION_4`, ponovno postavlja verziju nakon Explorer/taskbar rekreacije, zadržava standardni tooltip i podržava pointer i keyboard activation. Region activation je debounced kako dupli notification event ne bi pokrenuo dvije snimke.
+```text
+SNAPVERE-Setup.exe
+SNAPVERE-Portable.exe
+```
 
-Implementirane preference su **Start SNAPVERE with Windows**, **Include cursor on capture** i **Language**. Recent Captures je lokalni i ograničen. Nema telemetry workera, cloud-upload klijenta, remote-command kanala ni automatskog updatera.
+Minimalni Windows target je Windows 10 1809/build 17763. WGC putovi zahtijevaju Windows 10 2004/build 19041 ili noviji.
 
-## Android 0.1.0
+## Android 0.1.1
 
-SNAPVERE za Android 10+ je nativna Java 17 aplikacija izgrađena na Android MediaProjection i MediaStore API-jima. Svaka snimka zahtijeva novo Android sustavsko dopuštenje. Consent token se ne cacheira niti ponovno koristi i SNAPVERE ne snima kontinuirano u pozadini.
+SNAPVERE za Android 10+ je nativna Java 17 aplikacija na MediaProjection i MediaStore API-jima.
 
-Implementirani Android workflow uključuje:
+Verzija: **0.1.1** / `versionCode 11`.
 
-- izričito full-screen snimanje;
+Svaka snimka zahtijeva novo Android sustavsko dopuštenje. Consent token se ne cacheira niti ponovno koristi i SNAPVERE ne snima kontinuirano u pozadini.
+
+Android workflow uključuje:
+
+- eksplicitno full-screen snimanje;
 - lokalni PNG u `Pictures/SNAPVERE`;
-- validirane **Otvori / Podijeli / Izbriši** radnje za zadnju snimku;
+- validirane **Otvori / Podijeli / Izbriši** akcije za zadnju snimku;
 - engleske i hrvatske resurse;
-- korisnički pokrenute Web / Podrška / Privatnost / Uvjeti radnje;
-- responzivno slaganje akcija, velike touch targete, system insets i namjerno tamni dizajn;
+- korisnički pokrenute Web / Podrška / Privatnost / Uvjeti akcije;
+- responzivne kontrole, velike touch targete i system-inset handling;
 - bez računa, telemetrije, analyticsa, oglasa, cloud uploada i `INTERNET` permissiona.
 
-### Android stabilnost 0.1.0
+Capture put zadržava bounded Activity-hide/first-frame guardove, owner-aware capture ownership, exception-safe MediaProjection/VirtualDisplay/ImageReader cleanup te RGBA stride/buffer validaciju.
 
-- 5 s Activity-hide i 7 s first-frame guard;
-- provjera `Handler.post*` rezultata i `ImageReader.acquireLatestImage()`;
-- kontrolirano rukovanje foreground-service initialization failureom;
-- exception-safe MediaProjection / VirtualDisplay / ImageReader / HandlerThread cleanup po resursu;
-- owner-aware capture lock release koji stale teardownu ne dopušta čišćenje tuđe aktivne sesije;
-- `RGBA_8888` pixel-stride, row-stride, row-padding i buffer-size validacija prije bitmap kopiranja;
-- `ByteBuffer.rewind()` prije kopiranja i deterministički Image/Bitmap cleanup redoslijed;
-- conversion/provider/allocation failure ostaje unutar kontroliranog teardowna i prikazuje lokaliziranu recovery poruku.
+Javni `SNAPVERE.apk` za v0.1.1 i dalje koristi provjereni CI/debug signing identitet. Paket je instalabilan, ali se **ne predstavlja kao Google Play/production-potpisan**. Budući Android kanal s drugim production potpisom može zahtijevati deinstalaciju i novu instalaciju.
 
-Android CI pokreće `lintDebug`, `lintRelease`, JVM testove, debug/release build, signature/alignment i SHA-256. Za v0.1.0 javni `SNAPVERE.apk` namjerno koristi isti provjereni CI/debug-potpisani paketni put; privatni production keystore nije potreban.
+Release također sadrži `SNAPVERE-Android-Source.zip`, generiran izravno iz validiranog Android Git treea bez build cachea i signing materijala.
 
-Detalji: [Android arhitektura i QA](docs/hr/ANDROID.md) · [Android source/build vodič](android/README.md).
+Vidi [Android arhitekturu i QA](docs/hr/ANDROID.md) i [Android source/build vodič](android/README.md).
 
-## Privatnost i sigurnost
+## Browser ekstenzije 0.1.1
 
-Windows obrada snimki je lokalna. Desktop runtime nema first-party HTTP/socket klijent, WebView/WebView2 ni JavaScript execution path. Android manifest namjerno nema `android.permission.INTERNET`; cleartext i backup su isključeni, a MediaProjection servis nije exported.
+v0.1.1 je prvo javno SNAPVERE izdanje s browser paketima za:
 
-0.1.0 zadržava stroge build/security kontrole:
+- Google Chrome;
+- Microsoft Edge;
+- Operu;
+- Mozilla Firefox.
 
-- NuGet audit za direktne i tranzitivne ovisnosti od `low` severity nadalje;
-- `NU1901`–`NU1904` kao build failure;
-- GitHub Actions pinane na pune SHA vrijednosti;
-- deterministic/analyzer .NET build;
-- arhitekturne SHA-256 manifeste ugrađene u Portable host;
-- transactional Portable cache rebuild za missing/modified/unexpected/reparse-point sadržaj;
-- Android manifest privacy/version/service gate i lint warnings-as-errors;
-- objavu samo uz exact asset ugovor i post-publication GitHub digest provjeru.
+Ekstenzije podržavaju snimanje vidljivog područja, bounded full-page snimanje kontroliranim scrollanjem/stitchanjem i pravokutno odabrano područje. Pikseli snimke ostaju lokalni i spremaju se kao PNG.
 
-To nije tvrdnja da softver može biti zajamčeno bez svake ranjivosti. Vidi [Security policy](SECURITY.md), [0.1.0 sigurnost/performance](docs/hr/SECURITY-PERFORMANCE-0.1.0.md) i povijesni [0.0.9 izvještaj](docs/hr/SECURITY-PERFORMANCE-0.0.9.md).
+Chromium varijante koriste Manifest V3 service worker, a Firefox kompatibilni Manifest V3 WebExtension background model. Sve varijante traže samo:
 
-## Performanse i stabilnost
+- `activeTab`;
+- `scripting`;
+- `downloads`;
+- `storage`.
 
-SNAPVERE je event-driven dok miruje. Tray/hotkey hostovi koriste nativne message loopove bez pollinga, capture/D3D resursi stvaraju se za aktivni rad, sekundarni prozori su on-demand, Recent Captures je ograničen, a Android nema idle capture loop niti mrežni worker.
+Nema `<all_urls>` niti širokog host permissiona. Source ne sadrži telemetriju, analytics, oglasni SDK, cloud uploader ni remote runtime dependency.
 
-Ne obećava se fiksni CPU/RAM postotak jer OS, monitori/DPI, driveri, Android OEM, rezolucija i aktivni capture/editor rad mijenjaju potrošnju.
+Javni browser asseti:
 
-## Javni release ugovor 0.1.0
+```text
+SNAPVERE-Chrome.zip
+SNAPVERE-Edge.zip
+SNAPVERE-Opera.zip
+SNAPVERE-Firefox.zip
+```
 
-Valjano v0.1.0 GitHub izdanje sadrži **točno četiri javna asseta**:
+Paketi se reproducibilno generiraju u dva neovisna prolaza i moraju biti byte-for-byte identični prije objave. Store metadata i privacy deklaracije validiraju se prema stvarnim manifestima. Vidi [Browser ekstenzije](docs/hr/BROWSER-EXTENSIONS.md), [vodič za source](ekstenzije/README.md) i [browser privacy policy](ekstenzije/PRIVACY.md).
+
+GitHub Release **ne znači** da je ekstenzija objavljena ili odobrena u Chrome Web Storeu, Edge Add-onsu, Opera Add-onsu ili Mozilla Add-onsu. Ti kanali zahtijevaju zasebne autentificirane publisher račune i njihov review/certification/signing proces.
+
+## Javni release ugovor v0.1.1
+
+Valjano v0.1.1 GitHub izdanje sadrži **točno osam javnih asseta**:
 
 ```text
 SNAPVERE-Setup.exe
 SNAPVERE-Portable.exe
 SNAPVERE.apk
 SNAPVERE-Android-Source.zip
+SNAPVERE-Chrome.zip
+SNAPVERE-Edge.zip
+SNAPVERE-Opera.zip
+SNAPVERE-Firefox.zip
 ```
 
-`SNAPVERE-Setup.exe` i `SNAPVERE-Portable.exe` sadrže x86, x64 i ARM64 Windows payloade i automatski biraju kompatibilni payload. Minimalni Windows target ostaje Windows 10 1809/build 17763; WGC putovi zahtijevaju Windows 10 2004/build 19041 ili noviji.
+Release workflow računa SHA-256 za svaki asset, kreira nepromjenjivi `v0.1.1` tag tek nakon svih validacijskih gateova, objavljuje samo odobrena imena i zatim uspoređuje GitHub digest svakog objavljenog asseta s lokalno validiranom vrijednošću.
 
-`SNAPVERE.apk` je instalabilni Android CI/debug-potpisani paket iz validiranog 0.1.0 sourcea. Release put i dalje zahtijeva debug/release lint, JVM testove, uspješan debug/release build, provjeru APK potpisa, ZIP alignment i SHA-256. Paket se ne predstavlja kao Google Play/production-potpisan i ne zahtijeva privatne signing secrete.
+Povijesni **v0.1.0** ostaje nepromijenjen sa svoja originalna četiri Windows/Android asseta. Browser ZIP-ovi se ne dodaju retroaktivno u v0.1.0.
 
-Budući da javni 0.1.0 APK koristi CI/debug signing identitet, to nije podržani dugoročni production update lineage. Kasniji Android kanal s drugačijim stabilnim production ključem može zahtijevati deinstalaciju i novu instalaciju.
+## Privatnost i sigurnost
 
-`SNAPVERE-Android-Source.zip` generira se izravno iz validiranog Git `android/` treea i ne sadrži generirani build output, Gradle cache niti signing materijal.
+SNAPVERE je local-first:
+
+- Windows obrada snimki je lokalna i desktop runtime nema first-party telemetry/cloud-upload worker;
+- Android namjerno nema `android.permission.INTERNET`, cleartext i backup su isključeni, a MediaProjection servis nije exported;
+- browser ekstenzije ne šalju screenshotove izvan uređaja i ne traže široki pristup web stranicama.
+
+Build/release kontrole uključuju:
+
+- NuGet audit direktnih i tranzitivnih ovisnosti od `low` severity nadalje;
+- `NU1901`–`NU1904` kao build failure;
+- nullable/analyzer enforcement i deterministic .NET build;
+- GitHub Actions pinane na puni SHA;
+- arhitekturne SHA-256 manifeste u Portable hostu;
+- transactional Portable cache validaciju/rebuild;
+- Android privacy/version/service/lint/signature/alignment gateove;
+- browser manifest/permission/source/parity/store-metadata provjere;
+- exact release-asset i post-publication digest provjeru.
+
+Vidi [Security Policy](SECURITY.md) i [0.1.1 sigurnost/performance](docs/hr/SECURITY-PERFORMANCE-0.1.1.md).
 
 ## Automatizirani QA
 
@@ -112,79 +148,55 @@ GitHub Actions:
 - restore s NuGet auditom;
 - x64 build/test;
 - x86 build i ARM64 cross-build;
-- validacija sva tri native payloada i integrity manifesta;
-- šest stvarno renderiranih površina: Region, Window, Tray, Options, Language i About;
-- visual regression prema zadnjem zelenom `main` baselineu;
+- validacija native payloada i integrity manifesta;
+- šest stvarno renderiranih UI površina;
+- PR visual comparison prema zadnjem zelenom `main` baselineu;
 - universal Setup/Portable build;
-- x64/x86 Setup+Portable lifecycle i tray-first testovi.
+- validacija javnog package ugovora;
+- x64/x86 Setup+Portable lifecycle i tray-first probeovi.
 
 ARM64 na hosted x64 runneru ostaje cross-build/package dokaz, ne fizički ARM64 runtime test.
 
 ### Android
 
-Android CI provjerava manifest privacy/service/version ugovor, SDK/tooling, debug/release lint, JVM testove, debug/release build, debug potpis/alignment i SHA-256. Release workflow dodatno provjerava javni CI/debug-potpisani APK, source arhivu, digest kroz Actions artifact transfer i sva četiri objavljena GitHub digesta.
+Android CI/release provjerava privacy/service/version manifest, SDK/tooling, `lintDebug`, `lintRelease`, JVM unit testove, debug/release buildove, potpis/alignment javnog APK-a, strukturu source arhive te SHA-256 tijekom artifact transfera i objave.
 
-Zeleni Android workflow je automatizirani build/package dokaz, ne tvrdnja o iscrpnom runtime testu na svakom fizičkom OEM uređaju.
+Zeleni Android workflow je build/package dokaz, ne iscrpni fizički OEM/device runtime test.
 
-## Android potpisivanje paketa za 0.1.0
+### Browseri
 
-Javni 0.1.0 APK namjerno slijedi CI/debug signing put i zato **ne zahtijeva privatne Android keystore secrete**. `apksigner` i ZIP-alignment provjere ostaju obavezne prije nego APK može doći do release joba.
+Browser CI/release provjerava sve četiri varijante, source parity, točan permission allow-list, locale, dimenzije ikona, source syntax/policy, store metadata/privacy deklaracije, determinističke store vizuale, reproducibilne ZIP-ove, čistoću paketa i SHA-256 integritet.
 
-Ovaj izbor omogućuje odmah instalabilan APK bez spremanja privatnog production ključa na GitHub. Ne treba ga tumačiti kao trajnu production/Play signing strategiju.
+Zeleni browser workflow je static/package dokaz, ne iscrpno ručno GUI testiranje svakog browser builda ili web aplikacije.
+
+## Performanse i stabilnost
+
+SNAPVERE je event-driven dok miruje. Windows tray/hotkey hostovi koriste nativne message loopove umjesto pollinga, capture/D3D resursi stvaraju se samo za aktivni capture. Android nema idle capture loop ni network worker. Browser ekstenzije aktiviraju capture kod samo nakon korisničke akcije.
+
+Ne obećava se fiksni CPU/RAM postotak jer OS/browser verzija, monitori/DPI, driveri, Android OEM, složenost stranice, rezolucija i aktivni capture/editor rad utječu na potrošnju.
 
 ## Jezici
 
-English je canonical default/fallback. Windows nudi 28 ugrađenih jezika uključujući hrvatski. Android trenutno ima namjenske engleske i hrvatske resurse i koristi standardni Android fallback za ostale locale.
-
-Windows jezik sprema se lokalno u:
-
-```text
-%LOCALAPPDATA%\SNAPVERE\settings.json
-```
+English je canonical default/fallback. Windows nudi 28 ugrađenih jezika uključujući hrvatski. Android i browser ekstenzije imaju namjenske engleske i hrvatske resurse.
 
 Nema translation API-ja ni background language network servisa.
-
-## Arhitektura
-
-Windows:
-
-```text
-Tray / Print Screen / hotkeys
-    ↓
-Skriveni WinUI runtime koordinator
-    ↓
-Region / Window / Screen workflow
-    ↓
-CaptureFrame (fizički BGRA8 pikseli)
-    ↓
-Crop / anotacija / PNG encode
-    ↓
-Lokalni PNG → opcionalni Save As / Clipboard
-```
-
-Android:
-
-```text
-Izričiti Capture tap
-    ↓
-MediaProjection dopuštenje
-    ↓
-Foreground mediaProjection servis
-    ↓
-Potvrda da je Activity skriven
-    ↓
-VirtualDisplay + ImageReader + bounded frame wait
-    ↓
-RGBA stride/buffer validacija
-    ↓
-MediaStore PNG → Otvori / Podijeli / Izbriši
-```
 
 ## Dokumentacija
 
 Engleska dokumentacija: [`docs/`](docs/). Hrvatska dokumentacija: [`docs/hr/`](docs/hr/).
 
-Ključni dokumenti: [Arhitektura](docs/hr/ARCHITECTURE.md), [Tray UX](docs/hr/TRAY-UX.md), [Capture engine](docs/hr/CAPTURE-ENGINE.md), [Region Capture](docs/hr/REGION-CAPTURE.md), [Window Capture](docs/hr/WINDOW-CAPTURE.md), [Spremanje](docs/hr/SAVE-LOCATION.md), [Postavke](docs/hr/SETTINGS.md), [Instalacija](docs/hr/INSTALLATION.md), [Android](docs/hr/ANDROID.md), [0.1.0 sigurnost/performance](docs/hr/SECURITY-PERFORMANCE-0.1.0.md), [Branding](docs/hr/BRANDING.md) i [Image pipeline](docs/hr/IMAGE-PIPELINE.md).
+Ključni dokumenti:
+
+- [Arhitektura](docs/hr/ARCHITECTURE.md)
+- [Capture engine](docs/hr/CAPTURE-ENGINE.md)
+- [Region Capture](docs/hr/REGION-CAPTURE.md)
+- [Window Capture](docs/hr/WINDOW-CAPTURE.md)
+- [Instalacija](docs/hr/INSTALLATION.md)
+- [Android](docs/hr/ANDROID.md)
+- [Browser ekstenzije](docs/hr/BROWSER-EXTENSIONS.md)
+- [0.1.1 sigurnost i performanse](docs/hr/SECURITY-PERFORMANCE-0.1.1.md)
+- [Branding](docs/hr/BRANDING.md)
+- [Release Notes 0.1.1](RELEASE_NOTES_0.1.1.md)
 
 ## Tehnologija
 
@@ -193,7 +205,8 @@ Ključni dokumenti: [Arhitektura](docs/hr/ARCHITECTURE.md), [Tray UX](docs/hr/TR
 - Windows.Graphics.Capture + Direct3D 11
 - Win32 / DWM / GDI interoperabilnost
 - Java 17 / Android MediaProjection / MediaStore
-- deterministic buildovi, nullable/analyzer enforcement i centralni NuGet management
+- Manifest V3 / WebExtensions
+- deterministic buildovi i reproducibilno browser pakiranje
 - xUnit + JUnit 4 + GitHub Actions
 
 ## Dijagnostika
@@ -208,19 +221,10 @@ Pikseli snimke ne zapisuju se namjerno u taj log.
 
 ## Licenca i vlasništvo
 
-**SNAPVERE 0.0.7 i noviji distribuiraju se pod SNAPVERE Commercial Software License Agreement licencom u [`LICENSE`](LICENSE).** SNAPVERE je naziv proizvoda; Brendigo je developer i izdavač. Službena stranica: **snapvere.com**. Podrška: **info@snapvere.com**.
+**SNAPVERE 0.0.7 i noviji distribuiraju se pod SNAPVERE Commercial Software License Agreement licencom u [`LICENSE`](LICENSE).** SNAPVERE je naziv proizvoda; Brendigo je developer i izdavač.
 
-## Browser ekstenzije — post-v0.1.0 razvoj
-
-SNAPVERE sada sadrži source-ready browser ekstenzije za **Google Chrome, Microsoft Edge, Operu i Mozilla Firefox** u mapi [`ekstenzije/`](ekstenzije/). Omogućuju lokalno snimanje vidljivog područja, cijele stranice i odabranog područja u PNG, English/Hrvatski sučelje, ograničeno capture stanje, SNAPVERE branding i zaseban validation/package workflow.
-
-Chromium varijante koriste Manifest V3 service worker, a Firefox MV3 WebExtension s Firefox-kompatibilnim background skriptama. Source ne traži `<all_urls>` i ne uvodi telemetriju, analytics, cloud upload ni vanjske runtime ovisnosti.
-
-Za arhitekturu, dozvole, development loading, pakiranje i poznata ograničenja vidi [Browser ekstenzije](docs/hr/BROWSER-EXTENSIONS.md) i [`ekstenzije/README.md`](ekstenzije/README.md).
-
-Ove ekstenzije su **post-v0.1.0 source development** i nisu retroaktivno dio nepromjenjivog v0.1.0 izdanja niti njegova točno četvero-assetnog javnog ugovora.
+Službena stranica: **snapvere.com** · Podrška: **info@snapvere.com**.
 
 ---
 
-**SNAPVERE — Capture. Edit. Done.**  
-Razvija i objavljuje **Brendigo** · [snapvere.com](https://snapvere.com) · [info@snapvere.com](mailto:info@snapvere.com) · [brendigo.com](https://brendigo.com)
+**SNAPVERE — Capture. Edit. Done.**

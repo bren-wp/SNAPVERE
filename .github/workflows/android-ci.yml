@@ -20,7 +20,7 @@ permissions:
   contents: read
 
 env:
-  SNAPVERE_ANDROID_VERSION: 0.1.0
+  SNAPVERE_ANDROID_VERSION: 0.1.1
 
 jobs:
   build-apk:
@@ -60,7 +60,7 @@ jobs:
           grep -q 'android:usesCleartextTraffic="false"' "$manifest"
           grep -q 'android:allowBackup="false"' "$manifest"
           grep -A4 'android:name=".CaptureService"' "$manifest" | grep -q 'android:exported="false"'
-          grep -q "versionCode 10" "$gradle_file"
+          grep -q "versionCode 11" "$gradle_file"
           grep -q "versionName '$SNAPVERE_ANDROID_VERSION'" "$gradle_file"
           echo 'Android privacy/version/service contract validated.'
 
@@ -114,7 +114,7 @@ jobs:
         with:
           name: snapvere-android-ci-apk-${{ github.sha }}
           path: |
-            android/SNAPVERE-Android-0.1.0-debug.apk
-            android/SNAPVERE-Android-0.1.0-debug.apk.sha256
+            android/SNAPVERE-Android-0.1.1-debug.apk
+            android/SNAPVERE-Android-0.1.1-debug.apk.sha256
           if-no-files-found: error
           retention-days: 30

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "product": "SNAPVERE",
-  "extensionVersion": "0.1.0",
-  "developmentChannel": "post-v0.1.0-source-development",
+  "extensionVersion": "0.1.1",
+  "developmentChannel": "v0.1.1-release",
   "category": "Productivity",
   "singlePurpose": "Capture the visible area, a full page, or a user-selected region of the active browser tab and save the result locally as a PNG.",
   "website": "https://github.com/bren-wp/SNAPVERE",
