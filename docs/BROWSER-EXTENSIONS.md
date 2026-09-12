@@ -51,8 +51,27 @@ There is no telemetry, analytics, ad SDK, cloud upload, automatic screenshot tra
 
 English is the default/fallback locale. Dedicated English and Croatian catalogs are included in every distributable browser folder.
 
+## Reproducible packaging
+
+`ekstenzije/tools/package-extensions.sh` creates the four store-ready ZIP files from staged source. It normalizes staged file and directory timestamps to the portable ZIP epoch, sorts archive paths and uses `zip -X` to remove nonessential host metadata. A `SHA256SUMS.txt` file is generated next to the packages.
+
+CI executes the packaging helper twice in separate output directories. Every corresponding ZIP must be byte-identical and both SHA-256 manifests must match before the artifact can be uploaded.
+
+## Cross-browser parity controls
+
+`ekstenzije/tools/verify-extension-parity.mjs` prevents silent divergence between browser variants. It verifies that:
+
+- all shared runtime files have identical paths and SHA-256 content across Chrome, Edge, Opera and Firefox;
+- Chrome, Edge and Opera manifests remain identical;
+- Firefox differs from the Chromium manifest only in the expected background/Gecko metadata;
+- all four manifest versions remain aligned;
+- branded PNG icons have the exact required dimensions and identical bytes across browsers;
+- popup/options HTML contains no inline script/style blocks, inline event handlers or remote runtime resources.
+
+These checks complement the existing permission, locale, source-policy and manifest validator.
+
 ## QA boundary
 
-`extensions-ci.yml` provides syntax, manifest, permission, locale, source-policy and package validation. A green CI run is not a claim that all four extensions were manually exercised in real browser GUIs.
+`extensions-ci.yml` provides syntax, manifest, permission, locale, cross-browser parity, source-policy, deterministic packaging, SHA-256 and package-content validation. A green CI run is not a claim that all four extensions were manually exercised in real browser GUIs.
 
 See [`ekstenzije/README.md`](../ekstenzije/README.md) for development loading, packaging and known limitations.
