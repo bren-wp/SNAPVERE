@@ -75,6 +75,19 @@ public sealed class GdiScreenCaptureService : IScreenCaptureService
                 DrawCursor(memoryDc, bounds);
             }
 
+            // GetDIBits requires the target bitmap not to be selected into a
+            // device context. Restore the DC's original object before readback;
+            // this also guarantees DeleteObject can release the capture bitmap
+            // on every path after a successful restore.
+            var replacedBitmap = NativeMethods.SelectObject(memoryDc, previousBitmap);
+            if (replacedBitmap == nint.Zero || replacedBitmap == new nint(-1))
+            {
+                throw new Win32Exception(
+                    Marshal.GetLastWin32Error(),
+                    "SelectObject failed while preparing the captured bitmap for readback.");
+            }
+            previousBitmap = nint.Zero;
+
             var stride = checked(bounds.Width * 4);
             var pixels = new byte[checked(stride * bounds.Height)];
             var bitmapInfo = NativeMethods.BitmapInfo.CreateTopDownBgra32(bounds.Width, bounds.Height);
