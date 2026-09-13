@@ -13,7 +13,7 @@
 Na Windowsu odaberi precizno područje i anotiraj ga. Na Androidu napravi jednokratnu sistemski odobrenu snimku. U browseru spremi vidljivo područje, odabranu regiju ili cijelu stranicu unutar sigurnih granica. Core capture ostaje na tvom uređaju.
 
 **Aktualno izdanje: SNAPVERE 0.1.1**  
-[Preuzmi v0.1.1](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.1) · [English README](README.md) · [Korisnički vodič](docs/hr/USER-GUIDE.md) · [Službena stranica](https://snapvere.com) · [Podrška](mailto:info@snapvere.com)
+[Preuzmi v0.1.1](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.1) · [Povijest izdanja](RELEASES.md) · [English README](README.md) · [Korisnički vodič](docs/hr/USER-GUIDE.md) · [Službena stranica](https://snapvere.com) · [Podrška](mailto:info@snapvere.com)
 
 ### Preuzmi SNAPVERE
 
@@ -201,13 +201,14 @@ Nijedan ozbiljan softver ne može pošteno garantirati da nikada neće imati gre
 - EN/HR locale parity;
 - icon hash/dimenzije;
 - source syntax i forbidden-pattern policy;
+- behavioral background-runtime smoke testovi za sva četiri browsera;
 - deterministički store vizuali;
 - store metadata/privacy provjera;
 - dva neovisna ZIP builda koji moraju biti byte-for-byte jednaki.
 
 ### Product Contract CI
 
-[`product-version.json`](product-version.json) je canonical aktivni version contract. Poseban validator provjerava Windows, Android i browser verzije, Android EN/HR resource parity, aktivnu dokumentaciju, exact release asset names i relativne Markdown linkove.
+[`product-version.json`](product-version.json) je canonical aktivni version contract. Poseban validator provjerava Windows, Android i browser verzije, Android EN/HR resource parity, kanonsku [`RELEASES.md`](RELEASES.md) povijest, aktivnu dokumentaciju, exact release asset names i relativne Markdown linkove.
 
 Vidi [QA matricu](docs/hr/QA-MATRIX.md) i [Status proizvoda](docs/hr/PRODUCT-STATUS.md).
 
@@ -228,11 +229,11 @@ SNAPVERE-Opera.zip
 SNAPVERE-Firefox.zip
 ```
 
-Release workflow gradi/validira platform payloade, računa SHA-256, validira Windows runtime/package ugovor, kreira/provjerava release tag, objavljuje samo odobrene datoteke i zatim uspoređuje objavljeni GitHub digest svakog asseta s lokalno validiranom vrijednošću.
+Povijesni v0.1.1 release workflow izgradio je i validirao platform payloade, izračunao SHA-256, provjerio Windows runtime/package ugovor, kreirao/provjerio release tag, objavio samo odobrene datoteke te usporedio GitHub digest svakog asseta s lokalno validiranom vrijednošću. Nakon objave workflow je arhiviran umjesto da ostane aktivna publikacijska automatizacija.
 
 Povijesna izdanja ostaju povijesna: **v0.1.0 se ne prepisuje niti mu se retroaktivno dodaju browser paketi.**
 
-[Release Notes 0.1.1](RELEASE_NOTES_0.1.1.md) · [Versioning & Releases](docs/hr/VERSIONING-RELEASES.md)
+[Kompletna povijest izdanja](RELEASES.md) · [Versioning & Releases](docs/hr/VERSIONING-RELEASES.md)
 
 ---
 
@@ -258,6 +259,7 @@ Preporučeno:
 - [Android](docs/hr/ANDROID.md)
 - [Browser ekstenzije](docs/hr/BROWSER-EXTENSIONS.md)
 - [Security & Performance 0.1.1](docs/hr/SECURITY-PERFORMANCE-0.1.1.md)
+- [Kompletna povijest izdanja](RELEASES.md)
 - [Verzioniranje i izdanja](docs/hr/VERSIONING-RELEASES.md)
 
 ---
