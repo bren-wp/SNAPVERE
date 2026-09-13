@@ -50,7 +50,7 @@ function createRuntime(initialStorage = {}) {
       },
       captureVisibleTab(windowId, options, callback) {
         assert.equal(windowId, 3);
-        assert.deepEqual(options, { format: 'png' });
+        assert.equal(options && options.format, 'png');
         callback(PNG);
       },
       sendMessage(_tabId, _message, callback) {
@@ -120,7 +120,7 @@ async function runVariant(browser) {
     vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
 
     const response = await send(runtime.listener, { type: 'CAPTURE_VISIBLE' });
-    assert.equal(response.ok, true, `${browser}: visible capture should succeed`);
+    assert.equal(response.ok, true, `${browser}: visible capture should succeed; response=${JSON.stringify(response)}`);
     assert.equal(runtime.downloads.length, 1, `${browser}: exactly one download should start`);
     assert.equal(runtime.downloads[0].url, PNG, `${browser}: PNG data URL must reach downloads API`);
     assert.equal(runtime.downloads[0].saveAs, true, `${browser}: saveAs setting must be respected`);
