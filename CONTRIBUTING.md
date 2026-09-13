@@ -2,7 +2,7 @@
 
 SNAPVERE is developed as a production capture product for **Windows, Android, Chrome, Edge, Opera and Firefox**. Contributions should improve a real user workflow, correctness, reliability, accessibility, performance, security, documentation or maintainability without weakening the local-first product model.
 
-Current public release: **0.1.1**. Canonical active version contract: [`product-version.json`](product-version.json).
+Current public release: **0.1.1**. Canonical active version contract: [`product-version.json`](product-version.json). Canonical detailed release history: [`RELEASES.md`](RELEASES.md).
 
 ## Development requirements
 
@@ -44,6 +44,7 @@ No bundler/transpiler is required for the current extension source.
 11. Keep English/Croatian resource keys aligned on Android and browser extensions.
 12. Keep documentation aligned with actual implementation and actual evidence level.
 13. Update `product-version.json` only as part of an intentional cross-platform version/release change.
+14. Keep detailed release history in `RELEASES.md`; do not create a new root `RELEASE_NOTES_<version>.md` file.
 
 ## Windows validation
 
@@ -118,7 +119,7 @@ Run:
 python3 eng/validate-product-contract.py
 ```
 
-The validator uses [`product-version.json`](product-version.json) to verify Windows, Android and browser version alignment, Android EN/HR resource-key parity, exact release asset names, active README/current-documentation state and relative Markdown links.
+The validator uses [`product-version.json`](product-version.json) to verify Windows, Android and browser version alignment, Android EN/HR resource-key parity, exact release asset names, canonical release-history structure, active README/current-documentation state and relative Markdown links.
 
 When bumping a future version, follow [Versioning & Releases](docs/VERSIONING-RELEASES.md) rather than editing one platform in isolation.
 
@@ -158,12 +159,12 @@ Functional, behavioral, permission, signing or packaging changes require corresp
 - relevant `docs/` + `docs/hr/` pages;
 - `android/README.md` for Android source/build behavior;
 - `ekstenzije/README.md` for browser behavior;
-- `CHANGELOG.md` for release-visible changes;
-- current release notes when preparing a new release;
+- `CHANGELOG.md` for the concise engineering history;
+- `RELEASES.md` for canonical detailed release notes/history;
 - `SECURITY.md` when trust boundaries, permissions, networking, packaging or signing change;
 - `product-version.json` only when the canonical product version/release contract truly changes.
 
-Historical release notes remain historical records and should not be silently rewritten to describe a later release contract.
+When preparing a new release, prepend its detailed section to `RELEASES.md`; do not create another `RELEASE_NOTES_<version>.md`. Historical sections in `RELEASES.md` remain historical records and should not be silently rewritten to describe a later release contract.
 
 Do not claim hardware/device/browser/store runtime coverage that CI did not execute.
 
