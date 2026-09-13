@@ -1,0 +1,54 @@
+name: Product Contract CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'product-version.json'
+      - 'Directory.Build.props'
+      - 'README.md'
+      - 'README.hr.md'
+      - 'SECURITY.md'
+      - 'CONTRIBUTING.md'
+      - 'RELEASE_NOTES_0.1.1.md'
+      - 'docs/**'
+      - 'android/**'
+      - 'ekstenzije/**'
+      - 'eng/validate-product-contract.py'
+      - '.github/workflows/product-contract-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'product-version.json'
+      - 'Directory.Build.props'
+      - 'README.md'
+      - 'README.hr.md'
+      - 'SECURITY.md'
+      - 'CONTRIBUTING.md'
+      - 'RELEASE_NOTES_0.1.1.md'
+      - 'docs/**'
+      - 'android/**'
+      - 'ekstenzije/**'
+      - 'eng/validate-product-contract.py'
+      - '.github/workflows/product-contract-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: product-contract-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-product-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Check validator syntax
+        run: python3 -m py_compile eng/validate-product-contract.py
+
+      - name: Validate cross-platform product contract and documentation
+        run: python3 eng/validate-product-contract.py
