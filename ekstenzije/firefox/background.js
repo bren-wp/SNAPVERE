@@ -120,6 +120,18 @@
     }
   }
 
+  async function releasePendingRegionLockForTab(tabId) {
+    if (!Number.isInteger(tabId)) return;
+    const lock = await getLock();
+    if (lock && lock.kind === "region" && lock.tabId === tabId) {
+      await releaseLock(lock.token);
+    }
+  }
+
+  function releasePendingRegionLockBestEffort(tabId) {
+    Promise.resolve(releasePendingRegionLockForTab(tabId)).catch(() => undefined);
+  }
+
   async function readSettings() {
     const values = await storageGet(SETTINGS_KEY);
     const raw = values && values[SETTINGS_KEY] && typeof values[SETTINGS_KEY] === "object"
@@ -410,6 +422,16 @@
         throw new SnapvereError("captureFailed", "Unsupported extension message.");
     }
   }
+
+  chrome.tabs.onRemoved.addListener((tabId) => {
+    releasePendingRegionLockBestEffort(tabId);
+  });
+
+  chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+    if (changeInfo && changeInfo.status === "loading") {
+      releasePendingRegionLockBestEffort(tabId);
+    }
+  });
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     Promise.resolve(dispatch(message, sender))
