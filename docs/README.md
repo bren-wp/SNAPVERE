@@ -13,6 +13,7 @@ For the product overview and downloads, start with the [main README](../README.m
 - [Privacy](PRIVACY.md) — platform-by-platform local-first data behavior.
 - [QA Matrix](QA-MATRIX.md) — what CI proves and what it does not prove.
 - [Versioning & Releases](VERSIONING-RELEASES.md) — canonical version contract and immutable release policy.
+- [Complete Release History](../RELEASES.md) — one detailed canonical history for all releases.
 
 ## Windows application
 
@@ -40,19 +41,21 @@ For the product overview and downloads, start with the [main README](../README.m
 
 ## Release, security and branding
 
+- [Complete Release History](../RELEASES.md)
 - [SNAPVERE 0.1.1 Release Contract](RELEASE-0.1.1.md)
 - [SNAPVERE 0.1.1 Security & Performance Evidence](SECURITY-PERFORMANCE-0.1.1.md)
 - [Security Policy](../SECURITY.md)
 - [Branding](BRANDING.md)
 - [About & Support Links](ABOUT-SUPPORT-LINKS.md)
-- [Release Notes 0.1.1](../RELEASE_NOTES_0.1.1.md)
 - [Changelog](../CHANGELOG.md)
 
-## Canonical version source
+## Canonical version and release sources
 
-The machine-readable source of truth is [`product-version.json`](../product-version.json). `eng/validate-product-contract.py` and **Product Contract CI** verify that the active documentation, .NET version, Android version, browser manifests/store metadata and the eight-file public release contract remain aligned.
+The machine-readable source of truth is [`product-version.json`](../product-version.json). Detailed human-readable release notes and history live in [`RELEASES.md`](../RELEASES.md). `CHANGELOG.md` remains the concise engineering summary.
 
-Historical release notes remain historical records. They are not rewritten to pretend older releases had current features.
+`eng/validate-product-contract.py` and **Product Contract CI** verify that the active documentation, .NET version, Android version, browser manifests/store metadata, canonical release history and the eight-file public release contract remain aligned.
+
+Historical sections in `RELEASES.md` preserve what was true at each release; they are not rewritten to pretend older releases had current features.
 
 ## Support
 
