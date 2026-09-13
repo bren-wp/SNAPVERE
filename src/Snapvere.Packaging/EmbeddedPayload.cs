@@ -347,10 +347,23 @@ public static class EmbeddedPayload
 
     private static string GetValidatedTargetPath(string root, string rootWithSeparator, string entryName)
     {
-        var normalizedEntryName = entryName.Replace('/', Path.DirectorySeparatorChar);
+        if (string.IsNullOrWhiteSpace(entryName))
+        {
+            throw new InvalidDataException("A SNAPVERE package entry has an empty path.");
+        }
+
+        var normalizedEntryName = entryName
+            .Replace('\\', Path.DirectorySeparatorChar)
+            .Replace('/', Path.DirectorySeparatorChar);
+
         if (Path.IsPathRooted(normalizedEntryName))
         {
             throw new InvalidDataException("The SNAPVERE package contains an absolute path.");
+        }
+
+        if (normalizedEntryName.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
+        {
+            throw new InvalidDataException("The SNAPVERE package contains an invalid path.");
         }
 
         var targetPath = Path.GetFullPath(Path.Combine(root, normalizedEntryName));
