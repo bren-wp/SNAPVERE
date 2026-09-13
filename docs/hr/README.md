@@ -13,6 +13,7 @@ Za pregled proizvoda i preuzimanja kreni od [glavnog hrvatskog README-a](../../R
 - [Privatnost](PRIVACY.md) — local-first ponašanje po platformama.
 - [QA matrica](QA-MATRIX.md) — što CI stvarno dokazuje, a što ne.
 - [Verzioniranje i izdanja](VERSIONING-RELEASES.md) — canonical version contract i pravila nepromjenjivih izdanja.
+- [Kompletna povijest izdanja](../../RELEASES.md) — jedan detaljni kanonski release-history dokument.
 
 ## Windows aplikacija
 
@@ -39,18 +40,20 @@ Za pregled proizvoda i preuzimanja kreni od [glavnog hrvatskog README-a](../../R
 
 ## Release, sigurnost i branding
 
+- [Kompletna povijest izdanja](../../RELEASES.md)
 - [SNAPVERE 0.1.1 Security & Performance](SECURITY-PERFORMANCE-0.1.1.md)
 - [Security Policy](../../SECURITY.md)
 - [Branding](BRANDING.md)
 - [About i support linkovi](ABOUT-SUPPORT-LINKS.md)
-- [Release Notes 0.1.1](../../RELEASE_NOTES_0.1.1.md)
 - [Changelog](../../CHANGELOG.md)
 
-## Canonical izvor verzije
+## Kanonski izvori verzije i release-notesa
 
-Strojno čitljivi izvor istine je [`product-version.json`](../../product-version.json). `eng/validate-product-contract.py` i **Product Contract CI** provjeravaju da aktivna dokumentacija, .NET verzija, Android verzija, browser manifesti/store metadata i javni ugovor od osam release asseta ostanu međusobno usklađeni.
+Strojno čitljivi izvor istine je [`product-version.json`](../../product-version.json). Detaljna ljudski čitljiva release povijest nalazi se u [`RELEASES.md`](../../RELEASES.md), dok `CHANGELOG.md` ostaje kraći tehnički sažetak.
 
-Povijesni release notes ostaju povijesni zapisi. Ne prepisuju se tako da starija izdanja izgledaju kao da su sadržavala današnje funkcije.
+`eng/validate-product-contract.py` i **Product Contract CI** provjeravaju da aktivna dokumentacija, .NET verzija, Android verzija, browser manifesti/store metadata, kanonska release povijest i javni ugovor od osam release asseta ostanu međusobno usklađeni.
+
+Povijesne sekcije u `RELEASES.md` čuvaju ono što je vrijedilo za svaku verziju; ne prepisuju se tako da starija izdanja izgledaju kao da su sadržavala današnje funkcije.
 
 ## Podrška
 
