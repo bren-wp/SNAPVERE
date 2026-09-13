@@ -2,13 +2,13 @@
 
 Production browser-extension source and release packages for Google Chrome, Microsoft Edge, Opera and Mozilla Firefox.
 
-Browser extensions were developed after v0.1.0 and become official public GitHub Release assets starting with **SNAPVERE v0.1.1**. The historical v0.1.0 release remains immutable with exactly its original four Windows/Android assets.
+Browser extensions were developed after v0.1.0 and become official public GitHub Release assets starting with **SNAPVERE v0.1.1**. The historical v0.1.0 and the already published v0.1.1 release assets remain immutable; current `main` may add post-release QA/documentation hardening without moving those tags.
 
 ## Version
 
-Current release: **0.1.1**.
+Current public release: **0.1.1**.
 
-The four distributable manifests and `store/listing.json` must carry the same release version. CI rejects browser-version drift.
+The four distributable manifests and `store/listing.json` must carry the same release version. Product Contract CI and Browser Extensions CI reject browser-version drift.
 
 ## Supported browsers
 
@@ -94,7 +94,7 @@ SNAPVERE-Opera.zip
 SNAPVERE-Firefox.zip
 ```
 
-The release workflow builds these packages from the exact validated release commit and verifies their SHA-256 values before and after publication.
+The published release workflow built these packages from the exact validated release commit and verified their SHA-256 values before and after publication.
 
 ## Reproducible packaging
 
@@ -108,9 +108,21 @@ The packaging helper stages source, normalizes file/directory timestamps to the 
 
 Development/cache artifacts such as `node_modules`, `__pycache__`, `.cache`, `.DS_Store` and source maps are forbidden from release packages.
 
+## Behavioral background smoke testing
+
+Run the shared runtime smoke suite with:
+
+```bash
+node ekstenzije/tools/smoke-test-background.mjs
+```
+
+The suite executes the real `background.js` from Chrome, Edge, Opera and Firefox in isolated Node VM contexts with deterministic browser-API mocks. It verifies visible-capture download behavior, local `saveAs`, filename-prefix sanitization, successful lock cleanup, concurrent-capture rejection and controlled failure for unsupported runtime messages.
+
+This increases behavioral coverage of the background state machine without pretending to be a real browser GUI session.
+
 ## Validation
 
-`.github/workflows/extensions-ci.yml` and the v0.1.1 release workflow validate:
+`.github/workflows/extensions-ci.yml` validates:
 
 - Manifest V3 shape and Firefox background compatibility;
 - the exact permission allow-list and absence of broad host permissions;
@@ -121,11 +133,14 @@ Development/cache artifacts such as `node_modules`, `__pycache__`, `.cache`, `.D
 - identical Chrome/Edge/Opera manifests and normalized Firefox semantics;
 - exact 16/32/48/128 PNG icon dimensions and cross-browser icon parity;
 - no inline scripts/styles/event handlers or remote HTML runtime resources;
+- background runtime behavior through the VM smoke suite;
 - store metadata/privacy declarations against the actual manifests;
 - deterministic store listing/promo graphics;
 - reproducible ZIP creation, package cleanliness and SHA-256 integrity.
 
-Static/package validation is not the same as exhaustive manual GUI testing on every browser build or web application.
+The already published `.github/workflows/release-0.1.1.yml` remains the historical release workflow for v0.1.1. Post-release hardening is validated by current CI and does not rewrite the published tag/assets.
+
+Automated static/runtime-contract/package validation is not the same as exhaustive manual GUI testing on every browser build or web application.
 
 ## Store submission kit
 
@@ -138,3 +153,5 @@ The repository prepares store-submission material, but actual publication to Chr
 Full-page capture uses controlled scrolling and viewport stitching. Results can vary on highly dynamic pages, video, canvas/WebGL surfaces, lazy-loading content, cross-origin iframes, sticky/fixed-heavy interfaces or application-specific virtual scrolling. Browser-protected pages can block screenshot/script APIs.
 
 SNAPVERE restores the original scroll position and temporarily hidden floating elements in success/error paths and also uses a content-side watchdog. These safeguards reduce stale-page-state risk but cannot make every web application perfectly capturable.
+
+For the user-facing workflow see [`../docs/USER-GUIDE.md`](../docs/USER-GUIDE.md), and for troubleshooting see [`../docs/TROUBLESHOOTING.md`](../docs/TROUBLESHOOTING.md).
