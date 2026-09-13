@@ -81,7 +81,6 @@ def validate_markdown_links() -> None:
                 fail(f"empty Markdown link in {path.relative_to(ROOT)}")
             if target.startswith(("http://", "https://", "mailto:", "#")):
                 continue
-            # Strip an optional Markdown title and URL fragment/query.
             target = target.split(" ", 1)[0].strip("<>")
             target = target.split("#", 1)[0].split("?", 1)[0]
             if not target:
@@ -179,17 +178,48 @@ def main() -> int:
     required_current_docs = [
         ROOT / "README.md",
         ROOT / "README.hr.md",
+        ROOT / "SECURITY.md",
+        ROOT / "CONTRIBUTING.md",
+        ROOT / "android" / "README.md",
+        ROOT / "ekstenzije" / "README.md",
         ROOT / "RELEASE_NOTES_0.1.1.md",
+        ROOT / "docs" / "README.md",
+        ROOT / "docs" / "hr" / "README.md",
+        ROOT / "docs" / "ARCHITECTURE.md",
+        ROOT / "docs" / "hr" / "ARCHITECTURE.md",
+        ROOT / "docs" / "INSTALLATION.md",
+        ROOT / "docs" / "hr" / "INSTALLATION.md",
+        ROOT / "docs" / "ANDROID.md",
+        ROOT / "docs" / "hr" / "ANDROID.md",
+        ROOT / "docs" / "BROWSER-EXTENSIONS.md",
+        ROOT / "docs" / "hr" / "BROWSER-EXTENSIONS.md",
+        ROOT / "docs" / "PRODUCT-STATUS.md",
+        ROOT / "docs" / "hr" / "PRODUCT-STATUS.md",
+        ROOT / "docs" / "QA-MATRIX.md",
+        ROOT / "docs" / "hr" / "QA-MATRIX.md",
+        ROOT / "docs" / "PRIVACY.md",
+        ROOT / "docs" / "hr" / "PRIVACY.md",
+        ROOT / "docs" / "VERSIONING-RELEASES.md",
+        ROOT / "docs" / "hr" / "VERSIONING-RELEASES.md",
         ROOT / "docs" / "RELEASE-0.1.1.md",
         ROOT / "docs" / "SECURITY-PERFORMANCE-0.1.1.md",
         ROOT / "docs" / "hr" / "SECURITY-PERFORMANCE-0.1.1.md",
-        ROOT / "docs" / "README.md",
-        ROOT / "docs" / "hr" / "README.md",
     ]
     for path in required_current_docs:
         text = read_text(path)
         if version not in text:
             fail(f"current documentation does not mention {version}: {path.relative_to(ROOT)}")
+
+    stale_current_patterns = [
+        re.compile(r"current\s+(?:public\s+)?release(?:\s+line)?\s+is\s+\*\*0\.1\.0\*\*", re.IGNORECASE),
+        re.compile(r"aktualna\s+release\s+linija\s+je\s+\*\*0\.1\.0\*\*", re.IGNORECASE),
+        re.compile(r"javni\s+release\s+ugovor\s+0\.1\.0", re.IGNORECASE),
+    ]
+    for path in required_current_docs:
+        text = read_text(path)
+        for pattern in stale_current_patterns:
+            if pattern.search(text):
+                fail(f"stale 0.1.0 current-release wording remains in {path.relative_to(ROOT)}")
 
     for readme in (ROOT / "README.md", ROOT / "README.hr.md"):
         text = read_text(readme)
@@ -204,7 +234,10 @@ def main() -> int:
         fail("Croatian documentation index still contains stale 0.0.7 product-contract text")
 
     validate_markdown_links()
-    print(f"SNAPVERE product contract validation passed for {tag} ({len(expected_assets)} public assets).")
+    print(
+        f"SNAPVERE product contract validation passed for {tag} "
+        f"({len(expected_assets)} public assets, {len(required_current_docs)} current documents)."
+    )
     return 0
 
 
