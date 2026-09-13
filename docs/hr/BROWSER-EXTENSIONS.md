@@ -1,6 +1,6 @@
 # Browser ekstenzije
 
-SNAPVERE 0.1.1 uključuje službene javne browser-extension pakete za Chrome, Edge, Operu i Firefox u mapi [`ekstenzije/`](../../ekstenzije/). Browser kod razvijen je nakon v0.1.0, a v0.1.1 je prvo izdanje koje ga uključuje u javni GitHub Release ugovor.
+SNAPVERE 0.1.1 uključuje službene javne browser-extension pakete za Chrome, Edge, Operu i Firefox u mapi [`ekstenzije/`](../../ekstenzije/). Browser kod razvijen je nakon v0.1.0, a v0.1.1 je prvo izdanje koje ga uključuje u javni GitHub Release ugovor. Detaljna release povijest održava se u [`RELEASES.md`](../../RELEASES.md).
 
 ## Release verzija i asseti
 
@@ -83,7 +83,7 @@ To je behavioral source-runtime dokaz za zajednički background state machine. N
 
 `ekstenzije/tools/package-extensions.sh` izrađuje četiri release ZIP-a iz staged sourcea. Normalizira timestampove datoteka/mapa na prijenosni ZIP epoch, sortira putanje i koristi `zip -X` za uklanjanje nepotrebnih host metapodataka. Uz pakete se generira `SHA256SUMS.txt`.
 
-CI i 0.1.1 release workflow pokreću pakiranje dvaput u odvojenim direktorijima. Odgovarajući ZIP-ovi i checksum manifesti moraju biti byte-for-byte identični prije objave.
+Browser CI pokreće dva neovisna packaging prolaza i zahtijeva byte-for-byte jednakost odgovarajućih ZIP-ova i checksum manifesta. Povijesni v0.1.1 publication workflow koristio je isti reproducibility zahtjev prije objave.
 
 ## Kontrola pariteta između browsera
 
@@ -112,10 +112,10 @@ Sama store objava je vanjski proces. Autentificirani publisher pristup, store-si
 
 ## Release i QA granica
 
-`.github/workflows/extensions-ci.yml` sada provjerava syntax, manifest, permission, locale, cross-browser parity, source-policy, behavioral background smoke, store-readiness, generirane assete, determinističko pakiranje, SHA-256 i sadržaj paketa.
+`.github/workflows/extensions-ci.yml` provjerava syntax, manifest, permission, locale, cross-browser parity, source-policy, behavioral background smoke, store-readiness, generirane assete, determinističko pakiranje, SHA-256 i sadržaj paketa.
 
-`.github/workflows/release-0.1.1.yml` ostaje nepromjenjivi release-workflow zapis već objavljenog v0.1.1. Post-release CI hardening ne prepisuje v0.1.1 tag ni assete.
+Već objavljeni v0.1.1 publication workflow zadržan je kao povijesni audit source u `.github/release-archive/release-0.1.1.yml`. Namjerno je izvan `.github/workflows`, pa se više ne registrira kao aktualna publikacijska automatizacija. Premještanje te source datoteke ne mijenja objavljeni v0.1.1 tag, release opis ni assete.
 
 Zeleni workflow je automatizirani source/runtime-contract/package dokaz; nije tvrdnja da je svaki browser build/web aplikacija ručno testirana niti da je vanjski store odobrio ekstenziju.
 
-Za development load, pakiranje, privatnost, store-submission materijal i poznata ograničenja vidi [`ekstenzije/README.md`](../../ekstenzije/README.md).
+Za development load, pakiranje, privatnost, store-submission materijal i poznata ograničenja vidi [`ekstenzije/README.md`](../../ekstenzije/README.md), a za kompletnu povijest izdanja [`RELEASES.md`](../../RELEASES.md).
