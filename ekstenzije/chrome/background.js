@@ -85,6 +85,21 @@
     return tab;
   }
 
+  async function ensureCaptureTabActive(tabId, windowId) {
+    const tabs = await invoke(chrome.tabs, "query", { active: true, windowId });
+    const activeTab = Array.isArray(tabs) ? tabs[0] : null;
+    if (
+      !activeTab ||
+      activeTab.id !== tabId ||
+      activeTab.windowId !== windowId
+    ) {
+      throw new SnapvereError(
+        "captureTabChanged",
+        "The active tab changed while SNAPVERE was capturing."
+      );
+    }
+  }
+
   async function getLock() {
     const values = await storageGet(LOCK_KEY);
     const lock = values ? values[LOCK_KEY] : null;
@@ -243,6 +258,7 @@
     const tab = await getActiveTab();
     const lock = await acquireLock("visible", tab);
     try {
+      await ensureCaptureTabActive(lock.tabId, lock.windowId);
       const dataUrl = await captureVisible(tab.windowId);
       const filename = await downloadDataUrl(dataUrl, "visible");
       return { ok: true, filename };
@@ -306,6 +322,7 @@
             y
           });
 
+          await ensureCaptureTabActive(lock.tabId, lock.windowId);
           const dataUrl = await captureVisible(tab.windowId);
           await sendTab(tab.id, {
             type: "FULL_STORE_TILE",
@@ -370,6 +387,7 @@
         throw new SnapvereError("regionTooSmall", "Selected region is too small.");
       }
 
+      await ensureCaptureTabActive(lock.tabId, lock.windowId);
       const dataUrl = await captureVisible(windowId);
       const cropped = await sendTab(tabId, {
         type: "REGION_CROP",
