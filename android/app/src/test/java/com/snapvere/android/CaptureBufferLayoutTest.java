@@ -1,7 +1,6 @@
 package com.snapvere.android;
 
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
 import java.nio.ByteBuffer;
@@ -9,39 +8,6 @@ import java.nio.ByteBuffer;
 import org.junit.Test;
 
 public final class CaptureBufferLayoutTest {
-    @Test
-    public void paddedWidthReturnsVisibleWidthWhenRowsAreTight() {
-        assertEquals(1080, CaptureBufferLayout.paddedWidth(1080, 4, 4320));
-    }
-
-    @Test
-    public void paddedWidthIncludesWholePaddingPixels() {
-        assertEquals(1088, CaptureBufferLayout.paddedWidth(1080, 4, 4352));
-    }
-
-    @Test
-    public void paddedWidthRejectsInvalidDimensionsAndStrides() {
-        assertThrows(IllegalArgumentException.class, () -> CaptureBufferLayout.paddedWidth(0, 4, 4));
-        assertThrows(IllegalArgumentException.class, () -> CaptureBufferLayout.paddedWidth(10, 0, 40));
-        assertThrows(IllegalArgumentException.class, () -> CaptureBufferLayout.paddedWidth(10, 8, 80));
-        assertThrows(IllegalArgumentException.class, () -> CaptureBufferLayout.paddedWidth(10, 4, 0));
-        assertThrows(IllegalArgumentException.class, () -> CaptureBufferLayout.paddedWidth(10, 4, 39));
-    }
-
-    @Test
-    public void paddedWidthRejectsPartialPaddingPixels() {
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> CaptureBufferLayout.paddedWidth(10, 4, 41));
-    }
-
-    @Test
-    public void paddedWidthRejectsOverflowingVisibleRows() {
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> CaptureBufferLayout.paddedWidth(Integer.MAX_VALUE, 4, Integer.MAX_VALUE));
-    }
-
     @Test
     public void compactVisibleRgbaCopiesTightRows() {
         byte[] pixels = new byte[] {
@@ -85,11 +51,31 @@ public final class CaptureBufferLayoutTest {
     }
 
     @Test
-    public void compactVisibleRgbaRejectsInvalidHeightAndOversizedOutput() {
+    public void compactVisibleRgbaRejectsInvalidDimensionsAndStrides() {
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> CaptureBufferLayout.compactVisibleRgba(
+                ByteBuffer.allocate(8), 0, 1, 4, 8));
         assertThrows(
             IllegalArgumentException.class,
             () -> CaptureBufferLayout.compactVisibleRgba(
                 ByteBuffer.allocate(8), 2, 0, 4, 8));
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> CaptureBufferLayout.compactVisibleRgba(
+                ByteBuffer.allocate(8), 2, 1, 8, 16));
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> CaptureBufferLayout.compactVisibleRgba(
+                ByteBuffer.allocate(8), 2, 1, 4, 7));
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> CaptureBufferLayout.compactVisibleRgba(
+                ByteBuffer.allocate(12), 2, 1, 4, 9));
+    }
+
+    @Test
+    public void compactVisibleRgbaRejectsOversizedOutput() {
         assertThrows(
             IllegalArgumentException.class,
             () -> CaptureBufferLayout.compactVisibleRgba(
