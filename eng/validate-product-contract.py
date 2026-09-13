@@ -60,10 +60,49 @@ def android_string_keys(path: Path) -> set[str]:
     return keys
 
 
+def validate_release_history(version: str) -> None:
+    releases_path = ROOT / "RELEASES.md"
+    text = read_text(releases_path)
+
+    if f"Current public release: **v{version}**" not in text:
+        fail("RELEASES.md current-public-release marker does not match currentRelease")
+    if "## Unreleased" not in text:
+        fail("RELEASES.md must contain an Unreleased section for post-release main work")
+
+    historical_versions = [
+        "0.1.1",
+        "0.1.0",
+        "0.0.9",
+        "0.0.8",
+        "0.0.7",
+        "0.0.6",
+        "0.0.5",
+        "0.0.4",
+        "0.0.3",
+        "0.0.2",
+        "0.0.1",
+    ]
+    positions: list[int] = []
+    for historical_version in historical_versions:
+        match = re.search(rf"^## v{re.escape(historical_version)}\b", text, re.MULTILINE)
+        if match is None:
+            fail(f"RELEASES.md missing historical section v{historical_version}")
+        positions.append(match.start())
+
+    if positions != sorted(positions):
+        fail("RELEASES.md version sections must be newest-to-oldest")
+
+    fragmented = sorted(ROOT.glob("RELEASE_NOTES_*.md"))
+    if fragmented:
+        names = ", ".join(path.name for path in fragmented)
+        fail(f"version-specific root release-note files are forbidden; use RELEASES.md: {names}")
+
+
 def validate_markdown_links() -> None:
     markdown_roots = [
         ROOT / "README.md",
         ROOT / "README.hr.md",
+        ROOT / "RELEASES.md",
         ROOT / "SECURITY.md",
         ROOT / "CONTRIBUTING.md",
         ROOT / "android" / "README.md",
@@ -175,14 +214,16 @@ def main() -> int:
     if assets != expected_assets:
         fail("releaseAssets must match the exact eight-file v0.1.1 public contract")
 
+    validate_release_history(version)
+
     required_current_docs = [
         ROOT / "README.md",
         ROOT / "README.hr.md",
+        ROOT / "RELEASES.md",
         ROOT / "SECURITY.md",
         ROOT / "CONTRIBUTING.md",
         ROOT / "android" / "README.md",
         ROOT / "ekstenzije" / "README.md",
-        ROOT / "RELEASE_NOTES_0.1.1.md",
         ROOT / "docs" / "README.md",
         ROOT / "docs" / "hr" / "README.md",
         ROOT / "docs" / "ARCHITECTURE.md",
@@ -238,7 +279,7 @@ def main() -> int:
     validate_markdown_links()
     print(
         f"SNAPVERE product contract validation passed for {tag} "
-        f"({len(expected_assets)} public assets, {len(required_current_docs)} current documents)."
+        f"({len(expected_assets)} public assets, {len(required_current_docs)} current documents, canonical RELEASES history)."
     )
     return 0
 
