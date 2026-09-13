@@ -14,6 +14,8 @@ function createRuntime(initialStorage = {}) {
   const storage = structuredClone(initialStorage);
   const downloads = [];
   let messageListener = null;
+  let tabRemovedListener = null;
+  let tabUpdatedListener = null;
 
   const chrome = {
     runtime: {
@@ -55,6 +57,16 @@ function createRuntime(initialStorage = {}) {
       },
       sendMessage(_tabId, _message, callback) {
         callback({ ok: true });
+      },
+      onRemoved: {
+        addListener(listener) {
+          tabRemovedListener = listener;
+        }
+      },
+      onUpdated: {
+        addListener(listener) {
+          tabUpdatedListener = listener;
+        }
       }
     },
     scripting: {
@@ -87,6 +99,14 @@ function createRuntime(initialStorage = {}) {
     get listener() {
       assert.equal(typeof messageListener, 'function', 'background.js must register a runtime message listener');
       return messageListener;
+    },
+    removeTab(tabId) {
+      assert.equal(typeof tabRemovedListener, 'function', 'background.js must observe tab removal');
+      tabRemovedListener(tabId, { windowId: 3, isWindowClosing: false });
+    },
+    updateTab(tabId, changeInfo) {
+      assert.equal(typeof tabUpdatedListener, 'function', 'background.js must observe tab navigation');
+      tabUpdatedListener(tabId, changeInfo, { id: tabId, windowId: 3 });
     }
   };
 }
@@ -105,6 +125,10 @@ function send(listener, message, sender = {}) {
     });
     assert.equal(keepAlive, true, 'background listener must keep the async response channel alive');
   });
+}
+
+function flushBackgroundTasks() {
+  return new Promise((resolve) => setImmediate(resolve));
 }
 
 async function runVariant(browser) {
@@ -145,6 +169,36 @@ async function runVariant(browser) {
     assert.equal(response.ok, false, `${browser}: concurrent capture must be rejected`);
     assert.equal(response.errorKey, 'captureBusy');
     assert.equal(runtime.downloads.length, 0, `${browser}: busy capture must not download`);
+  }
+
+  {
+    const runtime = createRuntime();
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+
+    const response = await send(runtime.listener, { type: 'CAPTURE_REGION' });
+    assert.equal(response.ok, true, `${browser}: region capture should enter pending state`);
+    assert.equal(response.pending, true);
+    assert.equal(runtime.storage.snapvereActiveCapture?.kind, 'region');
+
+    runtime.removeTab(7);
+    await flushBackgroundTasks();
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined, `${browser}: closing a tab must release its pending region lock`);
+
+    const visible = await send(runtime.listener, { type: 'CAPTURE_VISIBLE' });
+    assert.equal(visible.ok, true, `${browser}: a new capture must be allowed after tab-close cleanup`);
+  }
+
+  {
+    const runtime = createRuntime();
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+
+    const response = await send(runtime.listener, { type: 'CAPTURE_REGION' });
+    assert.equal(response.ok, true, `${browser}: region capture should enter pending state before navigation`);
+    assert.equal(runtime.storage.snapvereActiveCapture?.kind, 'region');
+
+    runtime.updateTab(7, { status: 'loading', url: 'https://example.test/next' });
+    await flushBackgroundTasks();
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined, `${browser}: navigation must release a pending region lock`);
   }
 
   {
