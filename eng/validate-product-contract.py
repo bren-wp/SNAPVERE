@@ -176,6 +176,18 @@ def main() -> int:
     if android.get("publicApkSigning") != "ci-debug":
         fail("Android public signing disclosure changed; update validator and documentation deliberately")
 
+    android_main_activity = read_text(
+        ROOT / "android" / "app" / "src" / "main" / "java" / "com" / "snapvere" / "android" / "MainActivity.java"
+    )
+    if "BuildConfig.VERSION_NAME" not in android_main_activity:
+        fail("Android UI version fallback must use generated BuildConfig.VERSION_NAME")
+    hardcoded_android_version_returns = re.findall(
+        r"\breturn\s+['\"]\d+\.\d+\.\d+(?:-[^'\"]+)?['\"]\s*;",
+        android_main_activity,
+    )
+    if hardcoded_android_version_returns:
+        fail("Android UI must not hardcode semantic version return values")
+
     default_strings = android_string_keys(ROOT / "android" / "app" / "src" / "main" / "res" / "values" / "strings.xml")
     hr_strings = android_string_keys(ROOT / "android" / "app" / "src" / "main" / "res" / "values-hr" / "strings.xml")
     if default_strings != hr_strings:
