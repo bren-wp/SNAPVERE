@@ -195,6 +195,18 @@ async function runVariant(browser) {
   }
 
   {
+    const runtime = createRuntime({}, { activeTabSequence: [7, 7, 9] });
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+
+    const response = await send(runtime.listener, { type: 'CAPTURE_VISIBLE' });
+    assert.equal(response.ok, false, `${browser}: visible capture must discard a frame if activation changes during captureVisibleTab`);
+    assert.equal(response.errorKey, 'captureTabChanged');
+    assert.equal(runtime.captures.length, 1, `${browser}: race test must acquire exactly one frame before post-validation rejects it`);
+    assert.equal(runtime.downloads.length, 0, `${browser}: post-validation failure must never download the raced frame`);
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined, `${browser}: raced visible capture must release the lock`);
+  }
+
+  {
     const runtime = createRuntime({
       snapvereActiveCapture: {
         token: 'existing',
@@ -221,6 +233,18 @@ async function runVariant(browser) {
     assert.equal(response.errorKey, 'captureTabChanged');
     assert.equal(runtime.captures.length, 0, `${browser}: full-page capture must not capture a frame from another tab`);
     assert.equal(runtime.storage.snapvereActiveCapture, undefined, `${browser}: changed-tab full-page capture must release the lock`);
+  }
+
+  {
+    const runtime = createRuntime({}, { activeTabSequence: [7, 7, 9] });
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+
+    const response = await send(runtime.listener, { type: 'CAPTURE_FULL' });
+    assert.equal(response.ok, false, `${browser}: full-page capture must discard a tile if activation changes during captureVisibleTab`);
+    assert.equal(response.errorKey, 'captureTabChanged');
+    assert.equal(runtime.captures.length, 1, `${browser}: full-page race test must acquire one frame before rejecting it`);
+    assert.equal(runtime.downloads.length, 0, `${browser}: raced full-page frame must not produce a download`);
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined, `${browser}: raced full-page capture must release the lock`);
   }
 
   {
@@ -276,6 +300,31 @@ async function runVariant(browser) {
     assert.equal(runtime.captures.length, 0, `${browser}: changed-tab region capture must not capture another tab`);
     assert.equal(runtime.downloads.length, 0, `${browser}: changed-tab region capture must not download`);
     assert.equal(runtime.storage.snapvereActiveCapture, undefined, `${browser}: changed-tab region capture must release the lock`);
+  }
+
+  {
+    const runtime = createRuntime({}, { activeTabSequence: [7, 7, 9] });
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+
+    const pending = await send(runtime.listener, { type: 'CAPTURE_REGION' });
+    assert.equal(pending.ok, true, `${browser}: region race test should enter pending state`);
+    const token = runtime.storage.snapvereActiveCapture?.token;
+    assert.equal(typeof token, 'string');
+
+    const selected = await send(
+      runtime.listener,
+      {
+        type: 'REGION_SELECTED',
+        token,
+        rect: { x: 10, y: 12, width: 80, height: 60 }
+      },
+      { tab: { id: 7, windowId: 3 } }
+    );
+    assert.equal(selected.ok, false, `${browser}: region capture must discard a frame if activation changes during captureVisibleTab`);
+    assert.equal(selected.errorKey, 'captureTabChanged');
+    assert.equal(runtime.captures.length, 1, `${browser}: region race test must acquire one frame before post-validation rejects it`);
+    assert.equal(runtime.downloads.length, 0, `${browser}: raced region frame must not download`);
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined, `${browser}: raced region capture must release the lock`);
   }
 
   {
