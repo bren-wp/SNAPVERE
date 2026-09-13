@@ -45,7 +45,11 @@ jobs:
           node --check ekstenzije/tools/validate-extensions.mjs
           node --check ekstenzije/tools/verify-extension-parity.mjs
           node --check ekstenzije/tools/validate-store-readiness.mjs
+          node --check ekstenzije/tools/smoke-test-background.mjs
           python -m py_compile ekstenzije/tools/generate-store-assets.py
+
+      - name: Exercise background runtime behavior
+        run: node ekstenzije/tools/smoke-test-background.mjs
 
       - name: Generate browser store assets
         shell: bash

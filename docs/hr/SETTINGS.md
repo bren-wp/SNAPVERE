@@ -1,6 +1,6 @@
 # Postavke
 
-Aktualni post-v0.0.8 `main` prikazuje samo postavke koje imaju stvarnu implementaciju i lokalnu persistence logiku. Options / Preferences je sekundarna površina koja se otvara na zahtjev i ne vraća stari Capture Center kao normalni startup prozor.
+Aktualna javna linija **SNAPVERE 0.1.1** prikazuje samo postavke koje imaju stvarnu implementaciju i lokalnu persistence logiku. Options / Preferences je sekundarna površina koja se otvara na zahtjev i ne vraća stari Capture Center kao normalni startup prozor.
 
 ## Start SNAPVERE with Windows
 
@@ -27,19 +27,3 @@ Postavke se spremaju lokalno u:
 ```
 
 Datoteka je malena i zapisuje se preko privremene datoteke + atomic move obrasca kako prekid procesa ne bi ostavio djelomično zapisan JSON. Neispravan JSON ili nepodržani language code vraća sigurne zadane vrijednosti umjesto rušenja aplikacije.
-
-## Recent Captures
-
-Options površina prikazuje ograničeni popis stvarnih datoteka u lokalnoj capture mapi. Implementirane su stvarne akcije za osvježavanje popisa, otvaranje capture mape i otvaranje pojedinačne snimke kroz Windows shell association. Ne postoji lažna remote history baza.
-
-## Privatnost i performanse
-
-Nema background file watchera, polling timera ni cloud synca za postavke. Vrijednosti se učitavaju na zahtjev i cacheiraju u procesu, a zapisuju samo kada ih korisnik promijeni.
-
-Lokalizacija također ostaje statična i event-driven: nema mrežnog translation API-ja, telemetry dependencyja ni background language workera.
-
-## QA
-
-Unit testovi pokrivaju settings persistence, atomic temp-file cleanup, corrupt JSON fallback, normalization podržanih jezika, fallback nepodržanih jezika, zasebne hrvatske secondary-UI prijevode i formatirane localization placeholdere.
-
-Runtime QA kroz `SECONDARY_UI_READY` materijalizira Tray, Options, Language i About na instaliranim i Portable x64/x86 paketnim putovima. Dodatni x64 visual-QA gate snima stvarno renderirane Options, Language i About PNG-ove zajedno s Region, Window i Tray površinama, odbija vizualno prazne/neočekivano male frameove te sprema manifest s dimenzijama, veličinama datoteka i SHA-256 sažecima.

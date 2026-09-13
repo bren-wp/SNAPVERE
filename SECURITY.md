@@ -1,76 +1,35 @@
-# Security Policy
+# SNAPVERE Security Policy
 
-## Scope
+## Supported public line
 
-Security issues affecting SNAPVERE capture data, clipboard behavior, local preferences/history, native window targeting, Android MediaProjection/MediaStore handling, temporary files, Setup/Portable extraction, uninstall cleanup, Android signing, release integrity, dependency supply chain or future update mechanisms should be treated as sensitive.
+The current public release is **SNAPVERE 0.1.1**: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.1
 
-SNAPVERE is a local-first Windows and Android capture product. Core capture does not require telemetry, cloud upload, accounts, credentials or a first-party network service.
+Security reports affecting the Windows application, Android application, Chrome/Edge/Opera/Firefox extensions, packaging, local capture data, settings/history, signing, release integrity or dependency supply chain are in scope.
 
-## 0.1.0 threat model
+Historical release `v0.1.0` remains immutable and correctly reflects the older four-asset Windows/Android product state. Current security documentation describes the 0.1.1 product line and post-release `main` hardening.
 
-The desktop runtime has no WebView/WebView2, HTML renderer, JavaScript execution surface or first-party HTTP/socket client. Browser-style XSS is therefore not an applicable current runtime surface. A future embedded-web/network feature would require a new origin/navigation/content/script review before shipping.
+## Security and privacy model
 
-Android intentionally declares no `android.permission.INTERNET` and contains no telemetry, analytics, cloud upload or remote-command client. Website, support and legal destinations are delegated to OS handlers only after explicit user input.
+SNAPVERE is a **local-first capture product**. Core screenshot capture does not require a SNAPVERE account, first-party cloud upload, analytics service or advertising service.
 
-SNAPVERE is not a security boundary against arbitrary code already executing as the same OS user. Hardening focuses on preventing SNAPVERE itself from introducing traversal, unsafe extraction, hidden networking, destructive path mistakes, stuck capture ownership, corrupt image-buffer handling or supply-chain/release regressions.
+SNAPVERE is not a security boundary against arbitrary code already executing as the same OS/browser user. Hardening focuses on preventing SNAPVERE itself from introducing unsafe extraction, path traversal, destructive cleanup, stale capture ownership, corrupt image-buffer handling, overly broad browser permissions, hidden networking, remote runtime code or supply-chain/release regressions.
 
-## Dependency and CI supply chain
+SNAPVERE does not attempt to bypass DRM, protected-content restrictions, browser privileged-page rules or OS capture policy. A blocked/blank capture is not authorization to weaken platform protections.
 
-Repository-wide .NET restore enables NuGet auditing for direct and transitive dependencies at `low` severity and above. `NU1901`–`NU1904` are build errors.
+## Windows threat model
 
-CI/release actions are pinned to full commit SHAs and ordinary CI checkout does not persist repository credentials. Dependabot monitors NuGet and GitHub Actions dependencies.
+The Windows desktop runtime does not embed a WebView/WebView2/HTML/JavaScript application surface and does not include a first-party screenshot upload client. Capture, editing and PNG encoding are local.
 
-Android CI treats lint warnings as errors, runs JVM tests, builds debug/release variants and verifies the development APK signature/alignment. Its manifest contract fails if `INTERNET`, cleartext, backup, exported capture service or version regressions are introduced.
+### Capture boundaries
 
-No private signing key, production credential or private token belongs in Git source or generated source archives.
+- Region Capture operates on a frozen captured frame with physical-pixel selection and local annotations.
+- Window Capture discovers eligible top-level windows, freezes target metadata before picker overlays and uses Windows.Graphics.Capture where supported.
+- Expected WGC/native/timeout failures can use the documented resilient monitor fallback; unexpected programming errors should not be silently converted into unrelated capture work.
+- Screen capture does not claim the ability to bypass protected-content restrictions.
 
-## Sensitive information rules
+### Local file integrity
 
-Routine diagnostics must not intentionally include:
-
-- screenshot pixels/image contents;
-- clipboard contents;
-- OCR/user file text;
-- credentials/API keys/signing material;
-- private capture history beyond paths/metadata needed by the local feature.
-
-Windows startup diagnostics contain stage/exception metadata and stay under the current account.
-
-## Capture security boundaries
-
-SNAPVERE does not attempt to bypass DRM, protected-content restrictions or OS capture policy. A blocked/blank protected capture is not authorization to weaken OS protection.
-
-Windows Window Capture freezes eligible top-level-window metadata before picker overlays, uses geometric hit testing and filters self/tool/invisible/cloaked/invalid targets. Expected WGC compatibility/native/timeout failures may use the documented resilient monitor fallback; unexpected programming errors are not silently converted into unrelated capture work.
-
-Android requires fresh MediaProjection consent for every capture. Consent tokens are never cached/reused. Five-second Activity-hide and seven-second first-frame guards bound capture ownership.
-
-## Android resource and buffer safety
-
-`CaptureService` uses a process-local single-active-capture guard. 0.1.0 additionally makes capture ownership service-instance-aware so stale teardown does not clear another active owner.
-
-Cleanup is idempotent/per-resource. A framework/vendor failure while releasing one object does not intentionally prevent remaining MediaProjection, VirtualDisplay, ImageReader, callback, Image, HandlerThread or ownership cleanup.
-
-The service also checks Handler scheduling, guards `acquireLatestImage()`, closes acquired Image objects before final completion cleanup and contains conversion/provider/allocation failures within the session recovery path.
-
-For `RGBA_8888`, capture-buffer validation requires:
-
-- positive visible width;
-- 4-byte pixel stride;
-- positive/sufficient row stride;
-- whole-pixel row padding;
-- non-overflowing width arithmetic;
-- rewound ByteBuffer;
-- enough bytes for `rowStride × height`.
-
-JVM regression tests cover tight/padded layouts, invalid dimensions, unexpected pixel stride, partial padding and overflow.
-
-## Android storage and actions
-
-Captures use MediaStore under `Pictures/SNAPVERE` without broad storage permission. Pending-state finalization is checked; incomplete-item cleanup is best-effort and cannot mask the original save failure.
-
-Latest-capture actions revalidate the stored URI. Open/Share/Delete and Website/Support/Privacy/Terms have controlled failure paths. External destinations are user initiated and do not create a SNAPVERE networking client.
-
-## Local Windows settings and history
+Capture PNG writes use a temporary file followed by final move, so a partially encoded image is not intentionally exposed as a completed capture. Failure to remove a staging file must not replace the original capture exception.
 
 Windows preferences live at:
 
@@ -78,92 +37,211 @@ Windows preferences live at:
 %LOCALAPPDATA%\SNAPVERE\settings.json
 ```
 
-Writes use temporary-file + atomic move. Corrupt/unreadable settings fall back to safe defaults. 0.1.0 also contains filesystem-policy `SecurityException` during preference load/temp cleanup and recent-capture discovery.
+Settings writes use a staged/atomic replacement pattern. Corrupt/unreadable settings fall back to safe defaults through the implemented preference handling.
 
-Capture PNG writes use local staging followed by atomic move. Failure to remove a staging file because of I/O/access/security policy never replaces the original capture exception.
+### Startup diagnostics
 
-**Start SNAPVERE with Windows** remains per-user. Setup uninstall removes the SNAPVERE Run value only when it identifies the validated installed executable; unrelated/Portable registration is preserved.
+Windows startup diagnostics can be written under:
 
-Android latest URI/name metadata is private SharedPreferences convenience state only.
+```text
+%LOCALAPPDATA%\SNAPVERE\Logs\startup.log
+```
 
-## Package extraction security
+Routine diagnostics must not intentionally contain screenshot pixels, clipboard contents, credentials, private signing material or arbitrary user-document contents.
 
-Setup/Portable embedded ZIP extraction must reject absolute paths, parent traversal, destination escape, duplicate destinations, excessive entry counts/expanded size and unsafe staging. Child process arguments are not constructed as shell commands.
+## Setup and Portable security
 
-Portable cached payloads are not trusted merely because marker/executable files exist. The trusted expected manifest is embedded in the Portable host with the architecture payload. Reuse validation checks expected paths, lengths, SHA-256, missing/unexpected content and reparse points, then transactionally rebuilds/revalidates an invalid cache.
+Setup/Portable embedded payload extraction must reject:
 
-The embedded manifest protects against silently trusting persistent writable extracted content between executions; it is not represented as a sandbox against arbitrary same-user code modifying a running process.
+- absolute archive targets;
+- parent traversal and destination escape;
+- duplicate destinations;
+- unsafe reparse-point content;
+- excessive/invalid extraction state;
+- unexpected cached payload files.
 
-## Setup/uninstall safety
+The Portable host carries trusted architecture-specific integrity manifests and validates expected paths, lengths and SHA-256 hashes before reusing writable extracted content. Invalid reusable cache is rebuilt/revalidated transactionally.
 
-Protected path-boundary validation treats a protected directory itself and descendants as inside the boundary while sibling-prefix paths do not match.
+This protects the SNAPVERE extraction/reuse contract; it is not a sandbox against arbitrary same-user code modifying a live process.
 
-Before recursive install-directory removal, Setup validates the SNAPVERE installation marker and expected maintenance/application files. An arbitrary path from command line/registry must never be recursively deleted merely because it was supplied.
+### Uninstall safety
 
-Windows Installed apps invokes:
+Before recursive installation-directory deletion, Setup validates the SNAPVERE installation marker and expected maintenance/application files. An arbitrary command-line/registry path must never become sufficient authority for recursive deletion.
+
+Windows Installed apps invokes the same maintenance binary:
 
 ```text
 SNAPVERE-Setup.exe --uninstall
 ```
 
-No separate uninstaller binary is installed. User screenshots live outside the install directory and are preserved.
+No separate uninstaller binary is required. User screenshots under `Pictures\SNAPVERE` are outside the installation directory and are preserved by the install-removal contract.
 
-## Runtime/background-work boundary
+## Android threat model
 
-Windows tray/global-hotkey hosts use blocking native message loops, not periodic polling. Capture/D3D resources are created for capture work rather than kept resident solely for tray presence. Secondary UI is on demand.
+The Android manifest intentionally does **not** request `android.permission.INTERNET`. Cleartext traffic and application backup are disabled and `CaptureService` is non-exported with `foregroundServiceType="mediaProjection"`.
 
-Android has no idle capture worker. MediaProjection/ImageReader/VirtualDisplay/HandlerThread resources exist only for an explicitly approved capture and are bounded by failure cleanup.
+Website, support, privacy, terms, Open and Share actions are explicit user actions delegated to Android/external applications; their existence does not create a hidden SNAPVERE network client.
 
-Security or telemetry work must not add hidden periodic network requests, high-frequency timers, file watchers or polling loops merely to claim monitoring.
+### MediaProjection consent and ownership
+
+- every capture requires a fresh Android system MediaProjection consent flow;
+- consent intents/tokens are not cached for silent reuse;
+- a process-local single-active-capture guard prevents overlapping sessions;
+- capture ownership is service-instance-aware so stale teardown does not clear another active owner;
+- a five-second Activity-hide guard bounds the handoff before capture starts;
+- a seven-second first-frame guard bounds frame acquisition.
+
+### Resource and image-buffer safety
+
+Cleanup is designed to be idempotent/per-resource. Failure while releasing one framework object should not intentionally prevent remaining MediaProjection, VirtualDisplay, ImageReader, callback, Image, HandlerThread or ownership cleanup.
+
+For `RGBA_8888`, buffer validation requires:
+
+- positive visible width;
+- 4-byte pixel stride;
+- positive/sufficient row stride;
+- whole-pixel row padding;
+- non-overflowing width/byte arithmetic;
+- rewound ByteBuffer;
+- enough bytes for `rowStride × height`.
+
+JVM regression tests cover tight/padded layouts, invalid dimensions/stride, partial padding and overflow.
+
+### Android storage
+
+Captures use MediaStore under `Pictures/SNAPVERE` without broad filesystem permission. `IS_PENDING` finalization is checked and incomplete-item cleanup is best-effort without masking the original save error.
+
+Latest-capture Open/Share/Delete revalidate the stored URI. Stale unreadable latest-capture references are removed.
+
+## Browser-extension threat model
+
+SNAPVERE 0.1.1 publicly ships Chrome, Edge, Opera and Firefox extension ZIPs.
+
+The current extension permission set is exactly:
+
+```text
+activeTab
+scripting
+downloads
+storage
+```
+
+There is no `<all_urls>` permission and no broad `host_permissions` entry. The extension does not attempt to bypass protected/internal browser pages.
+
+### Runtime/source policy
+
+The extension source contains no first-party telemetry, analytics SDK, ad SDK, cloud-upload client, remote runtime script or background network client. Extension HTML is checked for remote runtime resources, inline script/style blocks and inline event handlers.
+
+Messages are restricted to explicit known types. Region completion validates the stored capture token plus sender tab/window identity. Capture-session state is bounded by a TTL and successful/error paths release the lock.
+
+Full-page capture has explicit bounds on tile count, canvas dimensions and total pixel allocation. A content-side watchdog restores scroll/floating-element state if orchestration disappears.
+
+### Browser CI hardening
+
+Browser CI validates:
+
+- exact permission allow-list and absence of broad host access;
+- manifest/localization/runtime file policy;
+- source parity across Chrome/Edge/Opera with only expected Firefox differences;
+- icon dimensions/hash parity;
+- behavioral background smoke tests for download/lock/error paths;
+- store metadata/privacy declarations against actual manifests;
+- reproducible ZIP packages and SHA-256 integrity.
+
+These checks are not represented as exhaustive manual GUI/runtime testing of every browser/page combination.
+
+## Dependency and CI supply chain
+
+Repository-wide .NET restore enables NuGet auditing for direct and transitive dependencies at `low` severity and above. `NU1901`–`NU1904` are build errors.
+
+GitHub Actions used by the validated workflows are pinned to full commit SHAs. Ordinary CI checkout does not persist repository credentials where not required. Dependabot configuration monitors relevant dependency/action surfaces.
+
+Android lint warnings are treated as errors and both debug/release variants are built. Browser source is dependency-light and release packages contain only approved extension source/assets.
+
+No private signing key, production credential, password or private token belongs in Git source, documentation examples or generated source archives.
+
+## Product/version contract security
+
+[`product-version.json`](product-version.json) is the canonical active product contract for 0.1.1. `eng/validate-product-contract.py` verifies that:
+
+- Windows product/assembly/file versions align;
+- Android versionName/versionCode/SDK contract aligns;
+- Android EN/HR resource keys remain in parity;
+- all four browser manifests/store metadata align;
+- the exact eight-file public release contract is unchanged;
+- active README/current docs point at the current release;
+- relative Markdown documentation links resolve.
+
+This prevents documentation/version drift from silently changing security or signing claims.
 
 ## Android release signing
 
-The public `SNAPVERE.apk` in v0.1.0 is intentionally the validated CI/debug-signed APK. It is built from the same validated 0.1.0 Android source that also passes `lintDebug`, `lintRelease`, JVM tests, debug build and release-variant build checks. The publication workflow verifies the APK signature and ZIP alignment before release.
+The public v0.1.1 `SNAPVERE.apk` is intentionally the validated **CI/debug-signed** APK. The release workflow also builds the release variant, but no private production/Google Play keystore is required or claimed for the public package.
 
-This signature establishes package integrity for the published APK, but the signing identity is **not** represented as a stable production/Google Play publisher identity. The v0.1.0 release does not require or embed a private production Android keystore.
+The signing identity provides package-signature integrity for that published APK, but it is **not** represented as a stable Google Play production publisher identity. A future channel using a different stable production key can require uninstall/reinstall and must document that transition explicitly.
 
-A future production/Play-signed Android channel must use a deliberately managed stable private signing identity outside Git source. If that identity differs from the v0.1.0 CI/debug identity, Android may require users to uninstall/reinstall rather than accept an in-place update. That transition must be documented explicitly rather than being treated as signature-compatible by assumption.
+`SNAPVERE-Android-Source.zip` must not contain keystores, secrets, generated build output or Gradle caches.
 
-`SNAPVERE-Android-Source.zip` is generated from the validated Git tree and must not contain keystores, secrets, generated build output or Gradle caches.
+## Windows code signing
 
-## Release integrity
+Public Windows executables are not represented as Authenticode-signed unless a real certificate/signing gate is introduced and verified. SHA-256 proves byte identity, not publisher identity or reputation.
 
-The v0.1.0 public release contract is exactly:
+## Browser-store signing/publication
+
+The public v0.1.1 browser ZIPs are GitHub release assets. They are **not** represented as Chrome Web Store, Edge Add-ons, Opera Add-ons or Mozilla Add-ons approved/signed packages unless real external publisher/review status supports that claim.
+
+Firefox AMO signing and all store-side certification remain external to the current repository credentials/workflows.
+
+## v0.1.1 release integrity
+
+The public v0.1.1 release contract is exactly:
 
 ```text
 SNAPVERE-Setup.exe
 SNAPVERE-Portable.exe
 SNAPVERE.apk
 SNAPVERE-Android-Source.zip
+SNAPVERE-Chrome.zip
+SNAPVERE-Edge.zip
+SNAPVERE-Opera.zip
+SNAPVERE-Firefox.zip
 ```
 
-Windows publication remains gated by audited build/tests, x86 build, ARM64 cross-build, payload/integrity-manifest validation, six rendered UI surfaces in the normal CI path and x64/x86 Setup+Portable lifecycle/tray-first probes.
+The release workflow:
 
-Android publication is gated by manifest/version/privacy checks, lint, JVM tests, debug/release builds, CI/debug APK signature/alignment verification and Android source-archive validation.
+1. validates/builds Android and records transfer hashes;
+2. validates and reproducibly packages all four browser variants;
+3. audits/builds/tests Windows and constructs x86/x64/ARM64 payloads;
+4. validates architecture integrity manifests;
+5. builds universal Setup and Portable;
+6. re-verifies transferred Android/browser files;
+7. enforces the exact eight-file release directory;
+8. validates x64/x86 Setup/Portable runtime contracts;
+9. creates/verifies the exact `v0.1.1` tag only after gates pass;
+10. publishes the approved files;
+11. compares GitHub-reported SHA-256 digests with locally validated values.
 
-The workflow transfers Android candidates through a GitHub Actions artifact with recorded SHA-256 values and re-verifies those hashes before admitting them to the final release directory.
-
-The immutable `v0.1.0` tag is created only for the exact validated commit and only after all pre-publication gates pass. Missing-tag detection accepts only an actual HTTP 404 as absence; other GitHub API errors abort. Existing tag refs must resolve to the exact commit.
-
-Post-publication validation requires exactly the four expected assets and compares each GitHub-reported SHA-256 digest with the locally validated candidate hash. Existing release assets are never replaced by the workflow.
-
-Windows binaries are not represented as Authenticode-signed unless a real certificate/signing gate is introduced and verified. SHA-256 establishes byte identity, not publisher identity. The Android v0.1.0 APK uses a CI/debug signing identity and is not represented as production/Play-signed.
+Already published v0.1.1 assets/tags are treated as immutable historical output. Post-release `main` hardening must use a future version for changed release binaries instead of replacing v0.1.1 assets.
 
 ## Update security
 
-0.1.0 has no automatic updater or licensing network feature. A future updater must authenticate metadata/artifacts, validate hashes/architecture/origin/version direction and define rollback behavior; TLS alone is not sufficient publisher authenticity.
+SNAPVERE 0.1.1 has no first-party automatic binary updater or licensing-network feature. A future updater must authenticate update metadata/artifacts, validate origin/hash/architecture/version direction and define rollback behavior. TLS alone is not sufficient publisher authenticity.
 
 ## Repository hygiene
 
 Never commit:
 
-- Authenticode/private Android signing keys;
+- Authenticode/private Android/browser-store signing keys;
 - production credentials/passwords/tokens;
-- private screenshots or real-user app data;
-- crash dumps containing user material;
-- generated release package output unless intentionally tracked as a public artifact;
+- private screenshots or real-user application data;
+- crash dumps containing sensitive user material;
+- generated private signing output;
 - secrets embedded in workflow/source files.
 
-## Reporting
+## Reporting a vulnerability
 
-Use GitHub private security reporting when disclosure could expose users or a practical exploit. General security/support contact: `info@snapvere.com`. Do not post sensitive proof-of-concept user data in a public issue.
+Use GitHub private security reporting when disclosure could expose users or a practical exploit. General security/support contact: **info@snapvere.com**.
+
+Do not post sensitive proof-of-concept user data or private screenshots in a public issue.
+
+For the wider privacy model see [Privacy](docs/PRIVACY.md), and for the validation boundary see [QA Matrix](docs/QA-MATRIX.md).

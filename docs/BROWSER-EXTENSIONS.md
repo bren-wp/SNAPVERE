@@ -1,6 +1,6 @@
 # Browser Extensions
 
-SNAPVERE 0.1.1 includes official public browser-extension packages for Chrome, Edge, Opera and Firefox under [`ekstenzije/`](../ekstenzije/). The browser code was developed after v0.1.0; v0.1.1 is the first release that promotes it into the public GitHub Release contract.
+SNAPVERE 0.1.1 includes official public browser-extension packages for Chrome, Edge, Opera and Firefox under [`ekstenzije/`](../ekstenzije/). The browser code was developed after v0.1.0; v0.1.1 is the first release that promotes it into the public GitHub Release contract. Detailed release history is maintained in [`RELEASES.md`](../RELEASES.md).
 
 ## Release version and assets
 
@@ -15,7 +15,7 @@ SNAPVERE-Opera.zip
 SNAPVERE-Firefox.zip
 ```
 
-These four browser files are part of the new eight-asset v0.1.1 release contract. Historical v0.1.0 remains unchanged with only its original Windows/Android assets.
+These four browser files are part of the eight-asset v0.1.1 release contract. Historical v0.1.0 remains unchanged with only its original Windows/Android assets.
 
 ## Architecture
 
@@ -66,11 +66,24 @@ The version-controlled browser privacy policy is [`ekstenzije/PRIVACY.md`](../ek
 
 English is the default/fallback locale. Dedicated English and Croatian catalogs are included in every distributable browser package.
 
+## Behavioral background smoke tests
+
+`ekstenzije/tools/smoke-test-background.mjs` executes each variant's real `background.js` inside an isolated Node VM with deterministic mocks for the browser APIs used by the background runtime. The CI smoke suite verifies for Chrome, Edge, Opera and Firefox that:
+
+- visible capture reaches the download API with a PNG data URL;
+- locally configured `saveAs` is respected;
+- unsafe filename-prefix characters are sanitized;
+- the active capture lock is released after a successful capture;
+- a concurrent active capture is rejected with `captureBusy` and does not download;
+- unknown runtime messages fail through the controlled `captureFailed` response path.
+
+This is behavioral source-runtime evidence for the shared background state machine. It is deliberately **not** described as manual GUI testing or proof that every browser/web page renders identically.
+
 ## Reproducible packaging
 
 `ekstenzije/tools/package-extensions.sh` creates the four release ZIP files from staged source. It normalizes file/directory timestamps to the portable ZIP epoch, sorts archive paths and uses `zip -X` to remove nonessential host metadata. `SHA256SUMS.txt` is generated next to the packages.
 
-CI and the 0.1.1 release workflow execute packaging twice in separate output directories. Corresponding ZIPs and checksum manifests must be byte-identical before publication.
+Browser CI performs two independent packaging passes and requires corresponding ZIPs plus checksum manifests to be byte-identical. The historical v0.1.1 publication workflow applied the same reproducibility requirement before publishing the release.
 
 ## Cross-browser parity controls
 
@@ -99,10 +112,10 @@ Store publication itself is external. Authenticated publisher access, store-side
 
 ## Release and QA boundary
 
-`.github/workflows/extensions-ci.yml` provides syntax, manifest, permission, locale, cross-browser parity, source-policy, store-readiness, generated-asset, deterministic packaging, SHA-256 and package-content validation.
+`.github/workflows/extensions-ci.yml` provides syntax, manifest, permission, locale, cross-browser parity, source-policy, behavioral background smoke, store-readiness, generated-asset, deterministic packaging, SHA-256 and package-content validation.
 
-`.github/workflows/release-0.1.1.yml` repeats the browser validation and reproducible packaging for the exact release commit, transfers the four browser ZIPs into the final release job, recomputes hashes and verifies GitHub's published asset digests after publication.
+The already-published v0.1.1 publication workflow is retained as historical audit source at `.github/release-archive/release-0.1.1.yml`. It is intentionally outside `.github/workflows`, so it is not registered as current publication automation. Moving that source file does not modify the published v0.1.1 tag, release description or assets.
 
-A green workflow is automated static/package evidence; it is not a claim that every browser build/web application has been manually exercised or that external stores have approved the extension.
+A green workflow is automated source/runtime-contract/package evidence; it is not a claim that every browser build/web application has been manually exercised or that external stores have approved the extension.
 
-See [`ekstenzije/README.md`](../ekstenzije/README.md) for development loading, packaging, privacy, store-submission material and known limitations.
+See [`ekstenzije/README.md`](../ekstenzije/README.md) for development loading, packaging, privacy, store-submission material and known limitations, and [`RELEASES.md`](../RELEASES.md) for the complete historical release record.
