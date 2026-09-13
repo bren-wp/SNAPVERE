@@ -2,6 +2,8 @@
 
 The current public release is **SNAPVERE 0.1.1**: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.1
 
+Detailed release history is maintained in the repository-root [`RELEASES.md`](../RELEASES.md). It is the canonical human-readable release-notes source. [`CHANGELOG.md`](../CHANGELOG.md) remains the shorter engineering change summary.
+
 ## Canonical version contract
 
 The active machine-readable source of truth is [`product-version.json`](../product-version.json). For 0.1.1 it aligns:
@@ -13,11 +15,25 @@ The active machine-readable source of truth is [`product-version.json`](../produ
 - browser store listing version `0.1.1`;
 - the exact eight-file public GitHub release contract.
 
-`eng/validate-product-contract.py` checks these values against the actual source files and active documentation.
+`eng/validate-product-contract.py` checks these values against the actual source files and active documentation. It also validates the canonical `RELEASES.md` history and rejects a return to root `RELEASE_NOTES_<version>.md` fragmentation.
+
+## Release-note policy
+
+For future releases, **do not create another `RELEASE_NOTES_<version>.md` file**.
+
+Instead:
+
+1. prepend a new detailed version section to `RELEASES.md`;
+2. leave all older version sections intact as historical snapshots;
+3. add a concise corresponding entry to `CHANGELOG.md`;
+4. update the machine-readable/platform version sources together;
+5. use the new section as the human-readable source for the release description.
+
+The `Unreleased` section in `RELEASES.md` can describe post-release `main` work without implying that those changes were retroactively included in the most recent published binaries.
 
 ## Release immutability
 
-Published tags/releases are treated as historical artifacts. A later development pass must not rewrite an older tag or silently replace an older release asset to make history appear cleaner.
+Published tags/releases are historical artifacts. A later development pass must not rewrite an older tag or silently replace an older release asset to make history appear cleaner.
 
 Examples:
 
@@ -25,7 +41,13 @@ Examples:
 - `v0.1.1` is the first public release that includes the four browser ZIP packages.
 - post-release maintenance on `main` does not move the `v0.1.1` tag.
 
-If a future build needs changed binaries, it should receive a new version/tag rather than mutating v0.1.1.
+If a future build needs changed binaries, it receives a new version/tag rather than mutating v0.1.1.
+
+## Historical release workflows
+
+Once a version has been published and verified, its version-specific workflow belongs under `.github/release-archive/`, outside `.github/workflows/`. This keeps the historical automation available for audit while preventing old publication workflows from remaining registered as active Actions indefinitely.
+
+A future release should get a new reviewed release workflow/trigger appropriate to that version. Its human-readable release text should come from the matching `RELEASES.md` section rather than a new version-specific notes file.
 
 ## Version update checklist
 
@@ -37,12 +59,12 @@ For a future version, update all of the following in one release-preparation cha
 4. Chrome/Edge/Opera/Firefox manifest versions;
 5. browser `store/listing.json` extension version;
 6. active README EN/HR current-release copy and download links;
-7. changelog and new release notes;
-8. version-specific release/security documentation;
+7. prepend the detailed release section to `RELEASES.md` and update `CHANGELOG.md`;
+8. version-specific release/security documentation where needed;
 9. CI gates that intentionally validate the release version;
-10. release workflow/trigger for the new tag.
+10. a reviewed release workflow/trigger for the new tag.
 
-Product Contract CI should remain green before merge.
+Product Contract CI plus applicable Windows, Android, browser and security gates should be green before merge/publication.
 
 ## Current v0.1.1 release assets
 
@@ -59,7 +81,7 @@ SNAPVERE-Opera.zip
 SNAPVERE-Firefox.zip
 ```
 
-The release pipeline hashes every file before publication, creates/verifies the release tag after validation, publishes only the approved asset names and verifies GitHub's published digests afterward.
+The release pipeline hashed every file before publication, created/verified the release tag after validation, published only the approved asset names and verified GitHub's published digests afterward.
 
 ## Platform signing/status rules
 
@@ -77,8 +99,10 @@ GitHub ZIP publication is separate from Chrome Web Store, Edge Add-ons, Opera Ad
 
 ## Historical documentation
 
-Historical `RELEASE_NOTES_*` files should preserve the facts of their own releases. Active product guides may reference only the current release, but historical notes are not “stale” simply because they contain an older version number.
+Older sections in [`RELEASES.md`](../RELEASES.md) preserve the facts of their own versions. A historical note is not “stale” merely because it contains an old shortcut, package shape, license, signing statement or feature boundary that later changed.
+
+The former version-specific `RELEASE_NOTES_*` files were consolidated to remove duplicated release-document maintenance. Published GitHub Release descriptions remain untouched.
 
 ## Release verification
 
-For the current release, use GitHub's release page and asset SHA-256 digest metadata. The v0.1.1 release workflow also verifies published asset digests against locally validated values before it completes successfully.
+For the current release, use GitHub's release page and asset SHA-256 digest metadata. The historical v0.1.1 release workflow verified published asset digests against locally validated values before completing successfully.
