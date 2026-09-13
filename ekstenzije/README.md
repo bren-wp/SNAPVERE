@@ -2,7 +2,7 @@
 
 Production browser-extension source and release packages for Google Chrome, Microsoft Edge, Opera and Mozilla Firefox.
 
-Browser extensions were developed after v0.1.0 and become official public GitHub Release assets starting with **SNAPVERE v0.1.1**. The historical v0.1.0 and the already published v0.1.1 release assets remain immutable; current `main` may add post-release QA/documentation hardening without moving those tags.
+Browser extensions were developed after v0.1.0 and become official public GitHub Release assets starting with **SNAPVERE v0.1.1**. The historical v0.1.0 and the already published v0.1.1 release assets remain immutable; current `main` may add post-release QA/documentation hardening without moving those tags. Detailed release history is maintained in [`../RELEASES.md`](../RELEASES.md).
 
 ## Version
 
@@ -138,7 +138,7 @@ This increases behavioral coverage of the background state machine without prete
 - deterministic store listing/promo graphics;
 - reproducible ZIP creation, package cleanliness and SHA-256 integrity.
 
-The already published `.github/workflows/release-0.1.1.yml` remains the historical release workflow for v0.1.1. Post-release hardening is validated by current CI and does not rewrite the published tag/assets.
+The already published v0.1.1 workflow is retained as historical audit source under `.github/release-archive/release-0.1.1.yml`; it is intentionally no longer registered as active publication automation. Post-release hardening is validated by current CI and does not rewrite the published tag/assets.
 
 Automated static/runtime-contract/package validation is not the same as exhaustive manual GUI testing on every browser build or web application.
 
@@ -154,4 +154,4 @@ Full-page capture uses controlled scrolling and viewport stitching. Results can 
 
 SNAPVERE restores the original scroll position and temporarily hidden floating elements in success/error paths and also uses a content-side watchdog. These safeguards reduce stale-page-state risk but cannot make every web application perfectly capturable.
 
-For the user-facing workflow see [`../docs/USER-GUIDE.md`](../docs/USER-GUIDE.md), and for troubleshooting see [`../docs/TROUBLESHOOTING.md`](../docs/TROUBLESHOOTING.md).
+For the user-facing workflow see [`../docs/USER-GUIDE.md`](../docs/USER-GUIDE.md), for troubleshooting see [`../docs/TROUBLESHOOTING.md`](../docs/TROUBLESHOOTING.md), and for the full historical release record see [`../RELEASES.md`](../RELEASES.md).
