@@ -2,7 +2,7 @@
 
 Native Android companion for SNAPVERE with the same local-first privacy model as the Windows application.
 
-Current release line: **0.1.1** (`versionCode 11`). Screen capture starts only after explicit user action and Android's MediaProjection consent.
+Current public release: **0.1.1** (`versionCode 11`). Screen capture starts only after explicit user action and Android's MediaProjection consent. The canonical cross-platform version/status contract is [`../product-version.json`](../product-version.json).
 
 ## Implemented application
 
@@ -31,7 +31,7 @@ versionCode 11
 versionName '0.1.1'
 ```
 
-0.1.1 preserves the hardened capture path established in 0.1.0 while moving the Android package into the new combined Windows/Android/browser release contract.
+`eng/validate-product-contract.py` additionally verifies this version against the Windows product version, all four browser manifests/store metadata and the active 0.1.1 documentation/release contract.
 
 ## Capture-path stability
 
@@ -58,13 +58,13 @@ gradle -p android --no-daemon clean lintDebug lintRelease testDebugUnitTest asse
 
 CI also validates the manifest privacy/service/version contract, SDK 36 / Build Tools availability, debug APK signature, ZIP alignment and SHA-256.
 
-For the 0.1.1 source line the CI artifact naming follows the versioned Android build produced from the same tracked source commit.
+Product Contract CI separately verifies Android EN/HR resource-key parity and prevents Android version drift from the Windows/browser release contract.
 
 ## Public v0.1.1 APK
 
 The public `SNAPVERE.apk` deliberately uses the validated CI/debug-signed APK path. No private production keystore is required or claimed.
 
-The release workflow still builds **both** debug and release variants and requires:
+The release workflow built **both** debug and release variants and required:
 
 - `lintDebug` and `lintRelease`;
 - JVM unit tests;
@@ -84,7 +84,7 @@ This package is installable but is **not** represented as Google Play/production
 
 ## Android source release asset
 
-The validated Git commit is archived with `git archive` and published as:
+The validated v0.1.1 Git commit was archived with `git archive` and published as:
 
 ```text
 SNAPVERE-Android-Source.zip
@@ -101,7 +101,7 @@ SNAPVERE.apk
 SNAPVERE-Android-Source.zip
 ```
 
-The complete release also contains Windows Setup/Portable and four browser-extension ZIPs. SHA-256 values are checked during artifact transfer, recomputed for all final assets and compared with GitHub's published asset digests.
+The complete release also contains Windows Setup/Portable and four browser-extension ZIPs. SHA-256 values were checked during artifact transfer, recomputed for all final assets and compared with GitHub's published asset digests.
 
 Historical v0.1.0 remains unchanged with its original four-asset contract.
 
@@ -115,6 +115,16 @@ External website/mail/legal destinations open only after explicit user action. S
 
 Android 0.1.1 is complete for the implemented full-screen MediaProjection workflow. Windows-style general top-level Window Capture and the desktop Region annotation editor are not represented as Android features.
 
-A green CI/release workflow proves the executed source/build/lint/unit/package/signature/digest automation. It is not exhaustive runtime coverage across every physical OEM device.
+A green CI workflow proves the executed source/build/lint/unit/package/signature automation. It is not exhaustive runtime coverage across every physical OEM device.
 
-See [`../docs/ANDROID.md`](../docs/ANDROID.md), [`../docs/hr/ANDROID.md`](../docs/hr/ANDROID.md) and [`../docs/SECURITY-PERFORMANCE-0.1.1.md`](../docs/SECURITY-PERFORMANCE-0.1.1.md).
+## User and support documentation
+
+- [Android architecture and QA](../docs/ANDROID.md)
+- [Croatian Android architecture and QA](../docs/hr/ANDROID.md)
+- [User Guide](../docs/USER-GUIDE.md)
+- [Troubleshooting](../docs/TROUBLESHOOTING.md)
+- [Privacy](../docs/PRIVACY.md)
+- [QA Matrix](../docs/QA-MATRIX.md)
+- [0.1.1 Security & Performance](../docs/SECURITY-PERFORMANCE-0.1.1.md)
+
+Support: **info@snapvere.com**
