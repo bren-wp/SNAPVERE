@@ -16,6 +16,10 @@ android {
         testInstrumentationRunner 'android.test.InstrumentationTestRunner'
     }
 
+    buildFeatures {
+        buildConfig true
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix '.debug'
