@@ -1,54 +1,58 @@
 # Installation and release packages
 
-## Public v0.1.0 release contract
+This guide describes the current public **SNAPVERE 0.1.1** packages. Official release: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.1
 
-A valid SNAPVERE **0.1.0** GitHub Release contains exactly four user-facing assets:
+## Public v0.1.1 release contract
+
+A valid v0.1.1 GitHub Release contains exactly eight SNAPVERE assets:
 
 ```text
 SNAPVERE-Setup.exe
 SNAPVERE-Portable.exe
 SNAPVERE.apk
 SNAPVERE-Android-Source.zip
+SNAPVERE-Chrome.zip
+SNAPVERE-Edge.zip
+SNAPVERE-Opera.zip
+SNAPVERE-Firefox.zip
 ```
 
-The two Windows hosts are universal x86/x64/ARM64 launchers. The public Android APK is the validated CI/debug-signed package produced from the same 0.1.0 Android source that also passes `lintRelease` and release-variant build validation. It is not represented as Google Play/production-signed. The Android source ZIP is generated from the exact validated Git tree.
-
-Historical releases keep their historical asset contracts and are not rewritten.
+Historical releases keep their own historical asset contracts. In particular, v0.1.0 remains the original four-asset Windows/Android release and is not retroactively modified.
 
 ## Windows architecture selection
 
-`SNAPVERE-Setup.exe` and `SNAPVERE-Portable.exe` embed native application payloads for:
+`SNAPVERE-Setup.exe` and `SNAPVERE-Portable.exe` are universal public hosts containing native application payloads for:
 
 - x86 / x32 / 32-bit Windows;
 - x64 / AMD64 Windows;
 - ARM64 Windows.
 
-The host resolves the running Windows architecture and selects the compatible native payload automatically. Users do not choose a separate architecture download.
+The host resolves the running Windows architecture and selects the compatible payload automatically. Users do not need separate architecture downloads.
 
-The application target remains Windows 10 version 1809 / build 17763 or later. WGC-dependent capture paths require Windows 10 version 2004 / build 19041 or later.
+Minimum application target: Windows 10 1809 / build 17763. Windows.Graphics.Capture-dependent paths require Windows 10 2004 / build 19041 or later.
 
-## Tray-first startup
+## Windows tray-first startup
 
-Normal Windows launch initializes the capture coordinator, global hotkeys and notification-area icon without opening a launcher dashboard.
+Normal launch initializes capture coordination, hotkeys and the notification-area icon without opening a permanent dashboard.
 
 - left-click tray → Region Capture;
 - right-click tray → quick actions;
-- Print Screen → Region Capture when available;
+- **Print Screen** → Region Capture when available;
 - `Ctrl+Shift+1` → Region Capture fallback;
 - `Ctrl+Shift+2` → Window Capture;
 - `Ctrl+Shift+3` → Screen Capture.
 
-Options, Language, Recent Captures and About are created only when requested.
+Settings, language, recent captures and About are opened only when requested.
 
 ## Windows Setup
 
-Default install directory:
+Download: https://github.com/bren-wp/SNAPVERE/releases/download/v0.1.1/SNAPVERE-Setup.exe
+
+Default per-user installation directory:
 
 ```text
 %LOCALAPPDATA%\Programs\SNAPVERE
 ```
-
-The default install is per-user and does not require Program Files elevation.
 
 Interactive Setup requires acceptance of the **SNAPVERE Commercial Software License Agreement**. Optional defaults are opt-out rather than forced:
 
@@ -70,9 +74,9 @@ The same binary owns install/update/remove.
 SNAPVERE-Setup.exe --silent --accept-license
 ```
 
-Silent install without `--accept-license` exits with code `2`.
+Silent installation without `--accept-license` exits with code `2`.
 
-## Start with Windows
+### Start with Windows
 
 Per-user startup registration:
 
@@ -80,9 +84,9 @@ Per-user startup registration:
 HKCU\Software\Microsoft\Windows\CurrentVersion\Run\SNAPVERE
 ```
 
-It points to the stable SNAPVERE launcher. Portable mode uses the original Portable launcher path rather than a versioned child inside the extraction cache.
+It points to the stable SNAPVERE launcher.
 
-## Same-Setup uninstall
+### Uninstall with the same Setup binary
 
 Windows Installed apps invokes:
 
@@ -96,11 +100,9 @@ Quiet removal:
 SNAPVERE-Setup.exe --uninstall --silent
 ```
 
-SNAPVERE installs no separate `uninstall.exe`, `uninstaller.exe` or `unins*.exe`.
+SNAPVERE does not install a separate `uninstall.exe`, `uninstaller.exe` or `unins*.exe`.
 
-Before recursive install-directory deletion, Setup validates the SNAPVERE installation marker and expected files. Uninstall removes app files, Setup-created shortcuts, Installed apps metadata and the startup registration only when it belongs to the validated installation.
-
-User screenshots remain outside the installation under:
+Before recursive installation-directory removal, Setup validates the SNAPVERE installation marker and expected files. User captures remain outside the installation directory under:
 
 ```text
 Pictures\SNAPVERE
@@ -108,79 +110,126 @@ Pictures\SNAPVERE
 
 ## Windows Portable
 
-`SNAPVERE-Portable.exe` embeds all supported native payloads and extracts only the compatible one into the controlled Portable cache.
+Download: https://github.com/bren-wp/SNAPVERE/releases/download/v0.1.1/SNAPVERE-Portable.exe
 
-Portable protections include:
+The Portable host embeds all supported native payloads and extracts only the compatible architecture into a controlled cache. Protections include:
 
 - no Installed apps registration;
 - no forced Start menu/Desktop shortcuts;
 - self-contained application payload;
 - archive traversal/absolute-target rejection;
 - bounded extraction and duplicate-destination rejection;
-- trusted architecture-specific embedded SHA-256 integrity manifest;
-- validation of expected paths, lengths and hashes before cached execution;
+- architecture-specific SHA-256 integrity manifests;
+- path/length/hash validation before cached execution;
 - reparse-point and unexpected-file rejection;
-- transactional rebuild/revalidation of invalid reusable cache;
+- transactional invalid-cache rebuild/revalidation;
 - version/architecture cache reuse only after validation;
 - launcher-preparation mutex and local startup diagnostics.
 
-## Android APK installation
+Portable startup registration, when explicitly enabled by the user, points to the original Portable launcher rather than a versioned child in the extraction cache.
 
-`SNAPVERE.apk` targets Android 10 / API 29 or newer. In v0.1.0 the public file is the validated CI/debug-signed APK. The same source also passes debug/release lint, JVM tests and release-variant build validation before publication. The public APK itself is accepted only after `apksigner` signature verification, `zipalign` verification and SHA-256 transfer/final-asset checks.
+## Android APK
 
-The Android package intentionally requests no `INTERNET` permission. Screen capture requires Android's system MediaProjection approval for every capture session.
+Download: https://github.com/bren-wp/SNAPVERE/releases/download/v0.1.1/SNAPVERE.apk
 
-When installing outside an app store, Android may require the user to explicitly allow installation from the chosen package/file source. SNAPVERE does not attempt to bypass Android package-installation policy.
+Requirements and identity:
 
-The v0.1.0 APK does **not** establish a stable production/Google Play signing lineage. If a future Android release switches to a separately managed production signing identity, Android may require uninstall/reinstall rather than accepting that package as an in-place update. That transition must be documented explicitly instead of assuming signature compatibility.
+- Android 10 / API 29 or later;
+- `versionName 0.1.1` / `versionCode 11`;
+- native Java 17 application;
+- no `android.permission.INTERNET`;
+- fresh Android MediaProjection approval for each capture.
+
+The public v0.1.1 APK uses the validated **CI/debug signing identity**. It is installable but is not represented as Google Play/production-signed. A future release using a different production signing identity may require uninstall/reinstall rather than an in-place update.
+
+When installing outside an app store, Android can require explicit permission to install from the chosen source. SNAPVERE does not attempt to bypass Android package-installation policy.
+
+The release gate verifies APK signature, ZIP alignment and SHA-256 integrity.
 
 ## Android source package
 
-`SNAPVERE-Android-Source.zip` is generated from the validated release commit's tracked `android/` tree with `git archive`.
+Download: https://github.com/bren-wp/SNAPVERE/releases/download/v0.1.1/SNAPVERE-Android-Source.zip
 
-The release gate verifies expected Gradle, manifest and MainActivity paths and rejects generated `build/` / `.gradle/` cache content. The archive does not contain private signing material.
+The source ZIP is generated from the validated tracked `android/` tree with `git archive`. The release gate checks expected Gradle, manifest and application source paths and rejects generated `build/` / `.gradle/` cache content. Private signing material is not part of the archive.
+
+## Chrome manual installation
+
+Package: https://github.com/bren-wp/SNAPVERE/releases/download/v0.1.1/SNAPVERE-Chrome.zip
+
+1. Extract the ZIP to a stable local directory.
+2. Open `chrome://extensions`.
+3. Enable **Developer mode**.
+4. Choose **Load unpacked**.
+5. Select the extracted directory containing `manifest.json`.
+
+## Microsoft Edge manual installation
+
+Package: https://github.com/bren-wp/SNAPVERE/releases/download/v0.1.1/SNAPVERE-Edge.zip
+
+1. Extract the ZIP.
+2. Open `edge://extensions`.
+3. Enable **Developer mode**.
+4. Choose **Load unpacked**.
+5. Select the extracted extension directory.
+
+## Opera manual installation
+
+Package: https://github.com/bren-wp/SNAPVERE/releases/download/v0.1.1/SNAPVERE-Opera.zip
+
+1. Extract the ZIP.
+2. Open `opera://extensions`.
+3. Enable developer mode if required by the current Opera UI.
+4. Choose the unpacked-extension load option.
+5. Select the extracted extension directory.
+
+## Firefox temporary/development installation
+
+Package: https://github.com/bren-wp/SNAPVERE/releases/download/v0.1.1/SNAPVERE-Firefox.zip
+
+For development/testing, extract the ZIP, open `about:debugging`, choose **This Firefox**, select **Load Temporary Add-on**, and choose the extracted `manifest.json`.
+
+Firefox store distribution has separate AMO review/signing requirements. The GitHub ZIP is not represented as AMO-signed or store-approved.
+
+## Browser store status
+
+The four browser ZIPs are official v0.1.1 GitHub release assets, but GitHub publication does **not** imply publication or approval in Chrome Web Store, Edge Add-ons, Opera Add-ons or Mozilla Add-ons. Those channels require authenticated publisher accounts and external review/signing.
 
 ## Release validation gate
 
-Before `v0.1.0` publication, automation requires:
+Before v0.1.1 publication, automation required:
 
 ### Windows
 
-1. audited x64 restore/build/tests;
-2. x86 build;
-3. ARM64 cross-build;
-4. root `Snapvere.exe` in all three native payloads;
-5. valid architecture integrity manifests;
-6. six real rendered WinUI surfaces in the normal CI path for the release commit;
-7. universal Setup and Portable generation;
-8. x64 and x86 Setup+Portable lifecycle and tray-first probes;
-9. uninstall cleanup while preserving user captures.
+1. audited restore/build/test;
+2. x86/x64/ARM64 payload generation;
+3. architecture integrity manifests;
+4. native payload validation;
+5. universal Setup/Portable generation;
+6. exact public package checks;
+7. x64/x86 Setup+Portable lifecycle and tray-first probes.
 
 ### Android
 
-1. privacy/service/version manifest contract;
-2. `lintDebug` and `lintRelease` with warnings as errors;
+1. privacy/service/version contract;
+2. `lintDebug` and `lintRelease`;
 3. JVM unit tests;
 4. debug and release-variant builds;
-5. validated CI/debug APK signature;
-6. ZIP alignment and APK-signature verification;
-7. structurally valid Android source ZIP;
-8. SHA-256 transfer verification from Android job to final release job.
+5. APK signature and ZIP-alignment verification;
+6. source ZIP validation;
+7. SHA-256 transfer validation.
+
+### Browser extensions
+
+1. MV3 manifest/permission/source validation;
+2. cross-browser parity validation;
+3. EN/HR locale checks;
+4. store metadata/privacy validation;
+5. reproducible two-pass packaging;
+6. exact four ZIP package names and SHA-256 checks.
 
 ### Publication
 
-The final release directory must contain exactly:
-
-```text
-SNAPVERE-Android-Source.zip
-SNAPVERE-Portable.exe
-SNAPVERE-Setup.exe
-SNAPVERE.apk
-```
-
-Only then may the immutable `v0.1.0` tag be created. After publication GitHub's SHA-256 asset digest for every file must match the locally validated digest.
-
-ARM64 Windows evidence on the hosted x64 runner is cross-build/package validation, not physical ARM64 runtime evidence. Android automation is not a claim of exhaustive testing across every physical OEM device.
+The final release directory had to contain exactly the eight files listed at the top of this guide. The release workflow then created/verified `v0.1.1`, published the GitHub Release and compared GitHub's published digest for every asset with its locally validated SHA-256 value.
 
 ## Diagnostics
 
@@ -198,8 +247,12 @@ Windows preferences:
 
 Screenshot pixels are not intentionally written to the startup log.
 
-## License and product identity
+## Next steps
 
-SNAPVERE 0.0.7 and later use the commercial license in the repository root `LICENSE`. Product: **SNAPVERE**. Developer/publisher: **Brendigo**. Product site: **https://snapvere.com**. Developer site: **https://brendigo.com**.
+- [User Guide](USER-GUIDE.md)
+- [Troubleshooting](TROUBLESHOOTING.md)
+- [Privacy](PRIVACY.md)
+- [QA Matrix](QA-MATRIX.md)
+- [Versioning & Releases](VERSIONING-RELEASES.md)
 
-Historical releases remain under the terms shipped with those versions.
+SNAPVERE is developed and published by **Brendigo**. Product site: https://snapvere.com · Support: **info@snapvere.com**.
