@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
@@ -48,6 +49,33 @@ public sealed class EmbeddedPayloadTests
             {
                 File.Delete(escapedPath);
             }
+        }
+    }
+
+    [Fact]
+    public void ExtractZipSafely_RejectsReparsePointInsideDestination()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"snapvere-payload-{Guid.NewGuid():N}");
+        var outsideDirectory = Path.Combine(Path.GetTempPath(), $"snapvere-outside-{Guid.NewGuid():N}");
+        var redirectDirectory = Path.Combine(directory, "redirect");
+        var escapedPath = Path.Combine(outsideDirectory, "escaped.txt");
+
+        try
+        {
+            Directory.CreateDirectory(directory);
+            Directory.CreateDirectory(outsideDirectory);
+            CreateDirectoryReparsePoint(redirectDirectory, outsideDirectory);
+
+            using var payload = BuildZip(("redirect/escaped.txt", "blocked"));
+
+            Assert.Throws<InvalidDataException>(() => EmbeddedPayload.ExtractZipSafely(payload, directory));
+            Assert.False(File.Exists(escapedPath));
+        }
+        finally
+        {
+            DeleteDirectoryLinkBestEffort(redirectDirectory);
+            EmbeddedPayload.DeleteDirectoryBestEffort(directory);
+            EmbeddedPayload.DeleteDirectoryBestEffort(outsideDirectory);
         }
     }
 
@@ -257,5 +285,55 @@ public sealed class EmbeddedPayloadTests
             Files = files
         });
         return new MemoryStream(Encoding.UTF8.GetBytes(json));
+    }
+
+    private static void CreateDirectoryReparsePoint(string linkPath, string targetPath)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            Directory.CreateSymbolicLink(linkPath, targetPath);
+            return;
+        }
+
+        var startInfo = new ProcessStartInfo("cmd.exe")
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+        startInfo.ArgumentList.Add("/d");
+        startInfo.ArgumentList.Add("/c");
+        startInfo.ArgumentList.Add("mklink");
+        startInfo.ArgumentList.Add("/J");
+        startInfo.ArgumentList.Add(linkPath);
+        startInfo.ArgumentList.Add(targetPath);
+
+        using var process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Could not start cmd.exe to create the test junction.");
+        var standardOutput = process.StandardOutput.ReadToEnd();
+        var standardError = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+
+        Assert.True(
+            process.ExitCode == 0,
+            $"Could not create the test directory junction. Exit {process.ExitCode}. {standardOutput} {standardError}");
+    }
+
+    private static void DeleteDirectoryLinkBestEffort(string path)
+    {
+        try
+        {
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path);
+            }
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
     }
 }

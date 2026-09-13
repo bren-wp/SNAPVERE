@@ -21,6 +21,7 @@ public static class EmbeddedPayload
 
         var root = Path.GetFullPath(destinationRoot);
         Directory.CreateDirectory(root);
+        EnsurePathDoesNotTraverseReparsePoints(root, root);
         var rootWithSeparator = EnsureTrailingSeparator(root);
 
         using var archive = new ZipArchive(zipStream, ZipArchiveMode.Read, leaveOpen: true);
@@ -48,7 +49,10 @@ public static class EmbeddedPayload
 
             if (IsDirectoryEntry(entry.FullName))
             {
+                var parentDirectory = Path.GetDirectoryName(targetPath) ?? root;
+                EnsurePathDoesNotTraverseReparsePoints(root, parentDirectory);
                 Directory.CreateDirectory(targetPath);
+                EnsurePathDoesNotTraverseReparsePoints(root, targetPath);
                 continue;
             }
 
@@ -60,7 +64,10 @@ public static class EmbeddedPayload
 
             var targetDirectory = Path.GetDirectoryName(targetPath)
                 ?? throw new InvalidDataException("A SNAPVERE package entry has no parent directory.");
+            EnsurePathDoesNotTraverseReparsePoints(root, targetDirectory);
             Directory.CreateDirectory(targetDirectory);
+            EnsurePathDoesNotTraverseReparsePoints(root, targetDirectory);
+            EnsurePathDoesNotTraverseReparsePoints(root, targetPath);
 
             // Keep the staging component bounded independently of the payload
             // filename. A valid long NTFS filename must not become invalid just
@@ -83,6 +90,8 @@ public static class EmbeddedPayload
                     destination.Flush(flushToDisk: true);
                 }
 
+                EnsurePathDoesNotTraverseReparsePoints(root, targetDirectory);
+                EnsurePathDoesNotTraverseReparsePoints(root, targetPath);
                 File.Move(temporaryPath, targetPath, overwrite: true);
             }
             finally
@@ -317,6 +326,61 @@ public static class EmbeddedPayload
         }
 
         return canonicalRelative;
+    }
+
+    private static void EnsurePathDoesNotTraverseReparsePoints(string root, string path)
+    {
+        var canonicalRoot = Path.GetFullPath(root);
+        var canonicalPath = Path.GetFullPath(path);
+        if (!PathBoundary.IsSameOrDescendant(canonicalPath, canonicalRoot))
+        {
+            throw new InvalidDataException("A SNAPVERE payload path escapes its destination root.");
+        }
+
+        EnsureExistingEntryIsNotReparsePoint(canonicalRoot);
+
+        var relativePath = Path.GetRelativePath(canonicalRoot, canonicalPath);
+        if (string.Equals(relativePath, ".", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var currentPath = canonicalRoot;
+        foreach (var segment in relativePath.Split(
+            new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar },
+            StringSplitOptions.RemoveEmptyEntries))
+        {
+            currentPath = Path.Combine(currentPath, segment);
+            if (!Directory.Exists(currentPath) && !File.Exists(currentPath))
+            {
+                break;
+            }
+
+            EnsureExistingEntryIsNotReparsePoint(currentPath);
+        }
+    }
+
+    private static void EnsureExistingEntryIsNotReparsePoint(string path)
+    {
+        FileAttributes attributes;
+        try
+        {
+            attributes = File.GetAttributes(path);
+        }
+        catch (FileNotFoundException)
+        {
+            return;
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return;
+        }
+
+        if ((attributes & FileAttributes.ReparsePoint) != 0)
+        {
+            throw new InvalidDataException(
+                "The SNAPVERE package cannot extract through a symbolic link or reparse point.");
+        }
     }
 
     private static bool IsSha256Hex(string? value)
