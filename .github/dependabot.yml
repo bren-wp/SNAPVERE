@@ -9,11 +9,20 @@ updates:
       timezone: "Etc/UTC"
     open-pull-requests-limit: 5
 
+  - package-ecosystem: "gradle"
+    directory: "/android"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:10"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
-      time: "04:15"
+      time: "04:20"
       timezone: "Etc/UTC"
     open-pull-requests-limit: 3
