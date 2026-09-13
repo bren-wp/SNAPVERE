@@ -1,6 +1,6 @@
 # Browser Extensions
 
-SNAPVERE 0.1.1 includes official public browser-extension packages for Chrome, Edge, Opera and Firefox under [`ekstenzije/`](../ekstenzije/). The browser code was developed after v0.1.0; v0.1.1 is the first release that promotes it into the public GitHub Release contract.
+SNAPVERE 0.1.1 includes official public browser-extension packages for Chrome, Edge, Opera and Firefox under [`ekstenzije/`](../ekstenzije/). The browser code was developed after v0.1.0; v0.1.1 is the first release that promotes it into the public GitHub Release contract. Detailed release history is maintained in [`RELEASES.md`](../RELEASES.md).
 
 ## Release version and assets
 
@@ -83,7 +83,7 @@ This is behavioral source-runtime evidence for the shared background state machi
 
 `ekstenzije/tools/package-extensions.sh` creates the four release ZIP files from staged source. It normalizes file/directory timestamps to the portable ZIP epoch, sorts archive paths and uses `zip -X` to remove nonessential host metadata. `SHA256SUMS.txt` is generated next to the packages.
 
-CI and the 0.1.1 release workflow execute packaging twice in separate output directories. Corresponding ZIPs and checksum manifests must be byte-identical before publication.
+Browser CI performs two independent packaging passes and requires corresponding ZIPs plus checksum manifests to be byte-identical. The historical v0.1.1 publication workflow applied the same reproducibility requirement before publishing the release.
 
 ## Cross-browser parity controls
 
@@ -112,10 +112,10 @@ Store publication itself is external. Authenticated publisher access, store-side
 
 ## Release and QA boundary
 
-`.github/workflows/extensions-ci.yml` now provides syntax, manifest, permission, locale, cross-browser parity, source-policy, behavioral background smoke, store-readiness, generated-asset, deterministic packaging, SHA-256 and package-content validation.
+`.github/workflows/extensions-ci.yml` provides syntax, manifest, permission, locale, cross-browser parity, source-policy, behavioral background smoke, store-readiness, generated-asset, deterministic packaging, SHA-256 and package-content validation.
 
-`.github/workflows/release-0.1.1.yml` is the immutable release workflow record for the already published v0.1.1 release. Post-release CI hardening does not rewrite the v0.1.1 tag/assets.
+The already-published v0.1.1 publication workflow is retained as historical audit source at `.github/release-archive/release-0.1.1.yml`. It is intentionally outside `.github/workflows`, so it is not registered as current publication automation. Moving that source file does not modify the published v0.1.1 tag, release description or assets.
 
 A green workflow is automated source/runtime-contract/package evidence; it is not a claim that every browser build/web application has been manually exercised or that external stores have approved the extension.
 
-See [`ekstenzije/README.md`](../ekstenzije/README.md) for development loading, packaging, privacy, store-submission material and known limitations.
+See [`ekstenzije/README.md`](../ekstenzije/README.md) for development loading, packaging, privacy, store-submission material and known limitations, and [`RELEASES.md`](../RELEASES.md) for the complete historical release record.
