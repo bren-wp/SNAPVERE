@@ -4,7 +4,7 @@ SNAPVERE 0.1.1 uključuje službene javne browser-extension pakete za Chrome, Ed
 
 ## Release verzija i asseti
 
-Sva četiri manifesta i kanonski store listing koriste verziju **0.1.1**.
+Sva četiri manifesta i canonical store listing koriste verziju **0.1.1**.
 
 v0.1.1 GitHub Release sadrži:
 
@@ -15,7 +15,7 @@ SNAPVERE-Opera.zip
 SNAPVERE-Firefox.zip
 ```
 
-Ta četiri browser paketa dio su novog osmo-assetnog v0.1.1 release ugovora. Povijesni v0.1.0 ostaje nepromijenjen sa svojim originalnim Windows/Android assetima.
+Ta četiri browser paketa dio su osmo-assetnog v0.1.1 release ugovora. Povijesni v0.1.0 ostaje nepromijenjen sa svojim originalnim Windows/Android assetima.
 
 ## Arhitektura
 
@@ -66,6 +66,19 @@ Javna politika privatnosti je [`ekstenzije/PRIVACY.md`](../../ekstenzije/PRIVACY
 
 English je default/fallback. Svaki distributivni browser paket sadrži English i Hrvatski locale katalog.
 
+## Behavioral background smoke testovi
+
+`ekstenzije/tools/smoke-test-background.mjs` izvršava stvarni `background.js` svake varijante u izoliranom Node VM-u s determinističkim mockovima browser API-ja koje background runtime koristi. CI za Chrome, Edge, Operu i Firefox provjerava da:
+
+- visible capture dolazi do downloads API-ja s PNG data URL-om;
+- lokalni `saveAs` setting stvarno utječe na download;
+- nedopušteni znakovi u filename prefixu budu sanitizirani;
+- active capture lock bude uklonjen nakon uspješnog capturea;
+- paralelni capture bude odbijen s `captureBusy` i bez pokretanja downloada;
+- nepoznata runtime poruka završi kontroliranim `captureFailed` odgovorom.
+
+To je behavioral source-runtime dokaz za zajednički background state machine. Namjerno se **ne predstavlja** kao ručno GUI testiranje ni dokaz da svaki browser/web page renderira identično.
+
 ## Reproducibilno pakiranje
 
 `ekstenzije/tools/package-extensions.sh` izrađuje četiri release ZIP-a iz staged sourcea. Normalizira timestampove datoteka/mapa na prijenosni ZIP epoch, sortira putanje i koristi `zip -X` za uklanjanje nepotrebnih host metapodataka. Uz pakete se generira `SHA256SUMS.txt`.
@@ -87,7 +100,7 @@ Ove provjere nadopunjuju validator permissiona, localea, source-policy pravila i
 
 ## Spremnost za browser storeove
 
-`ekstenzije/store/listing.json` je kanonski strojno čitljiv store ugovor s EN/HR listing tekstom, single-purpose izjavom, obrazloženjem permissiona, local-first privacy/data-practice izjavama, točnim ZIP imenima i referencama na store assete.
+`ekstenzije/store/listing.json` je canonical strojno čitljivi store ugovor s EN/HR listing tekstom, single-purpose izjavom, obrazloženjem permissiona, local-first privacy/data-practice izjavama, točnim ZIP imenima i referencama na store assete.
 
 `ekstenzije/store/reviewer-notes.md` daje vanjskim reviewerima deterministične funkcionalne korake i dokumentira protected-page ponašanje, upotrebu permissiona, network/privacy ponašanje, full-page limite i Firefox source/signing granicu.
 
@@ -99,10 +112,10 @@ Sama store objava je vanjski proces. Autentificirani publisher pristup, store-si
 
 ## Release i QA granica
 
-`.github/workflows/extensions-ci.yml` provjerava syntax, manifest, permission, locale, cross-browser parity, source-policy, store-readiness, generirane assete, determinističko pakiranje, SHA-256 i sadržaj paketa.
+`.github/workflows/extensions-ci.yml` sada provjerava syntax, manifest, permission, locale, cross-browser parity, source-policy, behavioral background smoke, store-readiness, generirane assete, determinističko pakiranje, SHA-256 i sadržaj paketa.
 
-`.github/workflows/release-0.1.1.yml` ponavlja browser validaciju i reproducibilno pakiranje na točnom release commitu, prenosi četiri ZIP-a u finalni release job, ponovno računa hashove i nakon objave uspoređuje GitHub digeste.
+`.github/workflows/release-0.1.1.yml` ostaje nepromjenjivi release-workflow zapis već objavljenog v0.1.1. Post-release CI hardening ne prepisuje v0.1.1 tag ni assete.
 
-Zeleni workflow je automatizirani static/package dokaz; nije tvrdnja da je svaki browser build/web aplikacija ručno testirana niti da je vanjski store odobrio ekstenziju.
+Zeleni workflow je automatizirani source/runtime-contract/package dokaz; nije tvrdnja da je svaki browser build/web aplikacija ručno testirana niti da je vanjski store odobrio ekstenziju.
 
 Za development load, pakiranje, privatnost, store-submission materijal i poznata ograničenja vidi [`ekstenzije/README.md`](../../ekstenzije/README.md).
