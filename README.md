@@ -13,7 +13,7 @@
 Capture a precise region and annotate it on Windows. Grab a one-shot screen on Android. Save a visible area, selected region or bounded full page from your browser. Your core capture workflow stays local to your device.
 
 **Current release: SNAPVERE 0.1.1**  
-[Download v0.1.1](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.1) · [Hrvatski README](README.hr.md) · [User Guide](docs/USER-GUIDE.md) · [Official site](https://snapvere.com) · [Support](mailto:info@snapvere.com)
+[Download v0.1.1](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.1) · [Release history](RELEASES.md) · [Hrvatski README](README.hr.md) · [User Guide](docs/USER-GUIDE.md) · [Official site](https://snapvere.com) · [Support](mailto:info@snapvere.com)
 
 ### Get SNAPVERE
 
@@ -201,13 +201,14 @@ A software project cannot honestly promise that no defect will ever exist. SNAPV
 - EN/HR locale parity;
 - icon/hash/dimension checks;
 - source syntax and forbidden-pattern policy;
+- behavioral background-runtime smoke tests for all four variants;
 - deterministic store graphics;
 - store metadata/privacy validation;
 - two independent ZIP builds that must match byte-for-byte.
 
 ### Product Contract CI
 
-[`product-version.json`](product-version.json) is the canonical active version contract. A dedicated validator checks Windows, Android and browser version alignment, Android EN/HR resource parity, active documentation, exact release asset names and relative Markdown links.
+[`product-version.json`](product-version.json) is the canonical active version contract. A dedicated validator checks Windows, Android and browser version alignment, Android EN/HR resource parity, the canonical [`RELEASES.md`](RELEASES.md) history, active documentation, exact release asset names and relative Markdown links.
 
 See the full [QA Matrix](docs/QA-MATRIX.md) and [Product Status](docs/PRODUCT-STATUS.md).
 
@@ -228,11 +229,11 @@ SNAPVERE-Opera.zip
 SNAPVERE-Firefox.zip
 ```
 
-The release workflow builds/validates the platform payloads, computes SHA-256 digests, validates Windows runtime/package contracts, creates/verifies the release tag, publishes the approved files and then compares the published GitHub digest of every asset with the locally validated value.
+The historical v0.1.1 release workflow built/validated the platform payloads, computed SHA-256 digests, validated Windows runtime/package contracts, created/verified the release tag, published the approved files and then compared the published GitHub digest of every asset with the locally validated value. The workflow is archived after publication rather than left registered as active release automation.
 
 Historical releases stay historical: **v0.1.0 is not rewritten or retroactively given browser packages.**
 
-[Release Notes 0.1.1](RELEASE_NOTES_0.1.1.md) · [Release Contract](docs/RELEASE-0.1.1.md) · [Versioning & Releases](docs/VERSIONING-RELEASES.md)
+[Complete Release History](RELEASES.md) · [Release Contract](docs/RELEASE-0.1.1.md) · [Versioning & Releases](docs/VERSIONING-RELEASES.md)
 
 ---
 
@@ -258,6 +259,7 @@ Recommended reading:
 - [Android](docs/ANDROID.md)
 - [Browser Extensions](docs/BROWSER-EXTENSIONS.md)
 - [Security & Performance 0.1.1](docs/SECURITY-PERFORMANCE-0.1.1.md)
+- [Complete Release History](RELEASES.md)
 - [Versioning & Releases](docs/VERSIONING-RELEASES.md)
 
 ---
