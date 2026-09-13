@@ -3,34 +3,8 @@ name: Product Contract CI
 on:
   push:
     branches: [main]
-    paths:
-      - 'product-version.json'
-      - 'Directory.Build.props'
-      - 'README.md'
-      - 'README.hr.md'
-      - 'SECURITY.md'
-      - 'CONTRIBUTING.md'
-      - 'RELEASE_NOTES_0.1.1.md'
-      - 'docs/**'
-      - 'android/**'
-      - 'ekstenzije/**'
-      - 'eng/validate-product-contract.py'
-      - '.github/workflows/product-contract-ci.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'product-version.json'
-      - 'Directory.Build.props'
-      - 'README.md'
-      - 'README.hr.md'
-      - 'SECURITY.md'
-      - 'CONTRIBUTING.md'
-      - 'RELEASE_NOTES_0.1.1.md'
-      - 'docs/**'
-      - 'android/**'
-      - 'ekstenzije/**'
-      - 'eng/validate-product-contract.py'
-      - '.github/workflows/product-contract-ci.yml'
 
 permissions:
   contents: read
