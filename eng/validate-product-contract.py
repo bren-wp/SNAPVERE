@@ -193,6 +193,8 @@ def main() -> int:
         ROOT / "docs" / "hr" / "ANDROID.md",
         ROOT / "docs" / "BROWSER-EXTENSIONS.md",
         ROOT / "docs" / "hr" / "BROWSER-EXTENSIONS.md",
+        ROOT / "docs" / "SETTINGS.md",
+        ROOT / "docs" / "hr" / "SETTINGS.md",
         ROOT / "docs" / "PRODUCT-STATUS.md",
         ROOT / "docs" / "hr" / "PRODUCT-STATUS.md",
         ROOT / "docs" / "QA-MATRIX.md",
