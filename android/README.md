@@ -2,7 +2,7 @@
 
 Native Android companion for SNAPVERE with the same local-first privacy model as the Windows application.
 
-Current public release: **0.1.1** (`versionCode 11`). Screen capture starts only after explicit user action and Android's MediaProjection consent. The canonical cross-platform version/status contract is [`../product-version.json`](../product-version.json).
+Current public release: **0.1.1** (`versionCode 11`). Screen capture starts only after explicit user action and Android's MediaProjection consent. The canonical cross-platform version/status contract is [`../product-version.json`](../product-version.json), and detailed release history is maintained in [`../RELEASES.md`](../RELEASES.md).
 
 ## Implemented application
 
@@ -125,6 +125,7 @@ A green CI workflow proves the executed source/build/lint/unit/package/signature
 - [Troubleshooting](../docs/TROUBLESHOOTING.md)
 - [Privacy](../docs/PRIVACY.md)
 - [QA Matrix](../docs/QA-MATRIX.md)
+- [Complete Release History](../RELEASES.md)
 - [0.1.1 Security & Performance](../docs/SECURITY-PERFORMANCE-0.1.1.md)
 
 Support: **info@snapvere.com**
