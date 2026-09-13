@@ -2,7 +2,7 @@
 
 ## Status
 
-The current post-v0.0.8 `main` line provides a real secondary **Options / Preferences** surface opened explicitly from the tray. It never reintroduces the former Capture Center as a normal startup window.
+The current public **SNAPVERE 0.1.1** line provides a real secondary **Options / Preferences** surface opened explicitly from the tray. It never reintroduces the former Capture Center as a normal startup window.
 
 Only implemented settings are shown. Placeholder toggles are intentionally absent.
 
