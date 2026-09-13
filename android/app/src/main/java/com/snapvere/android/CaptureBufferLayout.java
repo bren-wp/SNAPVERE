@@ -8,19 +8,6 @@ final class CaptureBufferLayout {
     private CaptureBufferLayout() {
     }
 
-    static int paddedWidth(int width, int pixelStride, int rowStride) {
-        validateRowLayout(width, pixelStride, rowStride);
-
-        long minimumRowBytes = (long) width * pixelStride;
-        int rowPadding = rowStride - (int) minimumRowBytes;
-        int extraPixels = rowPadding / pixelStride;
-        try {
-            return Math.addExact(width, extraPixels);
-        } catch (ArithmeticException exception) {
-            throw new IllegalArgumentException("Padded capture width exceeds the supported bitmap range.", exception);
-        }
-    }
-
     static byte[] compactVisibleRgba(
         ByteBuffer source,
         int width,
