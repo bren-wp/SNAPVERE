@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 korisnički vodič
+# SNAPVERE 0.1.2 korisnički vodič
 
 SNAPVERE je lokalno usmjeren alat za snimke zaslona na Windowsu i u modernim preglednicima.
 
