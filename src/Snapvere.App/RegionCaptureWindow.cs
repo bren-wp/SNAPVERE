@@ -860,8 +860,14 @@ public sealed class RegionCaptureWindow : Window
             using var png = new MemoryStream();
             await _pngEncoder.EncodeAsync(frame, png);
 
+            if (!png.TryGetBuffer(out var pngBuffer) || pngBuffer.Array is null)
+            {
+                throw new InvalidOperationException("SNAPVERE could not access the encoded PNG buffer.");
+            }
+
             using var randomAccessStream = new InMemoryRandomAccessStream();
-            await randomAccessStream.WriteAsync(png.ToArray().AsBuffer());
+            await randomAccessStream.WriteAsync(
+                pngBuffer.Array.AsBuffer(pngBuffer.Offset, pngBuffer.Count));
             randomAccessStream.Seek(0);
 
             var package = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
@@ -1064,9 +1070,9 @@ public sealed class RegionCaptureWindow : Window
 
         if (_annotationInProgress && _activeAnnotationTool is not null && _draftPoints.Count > 0)
         {
-            var points = _draftPoints.ToArray();
+            IReadOnlyList<CaptureAnnotationPoint> points = _draftPoints;
             if (_activeAnnotationTool is not (CaptureAnnotationKind.Pen or CaptureAnnotationKind.Highlight) &&
-                points.Length == 1)
+                points.Count == 1)
             {
                 points = [points[0], points[0]];
             }
@@ -1473,19 +1479,24 @@ public sealed class RegionCaptureWindow : Window
     {
         frame.Validate();
         var rowLength = checked(frame.Size.Width * 4);
-        var packedPixels = new byte[checked(rowLength * frame.Size.Height)];
-        var source = frame.Bgra8Pixels.Span;
-
-        for (var y = 0; y < frame.Size.Height; y++)
-        {
-            source.Slice(checked(y * frame.Stride), rowLength)
-                .CopyTo(packedPixels.AsSpan(checked(y * rowLength), rowLength));
-        }
-
         var bitmap = new WriteableBitmap(frame.Size.Width, frame.Size.Height);
         using var pixelStream = bitmap.PixelBuffer.AsStream();
         pixelStream.Position = 0;
-        await pixelStream.WriteAsync(packedPixels);
+
+        if (frame.Stride == rowLength)
+        {
+            await pixelStream.WriteAsync(
+                frame.Bgra8Pixels.Slice(0, checked(rowLength * frame.Size.Height)));
+        }
+        else
+        {
+            for (var y = 0; y < frame.Size.Height; y++)
+            {
+                await pixelStream.WriteAsync(
+                    frame.Bgra8Pixels.Slice(checked(y * frame.Stride), rowLength));
+            }
+        }
+
         bitmap.Invalidate();
         return bitmap;
     }
