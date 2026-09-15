@@ -23,7 +23,7 @@ internal static class InstallerEngine
     private const uint MoveFileDelayUntilReboot = 0x00000004;
 
     public static string VersionText =>
-        Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.1";
+        Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "unknown";
 
     public static string GetDefaultInstallDirectory()
         => Path.Combine(
@@ -138,17 +138,12 @@ internal static class InstallerEngine
                 throw;
             }
         }
-        catch (UnauthorizedAccessException exception)
-        {
-            return new InstallerResult(false, 5, silent ? exception.Message : "Windows denied access to the selected installation folder.");
-        }
-        catch (IOException exception)
-        {
-            return new InstallerResult(false, 1, silent ? exception.Message : $"SNAPVERE setup could not write the application files. {exception.Message}");
-        }
         catch (Exception exception)
         {
-            return new InstallerResult(false, 1, exception.Message);
+            return new InstallerResult(
+                false,
+                exception is UnauthorizedAccessException ? 5 : 1,
+                GetInstallFailureMessage(exception, silent));
         }
     }
 
@@ -180,13 +175,12 @@ internal static class InstallerEngine
 
             return new InstallerResult(true, 0, $"SNAPVERE {VersionText} was removed from this Windows account.");
         }
-        catch (UnauthorizedAccessException exception)
-        {
-            return new InstallerResult(false, 5, silent ? exception.Message : "Windows denied access while removing SNAPVERE.");
-        }
         catch (Exception exception)
         {
-            return new InstallerResult(false, 1, exception.Message);
+            return new InstallerResult(
+                false,
+                exception is UnauthorizedAccessException ? 5 : 1,
+                GetUninstallFailureMessage(exception, silent));
         }
     }
 
@@ -230,6 +224,48 @@ internal static class InstallerEngine
         {
             return false;
         }
+    }
+
+    private static string GetInstallFailureMessage(Exception exception, bool silent)
+    {
+        if (silent)
+        {
+            return exception.Message;
+        }
+
+        return exception switch
+        {
+            UnauthorizedAccessException =>
+                "Windows denied access to the selected installation folder. Choose a folder you can write to and try again.",
+            InvalidDataException =>
+                "The SNAPVERE Setup package appears incomplete or corrupted. Download a fresh copy from snapvere.com and try again.",
+            IOException =>
+                "SNAPVERE Setup could not write the application files. Close running SNAPVERE processes, check available disk space and try again.",
+            ArgumentException =>
+                "The selected installation folder is not valid. Choose another folder and try again.",
+            InvalidOperationException when exception.Message.StartsWith("SNAPVERE cannot be installed", StringComparison.Ordinal) =>
+                exception.Message,
+            _ =>
+                "SNAPVERE Setup could not complete the installation. Close Setup, verify the package and try again."
+        };
+    }
+
+    private static string GetUninstallFailureMessage(Exception exception, bool silent)
+    {
+        if (silent)
+        {
+            return exception.Message;
+        }
+
+        return exception switch
+        {
+            UnauthorizedAccessException =>
+                "Windows denied access while removing SNAPVERE. Close SNAPVERE and try again.",
+            IOException =>
+                "Some SNAPVERE application files are still in use. Close SNAPVERE and try again.",
+            _ =>
+                "SNAPVERE could not complete removal. Restart Windows if the app is still running, then try again."
+        };
     }
 
     private static void UpdateShortcut(bool enabled, string shortcutPath, string installRoot)
