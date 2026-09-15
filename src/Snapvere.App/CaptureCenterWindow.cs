@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Snapvere.App.Services;
@@ -12,41 +13,33 @@ namespace Snapvere.App;
 /// <summary>
 /// Hidden lifetime/capture coordinator for the tray-first application.
 ///
-/// This type intentionally is not a user-facing launcher. Normal SNAPVERE
-/// startup keeps it hidden while the tray icon and global hotkeys invoke the
-/// real Region, Window and Screen capture workflows. Keeping one WinUI Window
-/// alive provides a stable application lifetime anchor without reintroducing
-/// the legacy Capture Center UX.
+/// Normal SNAPVERE startup keeps this window hidden and intentionally avoids
+/// constructing the capture-service graph or an unused visual tree until the
+/// user actually starts a capture. The explicit startup QA probe can still
+/// request the tiny runtime-host surface.
 /// </summary>
 public sealed class CaptureCenterWindow : Window
 {
-    private readonly ScreenCaptureWorkflow _screenCaptureWorkflow;
-    private readonly RegionCaptureWorkflow _regionCaptureWorkflow;
-    private readonly WindowCaptureWorkflow _windowCaptureWorkflow;
-    private readonly WindowTargetPicker _windowTargetPicker;
+    private const string StartupProbeEnvironmentVariable = "SNAPVERE_STARTUP_PROBE";
+
+    private readonly IServiceProvider _services;
     private readonly CapturePreferencesService _capturePreferencesService;
-    private readonly PngCaptureEncoder _pngEncoder;
 
     private RegionCaptureWindow? _regionCaptureWindow;
     private bool _captureInProgress;
 
     public CaptureCenterWindow(
-        ScreenCaptureWorkflow screenCaptureWorkflow,
-        RegionCaptureWorkflow regionCaptureWorkflow,
-        WindowCaptureWorkflow windowCaptureWorkflow,
-        WindowTargetPicker windowTargetPicker,
-        CapturePreferencesService capturePreferencesService,
-        PngCaptureEncoder pngEncoder)
+        IServiceProvider services,
+        CapturePreferencesService capturePreferencesService)
     {
-        _screenCaptureWorkflow = screenCaptureWorkflow ?? throw new ArgumentNullException(nameof(screenCaptureWorkflow));
-        _regionCaptureWorkflow = regionCaptureWorkflow ?? throw new ArgumentNullException(nameof(regionCaptureWorkflow));
-        _windowCaptureWorkflow = windowCaptureWorkflow ?? throw new ArgumentNullException(nameof(windowCaptureWorkflow));
-        _windowTargetPicker = windowTargetPicker ?? throw new ArgumentNullException(nameof(windowTargetPicker));
+        _services = services ?? throw new ArgumentNullException(nameof(services));
         _capturePreferencesService = capturePreferencesService ?? throw new ArgumentNullException(nameof(capturePreferencesService));
-        _pngEncoder = pngEncoder ?? throw new ArgumentNullException(nameof(pngEncoder));
 
         Title = "SNAPVERE Runtime Host";
-        Content = BuildRuntimeHostContent();
+        if (IsStartupProbeRequested())
+        {
+            Content = BuildRuntimeHostContent();
+        }
     }
 
     public void StartCaptureFromHotkey(CaptureMode mode)
@@ -102,8 +95,6 @@ public sealed class CaptureCenterWindow : Window
 
     private static FrameworkElement BuildRuntimeHostContent()
     {
-        // This surface is used only by the explicit startup construction probe.
-        // Normal application startup never activates or shows this window.
         var root = new Grid
         {
             RequestedTheme = ElementTheme.Dark,
@@ -130,9 +121,11 @@ public sealed class CaptureCenterWindow : Window
 
         try
         {
+            var workflow = _services.GetRequiredService<RegionCaptureWorkflow>();
+            var pngEncoder = _services.GetRequiredService<PngCaptureEncoder>();
             var includeCursor = _capturePreferencesService.Current.IncludeCursorOnCapture;
-            var session = await _regionCaptureWorkflow.PreparePrimaryDisplayAsync(includeCursor);
-            var overlay = new RegionCaptureWindow(_regionCaptureWorkflow, _pngEncoder, session);
+            var session = await workflow.PreparePrimaryDisplayAsync(includeCursor);
+            var overlay = new RegionCaptureWindow(workflow, pngEncoder, session);
             _regionCaptureWindow = overlay;
 
             var outcome = await overlay.ShowAsync();
@@ -177,7 +170,9 @@ public sealed class CaptureCenterWindow : Window
 
         try
         {
-            var target = await _windowTargetPicker.PickAsync();
+            var windowTargetPicker = _services.GetRequiredService<WindowTargetPicker>();
+            var windowCaptureWorkflow = _services.GetRequiredService<WindowCaptureWorkflow>();
+            var target = await windowTargetPicker.PickAsync();
             if (target is null)
             {
                 StartupDiagnostics.WriteLine("Window capture was cancelled.");
@@ -185,7 +180,7 @@ public sealed class CaptureCenterWindow : Window
             }
 
             var includeCursor = _capturePreferencesService.Current.IncludeCursorOnCapture;
-            var result = await _windowCaptureWorkflow.CaptureWindowToDefaultFolderAsync(
+            var result = await windowCaptureWorkflow.CaptureWindowToDefaultFolderAsync(
                 target,
                 includeCursor);
             StartupDiagnostics.WriteLine(
@@ -210,8 +205,9 @@ public sealed class CaptureCenterWindow : Window
 
         try
         {
+            var screenCaptureWorkflow = _services.GetRequiredService<ScreenCaptureWorkflow>();
             var includeCursor = _capturePreferencesService.Current.IncludeCursorOnCapture;
-            var result = await _screenCaptureWorkflow.CapturePrimaryDisplayToDefaultFolderAsync(includeCursor);
+            var result = await screenCaptureWorkflow.CapturePrimaryDisplayToDefaultFolderAsync(includeCursor);
             StartupDiagnostics.WriteLine(
                 $"Screen capture saved {result.Width}x{result.Height} PNG locally.");
         }
@@ -239,4 +235,18 @@ public sealed class CaptureCenterWindow : Window
 
     private void EndCapture()
         => _captureInProgress = false;
+
+    private static bool IsStartupProbeRequested()
+    {
+        if (string.Equals(
+                Environment.GetEnvironmentVariable(StartupProbeEnvironmentVariable),
+                "1",
+                StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return Environment.GetCommandLineArgs().Any(
+            argument => string.Equals(argument, "--startup-probe", StringComparison.OrdinalIgnoreCase));
+    }
 }
