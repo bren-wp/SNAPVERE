@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Performance & Stability
+# SNAPVERE 0.1.2 Performance & Stability
 
 SNAPVERE is optimized around short-lived capture work instead of a permanently busy desktop process. Performance work therefore focuses on idle cost, peak memory during capture, predictable cleanup and regression detection.
 
@@ -31,7 +31,7 @@ No software can guarantee that every Windows driver, graphics stack or browser w
 
 ## Regression gates
 
-CI for 0.1.1 validates:
+CI for 0.1.2 validates:
 
 - x64 build and unit tests;
 - x86 and ARM64 builds;
