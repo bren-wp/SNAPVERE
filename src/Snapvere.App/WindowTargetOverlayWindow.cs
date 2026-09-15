@@ -25,7 +25,7 @@ namespace Snapvere.App;
 public sealed class WindowTargetOverlayWindow : Window
 {
     private readonly DisplayDescriptor _display;
-    private readonly CaptureFrame _frozenFrame;
+    private CaptureFrame? _frozenFrame;
     private readonly IReadOnlyList<WindowDescriptor> _windows;
     private readonly Action<WindowDescriptor?> _targetChanged;
     private readonly Action<WindowDescriptor> _targetSelected;
@@ -243,12 +243,16 @@ public sealed class WindowTargetOverlayWindow : Window
     {
         try
         {
-            _frozenImage.Source = await CreateFrozenBitmapAsync(_frozenFrame);
+            var frozenFrame = _frozenFrame
+                ?? throw new InvalidOperationException("The Window Capture frozen frame is no longer available.");
+            _frozenImage.Source = await CreateFrozenBitmapAsync(frozenFrame);
+            _frozenFrame = null;
             UpdateTargetVisual();
             _ = _focusTarget.Focus(FocusState.Programmatic);
         }
         catch
         {
+            _frozenFrame = null;
             _cancelled();
         }
     }
@@ -464,19 +468,24 @@ public sealed class WindowTargetOverlayWindow : Window
     {
         frame.Validate();
         var rowLength = checked(frame.Size.Width * 4);
-        var packedPixels = new byte[checked(rowLength * frame.Size.Height)];
-        var source = frame.Bgra8Pixels.Span;
-
-        for (var y = 0; y < frame.Size.Height; y++)
-        {
-            source.Slice(checked(y * frame.Stride), rowLength)
-                .CopyTo(packedPixels.AsSpan(checked(y * rowLength), rowLength));
-        }
-
         var bitmap = new WriteableBitmap(frame.Size.Width, frame.Size.Height);
         using var pixelStream = bitmap.PixelBuffer.AsStream();
         pixelStream.Position = 0;
-        await pixelStream.WriteAsync(packedPixels);
+
+        if (frame.Stride == rowLength)
+        {
+            await pixelStream.WriteAsync(
+                frame.Bgra8Pixels.Slice(0, checked(rowLength * frame.Size.Height)));
+        }
+        else
+        {
+            for (var y = 0; y < frame.Size.Height; y++)
+            {
+                await pixelStream.WriteAsync(
+                    frame.Bgra8Pixels.Slice(checked(y * frame.Stride), rowLength));
+            }
+        }
+
         bitmap.Invalidate();
         return bitmap;
     }

@@ -85,6 +85,11 @@ public sealed class WindowTargetPicker
                 overlays.Add(overlay);
             }
 
+            // Overlay instances now own the frozen frames until their bitmap is loaded.
+            // Drop the coordinator dictionary references before showing the surfaces so
+            // each raw BGRA frame can be collected as soon as its overlay finishes loading.
+            frozenFrames.Clear();
+
             foreach (var overlay in overlays)
             {
                 overlay.Show();
