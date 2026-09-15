@@ -140,6 +140,13 @@ function validateSource(browser, browserDir) {
       if (!postEncodeSessionGuard.test(text)) {
         fail(`${browser}/capture.js must revalidate the full-page token after async canvas encoding.`);
       }
+      if (
+        !text.includes("function showRegionError(") ||
+        !text.includes("response.ok !== true") ||
+        !text.includes('showRegionError("captureFailed")')
+      ) {
+        fail(`${browser}/capture.js must surface asynchronous region-capture failures in-page.`);
+      }
     }
   }
 }
