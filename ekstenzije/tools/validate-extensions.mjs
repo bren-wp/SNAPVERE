@@ -134,6 +134,13 @@ function validateSource(browser, browserDir) {
     for (const [pattern, label] of checks) {
       if (pattern.test(text)) fail(`${browser}/${relative} contains forbidden ${label}.`);
     }
+
+    if (relative === "capture.js") {
+      const postEncodeSessionGuard = /const\s+blob\s*=\s*await\s+canvasToBlob\(canvas\);\s*ensureFullToken\(token\);/;
+      if (!postEncodeSessionGuard.test(text)) {
+        fail(`${browser}/capture.js must revalidate the full-page token after async canvas encoding.`);
+      }
+    }
   }
 }
 
