@@ -38,10 +38,20 @@ public sealed class AboutWindow : Window
 
     private string L(string key) => SnapvereLocalization.T(key, _languageCode);
 
+    private string Tagline()
+        => string.Equals(_languageCode, "hr", StringComparison.OrdinalIgnoreCase)
+            ? "Snimi. Uredi. Gotovo."
+            : "Capture. Edit. Done.";
+
     private string SupportCopiedAnnouncement()
         => string.Equals(_languageCode, "hr", StringComparison.OrdinalIgnoreCase)
             ? $"Adresa podrške {SupportEmailAddress} kopirana je u međuspremnik."
             : $"Support email {SupportEmailAddress} copied to the clipboard.";
+
+    private string LinkOpenFailedAnnouncement()
+        => string.Equals(_languageCode, "hr", StringComparison.OrdinalIgnoreCase)
+            ? "Windows ne može otvoriti ovu poveznicu. Provjerite zadani preglednik i pokušajte ponovno."
+            : "Windows could not open this link. Check your default browser and try again.";
 
     private FrameworkElement BuildContent()
     {
@@ -69,7 +79,7 @@ public sealed class AboutWindow : Window
         var brand = Text("SNAPVERE", 17, Strong, Microsoft.UI.Text.FontWeights.Bold);
         brand.CharacterSpacing = 70;
         identity.Children.Add(brand);
-        identity.Children.Add(Text("Capture. Edit. Done.", 10.5, Muted));
+        identity.Children.Add(Text(Tagline(), 10.5, Muted));
         Grid.SetColumn(identity, 1);
         header.Children.Add(identity);
         root.Children.Add(header);
@@ -85,7 +95,7 @@ public sealed class AboutWindow : Window
         };
 
         var content = new StackPanel { Spacing = 12 };
-        var version = typeof(AboutWindow).Assembly.GetName().Version?.ToString(3) ?? "0.1.1";
+        var version = typeof(AboutWindow).Assembly.GetName().Version?.ToString(3);
 
         var versionRow = new Grid();
         versionRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -101,7 +111,7 @@ public sealed class AboutWindow : Window
             Background = Brush(0x55, 0x5D, 0x47, 0xB7),
             BorderBrush = Brush(0x70, 0x9C, 0x86, 0xFF),
             BorderThickness = new Thickness(1),
-            Child = Text($"v{version}", 9.5, Strong, Microsoft.UI.Text.FontWeights.SemiBold)
+            Child = Text(version is null ? "SNAPVERE" : $"v{version}", 9.5, Strong, Microsoft.UI.Text.FontWeights.SemiBold)
         };
         Grid.SetColumn(badge, 1);
         versionRow.Children.Add(badge);
@@ -129,10 +139,6 @@ public sealed class AboutWindow : Window
 
         content.Children.Add(Text(L("CommercialSoftware"), 9.5, Subtle));
 
-        // Keep links in a single vertical flow. This costs a little vertical
-        // space, which the existing ScrollViewer handles, but prevents long
-        // localized labels and the support address from becoming unreachable
-        // when Windows text scaling increases their width.
         var links = new StackPanel { Spacing = 8 };
         links.Children.Add(CreateLinkButton("snapvere.com", ProductWebsiteUrl));
         links.Children.Add(CreateLinkButton(
@@ -201,12 +207,18 @@ public sealed class AboutWindow : Window
             try
             {
                 _ = Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+                _supportStatus.Visibility = Visibility.Collapsed;
             }
             catch (Exception exception) when (exception is System.ComponentModel.Win32Exception or InvalidOperationException)
             {
                 StartupDiagnostics.Record($"Open {url}", exception);
                 if (clipboardFallbackText is null)
                 {
+                    var announcement = LinkOpenFailedAnnouncement();
+                    _supportStatus.Text = announcement;
+                    _supportStatus.Foreground = Warning;
+                    _supportStatus.Visibility = Visibility.Visible;
+                    AutomationProperties.SetHelpText(button, announcement);
                     return;
                 }
 
@@ -222,6 +234,7 @@ public sealed class AboutWindow : Window
                     AutomationProperties.SetName(button, announcement);
                     AutomationProperties.SetHelpText(button, announcement);
                     _supportStatus.Text = announcement;
+                    _supportStatus.Foreground = Success;
                     _supportStatus.Visibility = Visibility.Visible;
                 }
                 catch (Exception clipboardException) when (
@@ -231,6 +244,9 @@ public sealed class AboutWindow : Window
                     label.Text = clipboardFallbackText;
                     AutomationProperties.SetName(button, clipboardFallbackText);
                     AutomationProperties.SetHelpText(button, clipboardFallbackText);
+                    _supportStatus.Text = LinkOpenFailedAnnouncement();
+                    _supportStatus.Foreground = Warning;
+                    _supportStatus.Visibility = Visibility.Visible;
                 }
             }
         };
@@ -328,4 +344,5 @@ public sealed class AboutWindow : Window
     private static SolidColorBrush Muted => Brush(0xFF, 0xAE, 0xAC, 0xBC);
     private static SolidColorBrush Subtle => Brush(0xFF, 0x7D, 0x7C, 0x8D);
     private static SolidColorBrush Success => Brush(0xFF, 0x72, 0xD8, 0xB4);
+    private static SolidColorBrush Warning => Brush(0xFF, 0xE2, 0xB5, 0x72);
 }
