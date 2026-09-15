@@ -16,6 +16,7 @@
   "selectRegion": { "message": "Povuci za odabir područja na stranici." },
   "saved": { "message": "Pokrenuto je preuzimanje PNG-a." },
   "captureBusy": { "message": "Drugo SNAPVERE snimanje već je aktivno." },
+  "captureTabChanged": { "message": "Aktivna kartica promijenjena je tijekom snimanja. Ponovno pokreni snimanje na kartici koju želiš snimiti." },
   "unsupportedPage": { "message": "Ova stranica preglednika ne dopušta umetanje skripte ili snimanje." },
   "captureFailed": { "message": "Snimanje nije moguće dovršiti." },
   "fullPageTooLarge": { "message": "Stranica je prevelika za sigurno snimanje cijele stranice." },

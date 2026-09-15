@@ -85,6 +85,21 @@
     return tab;
   }
 
+  async function ensureCaptureTabActive(tabId, windowId) {
+    const tabs = await invoke(chrome.tabs, "query", { active: true, windowId });
+    const activeTab = Array.isArray(tabs) ? tabs[0] : null;
+    if (
+      !activeTab ||
+      activeTab.id !== tabId ||
+      activeTab.windowId !== windowId
+    ) {
+      throw new SnapvereError(
+        "captureTabChanged",
+        "The active tab changed while SNAPVERE was capturing."
+      );
+    }
+  }
+
   async function getLock() {
     const values = await storageGet(LOCK_KEY);
     const lock = values ? values[LOCK_KEY] : null;
@@ -196,6 +211,16 @@
     }
   }
 
+  async function captureExpectedVisible(tabId, windowId) {
+    await ensureCaptureTabActive(tabId, windowId);
+    const dataUrl = await captureVisible(windowId);
+    // Revalidate after the browser has produced the frame. This closes the
+    // pre-check/capture TOCTOU window: if activation changed during the API
+    // call, the frame is discarded before crop, stitch, or download.
+    await ensureCaptureTabActive(tabId, windowId);
+    return dataUrl;
+  }
+
   async function ensureCaptureScript(tabId) {
     try {
       await invoke(chrome.scripting, "executeScript", {
@@ -243,7 +268,7 @@
     const tab = await getActiveTab();
     const lock = await acquireLock("visible", tab);
     try {
-      const dataUrl = await captureVisible(tab.windowId);
+      const dataUrl = await captureExpectedVisible(lock.tabId, lock.windowId);
       const filename = await downloadDataUrl(dataUrl, "visible");
       return { ok: true, filename };
     } finally {
@@ -306,7 +331,7 @@
             y
           });
 
-          const dataUrl = await captureVisible(tab.windowId);
+          const dataUrl = await captureExpectedVisible(lock.tabId, lock.windowId);
           await sendTab(tab.id, {
             type: "FULL_STORE_TILE",
             token: lock.token,
@@ -370,7 +395,7 @@
         throw new SnapvereError("regionTooSmall", "Selected region is too small.");
       }
 
-      const dataUrl = await captureVisible(windowId);
+      const dataUrl = await captureExpectedVisible(lock.tabId, lock.windowId);
       const cropped = await sendTab(tabId, {
         type: "REGION_CROP",
         token: lock.token,

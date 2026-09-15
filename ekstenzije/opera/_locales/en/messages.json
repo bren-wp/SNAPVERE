@@ -16,6 +16,7 @@
   "selectRegion": { "message": "Drag to select a region on the page." },
   "saved": { "message": "PNG download started." },
   "captureBusy": { "message": "Another SNAPVERE capture is already active." },
+  "captureTabChanged": { "message": "The active tab changed during capture. Start the capture again on the tab you want." },
   "unsupportedPage": { "message": "This browser page does not allow screenshot injection or capture." },
   "captureFailed": { "message": "Capture could not be completed." },
   "fullPageTooLarge": { "message": "This page is too large for safe full-page capture." },
