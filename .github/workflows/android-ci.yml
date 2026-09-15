@@ -71,11 +71,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Gradle 8.11.1
+      - name: Setup Gradle 9.6.0
         if: steps.project.outputs.exists == 'true'
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
-          gradle-version: '8.11.1'
+          gradle-version: '9.6.0'
 
       - name: Verify Android SDK 36
         if: steps.project.outputs.exists == 'true'
@@ -84,8 +84,8 @@ jobs:
           set -euo pipefail
           test -n "${ANDROID_HOME:-}"
           test -d "$ANDROID_HOME/platforms/android-36"
-          test -x "$ANDROID_HOME/build-tools/35.0.0/apksigner"
-          test -x "$ANDROID_HOME/build-tools/35.0.0/zipalign"
+          test -x "$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          test -x "$ANDROID_HOME/build-tools/36.0.0/zipalign"
           echo "ANDROID_HOME=$ANDROID_HOME"
 
       - name: Lint, test and build debug and release variants
@@ -104,8 +104,8 @@ jobs:
           set -euo pipefail
           apk="android/SNAPVERE-Android-${SNAPVERE_ANDROID_VERSION}-debug.apk"
           test -s "$apk"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$apk"
-          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 -v 4 "$apk"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$apk"
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 -v 4 "$apk"
           sha256sum "$apk" | tee "$apk.sha256"
 
       - name: Upload Android CI APK
