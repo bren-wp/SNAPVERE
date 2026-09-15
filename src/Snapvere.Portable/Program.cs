@@ -9,6 +9,8 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        ApplicationConfiguration.Initialize();
+
         try
         {
             // Avoid hashing/extracting the large universal payload when the
@@ -21,14 +23,12 @@ internal static class Program
                 return;
             }
 
-            ApplicationConfiguration.Initialize();
             Environment.ExitCode = EmbeddedAppLauncher.Launch(
                 Assembly.GetExecutingAssembly(),
                 args);
         }
         catch (Exception exception)
         {
-            ApplicationConfiguration.Initialize();
             MessageBox.Show(
                 $"SNAPVERE Portable could not start.\r\n\r\n{exception.Message}\r\n\r\nStartup log (when available):\r\n{EmbeddedAppLauncher.GetStartupLogPath()}",
                 "SNAPVERE Portable",
