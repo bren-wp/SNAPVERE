@@ -70,6 +70,21 @@ The permission contract is exactly `activeTab`, `scripting`, `downloads` and `st
 
 Browser ZIP packages are release packages for manual installation. External store approval is not claimed unless an actual store listing exists.
 
+## See SNAPVERE in action
+
+These are **real rendered Windows surfaces captured by SNAPVERE's visual-QA pipeline** from the same validated codebase — not design mockups.
+
+<table>
+<tr>
+<td width="38%" valign="top"><img src="assets/branding/readme/screenshots/tray-menu.png" alt="SNAPVERE tray menu"><br><strong>Tray-first workflow</strong><br>Capture region, window or screen without keeping a permanent dashboard open.</td>
+<td width="62%" valign="top"><img src="assets/branding/readme/screenshots/options.png" alt="SNAPVERE Settings window"><br><strong>Local settings</strong><br>Startup, cursor and language preferences remain focused and local to the Windows account.</td>
+</tr>
+</table>
+
+<img src="assets/branding/readme/screenshots/window-capture.png" alt="SNAPVERE Window Capture overlay" width="760">
+
+**Window Capture** — a frozen desktop target-selection surface with clear visual focus before capture.
+
 ## Downloads
 
 Current release: **SNAPVERE 0.1.1**  
