@@ -63,6 +63,21 @@ Dozvole su točno `activeTab`, `scripting`, `downloads` i `storage`, bez široko
 
 Browser ZIP paketi namijenjeni su ručnoj instalaciji. Vanjsko store odobrenje ne tvrdi se dok stvarni listing nije objavljen.
 
+## SNAPVERE u stvarnom radu
+
+Ovo su **stvarne renderirane Windows površine koje je snimio SNAPVERE visual-QA pipeline** iz istog validiranog koda — nisu dizajnerski mockupovi.
+
+<table>
+<tr>
+<td width="38%" valign="top"><img src="assets/branding/readme/screenshots/tray-menu.png" alt="SNAPVERE tray izbornik"><br><strong>Tray-first workflow</strong><br>Region, window i screen capture bez stalno otvorenog dashboarda.</td>
+<td width="62%" valign="top"><img src="assets/branding/readme/screenshots/options.png" alt="SNAPVERE postavke"><br><strong>Lokalne postavke</strong><br>Startup, cursor i jezične postavke ostaju fokusirane i lokalne za Windows račun.</td>
+</tr>
+</table>
+
+<img src="assets/branding/readme/screenshots/window-capture.png" alt="SNAPVERE Window Capture overlay" width="760">
+
+**Window Capture** — zamrznuta površina za jasan odabir ciljnog prozora prije snimanja.
+
 ## Preuzimanja
 
 Aktualno izdanje: **SNAPVERE 0.1.1**  
