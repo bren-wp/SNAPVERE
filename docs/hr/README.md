@@ -12,15 +12,25 @@ Ova dokumentacija opisuje produkcijske funkcije, tehničke granice i provjere ko
 - [Rješavanje problema](TROUBLESHOOTING.md) — dijagnostika i kontrolirani recovery.
 - [Status proizvoda](PRODUCT-STATUS.md) — što se održava i što CI rezultat stvarno dokazuje.
 
-## Windows i browser dokumenti
+## Windows internals
 
-- [Postavke](SETTINGS.md)
+- [Window Capture](WINDOW-CAPTURE.md) — native discovery, zamrznuti multi-monitor picker i WGC acquisition.
+- [Image Pipeline](IMAGE-PIPELINE.md) — frame validation, crop/anotacije, PNG encode i atomsko spremanje.
+- [Tray i lifecycle](TRAY-LIFECYCLE.md) — single-instance, native tray host, Explorer recovery i Setup/Portable lifecycle dokaz.
+- [Postavke](SETTINGS.md) — lokalne Windows preference.
+- [QA matrica](QA-MATRIX.md) — automatizirani dokazi i njihove granice.
+- [Engleska tehnička dokumentacija](../README.md) — Architecture, Capture Engine, Region Capture i Multi-monitor detalji.
+
+## Browser i privatnost
+
 - [Browser ekstenzije](BROWSER-EXTENSIONS.md)
 - [Privatnost](PRIVACY.md)
-- [QA matrica](QA-MATRIX.md)
-- [Engleska tehnička dokumentacija](../README.md)
-- [Branding](../BRANDING.md)
 - [Security Policy](../../SECURITY.md)
+
+## Brand i release proces
+
+- [Branding](../BRANDING.md)
+- [Versioning and Releases](../VERSIONING-RELEASES.md)
 
 Službena stranica: https://snapvere.com  
 Podrška: info@snapvere.com  

@@ -51,7 +51,7 @@ Snimke se zadano spremaju u `Pictures\SNAPVERE`. PNG zapis koristi staging prije
 
 SNAPVERE koristi nativnu geometriju zaslona i DPI pretvorbu umjesto pretpostavke da svi monitori imaju isti scaling. Najnoviji memory hardening uklanja redundantne full-frame staging alokacije iz Region i Window Capture putova te ranije oslobađa zamrznute monitor buffere čim je UI bitmap spreman.
 
-Detalji su u [Performanse i stabilnost](docs/hr/PERFORMANCE.md) i [Multi-monitor dokumentaciji](docs/MULTI-MONITOR.md).
+Detalji su u [Performanse i stabilnost](docs/hr/PERFORMANCE.md), [Window Capture](docs/hr/WINDOW-CAPTURE.md) i [Multi-monitor dokumentaciji](docs/MULTI-MONITOR.md).
 
 ## Browser ekstenzije
 
@@ -111,6 +111,9 @@ Pročitajte [Privatnost](docs/hr/PRIVACY.md), [Security Policy](SECURITY.md), [S
 - [Korisnički vodič](docs/hr/USER-GUIDE.md)
 - [Instalacija](docs/hr/INSTALLATION.md)
 - [Performanse i stabilnost](docs/hr/PERFORMANCE.md)
+- [Window Capture](docs/hr/WINDOW-CAPTURE.md)
+- [Image Pipeline](docs/hr/IMAGE-PIPELINE.md)
+- [Tray i lifecycle](docs/hr/TRAY-LIFECYCLE.md)
 - [Browser ekstenzije](docs/hr/BROWSER-EXTENSIONS.md)
 - [Postavke](docs/hr/SETTINGS.md)
 - [Rješavanje problema](docs/hr/TROUBLESHOOTING.md)
