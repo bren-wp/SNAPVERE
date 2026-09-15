@@ -53,7 +53,13 @@ public sealed class CapturePreferencesService
     {
         lock (_gate)
         {
-            var updated = (_cached ??= LoadCore()) with
+            var current = _cached ??= LoadCore();
+            if (current.IncludeCursorOnCapture == enabled)
+            {
+                return;
+            }
+
+            var updated = current with
             {
                 IncludeCursorOnCapture = enabled
             };
@@ -68,7 +74,14 @@ public sealed class CapturePreferencesService
         var normalized = SnapvereLocalization.NormalizeLanguageCode(languageCode);
         lock (_gate)
         {
-            var updated = (_cached ??= LoadCore()) with
+            var current = _cached ??= LoadCore();
+            if (string.Equals(current.LanguageCode, normalized, StringComparison.Ordinal))
+            {
+                SnapvereLanguageState.SetCurrentLanguage(normalized);
+                return;
+            }
+
+            var updated = current with
             {
                 LanguageCode = normalized
             };
