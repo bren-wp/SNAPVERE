@@ -509,6 +509,7 @@
     }
 
     const blob = await canvasToBlob(canvas);
+    ensureFullToken(token);
     const url = URL.createObjectURL(blob);
     try {
       const link = document.createElement("a");
