@@ -4,20 +4,16 @@
   "currentRelease": "0.1.1",
   "releaseTag": "v0.1.1",
   "releaseUrl": "https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.1",
+  "supportedPlatforms": [
+    "windows",
+    "browsers"
+  ],
   "windows": {
     "productVersion": "0.1.1",
     "assemblyVersion": "0.1.1.0",
     "fileVersion": "0.1.1.0",
     "minimumWindowsBuild": 17763,
     "wgcMinimumWindowsBuild": 19041
-  },
-  "android": {
-    "versionName": "0.1.1",
-    "versionCode": 11,
-    "minSdk": 29,
-    "targetSdk": 36,
-    "compileSdk": 36,
-    "publicApkSigning": "ci-debug"
   },
   "browsers": {
     "extensionVersion": "0.1.1",
@@ -32,8 +28,6 @@
   "releaseAssets": [
     "SNAPVERE-Setup.exe",
     "SNAPVERE-Portable.exe",
-    "SNAPVERE.apk",
-    "SNAPVERE-Android-Source.zip",
     "SNAPVERE-Chrome.zip",
     "SNAPVERE-Edge.zip",
     "SNAPVERE-Opera.zip",

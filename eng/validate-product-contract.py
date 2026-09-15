@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate SNAPVERE's cross-platform version, documentation and release contract."""
+"""Validate SNAPVERE's active Windows/browser product and release contract."""
 
 from __future__ import annotations
 
@@ -31,11 +31,6 @@ def read_json(path: Path):
         fail(f"invalid JSON in {path.relative_to(ROOT)}: {exc}")
 
 
-def require_regex(text: str, pattern: str, label: str) -> None:
-    if re.search(pattern, text, re.MULTILINE) is None:
-        fail(f"{label} does not match canonical product contract")
-
-
 def xml_property(path: Path, name: str) -> str:
     try:
         root = ET.fromstring(read_text(path))
@@ -45,19 +40,6 @@ def xml_property(path: Path, name: str) -> str:
         if element.text:
             return element.text.strip()
     fail(f"missing <{name}> in {path.relative_to(ROOT)}")
-
-
-def android_string_keys(path: Path) -> set[str]:
-    try:
-        root = ET.fromstring(read_text(path))
-    except ET.ParseError as exc:
-        fail(f"invalid Android resources XML in {path.relative_to(ROOT)}: {exc}")
-    keys: set[str] = set()
-    for child in root:
-        name = child.attrib.get("name")
-        if name:
-            keys.add(name)
-    return keys
 
 
 def validate_release_history(version: str) -> None:
@@ -70,17 +52,8 @@ def validate_release_history(version: str) -> None:
         fail("RELEASES.md must contain an Unreleased section for post-release main work")
 
     historical_versions = [
-        "0.1.1",
-        "0.1.0",
-        "0.0.9",
-        "0.0.8",
-        "0.0.7",
-        "0.0.6",
-        "0.0.5",
-        "0.0.4",
-        "0.0.3",
-        "0.0.2",
-        "0.0.1",
+        "0.1.1", "0.1.0", "0.0.9", "0.0.8", "0.0.7", "0.0.6",
+        "0.0.5", "0.0.4", "0.0.3", "0.0.2", "0.0.1",
     ]
     positions: list[int] = []
     for historical_version in historical_versions:
@@ -98,21 +71,9 @@ def validate_release_history(version: str) -> None:
         fail(f"version-specific root release-note files are forbidden; use RELEASES.md: {names}")
 
 
-def validate_markdown_links() -> None:
-    markdown_roots = [
-        ROOT / "README.md",
-        ROOT / "README.hr.md",
-        ROOT / "RELEASES.md",
-        ROOT / "SECURITY.md",
-        ROOT / "CONTRIBUTING.md",
-        ROOT / "android" / "README.md",
-        ROOT / "ekstenzije" / "README.md",
-        ROOT / "ekstenzije" / "PRIVACY.md",
-    ]
-    markdown_roots.extend(sorted((ROOT / "docs").rglob("*.md")))
-
+def validate_markdown_links(paths: list[Path]) -> None:
     link_pattern = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
-    for path in markdown_roots:
+    for path in paths:
         text = read_text(path)
         for raw_target in link_pattern.findall(text):
             target = raw_target.strip()
@@ -150,6 +111,21 @@ def main() -> int:
     if release_url != f"https://github.com/bren-wp/SNAPVERE/releases/tag/{tag}":
         fail("releaseUrl does not match releaseTag")
 
+    if contract.get("supportedPlatforms") != ["windows", "browsers"]:
+        fail("supportedPlatforms must contain only windows and browsers")
+    if "android" in contract:
+        fail("Android must not be present in the active product contract")
+
+    forbidden_android_paths = [
+        ROOT / "android",
+        ROOT / ".github" / "workflows" / "android-ci.yml",
+        ROOT / "docs" / "ANDROID.md",
+        ROOT / "docs" / "hr" / "ANDROID.md",
+    ]
+    for path in forbidden_android_paths:
+        if path.exists():
+            fail(f"removed Android product path is still present: {path.relative_to(ROOT)}")
+
     windows = contract.get("windows", {})
     props = ROOT / "Directory.Build.props"
     if xml_property(props, "VersionPrefix") != windows.get("productVersion") or windows.get("productVersion") != version:
@@ -158,42 +134,6 @@ def main() -> int:
         fail("Windows AssemblyVersion mismatch")
     if xml_property(props, "FileVersion") != windows.get("fileVersion"):
         fail("Windows FileVersion mismatch")
-
-    android = contract.get("android", {})
-    gradle = read_text(ROOT / "android" / "app" / "build.gradle")
-    for key in ("versionCode", "minSdk", "targetSdk", "compileSdk"):
-        value = android.get(key)
-        if not isinstance(value, int):
-            fail(f"android.{key} must be an integer")
-        require_regex(gradle, rf"\b{re.escape(key)}\s+{value}\b", f"Android {key}")
-    require_regex(
-        gradle,
-        rf"\bversionName\s+['\"]{re.escape(str(android.get('versionName')))}['\"]",
-        "Android versionName",
-    )
-    if android.get("versionName") != version:
-        fail("Android versionName must match currentRelease")
-    if android.get("publicApkSigning") != "ci-debug":
-        fail("Android public signing disclosure changed; update validator and documentation deliberately")
-
-    android_main_activity = read_text(
-        ROOT / "android" / "app" / "src" / "main" / "java" / "com" / "snapvere" / "android" / "MainActivity.java"
-    )
-    if "BuildConfig.VERSION_NAME" not in android_main_activity:
-        fail("Android UI version fallback must use generated BuildConfig.VERSION_NAME")
-    hardcoded_android_version_returns = re.findall(
-        r"\breturn\s+['\"]\d+\.\d+\.\d+(?:-[^'\"]+)?['\"]\s*;",
-        android_main_activity,
-    )
-    if hardcoded_android_version_returns:
-        fail("Android UI must not hardcode semantic version return values")
-
-    default_strings = android_string_keys(ROOT / "android" / "app" / "src" / "main" / "res" / "values" / "strings.xml")
-    hr_strings = android_string_keys(ROOT / "android" / "app" / "src" / "main" / "res" / "values-hr" / "strings.xml")
-    if default_strings != hr_strings:
-        missing_hr = sorted(default_strings - hr_strings)
-        extra_hr = sorted(hr_strings - default_strings)
-        fail(f"Android EN/HR string-key parity mismatch; missing_hr={missing_hr}, extra_hr={extra_hr}")
 
     browsers = contract.get("browsers", {})
     browser_version = browsers.get("extensionVersion")
@@ -212,38 +152,32 @@ def main() -> int:
     if browsers.get("storePublication") != "not-published":
         fail("browser store publication status changed; update contract only after real external publication")
 
-    assets = contract.get("releaseAssets")
     expected_assets = [
         "SNAPVERE-Setup.exe",
         "SNAPVERE-Portable.exe",
-        "SNAPVERE.apk",
-        "SNAPVERE-Android-Source.zip",
         "SNAPVERE-Chrome.zip",
         "SNAPVERE-Edge.zip",
         "SNAPVERE-Opera.zip",
         "SNAPVERE-Firefox.zip",
     ]
-    if assets != expected_assets:
-        fail("releaseAssets must match the exact eight-file v0.1.1 public contract")
+    if contract.get("releaseAssets") != expected_assets:
+        fail("releaseAssets must match the active Windows/browser distribution contract")
 
     validate_release_history(version)
 
-    required_current_docs = [
+    current_docs = [
         ROOT / "README.md",
         ROOT / "README.hr.md",
-        ROOT / "RELEASES.md",
         ROOT / "SECURITY.md",
         ROOT / "CONTRIBUTING.md",
-        ROOT / "android" / "README.md",
         ROOT / "ekstenzije" / "README.md",
+        ROOT / "ekstenzije" / "PRIVACY.md",
         ROOT / "docs" / "README.md",
         ROOT / "docs" / "hr" / "README.md",
         ROOT / "docs" / "ARCHITECTURE.md",
         ROOT / "docs" / "hr" / "ARCHITECTURE.md",
         ROOT / "docs" / "INSTALLATION.md",
         ROOT / "docs" / "hr" / "INSTALLATION.md",
-        ROOT / "docs" / "ANDROID.md",
-        ROOT / "docs" / "hr" / "ANDROID.md",
         ROOT / "docs" / "BROWSER-EXTENSIONS.md",
         ROOT / "docs" / "hr" / "BROWSER-EXTENSIONS.md",
         ROOT / "docs" / "SETTINGS.md",
@@ -254,27 +188,19 @@ def main() -> int:
         ROOT / "docs" / "hr" / "QA-MATRIX.md",
         ROOT / "docs" / "PRIVACY.md",
         ROOT / "docs" / "hr" / "PRIVACY.md",
+        ROOT / "docs" / "USER-GUIDE.md",
+        ROOT / "docs" / "hr" / "USER-GUIDE.md",
+        ROOT / "docs" / "TROUBLESHOOTING.md",
+        ROOT / "docs" / "hr" / "TROUBLESHOOTING.md",
         ROOT / "docs" / "VERSIONING-RELEASES.md",
         ROOT / "docs" / "hr" / "VERSIONING-RELEASES.md",
-        ROOT / "docs" / "RELEASE-0.1.1.md",
-        ROOT / "docs" / "SECURITY-PERFORMANCE-0.1.1.md",
-        ROOT / "docs" / "hr" / "SECURITY-PERFORMANCE-0.1.1.md",
     ]
-    for path in required_current_docs:
+    for path in current_docs:
         text = read_text(path)
-        if version not in text:
+        if path.name not in {"SECURITY.md", "CONTRIBUTING.md"} and version not in text:
             fail(f"current documentation does not mention {version}: {path.relative_to(ROOT)}")
-
-    stale_current_patterns = [
-        re.compile(r"current\s+(?:public\s+)?release(?:\s+line)?\s+is\s+\*\*0\.1\.0\*\*", re.IGNORECASE),
-        re.compile(r"aktualna\s+release\s+linija\s+je\s+\*\*0\.1\.0\*\*", re.IGNORECASE),
-        re.compile(r"javni\s+release\s+ugovor\s+0\.1\.0", re.IGNORECASE),
-    ]
-    for path in required_current_docs:
-        text = read_text(path)
-        for pattern in stale_current_patterns:
-            if pattern.search(text):
-                fail(f"stale 0.1.0 current-release wording remains in {path.relative_to(ROOT)}")
+        if re.search(r"\bandroid\b", text, re.IGNORECASE):
+            fail(f"active documentation still presents Android content: {path.relative_to(ROOT)}")
 
     for readme in (ROOT / "README.md", ROOT / "README.hr.md"):
         text = read_text(readme)
@@ -282,16 +208,16 @@ def main() -> int:
             fail(f"{readme.name} must link directly to the current GitHub release")
         for asset in expected_assets:
             if asset not in text:
-                fail(f"{readme.name} missing release asset: {asset}")
+                fail(f"{readme.name} missing active release asset: {asset}")
 
-    hr_index = read_text(ROOT / "docs" / "hr" / "README.md")
-    if "0.0.7" in hr_index:
-        fail("Croatian documentation index still contains stale 0.0.7 product-contract text")
+    markdown_paths = [ROOT / "RELEASES.md", *current_docs]
+    markdown_paths.extend(sorted((ROOT / "docs").glob("*.md")))
+    markdown_paths.extend(sorted((ROOT / "docs" / "hr").glob("*.md")))
+    validate_markdown_links(list(dict.fromkeys(markdown_paths)))
 
-    validate_markdown_links()
     print(
         f"SNAPVERE product contract validation passed for {tag} "
-        f"({len(expected_assets)} public assets, {len(required_current_docs)} current documents, canonical RELEASES history)."
+        f"({len(expected_assets)} active assets; Windows + browsers only)."
     )
     return 0
 
