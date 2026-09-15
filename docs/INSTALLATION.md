@@ -1,4 +1,4 @@
-# Installing SNAPVERE 0.1.1
+# Installing SNAPVERE 0.1.2
 
 ## Windows Setup
 
@@ -19,4 +19,4 @@ The current release provides:
 
 The ZIP files are source-ready release packages for manual installation. Store publication is a separate external process and is not claimed unless an actual store listing exists.
 
-Current release: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.1
+Current release: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.2
