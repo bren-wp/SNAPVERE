@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  import:
+  import-screenshots:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -24,8 +24,7 @@ jobs:
         run: |
           set -euo pipefail
           gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/10416919418/zip" > visual-qa.zip
-          rm -rf visual-qa
-          mkdir visual-qa
+          mkdir -p visual-qa
           unzip -q visual-qa.zip -d visual-qa
           test -s visual-qa/options.png
           test -s visual-qa/tray-menu.png
@@ -40,64 +39,13 @@ jobs:
           cp visual-qa/window-capture.png assets/branding/readme/screenshots/window-capture.png
           rm -rf visual-qa visual-qa.zip
 
-          python - <<'PY'
-          from pathlib import Path
-
-          def insert(path: str, marker: str, section: str) -> None:
-              file = Path(path)
-              text = file.read_text(encoding="utf-8")
-              if "assets/branding/readme/screenshots/options.png" in text:
-                  return
-              if marker not in text:
-                  raise SystemExit(f"Missing README insertion marker in {path}: {marker}")
-              file.write_text(text.replace(marker, section + "\n\n" + marker, 1), encoding="utf-8")
-
-          insert(
-              "README.md",
-              "## Downloads",
-              '''## See SNAPVERE in action
-
-These are **real rendered Windows surfaces captured by SNAPVERE's visual-QA pipeline** from the same validated codebase — not design mockups.
-
-<table>
-<tr>
-<td width="38%" valign="top"><img src="assets/branding/readme/screenshots/tray-menu.png" alt="SNAPVERE tray menu"><br><strong>Tray-first workflow</strong><br>Capture region, window or screen without keeping a permanent dashboard open.</td>
-<td width="62%" valign="top"><img src="assets/branding/readme/screenshots/options.png" alt="SNAPVERE Settings window"><br><strong>Local settings</strong><br>Startup, cursor and language preferences remain focused and local to the Windows account.</td>
-</tr>
-</table>
-
-<img src="assets/branding/readme/screenshots/window-capture.png" alt="SNAPVERE Window Capture overlay" width="760">
-
-**Window Capture** — a frozen desktop target-selection surface with clear visual focus before capture.'''
-          )
-
-          insert(
-              "README.hr.md",
-              "## Preuzimanja",
-              '''## SNAPVERE u stvarnom radu
-
-Ovo su **stvarne renderirane Windows površine koje je snimio SNAPVERE visual-QA pipeline** iz istog validiranog koda — nisu dizajnerski mockupovi.
-
-<table>
-<tr>
-<td width="38%" valign="top"><img src="assets/branding/readme/screenshots/tray-menu.png" alt="SNAPVERE tray izbornik"><br><strong>Tray-first workflow</strong><br>Region, window i screen capture bez stalno otvorenog dashboarda.</td>
-<td width="62%" valign="top"><img src="assets/branding/readme/screenshots/options.png" alt="SNAPVERE postavke"><br><strong>Lokalne postavke</strong><br>Startup, cursor i jezične postavke ostaju fokusirane i lokalne za Windows račun.</td>
-</tr>
-</table>
-
-<img src="assets/branding/readme/screenshots/window-capture.png" alt="SNAPVERE Window Capture overlay" width="760">
-
-**Window Capture** — zamrznuta površina za jasan odabir ciljnog prozora prije snimanja.'''
-          )
-          PY
-
       - name: Commit screenshots and remove helper workflow
         run: |
           set -euo pipefail
           rm -f .github/workflows/import-readme-screenshots.yml
           git config user.name "Brendigo"
           git config user.email "info@brendigo.com"
-          git add README.md README.hr.md assets/branding/readme/screenshots .github/workflows/import-readme-screenshots.yml
+          git add assets/branding/readme/screenshots .github/workflows/import-readme-screenshots.yml
           git diff --cached --check
-          git commit -m "Add real SNAPVERE UI screenshots to README"
+          git commit -m "Add real SNAPVERE UI screenshots"
           git push origin HEAD:docs/readme-real-ui-screenshots
