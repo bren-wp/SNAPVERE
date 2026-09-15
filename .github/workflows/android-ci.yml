@@ -62,6 +62,7 @@ jobs:
           grep -A4 'android:name=".CaptureService"' "$manifest" | grep -q 'android:exported="false"'
           grep -q "versionCode 11" "$gradle_file"
           grep -q "versionName '$SNAPVERE_ANDROID_VERSION'" "$gradle_file"
+          grep -q 'compileSdk 37' "$gradle_file"
           echo 'Android privacy/version/service contract validated.'
 
       - name: Setup JDK 17
@@ -77,13 +78,22 @@ jobs:
         with:
           gradle-version: '9.6.0'
 
-      - name: Verify Android SDK 36
+      - name: Install Android SDK 37 platform
         if: steps.project.outputs.exists == 'true'
         shell: bash
         run: |
           set -euo pipefail
           test -n "${ANDROID_HOME:-}"
-          test -d "$ANDROID_HOME/platforms/android-36"
+          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$sdkmanager"
+          "$sdkmanager" --install 'platforms;android-37' 'build-tools;36.0.0'
+
+      - name: Verify Android SDK 37 toolchain
+        if: steps.project.outputs.exists == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$ANDROID_HOME/platforms/android-37"
           test -x "$ANDROID_HOME/build-tools/36.0.0/apksigner"
           test -x "$ANDROID_HOME/build-tools/36.0.0/zipalign"
           echo "ANDROID_HOME=$ANDROID_HOME"
