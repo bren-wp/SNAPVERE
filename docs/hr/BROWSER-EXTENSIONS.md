@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 browser ekstenzije
+# SNAPVERE 0.1.2 browser ekstenzije
 
 Podržani su Chrome, Edge, Opera i Firefox. Dostupne su radnje za vidljivo područje, odabrano područje i ograničeno snimanje cijele stranice.
 
