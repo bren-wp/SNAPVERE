@@ -16,7 +16,7 @@ No account. No screenshot telemetry. No automatic cloud upload.
 [![Product Contract](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Website](https://snapvere.com) · [Download v0.1.1](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.1) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
+[Website](https://snapvere.com) · [Download v0.1.2](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.2) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
 
 </div>
 
@@ -24,7 +24,7 @@ No account. No screenshot telemetry. No automatic cloud upload.
 
 ## Why SNAPVERE
 
-SNAPVERE 0.1.1 is built for people who want screenshot tools that stay focused on the job: capture the right pixels, annotate quickly, copy or save locally, and get out of the way.
+SNAPVERE 0.1.2 is built for people who want screenshot tools that stay focused on the job: capture the right pixels, annotate quickly, copy or save locally, and get out of the way.
 
 | | What you get |
 | --- | --- |
@@ -34,6 +34,8 @@ SNAPVERE 0.1.1 is built for people who want screenshot tools that stay focused o
 | 🔒 **Local-first by design** | Core capture processing stays local; no account is required for capture and no first-party screenshot telemetry is built into the capture runtime. |
 | 📦 **Portable or installed** | Universal Windows Setup and Portable packages carry x86, x64 and ARM64 application payloads. |
 | 🌐 **Browser coverage** | Chrome, Edge, Opera and Firefox share the same locked SNAPVERE brand and bounded capture behavior. |
+
+0.1.2 also tightens the user-facing Windows experience: internal exception details stay in bounded local diagnostics instead of appearing in Settings, Language, About, Setup or Region Capture surfaces; the tray shortcut labels match the registered hotkeys; and repeated unchanged preference writes are avoided.
 
 ## Windows capture workflow
 
@@ -49,7 +51,7 @@ Windows captures are stored by default in `Pictures\SNAPVERE`. PNG saving uses s
 
 ## Built for real multi-monitor desktops
 
-SNAPVERE uses native display geometry and DPI conversion instead of assuming every monitor has the same scale. Recent memory hardening also removes redundant full-frame staging allocations from Region and Window Capture paths and releases frozen monitor buffers as soon as their UI bitmap is ready.
+SNAPVERE uses native display geometry and DPI conversion instead of assuming every monitor has the same scale. Current memory hardening removes redundant full-frame staging allocations from Region and Window Capture paths and releases frozen monitor buffers as soon as their UI bitmap is ready.
 
 Read the implementation-focused notes in [Performance & Stability](docs/PERFORMANCE.md), [Window Capture](docs/WINDOW-CAPTURE.md) and [Multi-monitor](docs/MULTI-MONITOR.md).
 
@@ -87,8 +89,8 @@ These are **real rendered Windows surfaces captured by SNAPVERE's visual-QA pipe
 
 ## Downloads
 
-Current release: **SNAPVERE 0.1.1**  
-Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.1
+Current release: **SNAPVERE 0.1.2**  
+Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.2
 
 | Platform | Package |
 | --- | --- |
