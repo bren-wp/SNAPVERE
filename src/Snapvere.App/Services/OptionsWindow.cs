@@ -223,7 +223,10 @@ public sealed class OptionsWindow : Window
             glyph: "\uE7C9",
             trailing: _cursorToggle);
 
-        var languageButton = CreateSecondaryAction(L("ChooseLanguage"), "\uE774", LanguagePickerWindow.ShowStandalone);
+        var languageButton = CreateSecondaryAction(
+            L("ChooseLanguage"),
+            "\uE774",
+            () => LanguagePickerWindow.ShowStandalone(_preferences));
         AddPreferenceCard(
             row: 3,
             eyebrow: L("Language").ToUpperInvariant(),
