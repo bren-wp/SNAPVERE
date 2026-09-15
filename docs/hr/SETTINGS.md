@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 postavke
+# SNAPVERE 0.1.2 postavke
 
 Windows postavke obuhvaćaju lokalne opcije poput pokretanja s Windowsima, uključivanja pokazivača i jezika.
 
