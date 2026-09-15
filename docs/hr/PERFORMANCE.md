@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Performanse i stabilnost
+# SNAPVERE 0.1.2 Performanse i stabilnost
 
 SNAPVERE je optimiziran za kratke capture operacije umjesto za stalno aktivan desktop proces. Fokus je zato na niskom idle trošku, manjem peak RAM-u tijekom snimanja, predvidljivom cleanupu i regresijskim provjerama.
 
@@ -29,6 +29,6 @@ SNAPVERE ima kontrolirane failure putove za capture, filesystem, tray, hotkey, p
 
 ## Regresijski gateovi
 
-CI za 0.1.1 provjerava x64 build i unit testove, x86 i ARM64 buildove, renderirane WinUI površine, visual baseline usporedbu, universal Setup/Portable, package-size budget, x64/x86 lifecycle, browser runtime/permission/parity provjere, reproducibilno pakiranje, Product Contract CI i CodeQL.
+CI za 0.1.2 provjerava x64 build i unit testove, x86 i ARM64 buildove, renderirane WinUI površine, visual baseline usporedbu, universal Setup/Portable, package-size budget, x64/x86 lifecycle, browser runtime/permission/parity provjere, reproducibilno pakiranje, Product Contract CI i CodeQL.
 
 Povezano: [QA matrica](QA-MATRIX.md), [Status proizvoda](PRODUCT-STATUS.md), [Engleska arhitektura](../ARCHITECTURE.md) i [Multi-monitor](../MULTI-MONITOR.md).
