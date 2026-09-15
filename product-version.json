@@ -16,7 +16,7 @@
     "versionCode": 11,
     "minSdk": 29,
     "targetSdk": 36,
-    "compileSdk": 36,
+    "compileSdk": 37,
     "publicApkSigning": "ci-debug"
   },
   "browsers": {
