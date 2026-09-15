@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 QA Matrix
+# SNAPVERE 0.1.2 QA Matrix
 
 This matrix documents automated regression evidence. A green gate means the tested contract passed on that commit; it does not convert platform behavior into an absolute guarantee.
 
