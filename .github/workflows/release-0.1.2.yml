@@ -7,7 +7,7 @@ on:
       - '.github/release-triggers/v0.1.2'
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: snapvere-release-0.1.2
@@ -191,9 +191,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet publish src/Snapvere.Portable/Snapvere.Portable.csproj --configuration Release --runtime win-x86 -p:Platform=x86 -p:SelfContained=true "-p:Version=$env:SNAPVERE_VERSION" "-p:SnapverePayloadX86Path=$x86" "-p:SnapverePayloadX64Path=$x64" "-p:SnapverePayloadArm64Path=$arm64" "-p:SnapverePayloadX86IntegrityPath=$x86Integrity" "-p:SnapverePayloadX64IntegrityPath=$x64Integrity" "-p:SnapverePayloadArm64IntegrityPath=$arm64Integrity" --output artifacts/portable-universal
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force -Path artifacts/universal | Out-Null
           New-Item -ItemType Directory -Force -Path release | Out-Null
-          Copy-Item artifacts/setup-universal/SNAPVERE-Setup.exe release/SNAPVERE-Setup.exe
-          Copy-Item artifacts/portable-universal/SNAPVERE-Portable.exe release/SNAPVERE-Portable.exe
+          Copy-Item artifacts/setup-universal/SNAPVERE-Setup.exe artifacts/universal/SNAPVERE-Setup.exe
+          Copy-Item artifacts/portable-universal/SNAPVERE-Portable.exe artifacts/universal/SNAPVERE-Portable.exe
+          Copy-Item artifacts/universal/SNAPVERE-Setup.exe release/SNAPVERE-Setup.exe
+          Copy-Item artifacts/universal/SNAPVERE-Portable.exe release/SNAPVERE-Portable.exe
 
       - name: Enforce Windows package size budgets
         shell: pwsh
@@ -222,6 +225,9 @@ jobs:
           foreach ($arch in @('x64','x86')) {
             $marker = Join-Path $markerDirectory "$arch.ok"
             if (-not (Test-Path -LiteralPath $marker -PathType Leaf)) { throw "Missing $arch lifecycle marker." }
+            $expectedMarker = "SNAPVERE $env:SNAPVERE_VERSION $arch LIFECYCLE_OK"
+            $actualMarker = (Get-Content -LiteralPath $marker -Raw).Trim()
+            if ($actualMarker -ne $expectedMarker) { throw "$arch lifecycle marker is invalid: $actualMarker" }
           }
 
       - name: Download validated browser payload
@@ -266,7 +272,6 @@ jobs:
         run: |
           @'
           from pathlib import Path
-          import sys
           version = "0.1.2"
           lines = Path("RELEASES.md").read_text(encoding="utf-8").splitlines()
           starts = [i for i, line in enumerate(lines) if line.startswith(f"## v{version} — ")]
