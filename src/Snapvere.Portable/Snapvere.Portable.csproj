@@ -16,6 +16,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Snapvere.Packaging\Snapvere.Packaging.csproj" />
+    <ProjectReference Include="..\Snapvere.Shared\Snapvere.Shared.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(SnapverePayloadX86Path)' != '' and Exists('$(SnapverePayloadX86Path)')">
     <EmbeddedResource Include="$(SnapverePayloadX86Path)" LogicalName="Snapvere.Payload.x86.zip" />
