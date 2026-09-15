@@ -77,6 +77,40 @@ public sealed class CapturePreferencesServiceTests
     }
 
     [Fact]
+    public void ReapplyingUnchangedPreferences_DoesNotRewriteSettingsFile()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"snapvere-settings-noop-{Guid.NewGuid():N}");
+        var settingsPath = Path.Combine(directory, "settings.json");
+        var previousLanguage = SnapvereLanguageState.CurrentLanguageCode;
+
+        try
+        {
+            var service = new CapturePreferencesService(settingsPath);
+            service.SetIncludeCursorOnCapture(true);
+            service.SetLanguageCode("hr");
+
+            var sentinel = new DateTime(2001, 2, 3, 4, 5, 6, DateTimeKind.Utc);
+            File.SetLastWriteTimeUtc(settingsPath, sentinel);
+            var baseline = File.GetLastWriteTimeUtc(settingsPath);
+
+            service.SetIncludeCursorOnCapture(true);
+            service.SetLanguageCode("hr-HR");
+
+            Assert.Equal(baseline, File.GetLastWriteTimeUtc(settingsPath));
+            Assert.True(service.Current.IncludeCursorOnCapture);
+            Assert.Equal("hr", service.Current.LanguageCode);
+        }
+        finally
+        {
+            SnapvereLanguageState.SetCurrentLanguage(previousLanguage);
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public void InvalidSettings_FallsBackToSafeEnglishDefaults()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"snapvere-settings-invalid-{Guid.NewGuid():N}");
