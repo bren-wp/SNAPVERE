@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Window Capture
+# SNAPVERE 0.1.2 Window Capture
 
 Window Capture is a Windows-only capture path that separates **target selection** from **target acquisition**. The picker freezes the visible desktop and capturable-window ordering before SNAPVERE displays its own topmost overlays; the selected native window is then acquired through the window capture service and saved through the shared PNG publication pipeline.
 
@@ -28,7 +28,7 @@ The first frame must arrive within two seconds. A caller cancellation remains ca
 
 The delivered frame is copied into a validated `CaptureFrame` with packed BGRA data and source metadata. Frame-event handlers are detached and WinRT/D3D resources are disposed on every exit path.
 
-Window Capture does **not** claim a separate legacy window backend in the current 0.1.1 implementation. Platform restrictions or protected content can still prevent a successful window frame.
+Window Capture does **not** claim a separate legacy window backend in the current 0.1.2 implementation. Platform restrictions or protected content can still prevent a successful window frame.
 
 ## Save path and cancellation
 
