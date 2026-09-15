@@ -175,7 +175,7 @@ public sealed class OptionsWindow : Window
         Grid.SetColumn(identity, 1);
         header.Children.Add(identity);
 
-        var version = typeof(OptionsWindow).Assembly.GetName().Version?.ToString(3) ?? "unknown";
+        var version = typeof(OptionsWindow).Assembly.GetName().Version?.ToString(3);
         var versionBadge = new Border
         {
             Padding = new Thickness(10, 6, 10, 6),
@@ -184,7 +184,7 @@ public sealed class OptionsWindow : Window
             BorderBrush = Outline,
             BorderThickness = new Thickness(1),
             VerticalAlignment = VerticalAlignment.Center,
-            Child = Text($"v{version}", 10, Muted, Microsoft.UI.Text.FontWeights.SemiBold)
+            Child = Text(version is null ? "SNAPVERE" : $"v{version}", 10, Muted, Microsoft.UI.Text.FontWeights.SemiBold)
         };
         Grid.SetColumn(versionBadge, 2);
         header.Children.Add(versionBadge);
@@ -226,7 +226,11 @@ public sealed class OptionsWindow : Window
         var languageButton = CreateSecondaryAction(
             L("ChooseLanguage"),
             "\uE774",
-            () => LanguagePickerWindow.ShowStandalone(_preferences));
+            () =>
+            {
+                Close();
+                LanguagePickerWindow.ShowStandalone(_preferences);
+            });
         AddPreferenceCard(
             row: 3,
             eyebrow: L("Language").ToUpperInvariant(),
