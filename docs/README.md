@@ -12,14 +12,17 @@ This documentation describes the production product surface, its implementation 
 - [Troubleshooting](TROUBLESHOOTING.md) — diagnostics and controlled recovery guidance.
 - [Product Status](PRODUCT-STATUS.md) — what is maintained and what CI evidence means.
 
-## Windows internals
+## Windows capture internals
 
-- [Architecture](ARCHITECTURE.md)
-- [Capture Engine](CAPTURE-ENGINE.md)
-- [Region Capture](REGION-CAPTURE.md)
-- [Multi-monitor](MULTI-MONITOR.md)
-- [Settings](SETTINGS.md)
-- [QA Matrix](QA-MATRIX.md)
+- [Architecture](ARCHITECTURE.md) — project boundaries and dependency direction.
+- [Capture Engine](CAPTURE-ENGINE.md) — Windows capture acquisition and fallback boundaries.
+- [Region Capture](REGION-CAPTURE.md) — frozen-frame selection and annotation workflow.
+- [Window Capture](WINDOW-CAPTURE.md) — native window discovery, frozen multi-monitor picker and WGC acquisition.
+- [Image Pipeline](IMAGE-PIPELINE.md) — frame validation, crop/annotation, PNG encoding and atomic publication.
+- [Multi-monitor](MULTI-MONITOR.md) — virtual desktop, pixel geometry and DPI handling.
+- [Tray & Lifecycle](TRAY-LIFECYCLE.md) — single-instance ownership, native tray host, Explorer recovery and Setup/Portable lifecycle evidence.
+- [Settings](SETTINGS.md) — persisted local Windows preferences.
+- [QA Matrix](QA-MATRIX.md) — automated evidence and its limits.
 
 ## Browser extensions
 
