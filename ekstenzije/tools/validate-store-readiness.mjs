@@ -40,9 +40,7 @@ const listing = readJson(listingPath);
 if (listing.schemaVersion !== 1) fail('unsupported listing schemaVersion');
 if (listing.product !== 'SNAPVERE') fail('product must be SNAPVERE');
 if (!/^\d+\.\d+\.\d+$/.test(listing.extensionVersion ?? '')) fail('extensionVersion must use x.y.z');
-const expectedDevelopmentChannel = listing.extensionVersion === '0.1.1'
-  ? 'v0.1.1-release'
-  : 'post-v0.1.0-source-development';
+const expectedDevelopmentChannel = `v${listing.extensionVersion}-release`;
 if (listing.developmentChannel !== expectedDevelopmentChannel) {
   fail(`developmentChannel must be ${expectedDevelopmentChannel} for extension version ${listing.extensionVersion}`);
 }
