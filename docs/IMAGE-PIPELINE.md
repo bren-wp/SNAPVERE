@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Image Pipeline
+# SNAPVERE 0.1.2 Image Pipeline
 
 SNAPVERE's Windows image pipeline keeps capture acquisition, pixel transformation, annotation, PNG encoding and durable file publication as separate responsibilities. The shared frame contract uses BGRA8 pixels, explicit dimensions and stride, capture time and source identity.
 
