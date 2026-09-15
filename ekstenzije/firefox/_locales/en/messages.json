@@ -2,6 +2,7 @@
   "extensionName": { "message": "SNAPVERE" },
   "extensionDescription": { "message": "Local-first screenshot capture for visible areas, full pages and selected regions." },
   "actionTitle": { "message": "SNAPVERE capture" },
+  "tagline": { "message": "Capture. Edit. Done." },
   "captureActions": { "message": "Capture actions" },
   "captureVisible": { "message": "Capture visible area" },
   "captureVisibleHint": { "message": "Save the current viewport as PNG" },
@@ -24,10 +25,9 @@
   "regionInstruction": { "message": "Drag to select an area. Press Esc to cancel." },
   "fullPageLimitNote": { "message": "Full-page results can vary on video, canvas, cross-origin frames and highly dynamic pages." },
   "optionsTitle": { "message": "Capture settings" },
-  "fileNamePrefix": { "message": "Filename prefix" },
+  "fileNamingNote": { "message": "Saved captures always use the SNAPVERE filename prefix." },
   "askWhereToSave": { "message": "Ask where to save visible and region captures" },
   "saveSettings": { "message": "Save settings" },
   "settingsSaved": { "message": "Settings saved." },
-  "privacyNote": { "message": "Screenshots are processed locally. SNAPVERE does not upload captures, run analytics or use telemetry." },
-  "invalidPrefix": { "message": "Enter a valid filename prefix." }
+  "privacyNote": { "message": "Screenshots are processed locally. SNAPVERE does not upload captures, run analytics or use telemetry." }
 }

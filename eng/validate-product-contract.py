@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate SNAPVERE's cross-platform version, documentation and release contract."""
+"""Validate SNAPVERE's active Windows/browser product contract."""
 
 from __future__ import annotations
 
@@ -31,11 +31,6 @@ def read_json(path: Path):
         fail(f"invalid JSON in {path.relative_to(ROOT)}: {exc}")
 
 
-def require_regex(text: str, pattern: str, label: str) -> None:
-    if re.search(pattern, text, re.MULTILINE) is None:
-        fail(f"{label} does not match canonical product contract")
-
-
 def xml_property(path: Path, name: str) -> str:
     try:
         root = ET.fromstring(read_text(path))
@@ -47,78 +42,13 @@ def xml_property(path: Path, name: str) -> str:
     fail(f"missing <{name}> in {path.relative_to(ROOT)}")
 
 
-def android_string_keys(path: Path) -> set[str]:
-    try:
-        root = ET.fromstring(read_text(path))
-    except ET.ParseError as exc:
-        fail(f"invalid Android resources XML in {path.relative_to(ROOT)}: {exc}")
-    keys: set[str] = set()
-    for child in root:
-        name = child.attrib.get("name")
-        if name:
-            keys.add(name)
-    return keys
-
-
-def validate_release_history(version: str) -> None:
-    releases_path = ROOT / "RELEASES.md"
-    text = read_text(releases_path)
-
-    if f"Current public release: **v{version}**" not in text:
-        fail("RELEASES.md current-public-release marker does not match currentRelease")
-    if "## Unreleased" not in text:
-        fail("RELEASES.md must contain an Unreleased section for post-release main work")
-
-    historical_versions = [
-        "0.1.1",
-        "0.1.0",
-        "0.0.9",
-        "0.0.8",
-        "0.0.7",
-        "0.0.6",
-        "0.0.5",
-        "0.0.4",
-        "0.0.3",
-        "0.0.2",
-        "0.0.1",
-    ]
-    positions: list[int] = []
-    for historical_version in historical_versions:
-        match = re.search(rf"^## v{re.escape(historical_version)}\b", text, re.MULTILINE)
-        if match is None:
-            fail(f"RELEASES.md missing historical section v{historical_version}")
-        positions.append(match.start())
-
-    if positions != sorted(positions):
-        fail("RELEASES.md version sections must be newest-to-oldest")
-
-    fragmented = sorted(ROOT.glob("RELEASE_NOTES_*.md"))
-    if fragmented:
-        names = ", ".join(path.name for path in fragmented)
-        fail(f"version-specific root release-note files are forbidden; use RELEASES.md: {names}")
-
-
-def validate_markdown_links() -> None:
-    markdown_roots = [
-        ROOT / "README.md",
-        ROOT / "README.hr.md",
-        ROOT / "RELEASES.md",
-        ROOT / "SECURITY.md",
-        ROOT / "CONTRIBUTING.md",
-        ROOT / "android" / "README.md",
-        ROOT / "ekstenzije" / "README.md",
-        ROOT / "ekstenzije" / "PRIVACY.md",
-    ]
-    markdown_roots.extend(sorted((ROOT / "docs").rglob("*.md")))
-
-    link_pattern = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
-    for path in markdown_roots:
+def validate_links(paths: list[Path]) -> None:
+    pattern = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
+    for path in paths:
         text = read_text(path)
-        for raw_target in link_pattern.findall(text):
+        for raw_target in pattern.findall(text):
             target = raw_target.strip()
-            if not target:
-                fail(f"empty Markdown link in {path.relative_to(ROOT)}")
-            if target.startswith(("http://", "https://", "mailto:", "#")):
+            if not target or target.startswith(("http://", "https://", "mailto:", "#")):
                 continue
             target = target.split(" ", 1)[0].strip("<>")
             target = target.split("#", 1)[0].split("?", 1)[0]
@@ -135,164 +65,134 @@ def validate_markdown_links() -> None:
 
 def main() -> int:
     contract = read_json(CONTRACT_PATH)
-    if contract.get("schemaVersion") != 1:
-        fail("product-version.json schemaVersion must be 1")
-    if contract.get("product") != "SNAPVERE":
-        fail("product-version.json product must be SNAPVERE")
+    if contract.get("schemaVersion") != 1 or contract.get("product") != "SNAPVERE":
+        fail("product-version.json schema/product mismatch")
 
     version = contract.get("currentRelease")
-    tag = contract.get("releaseTag")
-    release_url = contract.get("releaseUrl")
     if not isinstance(version, str) or not re.fullmatch(r"\d+\.\d+\.\d+", version):
         fail("currentRelease must use x.y.z")
-    if tag != f"v{version}":
-        fail("releaseTag must be v + currentRelease")
-    if release_url != f"https://github.com/bren-wp/SNAPVERE/releases/tag/{tag}":
-        fail("releaseUrl does not match releaseTag")
+    tag = f"v{version}"
+    release_url = f"https://github.com/bren-wp/SNAPVERE/releases/tag/{tag}"
+    if contract.get("releaseTag") != tag or contract.get("releaseUrl") != release_url:
+        fail("release tag/URL mismatch")
+    if contract.get("supportedPlatforms") != ["windows", "browsers"]:
+        fail("supportedPlatforms must be exactly windows and browsers")
+    if "android" in contract:
+        fail("retired mobile product data must not exist in the active contract")
+
+    forbidden_paths = [
+        ROOT / "android",
+        ROOT / ".github" / "workflows" / "android-ci.yml",
+        ROOT / "docs" / "ANDROID.md",
+        ROOT / "docs" / "hr" / "ANDROID.md",
+    ]
+    for path in forbidden_paths:
+        if path.exists():
+            fail(f"retired product path still exists: {path.relative_to(ROOT)}")
+
+    dependabot = read_text(ROOT / ".github" / "dependabot.yml")
+    if re.search(r"package-ecosystem:\s*[\"']?gradle", dependabot, re.IGNORECASE):
+        fail("Gradle dependency automation must not remain after mobile removal")
+    codeql = read_text(ROOT / ".github" / "workflows" / "codeql.yml")
+    if "java-kotlin" in codeql:
+        fail("Java/Kotlin CodeQL target must not remain after mobile removal")
 
     windows = contract.get("windows", {})
     props = ROOT / "Directory.Build.props"
-    if xml_property(props, "VersionPrefix") != windows.get("productVersion") or windows.get("productVersion") != version:
-        fail("Windows VersionPrefix must match currentRelease")
+    if xml_property(props, "VersionPrefix") != version or windows.get("productVersion") != version:
+        fail("Windows product version mismatch")
     if xml_property(props, "AssemblyVersion") != windows.get("assemblyVersion"):
         fail("Windows AssemblyVersion mismatch")
     if xml_property(props, "FileVersion") != windows.get("fileVersion"):
         fail("Windows FileVersion mismatch")
 
-    android = contract.get("android", {})
-    gradle = read_text(ROOT / "android" / "app" / "build.gradle")
-    for key in ("versionCode", "minSdk", "targetSdk", "compileSdk"):
-        value = android.get(key)
-        if not isinstance(value, int):
-            fail(f"android.{key} must be an integer")
-        require_regex(gradle, rf"\b{re.escape(key)}\s+{value}\b", f"Android {key}")
-    require_regex(
-        gradle,
-        rf"\bversionName\s+['\"]{re.escape(str(android.get('versionName')))}['\"]",
-        "Android versionName",
-    )
-    if android.get("versionName") != version:
-        fail("Android versionName must match currentRelease")
-    if android.get("publicApkSigning") != "ci-debug":
-        fail("Android public signing disclosure changed; update validator and documentation deliberately")
-
-    android_main_activity = read_text(
-        ROOT / "android" / "app" / "src" / "main" / "java" / "com" / "snapvere" / "android" / "MainActivity.java"
-    )
-    if "BuildConfig.VERSION_NAME" not in android_main_activity:
-        fail("Android UI version fallback must use generated BuildConfig.VERSION_NAME")
-    hardcoded_android_version_returns = re.findall(
-        r"\breturn\s+['\"]\d+\.\d+\.\d+(?:-[^'\"]+)?['\"]\s*;",
-        android_main_activity,
-    )
-    if hardcoded_android_version_returns:
-        fail("Android UI must not hardcode semantic version return values")
-
-    default_strings = android_string_keys(ROOT / "android" / "app" / "src" / "main" / "res" / "values" / "strings.xml")
-    hr_strings = android_string_keys(ROOT / "android" / "app" / "src" / "main" / "res" / "values-hr" / "strings.xml")
-    if default_strings != hr_strings:
-        missing_hr = sorted(default_strings - hr_strings)
-        extra_hr = sorted(hr_strings - default_strings)
-        fail(f"Android EN/HR string-key parity mismatch; missing_hr={missing_hr}, extra_hr={extra_hr}")
-
     browsers = contract.get("browsers", {})
-    browser_version = browsers.get("extensionVersion")
-    if browser_version != version:
-        fail("browser extensionVersion must match currentRelease")
-    variants = browsers.get("variants")
-    if variants != ["chrome", "edge", "opera", "firefox"]:
-        fail("browser variants must be chrome, edge, opera, firefox in canonical order")
-    for browser in variants:
-        manifest = read_json(ROOT / "ekstenzije" / browser / "manifest.json")
-        if manifest.get("version") != browser_version:
-            fail(f"{browser} manifest version mismatch")
-    listing = read_json(ROOT / "ekstenzije" / "store" / "listing.json")
-    if listing.get("extensionVersion") != browser_version:
-        fail("browser store listing version mismatch")
+    if browsers.get("extensionVersion") != version:
+        fail("browser version mismatch")
+    variants = ["chrome", "edge", "opera", "firefox"]
+    if browsers.get("variants") != variants:
+        fail("browser variant list mismatch")
     if browsers.get("storePublication") != "not-published":
-        fail("browser store publication status changed; update contract only after real external publication")
+        fail("browser store publication status must reflect actual external state")
+    for browser in variants:
+        base = ROOT / "ekstenzije" / browser
+        manifest = read_json(base / "manifest.json")
+        if manifest.get("version") != version or manifest.get("name") != "__MSG_extensionName__":
+            fail(f"{browser} manifest product/version mismatch")
+        for locale in ("en", "hr"):
+            messages = read_json(base / "_locales" / locale / "messages.json")
+            if messages.get("extensionName", {}).get("message") != "SNAPVERE":
+                fail(f"{browser} {locale} product name must remain SNAPVERE")
+        source = read_text(base / "background.js")
+        if not re.search(r"const\s+FILE_PREFIX\s*=\s*[\"']SNAPVERE[\"']", source):
+            fail(f"{browser} capture filename brand is not locked")
 
-    assets = contract.get("releaseAssets")
     expected_assets = [
         "SNAPVERE-Setup.exe",
         "SNAPVERE-Portable.exe",
-        "SNAPVERE.apk",
-        "SNAPVERE-Android-Source.zip",
         "SNAPVERE-Chrome.zip",
         "SNAPVERE-Edge.zip",
         "SNAPVERE-Opera.zip",
         "SNAPVERE-Firefox.zip",
     ]
-    if assets != expected_assets:
-        fail("releaseAssets must match the exact eight-file v0.1.1 public contract")
+    if contract.get("releaseAssets") != expected_assets:
+        fail("active release asset contract mismatch")
 
-    validate_release_history(version)
+    releases = read_text(ROOT / "RELEASES.md")
+    if f"Current public release: **v{version}**" not in releases or "## Unreleased" not in releases:
+        fail("RELEASES.md current/unreleased structure mismatch")
 
-    required_current_docs = [
+    current_docs = [
         ROOT / "README.md",
         ROOT / "README.hr.md",
-        ROOT / "RELEASES.md",
         ROOT / "SECURITY.md",
         ROOT / "CONTRIBUTING.md",
-        ROOT / "android" / "README.md",
         ROOT / "ekstenzije" / "README.md",
+        ROOT / "ekstenzije" / "PRIVACY.md",
         ROOT / "docs" / "README.md",
-        ROOT / "docs" / "hr" / "README.md",
-        ROOT / "docs" / "ARCHITECTURE.md",
-        ROOT / "docs" / "hr" / "ARCHITECTURE.md",
+        ROOT / "docs" / "USER-GUIDE.md",
         ROOT / "docs" / "INSTALLATION.md",
-        ROOT / "docs" / "hr" / "INSTALLATION.md",
-        ROOT / "docs" / "ANDROID.md",
-        ROOT / "docs" / "hr" / "ANDROID.md",
-        ROOT / "docs" / "BROWSER-EXTENSIONS.md",
-        ROOT / "docs" / "hr" / "BROWSER-EXTENSIONS.md",
         ROOT / "docs" / "SETTINGS.md",
-        ROOT / "docs" / "hr" / "SETTINGS.md",
-        ROOT / "docs" / "PRODUCT-STATUS.md",
-        ROOT / "docs" / "hr" / "PRODUCT-STATUS.md",
-        ROOT / "docs" / "QA-MATRIX.md",
-        ROOT / "docs" / "hr" / "QA-MATRIX.md",
+        ROOT / "docs" / "BROWSER-EXTENSIONS.md",
         ROOT / "docs" / "PRIVACY.md",
-        ROOT / "docs" / "hr" / "PRIVACY.md",
+        ROOT / "docs" / "TROUBLESHOOTING.md",
+        ROOT / "docs" / "PRODUCT-STATUS.md",
+        ROOT / "docs" / "QA-MATRIX.md",
+        ROOT / "docs" / "ARCHITECTURE.md",
+        ROOT / "docs" / "CAPTURE-ENGINE.md",
+        ROOT / "docs" / "REGION-CAPTURE.md",
+        ROOT / "docs" / "MULTI-MONITOR.md",
+        ROOT / "docs" / "BRANDING.md",
         ROOT / "docs" / "VERSIONING-RELEASES.md",
-        ROOT / "docs" / "hr" / "VERSIONING-RELEASES.md",
-        ROOT / "docs" / "RELEASE-0.1.1.md",
-        ROOT / "docs" / "SECURITY-PERFORMANCE-0.1.1.md",
-        ROOT / "docs" / "hr" / "SECURITY-PERFORMANCE-0.1.1.md",
+        ROOT / "docs" / "hr" / "README.md",
+        ROOT / "docs" / "hr" / "USER-GUIDE.md",
+        ROOT / "docs" / "hr" / "INSTALLATION.md",
+        ROOT / "docs" / "hr" / "SETTINGS.md",
+        ROOT / "docs" / "hr" / "BROWSER-EXTENSIONS.md",
+        ROOT / "docs" / "hr" / "PRIVACY.md",
+        ROOT / "docs" / "hr" / "TROUBLESHOOTING.md",
+        ROOT / "docs" / "hr" / "PRODUCT-STATUS.md",
+        ROOT / "docs" / "hr" / "QA-MATRIX.md",
     ]
-    for path in required_current_docs:
+    for path in current_docs:
         text = read_text(path)
-        if version not in text:
-            fail(f"current documentation does not mention {version}: {path.relative_to(ROOT)}")
-
-    stale_current_patterns = [
-        re.compile(r"current\s+(?:public\s+)?release(?:\s+line)?\s+is\s+\*\*0\.1\.0\*\*", re.IGNORECASE),
-        re.compile(r"aktualna\s+release\s+linija\s+je\s+\*\*0\.1\.0\*\*", re.IGNORECASE),
-        re.compile(r"javni\s+release\s+ugovor\s+0\.1\.0", re.IGNORECASE),
-    ]
-    for path in required_current_docs:
-        text = read_text(path)
-        for pattern in stale_current_patterns:
-            if pattern.search(text):
-                fail(f"stale 0.1.0 current-release wording remains in {path.relative_to(ROOT)}")
+        if version not in text and path.name not in {"README.md", "PRIVACY.md"}:
+            fail(f"active documentation does not identify current release: {path.relative_to(ROOT)}")
+        if re.search(r"\bandroid\b", text, re.IGNORECASE):
+            fail(f"active documentation still describes the retired mobile product: {path.relative_to(ROOT)}")
+        if re.search(r"\b(?:placeholder|coming soon|todo|dev build)\b", text, re.IGNORECASE):
+            fail(f"active documentation contains development-only wording: {path.relative_to(ROOT)}")
 
     for readme in (ROOT / "README.md", ROOT / "README.hr.md"):
         text = read_text(readme)
         if release_url not in text:
-            fail(f"{readme.name} must link directly to the current GitHub release")
+            fail(f"{readme.name} must link directly to the current release")
         for asset in expected_assets:
             if asset not in text:
-                fail(f"{readme.name} missing release asset: {asset}")
+                fail(f"{readme.name} missing active package name: {asset}")
 
-    hr_index = read_text(ROOT / "docs" / "hr" / "README.md")
-    if "0.0.7" in hr_index:
-        fail("Croatian documentation index still contains stale 0.0.7 product-contract text")
-
-    validate_markdown_links()
-    print(
-        f"SNAPVERE product contract validation passed for {tag} "
-        f"({len(expected_assets)} public assets, {len(required_current_docs)} current documents, canonical RELEASES history)."
-    )
+    validate_links(current_docs)
+    print(f"SNAPVERE product contract passed for {tag}: Windows + browsers, {len(expected_assets)} active packages.")
     return 0
 
 

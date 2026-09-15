@@ -40,20 +40,20 @@ public sealed class PngCaptureEncoder
         header[12] = 0;
         await WriteChunkAsync(destination, IhdrType, header, cancellationToken).ConfigureAwait(false);
 
-        // Pixel conversion and DEFLATE compression are CPU-bound. In clipboard
-        // workflows the destination is a MemoryStream, so its async writes can
-        // complete synchronously on the WinUI thread. Explicitly offload only
-        // the heavy compression phase so large captures do not freeze the editor.
+        // Pixel conversion and DEFLATE compression are CPU-bound. Keep that work
+        // off the WinUI thread, but avoid a second full compressed-buffer copy:
+        // MemoryStream.GetBuffer exposes the existing backing array directly.
         var compressed = await Task.Run(
                 () => BuildCompressedImageData(frame, cancellationToken),
                 cancellationToken)
             .ConfigureAwait(false);
 
+        cancellationToken.ThrowIfCancellationRequested();
         await WriteChunkAsync(destination, IdatType, compressed, cancellationToken).ConfigureAwait(false);
         await WriteChunkAsync(destination, IendType, ReadOnlyMemory<byte>.Empty, cancellationToken).ConfigureAwait(false);
     }
 
-    private static byte[] BuildCompressedImageData(
+    private static ReadOnlyMemory<byte> BuildCompressedImageData(
         CaptureFrame frame,
         CancellationToken cancellationToken)
     {
@@ -85,7 +85,8 @@ public sealed class PngCaptureEncoder
             }
         }
 
-        return compressed.ToArray();
+        var length = checked((int)compressed.Length);
+        return compressed.GetBuffer().AsMemory(0, length);
     }
 
     private static async Task WriteChunkAsync(

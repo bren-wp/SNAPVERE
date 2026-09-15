@@ -58,6 +58,9 @@ function validateMessages(browserDir) {
         fail(`${path.basename(browserDir)} ${locale} locale has invalid message: ${key}`);
       }
     }
+    if (messages.extensionName?.message !== "SNAPVERE") {
+      fail(`${path.basename(browserDir)} ${locale} extensionName must remain SNAPVERE.`);
+    }
   }
 }
 
@@ -67,9 +70,13 @@ function validateManifest(browser, browserDir) {
   if (!/^\d+\.\d+\.\d+(?:\.\d+)?$/.test(String(manifest.version || ""))) {
     fail(`${browser} has invalid version format.`);
   }
+  if (manifest.name !== "__MSG_extensionName__") fail(`${browser} manifest name must use the locked SNAPVERE locale key.`);
   if (manifest.default_locale !== "en") fail(`${browser} default_locale must be en.`);
 
   const permissions = Array.isArray(manifest.permissions) ? manifest.permissions : [];
+  if (permissions.length !== allowedPermissions.size) {
+    fail(`${browser} permission count changed.`);
+  }
   for (const permission of permissions) {
     if (!allowedPermissions.has(permission)) fail(`${browser} requests disallowed permission: ${permission}`);
   }
@@ -88,9 +95,7 @@ function validateManifest(browser, browserDir) {
     if ("service_worker" in background) fail("Firefox manifest must not declare background.service_worker.");
     if (!manifest.browser_specific_settings?.gecko?.id) fail("Firefox manifest is missing Gecko extension id.");
   } else {
-    if (background.service_worker !== "background.js") {
-      fail(`${browser} must use background.service_worker.`);
-    }
+    if (background.service_worker !== "background.js") fail(`${browser} must use background.service_worker.`);
     if ("scripts" in background) fail(`${browser} must not declare background.scripts.`);
   }
 
@@ -104,9 +109,37 @@ function validateManifest(browser, browserDir) {
   ].filter(Boolean));
 
   for (const ref of references) {
-    if (!fs.existsSync(path.join(browserDir, ref))) {
-      fail(`${browser} references missing file: ${ref}`);
+    if (!fs.existsSync(path.join(browserDir, ref))) fail(`${browser} references missing file: ${ref}`);
+  }
+}
+
+function validateBrandLock(browser, browserDir) {
+  const background = fs.readFileSync(path.join(browserDir, "background.js"), "utf8");
+  const optionsHtml = fs.readFileSync(path.join(browserDir, "options.html"), "utf8");
+  const optionsJs = fs.readFileSync(path.join(browserDir, "options.js"), "utf8");
+  const popupHtml = fs.readFileSync(path.join(browserDir, "popup.html"), "utf8");
+
+  if (!/const\s+FILE_PREFIX\s*=\s*["']SNAPVERE["']/.test(background)) {
+    fail(`${browser}/background.js must hard-lock the SNAPVERE filename prefix.`);
+  }
+  if (!/`\$\{FILE_PREFIX\}-\$\{kind\}-\$\{timestamp\(\)\}\.png`/.test(background)) {
+    fail(`${browser}/background.js must build capture filenames from the locked SNAPVERE prefix.`);
+  }
+
+  for (const [name, text] of [["background.js", background], ["options.html", optionsHtml], ["options.js", optionsJs]]) {
+    if (/filenamePrefix|filename-prefix|fileNamePrefix|invalidPrefix/.test(text)) {
+      fail(`${browser}/${name} must not expose or consume configurable branding/filename prefixes.`);
     }
+  }
+
+  if (!/<div class="wordmark">SNAPVERE<\/div>/.test(optionsHtml) ||
+      !/<div class="wordmark">SNAPVERE<\/div>/.test(popupHtml)) {
+    fail(`${browser} visible extension surfaces must retain the SNAPVERE wordmark.`);
+  }
+
+  const visibleHtml = `${optionsHtml}\n${popupHtml}`;
+  if (/\b(?:dev|debug|todo|placeholder)\b/i.test(visibleHtml)) {
+    fail(`${browser} visible extension UI contains development-only wording.`);
   }
 }
 
@@ -140,12 +173,14 @@ function validateSource(browser, browserDir) {
       if (!postEncodeSessionGuard.test(text)) {
         fail(`${browser}/capture.js must revalidate the full-page token after async canvas encoding.`);
       }
-      if (
-        !text.includes("function showRegionError(") ||
-        !text.includes("response.ok !== true") ||
-        !text.includes('showRegionError("captureFailed")')
-      ) {
-        fail(`${browser}/capture.js must surface asynchronous region-capture failures in-page.`);
+      if (!/REGION_SELECTED[\s\S]*?\.then\s*\(\(response\)\s*=>[\s\S]*?showRegionError/.test(text)) {
+        fail(`${browser}/capture.js must surface asynchronous region capture failures after the popup closes.`);
+      }
+      if (/fullState\.tiles\.push|tiles\s*:\s*\[\]/.test(text)) {
+        fail(`${browser}/capture.js must not retain decoded full-page tile images in an unbounded array.`);
+      }
+      if (!/fullState\.context\.drawImage\(image/.test(text) || !/image\.src\s*=\s*["']["']/.test(text)) {
+        fail(`${browser}/capture.js must draw full-page tiles incrementally and release decoded images.`);
       }
     }
   }
@@ -158,15 +193,14 @@ for (const browser of browsers) {
   }
 
   for (const relative of requiredFiles) {
-    if (!fs.existsSync(path.join(browserDir, relative))) {
-      fail(`${browser} is missing required file: ${relative}`);
-    }
+    if (!fs.existsSync(path.join(browserDir, relative))) fail(`${browser} is missing required file: ${relative}`);
   }
 
   validateManifest(browser, browserDir);
   validateMessages(browserDir);
+  validateBrandLock(browser, browserDir);
   validateSource(browser, browserDir);
   console.log(`Validated ${browser}.`);
 }
 
-console.log("SNAPVERE browser extension validation passed.");
+console.log("SNAPVERE browser extension validation passed: branding locked, permissions bounded, capture memory lifecycle enforced.");

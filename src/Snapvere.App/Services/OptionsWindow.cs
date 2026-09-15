@@ -17,8 +17,8 @@ public enum OptionsSection
 }
 
 /// <summary>
-/// On-demand settings and recent-captures surface. It contains only implemented
-/// local preferences and performs no polling while SNAPVERE is idle.
+/// On-demand settings and recent-captures surface. It reads local preferences
+/// only when shown and performs no polling while SNAPVERE is idle.
 /// </summary>
 public sealed class OptionsWindow : Window
 {
@@ -173,7 +173,7 @@ public sealed class OptionsWindow : Window
         Grid.SetColumn(identity, 1);
         header.Children.Add(identity);
 
-        var version = typeof(OptionsWindow).Assembly.GetName().Version?.ToString(3) ?? "dev";
+        var version = typeof(OptionsWindow).Assembly.GetName().Version?.ToString(3) ?? "0.1.1";
         var versionBadge = new Border
         {
             Padding = new Thickness(10, 6, 10, 6),
@@ -198,7 +198,7 @@ public sealed class OptionsWindow : Window
 
         var intro = new StackPanel { Spacing = 4 };
         intro.Children.Add(Text(L("Settings"), 19, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
-        var description = Text(L("ImplementedSettingsOnly"), 11, Muted);
+        var description = Text(L("PreferencesStoredLocally"), 11, Muted);
         description.TextWrapping = TextWrapping.Wrap;
         intro.Children.Add(description);
         _preferencesPanel.Children.Add(intro);

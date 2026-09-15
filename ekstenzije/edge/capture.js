@@ -176,7 +176,6 @@
     try {
       await sendRuntime({ type: "REGION_CANCELLED", token });
     } catch {
-      // The local overlay is already cleaned even if the background is unavailable.
     }
   }
 
@@ -228,7 +227,6 @@
       try {
         root.setPointerCapture(pointerId);
       } catch {
-        // Pointer capture is best-effort; listeners still track movement on the overlay.
       }
       draw(startX, startY);
     };
@@ -237,10 +235,7 @@
       if (!dragging || (pointerId !== null && event.pointerId !== pointerId)) return;
       event.preventDefault();
       event.stopPropagation();
-      draw(
-        clamp(event.clientX, 0, window.innerWidth),
-        clamp(event.clientY, 0, window.innerHeight)
-      );
+      draw(clamp(event.clientX, 0, window.innerWidth), clamp(event.clientY, 0, window.innerHeight));
     };
 
     const onPointerUp = (event) => {
@@ -248,16 +243,11 @@
       event.preventDefault();
       event.stopPropagation();
 
-      const rect = draw(
-        clamp(event.clientX, 0, window.innerWidth),
-        clamp(event.clientY, 0, window.innerHeight)
-      );
+      const rect = draw(clamp(event.clientX, 0, window.innerWidth), clamp(event.clientY, 0, window.innerHeight));
       dragging = false;
-
       try {
         root.releasePointerCapture(pointerId);
       } catch {
-        // No-op.
       }
       pointerId = null;
 
@@ -268,18 +258,16 @@
       }
 
       cleanupRegion();
-      void sendRuntime({
-        type: "REGION_SELECTED",
-        token,
-        rect
-      }).then((response) => {
-        if (!response || response.ok !== true) {
-          const errorKey = response && typeof response.errorKey === "string"
-            ? response.errorKey
-            : "captureFailed";
-          showRegionError(errorKey);
-        }
-      }).catch(() => showRegionError("captureFailed"));
+      void sendRuntime({ type: "REGION_SELECTED", token, rect })
+        .then((response) => {
+          if (!response || response.ok !== true) {
+            const errorKey = response && typeof response.errorKey === "string"
+              ? response.errorKey
+              : "captureFailed";
+            showRegionError(errorKey);
+          }
+        })
+        .catch(() => showRegionError("captureFailed"));
     };
 
     const onKeyDown = (event) => {
@@ -304,62 +292,41 @@
     }
 
     const image = await loadImage(dataUrl);
-    const scaleX = image.naturalWidth / Math.max(1, window.innerWidth);
-    const scaleY = image.naturalHeight / Math.max(1, window.innerHeight);
+    let canvas = null;
+    try {
+      const scaleX = image.naturalWidth / Math.max(1, window.innerWidth);
+      const scaleY = image.naturalHeight / Math.max(1, window.innerHeight);
+      const sourceX = Math.max(0, Math.floor(rect.x * scaleX));
+      const sourceY = Math.max(0, Math.floor(rect.y * scaleY));
+      const sourceWidth = Math.min(image.naturalWidth - sourceX, Math.max(1, Math.round(rect.width * scaleX)));
+      const sourceHeight = Math.min(image.naturalHeight - sourceY, Math.max(1, Math.round(rect.height * scaleY)));
 
-    const sourceX = Math.max(0, Math.floor(rect.x * scaleX));
-    const sourceY = Math.max(0, Math.floor(rect.y * scaleY));
-    const sourceWidth = Math.min(image.naturalWidth - sourceX, Math.max(1, Math.round(rect.width * scaleX)));
-    const sourceHeight = Math.min(image.naturalHeight - sourceY, Math.max(1, Math.round(rect.height * scaleY)));
+      if (sourceWidth <= 0 || sourceHeight <= 0 || sourceWidth > MAX_CANVAS_DIMENSION || sourceHeight > MAX_CANVAS_DIMENSION || sourceWidth * sourceHeight > MAX_TOTAL_PIXELS) {
+        throw new Error("Selected region exceeds safe canvas limits.");
+      }
 
-    if (
-      sourceWidth <= 0 ||
-      sourceHeight <= 0 ||
-      sourceWidth > MAX_CANVAS_DIMENSION ||
-      sourceHeight > MAX_CANVAS_DIMENSION ||
-      sourceWidth * sourceHeight > MAX_TOTAL_PIXELS
-    ) {
-      throw new Error("Selected region exceeds safe canvas limits.");
+      canvas = document.createElement("canvas");
+      canvas.width = sourceWidth;
+      canvas.height = sourceHeight;
+      const context = canvas.getContext("2d", { alpha: false });
+      if (!context) throw new Error("2D canvas is unavailable.");
+
+      context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, sourceWidth, sourceHeight);
+      return canvas.toDataURL("image/png");
+    } finally {
+      image.src = "";
+      if (canvas) {
+        canvas.width = 1;
+        canvas.height = 1;
+      }
     }
-
-    const canvas = document.createElement("canvas");
-    canvas.width = sourceWidth;
-    canvas.height = sourceHeight;
-    const context = canvas.getContext("2d", { alpha: false });
-    if (!context) throw new Error("2D canvas is unavailable.");
-
-    context.drawImage(
-      image,
-      sourceX,
-      sourceY,
-      sourceWidth,
-      sourceHeight,
-      0,
-      0,
-      sourceWidth,
-      sourceHeight
-    );
-    return canvas.toDataURL("image/png");
   }
 
   function fullDimensions() {
     const root = document.documentElement;
     const body = document.body;
-    const widths = [
-      root.scrollWidth,
-      root.offsetWidth,
-      root.clientWidth,
-      body ? body.scrollWidth : 0,
-      body ? body.offsetWidth : 0
-    ];
-    const heights = [
-      root.scrollHeight,
-      root.offsetHeight,
-      root.clientHeight,
-      body ? body.scrollHeight : 0,
-      body ? body.offsetHeight : 0
-    ];
-
+    const widths = [root.scrollWidth, root.offsetWidth, root.clientWidth, body ? body.scrollWidth : 0, body ? body.offsetWidth : 0];
+    const heights = [root.scrollHeight, root.offsetHeight, root.clientHeight, body ? body.scrollHeight : 0, body ? body.offsetHeight : 0];
     return {
       totalWidth: Math.max(...widths),
       totalHeight: Math.max(...heights),
@@ -379,13 +346,9 @@
       const style = getComputedStyle(element);
       if (style.position !== "fixed" && style.position !== "sticky") continue;
       if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0) continue;
-
       const rect = element.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) continue;
-      items.push({
-        element,
-        visibility: element.style.visibility
-      });
+      items.push({ element, visibility: element.style.visibility });
       if (items.length >= 250) break;
     }
     return items;
@@ -394,9 +357,7 @@
   function scheduleFullWatchdog() {
     if (!fullState) return;
     if (fullState.watchdog) clearTimeout(fullState.watchdog);
-    fullState.watchdog = setTimeout(() => {
-      cleanupFull();
-    }, FULL_WATCHDOG_MS);
+    fullState.watchdog = setTimeout(cleanupFull, FULL_WATCHDOG_MS);
   }
 
   function ensureFullToken(token) {
@@ -408,26 +369,22 @@
 
   function cleanupFull() {
     if (!fullState) return;
+    const state = fullState;
+    fullState = null;
 
-    if (fullState.watchdog) clearTimeout(fullState.watchdog);
-    for (const item of fullState.floating) {
+    if (state.watchdog) clearTimeout(state.watchdog);
+    for (const item of state.floating) {
       if (item.element && item.element.isConnected) {
         item.element.style.visibility = item.visibility;
       }
     }
-
-    document.documentElement.style.scrollBehavior = fullState.rootScrollBehavior;
-    if (document.body) document.body.style.scrollBehavior = fullState.bodyScrollBehavior;
-
-    const x = fullState.originalX;
-    const y = fullState.originalY;
-    const tiles = fullState.tiles;
-    fullState = null;
-
-    for (const tile of tiles) {
-      if (tile.image) tile.image.src = "";
+    document.documentElement.style.scrollBehavior = state.rootScrollBehavior;
+    if (document.body) document.body.style.scrollBehavior = state.bodyScrollBehavior;
+    if (state.canvas) {
+      state.canvas.width = 1;
+      state.canvas.height = 1;
     }
-    window.scrollTo(x, y);
+    window.scrollTo(state.originalX, state.originalY);
   }
 
   function prepFull(token) {
@@ -435,14 +392,7 @@
     cleanupFull();
 
     const dimensions = fullDimensions();
-    if (
-      !Number.isFinite(dimensions.totalWidth) ||
-      !Number.isFinite(dimensions.totalHeight) ||
-      dimensions.totalWidth <= 0 ||
-      dimensions.totalHeight <= 0 ||
-      dimensions.viewportWidth <= 0 ||
-      dimensions.viewportHeight <= 0
-    ) {
+    if (!Number.isFinite(dimensions.totalWidth) || !Number.isFinite(dimensions.totalHeight) || dimensions.totalWidth <= 0 || dimensions.totalHeight <= 0 || dimensions.viewportWidth <= 0 || dimensions.viewportHeight <= 0) {
       throw new Error("Page dimensions are invalid.");
     }
 
@@ -454,7 +404,11 @@
       bodyScrollBehavior: document.body ? document.body.style.scrollBehavior : "",
       floating: identifyFloatingElements(),
       floatingHidden: false,
-      tiles: [],
+      tileCount: 0,
+      canvas: null,
+      context: null,
+      scaleX: 0,
+      scaleY: 0,
       viewportWidth: dimensions.viewportWidth,
       viewportHeight: dimensions.viewportHeight,
       totalWidth: dimensions.totalWidth,
@@ -470,9 +424,7 @@
 
   function afterPaint(delay = 70) {
     return new Promise((resolve) => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => setTimeout(resolve, delay));
-      });
+      requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, delay)));
     });
   }
 
@@ -500,39 +452,12 @@
     fullState.floatingHidden = true;
   }
 
-  async function storeTile(token, dataUrl, x, y) {
-    ensureFullToken(token);
-    if (!Number.isFinite(x) || !Number.isFinite(y)) throw new Error("Invalid tile position.");
-    if (fullState.tiles.length >= MAX_STORED_TILES) {
-      throw new Error("Full-page capture exceeded the tile limit.");
-    }
-
-    const image = await loadImage(dataUrl);
-    ensureFullToken(token);
-    fullState.tiles.push({ image, x, y });
-    return { count: fullState.tiles.length };
-  }
-
-  async function assembleFull(token, filename) {
-    ensureFullToken(token);
-    if (typeof filename !== "string" || !filename.toLowerCase().endsWith(".png") || filename.length > 128) {
-      throw new Error("Invalid download filename.");
-    }
-    if (fullState.tiles.length === 0) throw new Error("No full-page capture tiles were collected.");
-
-    const first = fullState.tiles[0].image;
-    const scaleX = first.naturalWidth / Math.max(1, fullState.viewportWidth);
-    const scaleY = first.naturalHeight / Math.max(1, fullState.viewportHeight);
+  function initializeFullCanvas(image) {
+    const scaleX = image.naturalWidth / Math.max(1, fullState.viewportWidth);
+    const scaleY = image.naturalHeight / Math.max(1, fullState.viewportHeight);
     const width = Math.ceil(fullState.totalWidth * scaleX);
     const height = Math.ceil(fullState.totalHeight * scaleY);
-
-    if (
-      width <= 0 ||
-      height <= 0 ||
-      width > MAX_CANVAS_DIMENSION ||
-      height > MAX_CANVAS_DIMENSION ||
-      width * height > MAX_TOTAL_PIXELS
-    ) {
+    if (width <= 0 || height <= 0 || width > MAX_CANVAS_DIMENSION || height > MAX_CANVAS_DIMENSION || width * height > MAX_TOTAL_PIXELS) {
       throw new Error("Full-page capture exceeds safe canvas limits.");
     }
 
@@ -541,16 +466,46 @@
     canvas.height = height;
     const context = canvas.getContext("2d", { alpha: false });
     if (!context) throw new Error("2D canvas is unavailable.");
-
     context.fillStyle = "#ffffff";
     context.fillRect(0, 0, width, height);
 
-    for (const tile of fullState.tiles) {
-      const destinationX = Math.round(tile.x * scaleX);
-      const destinationY = Math.round(tile.y * scaleY);
-      context.drawImage(tile.image, destinationX, destinationY);
+    fullState.canvas = canvas;
+    fullState.context = context;
+    fullState.scaleX = scaleX;
+    fullState.scaleY = scaleY;
+  }
+
+  async function storeTile(token, dataUrl, x, y) {
+    ensureFullToken(token);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) throw new Error("Invalid tile position.");
+    if (fullState.tileCount >= MAX_STORED_TILES) {
+      throw new Error("Full-page capture exceeded the tile limit.");
     }
 
+    const image = await loadImage(dataUrl);
+    try {
+      ensureFullToken(token);
+      if (!fullState.canvas) initializeFullCanvas(image);
+      const destinationX = Math.round(x * fullState.scaleX);
+      const destinationY = Math.round(y * fullState.scaleY);
+      fullState.context.drawImage(image, destinationX, destinationY);
+      fullState.tileCount += 1;
+      return { count: fullState.tileCount };
+    } finally {
+      image.src = "";
+    }
+  }
+
+  async function assembleFull(token, filename) {
+    ensureFullToken(token);
+    if (typeof filename !== "string" || !filename.toLowerCase().endsWith(".png") || filename.length > 128) {
+      throw new Error("Invalid download filename.");
+    }
+    if (!fullState.canvas || fullState.tileCount === 0) {
+      throw new Error("No full-page capture tiles were collected.");
+    }
+
+    const canvas = fullState.canvas;
     const blob = await canvasToBlob(canvas);
     ensureFullToken(token);
     const url = URL.createObjectURL(blob);
@@ -565,8 +520,6 @@
       link.remove();
     } finally {
       setTimeout(() => URL.revokeObjectURL(url), 15_000);
-      canvas.width = 1;
-      canvas.height = 1;
       cleanupFull();
     }
   }
@@ -577,41 +530,22 @@
     }
 
     switch (message.type) {
-      case "REGION_START":
-        startRegion(message.token);
-        return {};
-      case "REGION_CROP":
-        return { dataUrl: await cropRegion(message.token, message.rect, message.dataUrl) };
-      case "FULL_PREP":
-        return prepFull(message.token);
-      case "FULL_SCROLL":
-        return fullScroll(message.token, Number(message.x), Number(message.y));
-      case "FULL_HIDE_FLOATING":
-        hideFloating(message.token);
-        return {};
-      case "FULL_STORE_TILE":
-        return storeTile(message.token, message.dataUrl, Number(message.x), Number(message.y));
-      case "FULL_ASSEMBLE":
-        await assembleFull(message.token, message.filename);
-        return {};
-      case "FULL_CLEANUP":
-        if (fullState && fullState.token === message.token) cleanupFull();
-        return {};
-      default:
-        throw new Error("Unsupported capture message.");
+      case "REGION_START": startRegion(message.token); return {};
+      case "REGION_CROP": return { dataUrl: await cropRegion(message.token, message.rect, message.dataUrl) };
+      case "FULL_PREP": return prepFull(message.token);
+      case "FULL_SCROLL": return fullScroll(message.token, Number(message.x), Number(message.y));
+      case "FULL_HIDE_FLOATING": hideFloating(message.token); return {};
+      case "FULL_STORE_TILE": return storeTile(message.token, message.dataUrl, Number(message.x), Number(message.y));
+      case "FULL_ASSEMBLE": await assembleFull(message.token, message.filename); return {};
+      case "FULL_CLEANUP": if (fullState && fullState.token === message.token) cleanupFull(); return {};
+      default: throw new Error("Unsupported capture message.");
     }
   }
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     const accepted = new Set([
-      "REGION_START",
-      "REGION_CROP",
-      "FULL_PREP",
-      "FULL_SCROLL",
-      "FULL_HIDE_FLOATING",
-      "FULL_STORE_TILE",
-      "FULL_ASSEMBLE",
-      "FULL_CLEANUP"
+      "REGION_START", "REGION_CROP", "FULL_PREP", "FULL_SCROLL",
+      "FULL_HIDE_FLOATING", "FULL_STORE_TILE", "FULL_ASSEMBLE", "FULL_CLEANUP"
     ]);
     if (!message || !accepted.has(message.type)) return false;
 

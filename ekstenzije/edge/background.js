@@ -3,6 +3,7 @@
 
   const LOCK_KEY = "snapvereActiveCapture";
   const SETTINGS_KEY = "snapvereSettings";
+  const FILE_PREFIX = "SNAPVERE";
   const LOCK_TTL_MS = 5 * 60 * 1000;
   const MAX_TILES = 60;
   const MAX_CANVAS_DIMENSION = 32767;
@@ -88,15 +89,8 @@
   async function ensureCaptureTabActive(tabId, windowId) {
     const tabs = await invoke(chrome.tabs, "query", { active: true, windowId });
     const activeTab = Array.isArray(tabs) ? tabs[0] : null;
-    if (
-      !activeTab ||
-      activeTab.id !== tabId ||
-      activeTab.windowId !== windowId
-    ) {
-      throw new SnapvereError(
-        "captureTabChanged",
-        "The active tab changed while SNAPVERE was capturing."
-      );
+    if (!activeTab || activeTab.id !== tabId || activeTab.windowId !== windowId) {
+      throw new SnapvereError("captureTabChanged", "The active tab changed while SNAPVERE was capturing.");
     }
   }
 
@@ -152,23 +146,7 @@
     const raw = values && values[SETTINGS_KEY] && typeof values[SETTINGS_KEY] === "object"
       ? values[SETTINGS_KEY]
       : {};
-
-    const prefixCandidate = typeof raw.filenamePrefix === "string" ? raw.filenamePrefix.trim() : "SNAPVERE";
-    const filenamePrefix = sanitizePrefix(prefixCandidate || "SNAPVERE");
-    return {
-      filenamePrefix,
-      saveAs: raw.saveAs === true
-    };
-  }
-
-  function sanitizePrefix(value) {
-    const safe = String(value)
-      .normalize("NFKC")
-      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "-")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 48);
-    return safe || "SNAPVERE";
+    return { saveAs: raw.saveAs === true };
   }
 
   function timestamp() {
@@ -180,7 +158,7 @@
   async function buildFilename(kind) {
     const settings = await readSettings();
     return {
-      filename: `${settings.filenamePrefix}-${kind}-${timestamp()}.png`,
+      filename: `${FILE_PREFIX}-${kind}-${timestamp()}.png`,
       saveAs: settings.saveAs
     };
   }
@@ -214,9 +192,6 @@
   async function captureExpectedVisible(tabId, windowId) {
     await ensureCaptureTabActive(tabId, windowId);
     const dataUrl = await captureVisible(windowId);
-    // Revalidate after the browser has produced the frame. This closes the
-    // pre-check/capture TOCTOU window: if activation changed during the API
-    // call, the frame is discarded before crop, stitch, or download.
     await ensureCaptureTabActive(tabId, windowId);
     return dataUrl;
   }
@@ -304,14 +279,9 @@
       const viewportWidth = Number(prep.viewportWidth);
       const viewportHeight = Number(prep.viewportHeight);
       const dpr = Math.max(1, Math.min(4, Number(prep.devicePixelRatio) || 1));
-
       const pixelWidth = Math.ceil(totalWidth * dpr);
       const pixelHeight = Math.ceil(totalHeight * dpr);
-      if (
-        pixelWidth > MAX_CANVAS_DIMENSION ||
-        pixelHeight > MAX_CANVAS_DIMENSION ||
-        pixelWidth * pixelHeight > MAX_TOTAL_PIXELS
-      ) {
+      if (pixelWidth > MAX_CANVAS_DIMENSION || pixelHeight > MAX_CANVAS_DIMENSION || pixelWidth * pixelHeight > MAX_TOTAL_PIXELS) {
         throw new SnapvereError("fullPageTooLarge", "Page exceeds the safe full-page canvas limit.");
       }
 
@@ -330,7 +300,6 @@
             x,
             y
           });
-
           const dataUrl = await captureExpectedVisible(lock.tabId, lock.windowId);
           await sendTab(tab.id, {
             type: "FULL_STORE_TILE",
@@ -339,7 +308,6 @@
             x: Number(scrolled.x) || 0,
             y: Number(scrolled.y) || 0
           });
-
           index += 1;
           if (index === 1 && xs.length * ys.length > 1) {
             await sendTab(tab.id, { type: "FULL_HIDE_FLOATING", token: lock.token });
@@ -348,18 +316,13 @@
       }
 
       const { filename } = await buildFilename("full-page");
-      await sendTab(tab.id, {
-        type: "FULL_ASSEMBLE",
-        token: lock.token,
-        filename
-      });
+      await sendTab(tab.id, { type: "FULL_ASSEMBLE", token: lock.token, filename });
       return { ok: true, filename };
     } finally {
       if (prepared) {
         try {
           await sendTab(tab.id, { type: "FULL_CLEANUP", token: lock.token });
         } catch {
-          // The content script also has its own watchdog/cleanup path.
         }
       }
       await releaseLock(lock.token);
@@ -374,24 +337,13 @@
     }
 
     const lock = await getLock();
-    if (
-      !lock ||
-      lock.kind !== "region" ||
-      lock.token !== message.token ||
-      lock.tabId !== tabId ||
-      lock.windowId !== windowId
-    ) {
+    if (!lock || lock.kind !== "region" || lock.token !== message.token || lock.tabId !== tabId || lock.windowId !== windowId) {
       throw new SnapvereError("captureFailed", "Region capture session is stale.");
     }
 
     try {
       const rect = message.rect;
-      if (
-        !rect ||
-        ![rect.x, rect.y, rect.width, rect.height].every(Number.isFinite) ||
-        rect.width < 8 ||
-        rect.height < 8
-      ) {
+      if (!rect || ![rect.x, rect.y, rect.width, rect.height].every(Number.isFinite) || rect.width < 8 || rect.height < 8) {
         throw new SnapvereError("regionTooSmall", "Selected region is too small.");
       }
 
@@ -402,12 +354,7 @@
         rect,
         dataUrl
       });
-
-      if (
-        typeof cropped.dataUrl !== "string" ||
-        cropped.dataUrl.length > MAX_REGION_DATA_URL ||
-        !cropped.dataUrl.startsWith("data:image/png;base64,")
-      ) {
+      if (typeof cropped.dataUrl !== "string" || cropped.dataUrl.length > MAX_REGION_DATA_URL || !cropped.dataUrl.startsWith("data:image/png;base64,")) {
         throw new SnapvereError("captureFailed", "Region crop result is invalid or too large.");
       }
 
@@ -433,18 +380,12 @@
     }
 
     switch (message.type) {
-      case "CAPTURE_VISIBLE":
-        return serializeStart(startVisibleCapture);
-      case "CAPTURE_FULL":
-        return serializeStart(startFullPageCapture);
-      case "CAPTURE_REGION":
-        return serializeStart(startRegionCapture);
-      case "REGION_SELECTED":
-        return handleRegionSelected(message, sender);
-      case "REGION_CANCELLED":
-        return handleRegionCancelled(message, sender);
-      default:
-        throw new SnapvereError("captureFailed", "Unsupported extension message.");
+      case "CAPTURE_VISIBLE": return serializeStart(startVisibleCapture);
+      case "CAPTURE_FULL": return serializeStart(startFullPageCapture);
+      case "CAPTURE_REGION": return serializeStart(startRegionCapture);
+      case "REGION_SELECTED": return handleRegionSelected(message, sender);
+      case "REGION_CANCELLED": return handleRegionCancelled(message, sender);
+      default: throw new SnapvereError("captureFailed", "Unsupported extension message.");
     }
   }
 

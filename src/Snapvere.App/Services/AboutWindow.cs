@@ -85,7 +85,7 @@ public sealed class AboutWindow : Window
         };
 
         var content = new StackPanel { Spacing = 12 };
-        var version = typeof(AboutWindow).Assembly.GetName().Version?.ToString(3) ?? "dev";
+        var version = typeof(AboutWindow).Assembly.GetName().Version?.ToString(3) ?? "0.1.1";
 
         var versionRow = new Grid();
         versionRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });

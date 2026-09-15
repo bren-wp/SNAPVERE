@@ -33,6 +33,7 @@ internal static class StartupDiagnostics
         TaskScheduler.UnobservedTaskException += (_, args) =>
         {
             Record("TaskScheduler.UnobservedTaskException", args.Exception);
+            args.SetObserved();
         };
 
         WriteLine(
@@ -50,7 +51,6 @@ internal static class StartupDiagnostics
         builder.Append(" | ");
         builder.AppendLine(stage);
         AppendException(builder, exception, depth: 0);
-
         WriteRaw(builder.ToString());
     }
 
@@ -70,8 +70,7 @@ internal static class StartupDiagnostics
 
         var message =
             "SNAPVERE could not start correctly.\r\n\r\n" +
-            $"{exception.Message}\r\n\r\n" +
-            "A local diagnostic log was written to:\r\n" +
+            "Close SNAPVERE and try again. If the problem continues, a local diagnostic log is available at:\r\n" +
             LogFilePath;
 
         _ = NativeMethods.MessageBoxW(
