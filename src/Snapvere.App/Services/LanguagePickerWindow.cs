@@ -78,8 +78,13 @@ public sealed class LanguagePickerWindow : Window
 
     private string L(string key) => SnapvereLocalization.T(key, _preferences.Current.LanguageCode);
 
-    private string LF(string key, params object[] arguments)
-        => string.Format(L(key), arguments);
+    private string LanguageSaveFailureText()
+        => string.Equals(
+                SnapvereLocalization.NormalizeLanguageCode(_preferences.Current.LanguageCode),
+                "hr",
+                StringComparison.OrdinalIgnoreCase)
+            ? "Postavku jezika nije moguće spremiti. Pokušajte ponovno ili ponovno pokrenite SNAPVERE."
+            : "The language setting could not be saved. Try again or restart SNAPVERE.";
 
     private FrameworkElement BuildContent()
     {
@@ -181,7 +186,8 @@ public sealed class LanguagePickerWindow : Window
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            _status.Text = LF("LanguageSaveFailed", exception.Message);
+            StartupDiagnostics.Record("Save language preference", exception);
+            _status.Text = LanguageSaveFailureText();
             _status.Foreground = Error;
         }
     }
