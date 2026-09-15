@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 rješavanje problema
+# SNAPVERE 0.1.2 rješavanje problema
 
 Ako Windows snimanje ne uspije, pokušaj ponovno nakon zatvaranja zaštićenog ili full-screen sadržaja. Zaštićeni sadržaj može namjerno ostati prazan.
 
