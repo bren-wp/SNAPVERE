@@ -17,7 +17,12 @@ internal static class SingleInstanceGuard
             return;
         }
 
-        var sid = WindowsIdentity.GetCurrent().User?.Value;
+        string? sid;
+        using (var identity = WindowsIdentity.GetCurrent())
+        {
+            sid = identity.User?.Value;
+        }
+
         if (string.IsNullOrWhiteSpace(sid))
         {
             throw new InvalidOperationException("SNAPVERE could not resolve the current Windows user identity.");
