@@ -66,9 +66,6 @@ public sealed class OptionsWindow : Window
         BuildPreferencesPanel();
         BuildRecentPanel();
         Content = BuildContent();
-        // The active section owns its own data refresh. Avoid enumerating recent
-        // PNG files until the user actually opens Recent Captures, and avoid a
-        // duplicate preference load during construction.
         ShowSection(OptionsSection.Preferences);
         Activated += OptionsWindow_Activated;
     }
@@ -96,6 +93,11 @@ public sealed class OptionsWindow : Window
         => string.Format(L(key), arguments);
 
     private string LocalStatusText() => L("PreferencesStoredLocally");
+
+    private string UserText(string english, string croatian)
+        => string.Equals(_languageCode, "hr", StringComparison.OrdinalIgnoreCase)
+            ? croatian
+            : english;
 
     private FrameworkElement BuildContent()
     {
@@ -173,7 +175,7 @@ public sealed class OptionsWindow : Window
         Grid.SetColumn(identity, 1);
         header.Children.Add(identity);
 
-        var version = typeof(OptionsWindow).Assembly.GetName().Version?.ToString(3) ?? "0.1.1";
+        var version = typeof(OptionsWindow).Assembly.GetName().Version?.ToString(3);
         var versionBadge = new Border
         {
             Padding = new Thickness(10, 6, 10, 6),
@@ -182,7 +184,7 @@ public sealed class OptionsWindow : Window
             BorderBrush = Outline,
             BorderThickness = new Thickness(1),
             VerticalAlignment = VerticalAlignment.Center,
-            Child = Text($"v{version}", 10, Muted, Microsoft.UI.Text.FontWeights.SemiBold)
+            Child = Text(version is null ? "SNAPVERE" : $"v{version}", 10, Muted, Microsoft.UI.Text.FontWeights.SemiBold)
         };
         Grid.SetColumn(versionBadge, 2);
         header.Children.Add(versionBadge);
@@ -215,11 +217,20 @@ public sealed class OptionsWindow : Window
             row: 2,
             eyebrow: L("Capture").ToUpperInvariant(),
             title: L("IncludeCursor"),
-            description: L("CursorDescription"),
+            description: UserText(
+                "Include the mouse pointer when the selected capture mode can include it.",
+                "Uključi pokazivač miša kada ga odabrani način snimanja može prikazati."),
             glyph: "\uE7C9",
             trailing: _cursorToggle);
 
-        var languageButton = CreateSecondaryAction(L("ChooseLanguage"), "\uE774", LanguagePickerWindow.ShowStandalone);
+        var languageButton = CreateSecondaryAction(
+            L("ChooseLanguage"),
+            "\uE774",
+            () =>
+            {
+                Close();
+                LanguagePickerWindow.ShowStandalone(_preferences);
+            });
         AddPreferenceCard(
             row: 3,
             eyebrow: L("Language").ToUpperInvariant(),
@@ -239,9 +250,14 @@ public sealed class OptionsWindow : Window
         };
         var localCopy = new StackPanel { Spacing = 3 };
         localCopy.Children.Add(Text(L("LocalFirst").ToUpperInvariant(), 9, Success, Microsoft.UI.Text.FontWeights.Bold));
-        var path = Text($"{L("Settings")}: {_preferences.SettingsPath}", 10, Muted);
-        path.TextWrapping = TextWrapping.Wrap;
-        localCopy.Children.Add(path);
+        var localDetail = Text(
+            UserText(
+                "Your preferences stay on this PC and are not uploaded by SNAPVERE.",
+                "Vaše postavke ostaju na ovom računalu i SNAPVERE ih ne prenosi u oblak."),
+            10,
+            Muted);
+        localDetail.TextWrapping = TextWrapping.Wrap;
+        localCopy.Children.Add(localDetail);
         local.Child = localCopy;
         Grid.SetRow(local, 4);
         _preferencesPanel.Children.Add(local);
@@ -251,7 +267,9 @@ public sealed class OptionsWindow : Window
     {
         var selected = SnapvereLocalization.SupportedLanguages.First(language =>
             string.Equals(language.Code, _preferences.Current.LanguageCode, StringComparison.OrdinalIgnoreCase));
-        return LF("CurrentLanguageDescription", selected.NativeName);
+        return UserText(
+            $"Selected language: {selected.NativeName}.",
+            $"Odabrani jezik: {selected.NativeName}.");
     }
 
     private void AddPreferenceCard(int row, string eyebrow, string title, string description, string glyph, Control trailing)
@@ -371,7 +389,12 @@ public sealed class OptionsWindow : Window
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
         {
-            SetStatus(LF("PreferenceReadFailed", exception.Message), Warning);
+            StartupDiagnostics.Record("Read settings", exception);
+            SetStatus(
+                UserText(
+                    "Settings could not be loaded. SNAPVERE is using safe local defaults.",
+                    "Postavke nije moguće učitati. SNAPVERE koristi sigurne lokalne zadane postavke."),
+                Warning);
         }
         finally
         {
@@ -404,7 +427,13 @@ public sealed class OptionsWindow : Window
             {
                 _updatingControls = false;
             }
-            SetStatus(LF("StartupChangeFailed", exception.Message), Error);
+
+            StartupDiagnostics.Record("Change Windows startup setting", exception);
+            SetStatus(
+                UserText(
+                    "Windows startup could not be changed. Check Windows permissions and try again.",
+                    "Automatsko pokretanje nije moguće promijeniti. Provjerite Windows dozvole i pokušajte ponovno."),
+                Error);
         }
     }
 
@@ -431,7 +460,13 @@ public sealed class OptionsWindow : Window
             {
                 _updatingControls = false;
             }
-            SetStatus(LF("CursorSaveFailed", exception.Message), Error);
+
+            StartupDiagnostics.Record("Save cursor preference", exception);
+            SetStatus(
+                UserText(
+                    "The cursor setting could not be saved. Try again or restart SNAPVERE.",
+                    "Postavku pokazivača nije moguće spremiti. Pokušajte ponovno ili ponovno pokrenite SNAPVERE."),
+                Error);
         }
     }
 
@@ -461,8 +496,14 @@ public sealed class OptionsWindow : Window
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
+            StartupDiagnostics.Record("Read recent captures", exception);
             _recentSummary.Text = L("LocalHistoryUnavailable");
-            var error = Text(exception.Message, 10, Warning);
+            var error = Text(
+                UserText(
+                    "Recent captures could not be read. Open the capture folder or try Refresh again.",
+                    "Nedavne snimke nije moguće učitati. Otvorite mapu snimki ili ponovno odaberite Osvježi."),
+                10,
+                Warning);
             error.TextWrapping = TextWrapping.Wrap;
             _recentItems.Children.Add(error);
         }
@@ -574,7 +615,12 @@ public sealed class OptionsWindow : Window
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
         {
-            SetStatus(LF("OpenCaptureFailed", exception.Message), Error);
+            StartupDiagnostics.Record("Open recent capture", exception);
+            SetStatus(
+                UserText(
+                    "Windows could not open this capture. Check the file and try again.",
+                    "Windows ne može otvoriti ovu snimku. Provjerite datoteku i pokušajte ponovno."),
+                Error);
         }
     }
 
@@ -589,7 +635,12 @@ public sealed class OptionsWindow : Window
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
         {
-            SetStatus(LF("OpenCaptureFolderFailed", exception.Message), Error);
+            StartupDiagnostics.Record("Open capture folder", exception);
+            SetStatus(
+                UserText(
+                    "Windows could not open the capture folder. Check folder permissions and try again.",
+                    "Windows ne može otvoriti mapu snimki. Provjerite dozvole mape i pokušajte ponovno."),
+                Error);
         }
     }
 

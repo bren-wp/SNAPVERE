@@ -87,20 +87,6 @@ public sealed class CaptureHistoryService
             .ToArray();
     }
 
-    public bool DeleteCapture(string filePath)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
-
-        var safePath = GetValidatedCapturePath(filePath);
-        if (!File.Exists(safePath))
-        {
-            return false;
-        }
-
-        File.Delete(safePath);
-        return true;
-    }
-
     public string GetCaptureDirectory()
         => _pathProvider.GetDefaultCaptureDirectory();
 
@@ -127,29 +113,5 @@ public sealed class CaptureHistoryService
             item = null!;
             return false;
         }
-    }
-
-    private string GetValidatedCapturePath(string filePath)
-    {
-        var root = Path.GetFullPath(_pathProvider.GetDefaultCaptureDirectory());
-        var candidate = Path.GetFullPath(filePath);
-        var relative = Path.GetRelativePath(root, candidate);
-
-        if (relative == "." ||
-            relative.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal) ||
-            relative == ".." ||
-            Path.IsPathRooted(relative))
-        {
-            throw new InvalidOperationException("The requested history item is outside the SNAPVERE capture directory.");
-        }
-
-        var fileName = Path.GetFileName(candidate);
-        if (!fileName.StartsWith("SNAPVERE_", StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(Path.GetExtension(fileName), ".png", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException("Only SNAPVERE PNG capture files can be managed by this history service.");
-        }
-
-        return candidate;
     }
 }

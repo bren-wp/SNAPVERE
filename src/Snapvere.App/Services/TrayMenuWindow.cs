@@ -31,12 +31,12 @@ public sealed class TrayMenuWindow : Window
     public TrayMenuWindow(
         Action<TrayCommand> commandHandler,
         Action recentCapturesHandler,
-        Action? languageHandler = null,
+        Action languageHandler,
         string? languageCode = null)
     {
         _commandHandler = commandHandler ?? throw new ArgumentNullException(nameof(commandHandler));
         _recentCapturesHandler = recentCapturesHandler ?? throw new ArgumentNullException(nameof(recentCapturesHandler));
-        _languageHandler = languageHandler ?? LanguagePickerWindow.ShowStandalone;
+        _languageHandler = languageHandler ?? throw new ArgumentNullException(nameof(languageHandler));
         _languageCode = SnapvereLocalization.NormalizeLanguageCode(languageCode ?? SnapvereLanguageState.CurrentLanguageCode);
         Title = "SNAPVERE";
         Content = BuildContent();
@@ -51,6 +51,11 @@ public sealed class TrayMenuWindow : Window
     }
 
     private string L(string key) => SnapvereLocalization.T(key, _languageCode);
+
+    private string Tagline()
+        => string.Equals(_languageCode, "hr", StringComparison.OrdinalIgnoreCase)
+            ? "Snimi. Uredi. Gotovo."
+            : "Capture. Edit. Done.";
 
     private FrameworkElement BuildContent()
     {
@@ -74,7 +79,7 @@ public sealed class TrayMenuWindow : Window
         };
         actions.Children.Add(CreateMenuButton("\uE722", L("CaptureRegion"), "Print Screen", TrayCommand.RegionCapture, primary: true));
         actions.Children.Add(CreateMenuButton("\uE7F4", L("CaptureWindow"), "Ctrl + Shift + 2", TrayCommand.WindowCapture));
-        actions.Children.Add(CreateMenuButton("\uE7F8", L("CaptureScreen"), "Ctrl + Shift + 4", TrayCommand.ScreenCapture));
+        actions.Children.Add(CreateMenuButton("\uE7F8", L("CaptureScreen"), "Ctrl + Shift + 3", TrayCommand.ScreenCapture));
         actions.Children.Add(CreateSeparator());
         actions.Children.Add(CreateMenuButton("\uE838", L("OpenCaptureFolder"), string.Empty, TrayCommand.OpenCaptureFolder));
         actions.Children.Add(CreateActionButton("\uE713", L("OptionsRecent"), string.Empty, _recentCapturesHandler));
@@ -104,8 +109,8 @@ public sealed class TrayMenuWindow : Window
         ready.Children.Add(Text(L("Ready"), 10, Muted));
         footer.Children.Add(ready);
 
-        var version = typeof(TrayMenuWindow).Assembly.GetName().Version?.ToString(3) ?? "dev";
-        var versionText = Text($"v{version}", 10, Subtle);
+        var version = typeof(TrayMenuWindow).Assembly.GetName().Version?.ToString(3);
+        var versionText = Text(version is null ? "SNAPVERE" : $"v{version}", 10, Subtle);
         Grid.SetColumn(versionText, 1);
         footer.Children.Add(versionText);
         Grid.SetRow(footer, 2);
@@ -146,7 +151,7 @@ public sealed class TrayMenuWindow : Window
         product.Inlines.Add(new Run { Text = "SNAP", Foreground = Strong });
         product.Inlines.Add(new Run { Text = "VERE", Foreground = Accent });
         identity.Children.Add(product);
-        identity.Children.Add(Text("Capture. Edit. Done.", 10.5, Muted));
+        identity.Children.Add(Text(Tagline(), 10.5, Muted));
         Grid.SetColumn(identity, 1);
         header.Children.Add(identity);
 
