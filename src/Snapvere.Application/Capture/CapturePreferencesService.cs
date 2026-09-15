@@ -49,8 +49,6 @@ public sealed class CapturePreferencesService
         }
     }
 
-    public string SettingsPath => _settingsPath;
-
     public void SetIncludeCursorOnCapture(bool enabled)
     {
         lock (_gate)
