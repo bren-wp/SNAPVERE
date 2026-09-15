@@ -7,20 +7,14 @@ public sealed class SnapvereLocalizationTests
     private static readonly string[] SecondaryUiKeys =
     [
         "PreferencesStoredLocally",
-        "ImplementedSettingsOnly",
         "Startup",
         "StartupDescription",
         "Capture",
-        "CursorDescription",
-        "CurrentLanguageDescription",
         "Refresh",
-        "PreferenceReadFailed",
         "StartupEnabled",
         "StartupDisabled",
-        "StartupChangeFailed",
         "CursorEnabled",
         "CursorDisabled",
-        "CursorSaveFailed",
         "OneLocalCapture",
         "LocalCaptureCount",
         "LocalHistoryUnavailable",
@@ -28,12 +22,9 @@ public sealed class SnapvereLocalizationTests
         "EmptyHistoryHelp",
         "OpenCaptureNamed",
         "CaptureUnavailable",
-        "OpenCaptureFailed",
-        "OpenCaptureFolderFailed",
         "Off",
         "On",
         "LanguagePickerIntro",
-        "LanguageSaveFailed",
         "AboutLocalFirstTitle",
         "AboutCaptureDescription",
         "AboutPrivacyDescription",
@@ -104,7 +95,6 @@ public sealed class SnapvereLocalizationTests
     [Theory]
     [InlineData("OpenCaptureNamed", "sample.png", "Otvori sample.png")]
     [InlineData("LocalCaptureCount", 7, "Lokalne snimke: 7")]
-    [InlineData("LanguageSaveFailed", "disk", "Postavku jezika nije moguće spremiti: disk")]
     public void CroatianFormattedSecondaryUiCopy_PreservesFormatArguments(
         string key,
         object argument,

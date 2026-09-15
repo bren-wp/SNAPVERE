@@ -407,6 +407,7 @@ public sealed class RegionCaptureWindow : Window
         }
         catch (Exception exception)
         {
+            Snapvere.App.Services.StartupDiagnostics.Record("Render region capture overlay", exception);
             ShowStatus(GetUserFacingError(exception), isBusy: false);
         }
     }
@@ -839,6 +840,7 @@ public sealed class RegionCaptureWindow : Window
         catch (Exception exception)
         {
             _saving = false;
+            Snapvere.App.Services.StartupDiagnostics.Record("Save region capture", exception);
             ShowStatus(GetUserFacingError(exception), isBusy: false);
             _ = _keyboardFocusTarget.Focus(FocusState.Programmatic);
         }
@@ -881,6 +883,7 @@ public sealed class RegionCaptureWindow : Window
         catch (Exception exception)
         {
             _saving = false;
+            Snapvere.App.Services.StartupDiagnostics.Record("Copy region capture", exception);
             ShowStatus(GetUserFacingError(exception), isBusy: false);
             _ = _keyboardFocusTarget.Focus(FocusState.Programmatic);
         }
@@ -1507,7 +1510,6 @@ public sealed class RegionCaptureWindow : Window
             UnauthorizedAccessException => L("RegionAccessDenied"),
             IOException => L("RegionIoFailure"),
             ArgumentException => L("RegionInvalidSelection"),
-            InvalidOperationException => exception.Message,
             _ => L("RegionCaptureFailed")
         };
 }
