@@ -440,11 +440,12 @@ internal sealed class SetupForm : Form
         {
             _licenseBox.Text = InstallerEngine.ReadLicenseText();
         }
-        catch (Exception exception)
+        catch (Exception)
         {
-            _licenseBox.Text = exception.Message;
+            _licenseBox.Text =
+                "License terms could not be loaded. Close Setup and download a fresh SNAPVERE Setup package from snapvere.com.";
             _acceptLicense.Enabled = false;
-            _statusLabel.Text = "Setup cannot continue because the commercial license resource is unavailable.";
+            _statusLabel.Text = "Setup cannot continue until the license terms are available.";
         }
     }
 
