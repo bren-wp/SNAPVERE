@@ -1,12 +1,10 @@
 using System.Runtime.CompilerServices;
-using System.Security.Principal;
+using Snapvere.Shared;
 
 namespace Snapvere.App;
 
 internal static class SingleInstanceGuard
 {
-    private const string MutexPrefix = "Local\\SNAPVERE.Desktop.";
-
     private static Mutex? _lifetimeMutex;
 
     [ModuleInitializer]
@@ -17,18 +15,10 @@ internal static class SingleInstanceGuard
             return;
         }
 
-        string? sid;
-        using (var identity = WindowsIdentity.GetCurrent())
-        {
-            sid = identity.User?.Value;
-        }
-
-        if (string.IsNullOrWhiteSpace(sid))
-        {
-            throw new InvalidOperationException("SNAPVERE could not resolve the current Windows user identity.");
-        }
-
-        var mutex = new Mutex(initiallyOwned: true, MutexPrefix + sid, out var createdNew);
+        var mutex = new Mutex(
+            initiallyOwned: true,
+            DesktopInstanceIdentity.GetMutexName(),
+            out var createdNew);
         var ownsMutex = createdNew;
 
         if (!createdNew)

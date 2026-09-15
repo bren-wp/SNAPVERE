@@ -290,15 +290,36 @@ jobs:
       - name: Validate universal Setup and Portable with x64 and x86 payloads
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           $setup = (Resolve-Path 'artifacts/universal/SNAPVERE-Setup.exe').Path
           $portable = (Resolve-Path 'artifacts/universal/SNAPVERE-Portable.exe').Path
+          $markerDirectory = Join-Path $PWD 'artifacts/lifecycle-completion'
+          New-Item -ItemType Directory -Force -Path $markerDirectory | Out-Null
+
           try {
             foreach ($arch in @('x64', 'x86')) {
               $env:SNAPVERE_PAYLOAD_ARCH = $arch
               & ./eng/Test-SnapverePackageLifecycle.ps1 -SetupPath $setup -PortablePath $portable -Version $env:SNAPVERE_VERSION -Arch $arch
-              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
               & ./eng/Test-SnapvereTrayFirstLaunch.ps1 -SetupPath $setup -PortablePath $portable -Version $env:SNAPVERE_VERSION -Arch $arch
-              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              Set-Content -LiteralPath (Join-Path $markerDirectory "$arch.ok") -Value "SNAPVERE $env:SNAPVERE_VERSION $arch LIFECYCLE_OK" -Encoding utf8NoBOM
             }
           }
           finally { Remove-Item Env:SNAPVERE_PAYLOAD_ARCH -ErrorAction SilentlyContinue }
+
+      - name: Enforce x64 and x86 lifecycle completion
+        shell: pwsh
+        run: |
+          $markerDirectory = Join-Path $PWD 'artifacts/lifecycle-completion'
+          foreach ($arch in @('x64', 'x86')) {
+            $marker = Join-Path $markerDirectory "$arch.ok"
+            if (-not (Test-Path -LiteralPath $marker -PathType Leaf)) {
+              throw "Missing $arch package lifecycle completion marker."
+            }
+
+            $expected = "SNAPVERE $env:SNAPVERE_VERSION $arch LIFECYCLE_OK"
+            $actual = (Get-Content -LiteralPath $marker -Raw).Trim()
+            if ($actual -ne $expected) {
+              throw "$arch package lifecycle marker is invalid: $actual"
+            }
+            Write-Host "$actual"
+          }
