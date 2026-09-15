@@ -2,6 +2,7 @@
   "extensionName": { "message": "SNAPVERE" },
   "extensionDescription": { "message": "Lokalno snimanje vidljivog područja, cijele stranice i odabranog područja." },
   "actionTitle": { "message": "SNAPVERE snimanje" },
+  "tagline": { "message": "Snimi. Uredi. Gotovo." },
   "captureActions": { "message": "Radnje snimanja" },
   "captureVisible": { "message": "Snimi vidljivo područje" },
   "captureVisibleHint": { "message": "Spremi trenutačni prikaz kao PNG" },
@@ -24,10 +25,9 @@
   "regionInstruction": { "message": "Povuci za odabir područja. Pritisni Esc za odustajanje." },
   "fullPageLimitNote": { "message": "Rezultat cijele stranice može varirati kod videa, canvasa, cross-origin frameova i vrlo dinamičnih stranica." },
   "optionsTitle": { "message": "Postavke snimanja" },
-  "fileNamePrefix": { "message": "Prefiks naziva datoteke" },
+  "fileNamingNote": { "message": "Spremljene snimke uvijek koriste SNAPVERE prefiks naziva datoteke." },
   "askWhereToSave": { "message": "Pitaj gdje spremiti snimke vidljivog i odabranog područja" },
   "saveSettings": { "message": "Spremi postavke" },
   "settingsSaved": { "message": "Postavke su spremljene." },
-  "privacyNote": { "message": "Snimke se obrađuju lokalno. SNAPVERE ne šalje snimke u oblak, ne koristi analytics ni telemetriju." },
-  "invalidPrefix": { "message": "Unesi valjani prefiks naziva datoteke." }
+  "privacyNote": { "message": "Snimke se obrađuju lokalno. SNAPVERE ne šalje snimke u oblak, ne koristi analitiku ni telemetriju." }
 }
