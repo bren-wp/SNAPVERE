@@ -1,62 +1,15 @@
-# SNAPVERE dokumentacija — Hrvatski
+# SNAPVERE dokumentacija
 
-Ova mapa je hrvatsko središte dokumentacije za aktualnu proizvodnu liniju **SNAPVERE 0.1.1**. Opisuje stvarno implementiranu Windows aplikaciju, nativnu Android aplikaciju, browser ekstenzije, pakiranje, privatnost, QA dokaze i release proces.
+Aktualna linija proizvoda: **SNAPVERE 0.1.1** za Windows te Chrome, Edge, Operu i Firefox.
 
-Za pregled proizvoda i preuzimanja kreni od [glavnog hrvatskog README-a](../../README.hr.md). Engleska dokumentacija indeksirana je u [`docs/README.md`](../README.md).
-
-## Počni ovdje
-
-- [Korisnički vodič](USER-GUIDE.md) — svakodnevni Windows, Android i browser workflowi.
-- [Instalacija](INSTALLATION.md) — Setup, Portable, APK i ručna instalacija browser ekstenzija.
-- [Rješavanje problema](TROUBLESHOOTING.md) — česti problemi, ograničenja i provjere.
-- [Status proizvoda](PRODUCT-STATUS.md) — što je objavljeno, validirano i što još ovisi o vanjskim storeovima.
-- [Privatnost](PRIVACY.md) — local-first ponašanje po platformama.
-- [QA matrica](QA-MATRIX.md) — što CI stvarno dokazuje, a što ne.
-- [Verzioniranje i izdanja](VERSIONING-RELEASES.md) — canonical version contract i pravila nepromjenjivih izdanja.
-- [Kompletna povijest izdanja](../../RELEASES.md) — jedan detaljni kanonski release-history dokument.
-
-## Windows aplikacija
-
-- [Arhitektura](ARCHITECTURE.md)
-- [Capture engine](CAPTURE-ENGINE.md)
-- [Region Capture](REGION-CAPTURE.md)
-- [Window Capture](WINDOW-CAPTURE.md)
-- [Multi-monitor i DPI](MULTI-MONITOR.md)
-- [Image pipeline](IMAGE-PIPELINE.md)
-- [Tray UX](TRAY-UX.md)
+- [Korisnički vodič](USER-GUIDE.md)
+- [Instalacija](INSTALLATION.md)
 - [Postavke](SETTINGS.md)
-- [Visual QA](VISUAL-QA.md)
-
-## Android
-
-- [Android arhitektura i QA](ANDROID.md)
-- [Android source/build vodič](../../android/README.md)
-
-## Browser ekstenzije
-
 - [Browser ekstenzije](BROWSER-EXTENSIONS.md)
-- [Extension source vodič](../../ekstenzije/README.md)
-- [Privacy policy browser ekstenzija](../../ekstenzije/PRIVACY.md)
+- [Privatnost](PRIVACY.md)
+- [Rješavanje problema](TROUBLESHOOTING.md)
+- [Status proizvoda](PRODUCT-STATUS.md)
+- [QA matrica](QA-MATRIX.md)
 
-## Release, sigurnost i branding
-
-- [Kompletna povijest izdanja](../../RELEASES.md)
-- [SNAPVERE 0.1.1 Security & Performance](SECURITY-PERFORMANCE-0.1.1.md)
-- [Security Policy](../../SECURITY.md)
-- [Branding](BRANDING.md)
-- [About i support linkovi](ABOUT-SUPPORT-LINKS.md)
-- [Changelog](../../CHANGELOG.md)
-
-## Kanonski izvori verzije i release-notesa
-
-Strojno čitljivi izvor istine je [`product-version.json`](../../product-version.json). Detaljna ljudski čitljiva release povijest nalazi se u [`RELEASES.md`](../../RELEASES.md), dok `CHANGELOG.md` ostaje kraći tehnički sažetak.
-
-`eng/validate-product-contract.py` i **Product Contract CI** provjeravaju da aktivna dokumentacija, .NET verzija, Android verzija, browser manifesti/store metadata, kanonska release povijest i javni ugovor od osam release asseta ostanu međusobno usklađeni.
-
-Povijesne sekcije u `RELEASES.md` čuvaju ono što je vrijedilo za svaku verziju; ne prepisuju se tako da starija izdanja izgledaju kao da su sadržavala današnje funkcije.
-
-## Podrška
-
-Službena stranica proizvoda: **https://snapvere.com**  
-Podrška: **info@snapvere.com**  
-Developer i publisher: **Brendigo** — https://brendigo.com
+Službena stranica: https://snapvere.com  
+Podrška: info@snapvere.com

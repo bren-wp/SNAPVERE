@@ -1,121 +1,32 @@
-# Browser Extensions
+# SNAPVERE 0.1.1 Browser Extensions
 
-SNAPVERE 0.1.1 includes official public browser-extension packages for Chrome, Edge, Opera and Firefox under [`ekstenzije/`](../ekstenzije/). The browser code was developed after v0.1.0; v0.1.1 is the first release that promotes it into the public GitHub Release contract. Detailed release history is maintained in [`RELEASES.md`](../RELEASES.md).
+Supported variants: Chrome, Edge, Opera and Firefox.
 
-## Release version and assets
+## Capture modes
 
-All four extension manifests and the canonical store listing use version **0.1.1**.
+- **Visible area** — captures the current viewport.
+- **Select region** — lets the user drag over the required area.
+- **Full page** — scrolls and stitches a bounded page capture locally.
 
-The v0.1.1 GitHub Release contains:
+## Brand contract
+
+The extension name, visible wordmark and saved capture prefix are fixed to **SNAPVERE**. Settings do not expose a rebrand, custom product name or custom filename prefix.
+
+## Permission contract
+
+The permission set is exactly:
 
 ```text
-SNAPVERE-Chrome.zip
-SNAPVERE-Edge.zip
-SNAPVERE-Opera.zip
-SNAPVERE-Firefox.zip
+activeTab
+scripting
+downloads
+storage
 ```
 
-These four browser files are part of the eight-asset v0.1.1 release contract. Historical v0.1.0 remains unchanged with only its original Windows/Android assets.
+There is no broad host permission. Internal/protected browser pages can reject capture; SNAPVERE reports that failure instead of attempting to bypass browser policy.
 
-## Architecture
+## Stability and memory
 
-Chromium-family builds use Manifest V3 with `background.service_worker`. Firefox uses Manifest V3 with Firefox-compatible `background.scripts`. All variants share the same capture logic, popup/options UI, localization keys and local-first privacy model.
+Full-page capture uses explicit limits for tile count, canvas dimensions and total pixels. Tiles are decoded, drawn into one bounded destination canvas and released immediately instead of being retained as a second full image set. Capture-session tokens, tab ownership checks and cleanup watchdogs prevent stale work from silently completing against the wrong tab.
 
-The browser packages do not use external runtime dependencies.
-
-### Visible capture
-
-The background context acquires a bounded capture lock, captures the current active-tab viewport with the browser screenshot API, and saves a PNG using the downloads API.
-
-### Region capture
-
-The background stores the capture token, tab/window identity and start time in `storage.local` before injecting the local region selector. This avoids relying only on service-worker RAM while the user decides what to select.
-
-The content helper removes its overlay before the screenshot is taken. The captured viewport is cropped locally using a canvas. Escape cancels and pointer/keyboard listeners plus injected overlay nodes are cleaned in final paths.
-
-### Full-page capture
-
-Full-page capture:
-
-1. records the original scroll position;
-2. measures document/viewport dimensions;
-3. discovers visible fixed/sticky elements;
-4. builds a bounded viewport-tile grid;
-5. scrolls to each tile with paint settling;
-6. captures and transfers each tile to the content helper;
-7. hides floating elements after the first tile to reduce repeated overlays;
-8. assembles tiles into a bounded final canvas;
-9. downloads a local PNG;
-10. restores floating elements and the original scroll position.
-
-Safety limits reject pages that exceed supported canvas dimensions, pixel count or tile count instead of attempting uncontrolled memory allocation. A content-side watchdog restores page state if orchestration disappears unexpectedly.
-
-## Security controls
-
-Messages are accepted only for explicit known message types. Capture tokens and sender tab/window identifiers are validated for region completion. Page text is not inserted with `innerHTML`; extension UI uses fixed extension-owned markup and `textContent` for localized strings/status.
-
-No `<all_urls>` permission or broad `host_permissions` entry is requested. The extension does not attempt to bypass browser-protected pages.
-
-## Privacy
-
-There is no telemetry, analytics, ad SDK, cloud upload, automatic screenshot transfer, remote runtime code or background network client. Settings and active-capture metadata stay in browser-local storage.
-
-The version-controlled browser privacy policy is [`ekstenzije/PRIVACY.md`](../ekstenzije/PRIVACY.md).
-
-## Localization
-
-English is the default/fallback locale. Dedicated English and Croatian catalogs are included in every distributable browser package.
-
-## Behavioral background smoke tests
-
-`ekstenzije/tools/smoke-test-background.mjs` executes each variant's real `background.js` inside an isolated Node VM with deterministic mocks for the browser APIs used by the background runtime. The CI smoke suite verifies for Chrome, Edge, Opera and Firefox that:
-
-- visible capture reaches the download API with a PNG data URL;
-- locally configured `saveAs` is respected;
-- unsafe filename-prefix characters are sanitized;
-- the active capture lock is released after a successful capture;
-- a concurrent active capture is rejected with `captureBusy` and does not download;
-- unknown runtime messages fail through the controlled `captureFailed` response path.
-
-This is behavioral source-runtime evidence for the shared background state machine. It is deliberately **not** described as manual GUI testing or proof that every browser/web page renders identically.
-
-## Reproducible packaging
-
-`ekstenzije/tools/package-extensions.sh` creates the four release ZIP files from staged source. It normalizes file/directory timestamps to the portable ZIP epoch, sorts archive paths and uses `zip -X` to remove nonessential host metadata. `SHA256SUMS.txt` is generated next to the packages.
-
-Browser CI performs two independent packaging passes and requires corresponding ZIPs plus checksum manifests to be byte-identical. The historical v0.1.1 publication workflow applied the same reproducibility requirement before publishing the release.
-
-## Cross-browser parity controls
-
-`ekstenzije/tools/verify-extension-parity.mjs` prevents silent divergence by verifying:
-
-- identical paths and SHA-256 content for shared runtime files across Chrome, Edge, Opera and Firefox;
-- identical Chrome/Edge/Opera manifests;
-- only expected background/Gecko differences in Firefox;
-- aligned manifest versions;
-- exact icon dimensions and bytes;
-- no inline script/style blocks, inline event handlers or remote HTML runtime resources.
-
-These checks complement the permission, locale, source-policy and manifest validator.
-
-## Store submission readiness
-
-`ekstenzije/store/listing.json` is the canonical machine-readable store contract. It contains EN/HR listing copy, the single-purpose statement, permission justifications, local-first privacy/data-practice declarations, exact ZIP names and store-asset references.
-
-`ekstenzije/store/reviewer-notes.md` gives external reviewers deterministic functional test steps and documents protected-page behavior, permission use, network/privacy behavior, full-page limits and the Firefox source/signing boundary.
-
-`ekstenzije/tools/generate-store-assets.py` deterministically creates listing screenshots and promo tiles. Generated PNGs are CI artifacts rather than committed binaries.
-
-`ekstenzije/tools/validate-store-readiness.mjs` validates store material against actual manifests, including version alignment, the four-permission allow-list, no broad host permissions, local-first privacy flags, EN/HR metadata completeness, exact package names, required asset references and exact PNG dimensions.
-
-Store publication itself is external. Authenticated publisher access, store-side submission, certification/review and Firefox signing are not implied by a GitHub release or green repository CI run.
-
-## Release and QA boundary
-
-`.github/workflows/extensions-ci.yml` provides syntax, manifest, permission, locale, cross-browser parity, source-policy, behavioral background smoke, store-readiness, generated-asset, deterministic packaging, SHA-256 and package-content validation.
-
-The already-published v0.1.1 publication workflow is retained as historical audit source at `.github/release-archive/release-0.1.1.yml`. It is intentionally outside `.github/workflows`, so it is not registered as current publication automation. Moving that source file does not modify the published v0.1.1 tag, release description or assets.
-
-A green workflow is automated source/runtime-contract/package evidence; it is not a claim that every browser build/web application has been manually exercised or that external stores have approved the extension.
-
-See [`ekstenzije/README.md`](../ekstenzije/README.md) for development loading, packaging, privacy, store-submission material and known limitations, and [`RELEASES.md`](../RELEASES.md) for the complete historical release record.
+Region-capture failures that occur after the popup closes are shown as a transient localized in-page SNAPVERE status.
