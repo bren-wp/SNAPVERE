@@ -12,6 +12,9 @@
     <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
   <ItemGroup>
+    <Using Include="Snapvere.App.Services" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
   </ItemGroup>
