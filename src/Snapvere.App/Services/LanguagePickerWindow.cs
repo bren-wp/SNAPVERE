@@ -56,15 +56,17 @@ public sealed class LanguagePickerWindow : Window
         Activated += LanguagePickerWindow_Activated;
     }
 
-    public static void ShowStandalone()
+    public static void ShowStandalone(CapturePreferencesService preferences)
     {
+        ArgumentNullException.ThrowIfNull(preferences);
+
         if (_standaloneWindow is not null)
         {
             _standaloneWindow.Activate();
             return;
         }
 
-        var window = new LanguagePickerWindow(new CapturePreferencesService());
+        var window = new LanguagePickerWindow(preferences);
         _standaloneWindow = window;
         window.Closed += (_, _) =>
         {
