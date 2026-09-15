@@ -28,27 +28,50 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased — post-v0.1.1 main maintenance
 
-These changes belong to `main` after the already-published v0.1.1 release. They are **not** retroactively part of the v0.1.1 binaries or store status.
+These changes are present on `main` after the already-published v0.1.1 release. They are **not** retroactively part of the v0.1.1 binaries, browser packages or historical Android artifacts. The current public release remains **v0.1.1** until a separately validated future version is prepared and published.
 
-### Product-quality and documentation hardening
+### Active product boundary
 
-- Added canonical cross-platform [`product-version.json`](product-version.json) metadata for Windows, Android, browser-extension and release-asset alignment.
-- Added Product Contract CI to detect version drift, Android EN/HR resource-key drift, incorrect public asset contracts, stale current-release wording and broken relative documentation links.
-- Reworked the English and Croatian root README files into product-first landing pages with direct current-release downloads, local-first privacy positioning and evidence-based QA/signing/store disclosures.
-- Added/expanded English and Croatian user guides, troubleshooting, privacy, product status, QA matrix, installation, architecture and versioning/release documentation.
-- Corrected stale documentation that still described 0.0.7, 0.0.8 or 0.1.0 as the current line.
+- The maintained product surface is now **Windows + browser extensions**.
+- The Android application, Android CI workflow, Gradle dependency automation, Java/Kotlin CodeQL target and active Android documentation were removed from the maintained product tree.
+- Historical v0.1.1 and earlier Android release facts remain below unchanged because published tags/assets are immutable historical records.
+- [`product-version.json`](product-version.json) now declares `windows` and `browsers` as the supported platforms and exactly six maintained package names: Windows Setup, Windows Portable, Chrome, Edge, Opera and Firefox.
 
-### Browser-extension behavioral QA
+### Windows capture, lifecycle and memory hardening
 
-- Added VM-based behavioral smoke coverage for Chrome, Edge, Opera and Firefox `background.js` runtime behavior.
-- Tests cover visible capture/download dispatch, `saveAs`, filename sanitization, capture-lock cleanup, concurrent-capture rejection and controlled unsupported-message handling.
-- Existing cross-browser parity, store-readiness, source-policy and reproducible ZIP packaging checks remain required.
+- Corrected the GDI fallback readback lifecycle by restoring the original DC bitmap before `GetDIBits`, improving correctness and resource cleanup.
+- Hardened embedded payload extraction against destination reparse-point/junction escapes in addition to lexical ZIP traversal checks.
+- Added a per-user desktop single-instance guard and disposed the temporary Windows identity/token wrapper after SID lookup.
+- Portable duplicate launch now probes the same single-instance mutex before expensive cache verification/extraction while the child process remains the final race-safe owner.
+- CPU-heavy PNG conversion/compression now runs off the WinUI thread; cancellation is checked again immediately before the final atomic file move.
+- Normal tray startup defers capture-service construction until the user requests a capture, reducing idle startup work.
+- Region Capture writes frozen BGRA rows directly into the destination bitmap, avoids an extra clipboard `ToArray()` copy and avoids cloning draft annotation points on every pointer move.
+- Window Capture writes frozen monitor data directly into overlay bitmaps and releases raw frozen frames as soon as each overlay has loaded them, reducing multi-monitor peak memory.
 
-### Release-document consolidation
+### Browser state-machine, privacy and memory hardening
 
-- Consolidated the former root `RELEASE_NOTES_0.0.1.md` through `RELEASE_NOTES_0.1.1.md` history into this single canonical document.
-- Historical version-specific release workflows are archived after publication rather than left registered as active GitHub Actions workflows indefinitely.
-- Future release preparation should update this file rather than create another version-specific root release-notes file.
+- Chrome, Edge, Opera and Firefox revalidate the initiating tab/window immediately before and after every `captureVisibleTab` call, preventing a tab-switch race from admitting pixels from another active tab.
+- Full-page assembly revalidates the capture session after asynchronous canvas encoding and before creating a download.
+- Region-capture failures are surfaced through a transient accessible in-page status after the popup has closed instead of failing silently.
+- The visible product name, wordmark and saved filename prefix are locked to **SNAPVERE**; legacy custom filename-prefix values are ignored.
+- Full-page stitching draws decoded tiles incrementally into one bounded destination canvas and releases image resources promptly instead of retaining an image set for the full capture.
+- The permission contract remains exactly `activeTab`, `scripting`, `downloads` and `storage`, without broad host access.
+
+### CI, security and evidence hardening
+
+- Product Contract CI is always active and validates the Windows/browser platform boundary, current version, exact six-package contract, brand lock and active documentation links.
+- CodeQL checkout/init/analyze actions are pinned to audited commit SHAs; workflow credentials/permissions, concurrency and time bounds are tightened.
+- Windows package CI now records explicit architecture completion markers so x64 and x86 Setup/Portable lifecycle scripts must both actually finish successfully.
+- Universal package-size regression budgets guard application payloads and public Setup/Portable executables.
+- Existing x64 tests, x86 build, ARM64 cross-build, native payload validation, rendered WinUI visual QA and Setup/Portable lifecycle gates remain required.
+
+### Documentation, branding and real product imagery
+
+- Rebuilt the English and Croatian root READMEs as product landing pages with adaptive SNAPVERE dark/light logos, live CI badges, concise value proposition, capture shortcuts, download matrix, privacy/security positioning and documentation navigation.
+- Added real tray, Settings and Window Capture screenshots generated by the validated Windows visual-QA pipeline. These are product renders, not design mockups.
+- Added English/Croatian Performance & Stability documentation covering idle-runtime and Region/Window memory hardening.
+- Expanded Branding, Product Status, QA Matrix and documentation indexes so marketing claims remain separated from automated evidence and external publication/signing status.
+- `RELEASES.md` remains the canonical detailed release-history source; no new root `RELEASE_NOTES_<version>.md` file is introduced.
 
 ---
 

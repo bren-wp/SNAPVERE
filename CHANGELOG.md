@@ -2,6 +2,45 @@
 
 All notable SNAPVERE changes are documented here. Published release tags and assets are immutable; later documentation may clarify evidence boundaries but does not rewrite historical binaries.
 
+## [Unreleased]
+
+These changes are merged to `main` after the immutable v0.1.1 release. They are not retroactively part of the published v0.1.1 binaries or browser packages.
+
+### Active product boundary
+
+- The maintained product surface is now Windows plus Chrome, Edge, Opera and Firefox.
+- The Android application, Android CI/tooling and active Android product-contract entries were removed from the maintained source tree. Historical release records remain unchanged.
+- `product-version.json` now defines exactly six maintained release packages: Windows Setup/Portable and four browser ZIPs.
+
+### Windows reliability and performance
+
+- Hardened GDI fallback bitmap readback lifecycle and reparse-point-safe embedded payload extraction.
+- Added per-user single-instance handling and fast duplicate Portable launch rejection before expensive payload validation.
+- Moved PNG compression off the WinUI thread and added a final cancellation check immediately before atomic publication.
+- Reduced idle startup work by deferring capture-service creation until capture is requested.
+- Reduced Region and Window Capture peak memory by removing redundant full-frame staging buffers and releasing frozen monitor frames earlier.
+
+### Browser reliability and privacy
+
+- Revalidate the initiating tab immediately before and after `captureVisibleTab` so tab switches cannot feed another tab's pixels into the capture workflow.
+- Revalidate full-page session ownership after asynchronous canvas encoding and before download publication.
+- Surface region-capture failures in-page after the popup closes.
+- Lock the visible product identity and saved filename prefix to SNAPVERE, while keeping permissions limited to `activeTab`, `scripting`, `downloads` and `storage`.
+- Stitch full-page captures incrementally into one bounded canvas and release decoded tile resources promptly.
+
+### CI, security and packaging
+
+- Product Contract CI enforces the active Windows/browser contract, version alignment, exact package names and documentation links.
+- CodeQL workflow actions are pinned and run with reduced permissions, concurrency control and bounded execution.
+- Windows CI enforces real x64/x86 Setup and Portable lifecycle completion rather than relying on ambiguous PowerShell exit-state behavior.
+- Added universal package-size regression budgets and retained x86, x64 and ARM64 payload validation plus rendered WinUI visual QA.
+
+### Documentation and branding
+
+- Rebuilt the English and Croatian READMEs as product landing pages with adaptive SNAPVERE branding, live CI badges, feature/download sections and evidence-based privacy/security language.
+- Added real Windows UI screenshots produced by the validated visual-QA pipeline rather than marketing mockups.
+- Added English/Croatian Performance & Stability documentation and expanded branding, product-status and QA evidence documentation.
+
 ## [0.1.1] - 2026-09-12
 
 ### Browser extensions become public release assets
