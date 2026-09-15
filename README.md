@@ -17,7 +17,7 @@ Current release: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.1
 | Opera | `SNAPVERE-Opera.zip` |
 | Firefox | `SNAPVERE-Firefox.zip` |
 
-The active product contract contains only these six packages. Browser ZIPs are release packages for manual installation; external store approval is not claimed unless an actual store listing exists.
+The active product contract contains only these six packages. Browser ZIPs are release packages for manual installation; external store approval is not claimed unless an actual store listing exists. Production UI exposes only implemented user-facing controls.
 
 ## Windows
 
