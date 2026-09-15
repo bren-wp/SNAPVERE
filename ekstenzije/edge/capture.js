@@ -70,6 +70,42 @@
     });
   }
 
+  function showRegionError(errorKey) {
+    const existing = document.getElementById("snapvere-capture-status");
+    if (existing) existing.remove();
+
+    const status = document.createElement("div");
+    status.id = "snapvere-capture-status";
+    status.setAttribute("role", "status");
+    status.setAttribute("aria-live", "polite");
+    status.textContent = localized(
+      typeof errorKey === "string" ? errorKey : "captureFailed",
+      localized("captureFailed", "Capture could not be completed.")
+    );
+    status.style.cssText = [
+      "position:fixed!important",
+      "left:50%!important",
+      "top:18px!important",
+      "transform:translateX(-50%)!important",
+      "max-width:calc(100vw - 32px)!important",
+      "padding:10px 14px!important",
+      "border:1px solid rgba(255,95,115,.55)!important",
+      "border-radius:12px!important",
+      "background:rgba(30,10,18,.96)!important",
+      "color:#fff1f3!important",
+      "font:600 13px/1.35 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif!important",
+      "letter-spacing:.01em!important",
+      "box-shadow:0 12px 32px rgba(0,0,0,.32)!important",
+      "pointer-events:none!important",
+      "text-align:center!important",
+      "z-index:2147483647!important"
+    ].join(";");
+    document.documentElement.appendChild(status);
+    setTimeout(() => {
+      if (status.isConnected) status.remove();
+    }, 5000);
+  }
+
   function addOverlayStyle() {
     if (document.getElementById("snapvere-capture-style")) return;
 
@@ -236,7 +272,14 @@
         type: "REGION_SELECTED",
         token,
         rect
-      }).catch(() => undefined);
+      }).then((response) => {
+        if (!response || response.ok !== true) {
+          const errorKey = response && typeof response.errorKey === "string"
+            ? response.errorKey
+            : "captureFailed";
+          showRegionError(errorKey);
+        }
+      }).catch(() => showRegionError("captureFailed"));
     };
 
     const onKeyDown = (event) => {
