@@ -40,7 +40,15 @@ public sealed class PngCaptureEncoder
         header[12] = 0;
         await WriteChunkAsync(destination, IhdrType, header, cancellationToken).ConfigureAwait(false);
 
-        var compressed = BuildCompressedImageData(frame, cancellationToken);
+        // Pixel conversion and DEFLATE compression are CPU-bound. In clipboard
+        // workflows the destination is a MemoryStream, so its async writes can
+        // complete synchronously on the WinUI thread. Explicitly offload only
+        // the heavy compression phase so large captures do not freeze the editor.
+        var compressed = await Task.Run(
+                () => BuildCompressedImageData(frame, cancellationToken),
+                cancellationToken)
+            .ConfigureAwait(false);
+
         await WriteChunkAsync(destination, IdatType, compressed, cancellationToken).ConfigureAwait(false);
         await WriteChunkAsync(destination, IendType, ReadOnlyMemory<byte>.Empty, cancellationToken).ConfigureAwait(false);
     }
