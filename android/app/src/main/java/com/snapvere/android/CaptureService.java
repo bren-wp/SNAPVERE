@@ -363,34 +363,23 @@ public final class CaptureService extends Service {
 
         Image.Plane plane = planes[0];
         ByteBuffer buffer = plane.getBuffer();
-        int pixelStride = plane.getPixelStride();
-        int rowStride = plane.getRowStride();
-        int paddedWidth = CaptureBufferLayout.paddedWidth(width, pixelStride, rowStride);
+        byte[] compactPixels = CaptureBufferLayout.compactVisibleRgba(
+            buffer,
+            width,
+            height,
+            plane.getPixelStride(),
+            plane.getRowStride());
 
-        long requiredBytes;
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         try {
-            requiredBytes = Math.multiplyExact((long) rowStride, (long) height);
-        } catch (ArithmeticException exception) {
-            throw new IllegalArgumentException("Capture buffer size overflow", exception);
-        }
-
-        buffer.rewind();
-        if (requiredBytes > buffer.remaining()) {
-            throw new IllegalArgumentException("Capture buffer is smaller than the declared row layout");
-        }
-
-        Bitmap padded = Bitmap.createBitmap(paddedWidth, height, Bitmap.Config.ARGB_8888);
-        try {
-            padded.copyPixelsFromBuffer(buffer);
-            if (paddedWidth == width) {
-                return padded;
+            bitmap.copyPixelsFromBuffer(ByteBuffer.wrap(compactPixels));
+            return bitmap;
+        } catch (RuntimeException | Error exception) {
+            try {
+                bitmap.recycle();
+            } catch (RuntimeException ignored) {
             }
-
-            return Bitmap.createBitmap(padded, 0, 0, width, height);
-        } finally {
-            if (paddedWidth != width) {
-                padded.recycle();
-            }
+            throw exception;
         }
     }
 
