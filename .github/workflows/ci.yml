@@ -287,6 +287,11 @@ jobs:
             Write-Host "${name}: $([Math]::Round($file.Length / 1MB, 1)) MB"
           }
 
+      - name: Enforce package size regression budgets
+        shell: pwsh
+        run: |
+          & ./eng/Assert-SnapverePackageSize.ps1 -ArtifactsRoot (Join-Path $PWD 'artifacts')
+
       - name: Validate universal Setup and Portable with x64 and x86 payloads
         shell: pwsh
         run: |
