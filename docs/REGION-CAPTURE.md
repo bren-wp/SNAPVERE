@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Region Capture
+# SNAPVERE 0.1.2 Region Capture
 
 Region capture freezes the selected display before the selection overlay is shown. The user can drag, move or resize the region and annotate with Pen, Line, Arrow, Box or Highlight.
 
