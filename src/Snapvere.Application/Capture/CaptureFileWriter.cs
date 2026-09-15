@@ -55,6 +55,10 @@ public sealed class CaptureFileWriter
                 await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
             }
 
+            // The atomic move is the commit boundary. Honor cancellation one
+            // final time immediately before making the completed PNG visible;
+            // cancellation before this point leaves only a disposable temp file.
+            cancellationToken.ThrowIfCancellationRequested();
             File.Move(temporaryPath, finalPath, overwrite: false);
         }
         catch
