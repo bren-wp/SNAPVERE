@@ -24,6 +24,8 @@
   "regionTooSmall": { "message": "Select a larger area." },
   "regionInstruction": { "message": "Drag to select an area. Press Esc to cancel." },
   "fullPageLimitNote": { "message": "Full-page results can vary on video, canvas, cross-origin frames and highly dynamic pages." },
+  "openingOptions": { "message": "Opening settings…" },
+  "optionsOpenFailed": { "message": "Settings could not be opened. Try again." },
   "optionsTitle": { "message": "Capture settings" },
   "optionsNavigation": { "message": "SNAPVERE options" },
   "fileNamingNote": { "message": "Saved captures always use the SNAPVERE filename prefix." },
