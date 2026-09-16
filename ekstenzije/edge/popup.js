@@ -48,6 +48,32 @@
     });
   }
 
+  function openOptionsPage() {
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = (error) => {
+        if (settled) return;
+        settled = true;
+        if (error) reject(error);
+        else resolve();
+      };
+
+      try {
+        const maybePromise = chrome.runtime.openOptionsPage(() => {
+          finish(runtimeError());
+        });
+        if (maybePromise && typeof maybePromise.then === "function") {
+          maybePromise.then(
+            () => finish(null),
+            (error) => finish(error instanceof Error ? error : new Error(String(error)))
+          );
+        }
+      } catch (error) {
+        finish(error instanceof Error ? error : new Error(String(error)));
+      }
+    });
+  }
+
   function progressKey(action) {
     if (action === "CAPTURE_VISIBLE") return "capturingVisible";
     if (action === "CAPTURE_FULL") return "capturingFull";
@@ -87,8 +113,16 @@
     });
   }
 
-  settingsButton.addEventListener("click", () => {
-    chrome.runtime.openOptionsPage();
+  settingsButton.addEventListener("click", async () => {
+    setBusy(true);
+    setStatus("openingOptions");
+    try {
+      await openOptionsPage();
+      window.close();
+    } catch {
+      setStatus("optionsOpenFailed", "error");
+      setBusy(false);
+    }
   });
 
   localize();

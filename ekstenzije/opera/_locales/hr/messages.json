@@ -24,6 +24,8 @@
   "regionTooSmall": { "message": "Odaberi veće područje." },
   "regionInstruction": { "message": "Povuci za odabir područja. Pritisni Esc za odustajanje." },
   "fullPageLimitNote": { "message": "Rezultat cijele stranice može varirati kod videa, canvasa, cross-origin frameova i vrlo dinamičnih stranica." },
+  "openingOptions": { "message": "Otvaram postavke…" },
+  "optionsOpenFailed": { "message": "Postavke nije moguće otvoriti. Pokušaj ponovno." },
   "optionsTitle": { "message": "Postavke snimanja" },
   "optionsNavigation": { "message": "SNAPVERE opcije" },
   "fileNamingNote": { "message": "Spremljene snimke uvijek koriste SNAPVERE prefiks naziva datoteke." },

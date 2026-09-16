@@ -26,6 +26,7 @@ public sealed class CaptureCenterWindow : Window
     private readonly CapturePreferencesService _capturePreferencesService;
 
     private RegionCaptureWindow? _regionCaptureWindow;
+    private CaptureFeedbackWindow? _feedbackWindow;
     private bool _captureInProgress;
 
     public CaptureCenterWindow(
@@ -146,6 +147,7 @@ public sealed class CaptureCenterWindow : Window
         catch (Exception exception)
         {
             StartupDiagnostics.Record("Region capture", exception);
+            ShowCaptureFeedback(CaptureFeedbackKind.RegionFailed);
         }
         finally
         {
@@ -160,6 +162,7 @@ public sealed class CaptureCenterWindow : Window
         {
             StartupDiagnostics.WriteLine(
                 "Window Capture is unavailable because Windows.Graphics.Capture CreateForWindow is not supported on this Windows build.");
+            ShowCaptureFeedback(CaptureFeedbackKind.WindowUnsupported);
             return;
         }
 
@@ -189,6 +192,7 @@ public sealed class CaptureCenterWindow : Window
         catch (Exception exception)
         {
             StartupDiagnostics.Record("Window capture", exception);
+            ShowCaptureFeedback(CaptureFeedbackKind.WindowFailed);
         }
         finally
         {
@@ -214,6 +218,7 @@ public sealed class CaptureCenterWindow : Window
         catch (Exception exception)
         {
             StartupDiagnostics.Record("Screen capture", exception);
+            ShowCaptureFeedback(CaptureFeedbackKind.ScreenFailed);
         }
         finally
         {
@@ -226,11 +231,36 @@ public sealed class CaptureCenterWindow : Window
         if (_captureInProgress)
         {
             StartupDiagnostics.WriteLine("Capture request ignored because another capture is already active.");
+            ShowCaptureFeedback(CaptureFeedbackKind.Busy);
             return false;
         }
 
         _captureInProgress = true;
         return true;
+    }
+
+    private void ShowCaptureFeedback(CaptureFeedbackKind kind)
+    {
+        try
+        {
+            _feedbackWindow?.Close();
+        }
+        catch (InvalidOperationException)
+        {
+        }
+
+        var feedback = new CaptureFeedbackWindow(
+            kind,
+            _capturePreferencesService.Current.LanguageCode);
+        _feedbackWindow = feedback;
+        feedback.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_feedbackWindow, feedback))
+            {
+                _feedbackWindow = null;
+            }
+        };
+        feedback.Activate();
     }
 
     private void EndCapture()
