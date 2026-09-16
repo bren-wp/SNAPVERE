@@ -37,6 +37,7 @@ public sealed class CaptureCenterWindow : Window
         _capturePreferencesService = capturePreferencesService ?? throw new ArgumentNullException(nameof(capturePreferencesService));
 
         Title = "SNAPVERE Runtime Host";
+        Closed += (_, _) => CloseCaptureFeedback();
         if (IsStartupProbeRequested())
         {
             Content = BuildRuntimeHostContent();
@@ -241,13 +242,7 @@ public sealed class CaptureCenterWindow : Window
 
     private void ShowCaptureFeedback(CaptureFeedbackKind kind)
     {
-        try
-        {
-            _feedbackWindow?.Close();
-        }
-        catch (InvalidOperationException)
-        {
-        }
+        CloseCaptureFeedback();
 
         var feedback = new CaptureFeedbackWindow(
             kind,
@@ -261,6 +256,25 @@ public sealed class CaptureCenterWindow : Window
             }
         };
         feedback.Activate();
+    }
+
+    private void CloseCaptureFeedback()
+    {
+        var feedback = _feedbackWindow;
+        _feedbackWindow = null;
+        if (feedback is null)
+        {
+            return;
+        }
+
+        try
+        {
+            feedback.Close();
+        }
+        catch (InvalidOperationException)
+        {
+            // The feedback window may already be closing through user chrome.
+        }
     }
 
     private void EndCapture()
