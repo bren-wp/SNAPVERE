@@ -2,7 +2,9 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Windows.System;
 
 namespace Snapvere.App.Services;
 
@@ -84,6 +86,7 @@ public sealed class CaptureFeedbackWindow : Window
             Background = Surface,
             Padding = new Thickness(22)
         };
+        root.KeyDown += Root_KeyDown;
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -149,10 +152,22 @@ public sealed class CaptureFeedbackWindow : Window
         };
         AutomationProperties.SetName(close, CloseText());
         close.Click += (_, _) => Close();
+        close.Loaded += (_, _) => _ = close.Focus(FocusState.Programmatic);
         Grid.SetRow(close, 2);
         root.Children.Add(close);
 
         return root;
+    }
+
+    private void Root_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != VirtualKey.Escape)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        Close();
     }
 
     private void CaptureFeedbackWindow_Activated(object sender, WindowActivatedEventArgs args)
