@@ -9,6 +9,7 @@
   const recentStatus = document.getElementById("recent-status");
   const recentList = document.getElementById("recent-list");
   const refreshRecent = document.getElementById("refresh-recent");
+  const openDownloadsFolder = document.getElementById("open-downloads-folder");
   const tabs = Array.from(document.querySelectorAll("[data-panel]"));
 
   function t(key, substitutions) {
@@ -108,6 +109,17 @@
     }
   }
 
+  function openDefaultDownloadsFolder() {
+    try {
+      const result = chrome.downloads.showDefaultFolder();
+      if (result && typeof result.catch === "function") {
+        result.catch(() => setStatus(recentStatus, t("openDownloadsFolderFailed"), true));
+      }
+    } catch {
+      setStatus(recentStatus, t("openDownloadsFolderFailed"), true);
+    }
+  }
+
   function renderRecent(items) {
     recentList.replaceChildren();
     if (items.length === 0) {
@@ -190,6 +202,7 @@
     tab.addEventListener("click", () => showPanel(tab.dataset.panel));
   }
   refreshRecent.addEventListener("click", () => void loadRecent());
+  openDownloadsFolder.addEventListener("click", openDefaultDownloadsFolder);
 
   localize();
   loadSettings().catch(() => setStatus(settingsStatus, t("settingsLoadFailed"), true));
