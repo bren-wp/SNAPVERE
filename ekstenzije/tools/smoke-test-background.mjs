@@ -14,6 +14,7 @@ function createRuntime(initialStorage = {}, options = {}) {
   const storage = structuredClone(initialStorage);
   const downloads = [];
   const captures = [];
+  const actionCalls = [];
   const activeTabSequence = Array.isArray(options.activeTabSequence) && options.activeTabSequence.length > 0
     ? [...options.activeTabSequence]
     : [7];
@@ -21,11 +22,32 @@ function createRuntime(initialStorage = {}, options = {}) {
   let messageListener = null;
   let tabRemovedListener = null;
   let tabUpdatedListener = null;
+  let commandListener = null;
 
   const chrome = {
     runtime: {
       lastError: null,
       onMessage: { addListener(listener) { messageListener = listener; } }
+    },
+    i18n: {
+      getMessage(key) {
+        const messages = {
+          actionTitle: 'SNAPVERE capture',
+          captureFailed: 'Capture could not be completed.',
+          captureBusy: 'Another SNAPVERE capture is already active.',
+          captureTabChanged: 'The active tab changed during capture. Start the capture again on the tab you want.',
+          unsupportedPage: 'This browser page does not allow screenshot injection or capture.'
+        };
+        return messages[key] || '';
+      }
+    },
+    action: {
+      setBadgeText(details) { actionCalls.push({ method: 'setBadgeText', details: structuredClone(details) }); },
+      setBadgeBackgroundColor(details) { actionCalls.push({ method: 'setBadgeBackgroundColor', details: structuredClone(details) }); },
+      setTitle(details) { actionCalls.push({ method: 'setTitle', details: structuredClone(details) }); }
+    },
+    commands: {
+      onCommand: { addListener(listener) { commandListener = listener; } }
     },
     storage: {
       local: {
@@ -102,9 +124,14 @@ function createRuntime(initialStorage = {}, options = {}) {
     storage,
     downloads,
     captures,
+    actionCalls,
     get listener() {
       assert.equal(typeof messageListener, 'function');
       return messageListener;
+    },
+    invokeCommand(command) {
+      assert.equal(typeof commandListener, 'function');
+      commandListener(command);
     },
     removeTab(tabId) {
       assert.equal(typeof tabRemovedListener, 'function');
@@ -243,6 +270,30 @@ async function runVariant(browser) {
     const response = await send(runtime.listener, { type: 'UNKNOWN_MESSAGE' });
     assert.equal(response.ok, false);
     assert.equal(response.errorKey, 'captureFailed');
+  }
+
+  {
+    const runtime = createRuntime();
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    runtime.invokeCommand('capture-visible');
+    await flush();
+    await flush();
+    assert.equal(runtime.downloads.length, 1);
+    assert.match(runtime.downloads[0].filename, /^SNAPVERE-visible-/);
+    assert.ok(runtime.actionCalls.some((call) => call.method === 'setBadgeText' && call.details.text === ''));
+  }
+
+  {
+    const runtime = createRuntime({
+      snapvereActiveCapture: { token: 'existing', kind: 'region', tabId: 7, windowId: 3, startedAt: Date.now() }
+    });
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    runtime.invokeCommand('capture-visible');
+    await flush();
+    await flush();
+    assert.equal(runtime.downloads.length, 0);
+    assert.ok(runtime.actionCalls.some((call) => call.method === 'setBadgeText' && call.details.text === '!'));
+    assert.ok(runtime.actionCalls.some((call) => call.method === 'setTitle' && /Another SNAPVERE capture/.test(call.details.title)));
   }
 
   console.log(`${browser}: background runtime smoke tests passed`);
