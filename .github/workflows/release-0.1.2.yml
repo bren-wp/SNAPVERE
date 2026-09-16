@@ -307,6 +307,7 @@ jobs:
           if ($exit -eq 0) { throw "$tag GitHub Release already exists; refusing asset replacement or release mutation." }
           $text = ($result | ForEach-Object { $_.ToString() }) -join "`n"
           if ($text -notmatch 'HTTP 404') { throw "Could not safely determine existing release state. $text" }
+          exit 0
 
       - name: Create or verify immutable v0.1.2 tag
         shell: pwsh
