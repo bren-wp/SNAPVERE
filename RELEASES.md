@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.1**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.1
+- Current public release: **v0.1.2**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.2
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -26,18 +26,34 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ---
 
-## Unreleased — post-v0.1.1 main maintenance
+## Unreleased
 
-These changes are present on `main` after the already-published v0.1.1 release. They are **not** retroactively part of the v0.1.1 binaries, browser packages or historical Android artifacts. The current public release remains **v0.1.1** until a separately validated future version is prepared and published.
+No post-v0.1.2 release changes are documented yet.
 
-### Active product boundary
+---
 
-- The maintained product surface is now **Windows + browser extensions**.
-- The Android application, Android CI workflow, Gradle dependency automation, Java/Kotlin CodeQL target and active Android documentation were removed from the maintained product tree.
-- Historical v0.1.1 and earlier Android release facts remain below unchanged because published tags/assets are immutable historical records.
-- [`product-version.json`](product-version.json) now declares `windows` and `browsers` as the supported platforms and exactly six maintained package names: Windows Setup, Windows Portable, Chrome, Edge, Opera and Firefox.
+## v0.1.2 — 2026-09-16
 
-### Windows capture, lifecycle and memory hardening
+SNAPVERE 0.1.2 consolidates the post-v0.1.1 maintenance line into the maintained **Windows + browser extensions** product boundary. Historical Android facts in v0.1.1 and earlier sections remain unchanged.
+
+### Active product boundary and release contract
+
+- The maintained product surface is Windows plus Chrome, Edge, Opera and Firefox.
+- `product-version.json` declares only `windows` and `browsers` as supported platforms.
+- The public release contract contains exactly six packages:
+
+```text
+SNAPVERE-Setup.exe
+SNAPVERE-Portable.exe
+SNAPVERE-Chrome.zip
+SNAPVERE-Edge.zip
+SNAPVERE-Opera.zip
+SNAPVERE-Firefox.zip
+```
+
+- Browser store publication remains an external publisher/reviewer process. Repository CI prepares and validates the packages and store-submission metadata but does not claim Chrome Web Store, Microsoft Edge Add-ons, Opera Add-ons or Mozilla Add-ons publication without external confirmation.
+
+### Windows reliability, security and performance hardening
 
 - Corrected the GDI fallback readback lifecycle by restoring the original DC bitmap before `GetDIBits`, improving correctness and resource cleanup.
 - Hardened embedded payload extraction against destination reparse-point/junction escapes in addition to lexical ZIP traversal checks.
@@ -47,6 +63,9 @@ These changes are present on `main` after the already-published v0.1.1 release. 
 - Normal tray startup defers capture-service construction until the user requests a capture, reducing idle startup work.
 - Region Capture writes frozen BGRA rows directly into the destination bitmap, avoids an extra clipboard `ToArray()` copy and avoids cloning draft annotation points on every pointer move.
 - Window Capture writes frozen monitor data directly into overlay bitmaps and releases raw frozen frames as soon as each overlay has loaded them, reducing multi-monitor peak memory.
+- Setup interactive error handling no longer exposes raw technical exception details to users.
+- Region Capture no longer exposes raw `InvalidOperationException.Message`; technical details are retained only in a bounded local diagnostic log while the user receives stable localized recovery copy.
+- No-op preference writes are avoided, stale localization/development copy was removed, hotkey wording was corrected and the dead CaptureHistory delete surface was removed.
 
 ### Browser state-machine, privacy and memory hardening
 
@@ -55,15 +74,16 @@ These changes are present on `main` after the already-published v0.1.1 release. 
 - Region-capture failures are surfaced through a transient accessible in-page status after the popup has closed instead of failing silently.
 - The visible product name, wordmark and saved filename prefix are locked to **SNAPVERE**; legacy custom filename-prefix values are ignored.
 - Full-page stitching draws decoded tiles incrementally into one bounded destination canvas and releases image resources promptly instead of retaining an image set for the full capture.
-- The permission contract remains exactly `activeTab`, `scripting`, `downloads` and `storage`, without broad host access.
+- The permission contract remains exactly `activeTab`, `scripting`, `downloads` and `storage`, without `<all_urls>` or broad host permissions.
 
-### CI, security and evidence hardening
+### CI, security and release evidence hardening
 
-- Product Contract CI is always active and validates the Windows/browser platform boundary, current version, exact six-package contract, brand lock and active documentation links.
+- Product Contract CI validates the Windows/browser platform boundary, current version, exact six-package contract, brand/file-prefix lock, store status and active documentation links.
 - CodeQL checkout/init/analyze actions are pinned to audited commit SHAs; workflow credentials/permissions, concurrency and time bounds are tightened.
-- Windows package CI now records explicit architecture completion markers so x64 and x86 Setup/Portable lifecycle scripts must both actually finish successfully.
+- Windows package CI records explicit architecture completion markers so x64 and x86 Setup/Portable lifecycle scripts must both actually finish successfully.
 - Universal package-size regression budgets guard application payloads and public Setup/Portable executables.
 - Existing x64 tests, x86 build, ARM64 cross-build, native payload validation, rendered WinUI visual QA and Setup/Portable lifecycle gates remain required.
+- Release publication uses immutable-tag protection, transfer SHA validation, exact asset-name validation and post-publication digest verification; published tags and historical releases are never force-moved or rewritten.
 
 ### Documentation, branding and real product imagery
 

@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Image Pipeline
+# SNAPVERE 0.1.2 Image Pipeline
 
 Windows image pipeline odvaja capture acquisition, obradu piksela, anotacije, PNG encode i trajno objavljivanje datoteke. Zajednički `CaptureFrame` koristi BGRA8 piksele, eksplicitne dimenzije i stride te capture vrijeme i source identity.
 

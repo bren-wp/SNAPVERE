@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Tray and Process Lifecycle
+# SNAPVERE 0.1.2 Tray and Process Lifecycle
 
 The Windows application is designed as a **tray-first** process. A normal launch keeps SNAPVERE available for capture without opening a permanent dashboard window, while global shortcuts and the notification-area host provide the primary entry points.
 

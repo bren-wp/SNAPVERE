@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 User Guide
+# SNAPVERE 0.1.2 User Guide
 
 SNAPVERE is a local-first screenshot tool for Windows and modern browsers.
 

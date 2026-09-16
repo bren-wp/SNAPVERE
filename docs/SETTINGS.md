@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Settings
+# SNAPVERE 0.1.2 Settings
 
 ## Windows settings
 

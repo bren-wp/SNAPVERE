@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Branding
+# SNAPVERE 0.1.2 Branding
 
 **SNAPVERE** is the product name and visible wordmark. **Brendigo** is the developer and publisher identity.
 
@@ -28,4 +28,4 @@ SNAPVERE copy should be short, technical and useful. Preferred positioning is lo
 Official site: https://snapvere.com  
 Support: info@snapvere.com  
 Publisher: https://brendigo.com  
-Current release: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.1
+Current release: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.2

@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Browser Extensions
+# SNAPVERE 0.1.2 Browser Extensions
 
 Supported variants: Chrome, Edge, Opera and Firefox.
 

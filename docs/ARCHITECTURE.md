@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Architecture
+# SNAPVERE 0.1.2 Architecture
 
 ## Windows
 

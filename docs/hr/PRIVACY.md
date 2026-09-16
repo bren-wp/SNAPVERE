@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 privatnost
+# SNAPVERE 0.1.2 privatnost
 
 Osnovna obrada snimki na Windowsu i u browser ekstenzijama odvija se lokalno. Nije potreban SNAPVERE račun, nema automatskog prijenosa snimki u oblak te capture runtime nema first-party analitiku ni telemetriju.
 

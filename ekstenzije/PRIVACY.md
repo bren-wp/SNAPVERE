@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Browser Extension Privacy Policy
+# SNAPVERE 0.1.2 Browser Extension Privacy Policy
 
 This policy applies to the SNAPVERE extensions for Chrome, Edge, Opera and Firefox.
 

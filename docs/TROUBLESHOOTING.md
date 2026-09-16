@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Troubleshooting
+# SNAPVERE 0.1.2 Troubleshooting
 
 ## Windows does not capture
 

@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Capture Engine
+# SNAPVERE 0.1.2 Capture Engine
 
 Windows screen capture prefers Windows.Graphics.Capture when supported. Expected platform, timeout or native acquisition failures can fall back to the compatibility monitor backend; caller cancellation is never converted into fallback work.
 

@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Privacy
+# SNAPVERE 0.1.2 Privacy
 
 SNAPVERE is local-first. Core Windows and browser screenshot processing does not require a SNAPVERE account or automatic cloud service.
 

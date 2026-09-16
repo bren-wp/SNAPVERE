@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Browser Extensions
+# SNAPVERE 0.1.2 Browser Extensions
 
 Production extension packages are maintained for Google Chrome, Microsoft Edge, Opera and Mozilla Firefox.
 

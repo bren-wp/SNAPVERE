@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Tray i lifecycle
+# SNAPVERE 0.1.2 Tray i lifecycle
 
 Windows aplikacija radi kao **tray-first** proces. Normalan launch drži SNAPVERE spremnim za capture bez stalno otvorenog dashboarda, dok globalni prečaci i notification-area host služe kao glavni ulazi u capture workflow.
 

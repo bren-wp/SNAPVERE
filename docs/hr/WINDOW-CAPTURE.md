@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 Window Capture
+# SNAPVERE 0.1.2 Window Capture
 
 Window Capture na Windowsu odvaja **odabir cilja** od **snimanja ciljnog prozora**. Picker najprije zamrzne prikaz radne površine i poredak prozora koji se mogu snimiti, a tek zatim prikazuje SNAPVERE overlay površine. Odabrani nativni prozor potom se snima kroz window capture servis i sprema kroz zajednički PNG pipeline.
 
@@ -28,7 +28,7 @@ Prvi frame mora stići unutar dvije sekunde. Cancellation korisnika ostaje cance
 
 Dobiveni frame kopira se u validirani `CaptureFrame` s BGRA pikselima i source metapodacima. Event handleri, WinRT objekti i D3D resursi oslobađaju se na svim izlaznim putovima.
 
-Aktualna 0.1.1 implementacija ne tvrdi postojanje zasebnog legacy window backenda. Platform policy, protected content ili grafički stack mogu spriječiti uspješno snimanje pojedinog prozora.
+Aktualna 0.1.2 implementacija ne tvrdi postojanje zasebnog legacy window backenda. Platform policy, protected content ili grafički stack mogu spriječiti uspješno snimanje pojedinog prozora.
 
 ## Spremanje i cancellation
 

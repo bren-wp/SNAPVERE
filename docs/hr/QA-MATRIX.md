@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.1 QA matrica
+# SNAPVERE 0.1.2 QA matrica
 
 Ova matrica opisuje automatiziranu regresijsku evidenciju. Zeleni gate znači da je provjereni ugovor prošao na tom commitu; ne predstavlja apsolutno jamstvo platformskog ponašanja.
 
