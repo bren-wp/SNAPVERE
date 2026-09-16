@@ -25,9 +25,22 @@
   "regionInstruction": { "message": "Povuci za odabir područja. Pritisni Esc za odustajanje." },
   "fullPageLimitNote": { "message": "Rezultat cijele stranice može varirati kod videa, canvasa, cross-origin frameova i vrlo dinamičnih stranica." },
   "optionsTitle": { "message": "Postavke snimanja" },
+  "optionsNavigation": { "message": "SNAPVERE opcije" },
   "fileNamingNote": { "message": "Spremljene snimke uvijek koriste SNAPVERE prefiks naziva datoteke." },
   "askWhereToSave": { "message": "Pitaj gdje spremiti snimke vidljivog i odabranog područja" },
   "saveSettings": { "message": "Spremi postavke" },
   "settingsSaved": { "message": "Postavke su spremljene." },
-  "privacyNote": { "message": "Snimke se obrađuju lokalno. SNAPVERE ne šalje snimke u oblak, ne koristi analitiku ni telemetriju." }
+  "settingsLoadFailed": { "message": "Postavke nije moguće učitati. Sigurne zadane postavke ostaju aktivne." },
+  "settingsSaveFailed": { "message": "Postavke nije moguće spremiti. Pokušaj ponovno." },
+  "privacyNote": { "message": "Snimke se obrađuju lokalno. SNAPVERE ne šalje snimke u oblak, ne koristi analitiku ni telemetriju." },
+  "recentCaptures": { "message": "Nedavne snimke" },
+  "recentDescription": { "message": "Najnovija dovršena SNAPVERE PNG preuzimanja iz ovog profila preglednika." },
+  "refresh": { "message": "Osvježi" },
+  "loadingRecent": { "message": "Učitavam nedavne snimke…" },
+  "recentReady": { "message": "Nedavne snimke su ažurne." },
+  "noRecentCaptures": { "message": "U preuzimanjima preglednika nema dovršenih SNAPVERE snimki." },
+  "recentCapture": { "message": "SNAPVERE snimka" },
+  "openCapture": { "message": "Otvori" },
+  "recentLoadFailed": { "message": "Nedavne snimke nije moguće učitati iz preuzimanja preglednika." },
+  "openCaptureFailed": { "message": "Snimku nije moguće otvoriti. Možda je premještena ili izbrisana." }
 }

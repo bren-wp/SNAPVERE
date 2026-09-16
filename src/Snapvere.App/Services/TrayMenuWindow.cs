@@ -12,9 +12,7 @@ using Windows.System;
 namespace Snapvere.App.Services;
 
 /// <summary>
-/// Tray-first command surface. Its geometry, spacing and graphite/violet
-/// treatment intentionally mirror docs/images/tray-menu.svg, which is the
-/// product UI reference for this surface.
+/// Tray-first command surface for capture, settings, history and app lifecycle.
 /// </summary>
 public sealed class TrayMenuWindow : Window
 {
@@ -69,36 +67,26 @@ public sealed class TrayMenuWindow : Window
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
         root.Children.Add(BuildHeader());
 
-        var actions = new StackPanel
-        {
-            Spacing = 4,
-            Margin = new Thickness(0, 14, 0, 0)
-        };
+        var actions = new StackPanel { Spacing = 3, Margin = new Thickness(0, 12, 0, 0) };
         actions.Children.Add(CreateMenuButton("\uE722", L("CaptureRegion"), "Print Screen", TrayCommand.RegionCapture, primary: true));
         actions.Children.Add(CreateMenuButton("\uE7F4", L("CaptureWindow"), "Ctrl + Shift + 2", TrayCommand.WindowCapture));
         actions.Children.Add(CreateMenuButton("\uE7F8", L("CaptureScreen"), "Ctrl + Shift + 3", TrayCommand.ScreenCapture));
         actions.Children.Add(CreateSeparator());
+        actions.Children.Add(CreateMenuButton("\uE713", L("Settings"), string.Empty, TrayCommand.Show));
+        actions.Children.Add(CreateActionButton("\uE81C", L("RecentCaptures"), string.Empty, _recentCapturesHandler));
         actions.Children.Add(CreateMenuButton("\uE838", L("OpenCaptureFolder"), string.Empty, TrayCommand.OpenCaptureFolder));
-        actions.Children.Add(CreateActionButton("\uE713", L("OptionsRecent"), string.Empty, _recentCapturesHandler));
         actions.Children.Add(CreateMenuButton("\uE946", L("About"), string.Empty, TrayCommand.About));
         actions.Children.Add(CreateSeparator());
         actions.Children.Add(CreateMenuButton("\uE7E8", L("Exit"), string.Empty, TrayCommand.Exit, danger: true));
         Grid.SetRow(actions, 1);
         root.Children.Add(actions);
 
-        var footer = new Grid { Margin = new Thickness(5, 9, 5, 0) };
+        var footer = new Grid { Margin = new Thickness(5, 8, 5, 0) };
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        var ready = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 8,
-            VerticalAlignment = VerticalAlignment.Center
-        };
+        var ready = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
         ready.Children.Add(new Border
         {
             Width = 7,
@@ -108,7 +96,6 @@ public sealed class TrayMenuWindow : Window
         });
         ready.Children.Add(Text(L("Ready"), 10, Muted));
         footer.Children.Add(ready);
-
         var version = typeof(TrayMenuWindow).Assembly.GetName().Version?.ToString(3);
         var versionText = Text(version is null ? "SNAPVERE" : $"v{version}", 10, Subtle);
         Grid.SetColumn(versionText, 1);
@@ -132,7 +119,6 @@ public sealed class TrayMenuWindow : Window
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
         header.Children.Add(BuildBrandMark());
 
         var identity = new StackPanel
@@ -141,7 +127,6 @@ public sealed class TrayMenuWindow : Window
             Margin = new Thickness(14, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center
         };
-
         var product = new TextBlock
         {
             FontSize = 25,
@@ -191,7 +176,6 @@ public sealed class TrayMenuWindow : Window
             BorderBrush = Brush(0x70, 0xC9, 0xC0, 0xFF),
             BorderThickness = new Thickness(1)
         });
-
         var shard = new Grid
         {
             Width = 30,
@@ -250,22 +234,13 @@ public sealed class TrayMenuWindow : Window
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(42) });
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        var iconTile = new Border
+        content.Children.Add(new Border
         {
             Width = 32,
             Height = 32,
             CornerRadius = new CornerRadius(9),
-            Background = primary
-                ? Brush(0x90, 0x65, 0x47, 0xD8)
-                : danger
-                    ? Brush(0x28, 0xEC, 0x5F, 0x74)
-                    : Brush(0xFF, 0x14, 0x1A, 0x28),
-            BorderBrush = primary
-                ? Brush(0xFF, 0x86, 0x67, 0xF4)
-                : danger
-                    ? Brush(0x45, 0xEC, 0x5F, 0x74)
-                    : Brush(0xFF, 0x2B, 0x36, 0x4B),
+            Background = primary ? Brush(0x90, 0x65, 0x47, 0xD8) : danger ? Brush(0x28, 0xEC, 0x5F, 0x74) : Brush(0xFF, 0x14, 0x1A, 0x28),
+            BorderBrush = primary ? Brush(0xFF, 0x86, 0x67, 0xF4) : danger ? Brush(0x45, 0xEC, 0x5F, 0x74) : Brush(0xFF, 0x2B, 0x36, 0x4B),
             BorderThickness = new Thickness(1),
             Child = new FontIcon
             {
@@ -274,18 +249,11 @@ public sealed class TrayMenuWindow : Window
                 FontSize = 14,
                 Foreground = danger ? Brush(0xFF, 0xFF, 0xAE, 0xB7) : Strong
             }
-        };
-        content.Children.Add(iconTile);
-
-        var label = Text(
-            title,
-            11.5,
-            danger ? Brush(0xFF, 0xFF, 0xB6, 0xBF) : Strong,
-            Microsoft.UI.Text.FontWeights.SemiBold);
+        });
+        var label = Text(title, 11.5, danger ? Brush(0xFF, 0xFF, 0xB6, 0xBF) : Strong, Microsoft.UI.Text.FontWeights.SemiBold);
         label.VerticalAlignment = VerticalAlignment.Center;
         Grid.SetColumn(label, 1);
         content.Children.Add(label);
-
         if (!string.IsNullOrWhiteSpace(shortcut))
         {
             var hint = Text(shortcut, 9, primary ? Brush(0xFF, 0xDA, 0xD2, 0xFF) : Subtle);
@@ -293,13 +261,12 @@ public sealed class TrayMenuWindow : Window
             Grid.SetColumn(hint, 2);
             content.Children.Add(hint);
         }
-
         var button = new Button
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            MinHeight = primary ? 54 : 42,
-            Padding = new Thickness(10, 5, 10, 5),
+            MinHeight = primary ? 52 : 38,
+            Padding = new Thickness(10, 4, 10, 4),
             CornerRadius = new CornerRadius(12),
             Background = primary ? Brush(0xFF, 0x39, 0x28, 0x78) : Transparent,
             BorderBrush = primary ? Brush(0xFF, 0x86, 0x67, 0xF4) : Transparent,
@@ -315,17 +282,13 @@ public sealed class TrayMenuWindow : Window
         => new()
         {
             Height = 1,
-            Margin = new Thickness(8, 3, 8, 3),
+            Margin = new Thickness(8, 2, 8, 2),
             Background = Brush(0xFF, 0x2B, 0x36, 0x4B)
         };
 
     private void InvokeCommand(TrayCommand command)
     {
-        if (_closingForCommand)
-        {
-            return;
-        }
-
+        if (_closingForCommand) return;
         _closingForCommand = true;
         Close();
         _commandHandler(command);
@@ -333,11 +296,7 @@ public sealed class TrayMenuWindow : Window
 
     private void InvokeAction(Action action)
     {
-        if (_closingForCommand)
-        {
-            return;
-        }
-
+        if (_closingForCommand) return;
         _closingForCommand = true;
         Close();
         action();
@@ -345,11 +304,7 @@ public sealed class TrayMenuWindow : Window
 
     private void Root_KeyDown(object sender, KeyRoutedEventArgs e)
     {
-        if (e.Key != VirtualKey.Escape || _closingForCommand)
-        {
-            return;
-        }
-
+        if (e.Key != VirtualKey.Escape || _closingForCommand) return;
         e.Handled = true;
         Close();
     }
@@ -358,19 +313,14 @@ public sealed class TrayMenuWindow : Window
     {
         if (args.WindowActivationState == WindowActivationState.Deactivated)
         {
-            if (_hasActivated && !_closingForCommand)
-            {
-                Close();
-            }
+            if (_hasActivated && !_closingForCommand) Close();
             return;
         }
-
         if (!_hasActivated)
         {
             AppWindow.Resize(DpiAwareWindowSizing.ScaleSize(this, FlyoutWidth, FlyoutHeight));
             PositionNearCursor();
         }
-
         _hasActivated = true;
     }
 
@@ -384,52 +334,32 @@ public sealed class TrayMenuWindow : Window
             presenter.IsMinimizable = false;
             presenter.IsAlwaysOnTop = true;
         }
-
         AppWindow.Resize(DpiAwareWindowSizing.ScaleSize(this, FlyoutWidth, FlyoutHeight));
     }
 
     private void PositionNearCursor()
     {
-        if (!NativeMethods.GetCursorPos(out var cursor))
-        {
-            return;
-        }
-
+        if (!NativeMethods.GetCursorPos(out var cursor)) return;
         var flyoutWidth = AppWindow.Size.Width;
         var flyoutHeight = AppWindow.Size.Height;
         var monitor = NativeMethods.MonitorFromPoint(cursor, 2);
-        var info = new NativeMethods.MonitorInfo
-        {
-            Size = (uint)System.Runtime.InteropServices.Marshal.SizeOf<NativeMethods.MonitorInfo>()
-        };
-
+        var info = new NativeMethods.MonitorInfo { Size = (uint)System.Runtime.InteropServices.Marshal.SizeOf<NativeMethods.MonitorInfo>() };
         if (monitor == nint.Zero || !NativeMethods.GetMonitorInfo(monitor, ref info))
         {
             AppWindow.Move(new PointInt32(cursor.X - flyoutWidth + 24, cursor.Y - flyoutHeight - 12));
             return;
         }
-
         var minX = info.WorkArea.Left + 8;
         var maxX = Math.Max(minX, info.WorkArea.Right - flyoutWidth - 8);
         var minY = info.WorkArea.Top + 8;
         var maxY = Math.Max(minY, info.WorkArea.Bottom - flyoutHeight - 8);
-        var x = Math.Clamp(cursor.X - flyoutWidth + 24, minX, maxX);
-        var y = Math.Clamp(cursor.Y - flyoutHeight - 12, minY, maxY);
-        AppWindow.Move(new PointInt32(x, y));
+        AppWindow.Move(new PointInt32(
+            Math.Clamp(cursor.X - flyoutWidth + 24, minX, maxX),
+            Math.Clamp(cursor.Y - flyoutHeight - 12, minY, maxY)));
     }
 
-    private static TextBlock Text(
-        string value,
-        double size,
-        SolidColorBrush foreground,
-        Windows.UI.Text.FontWeight? weight = null)
-        => new()
-        {
-            Text = value,
-            FontSize = size,
-            Foreground = foreground,
-            FontWeight = weight ?? Microsoft.UI.Text.FontWeights.Normal
-        };
+    private static TextBlock Text(string value, double size, SolidColorBrush foreground, Windows.UI.Text.FontWeight? weight = null)
+        => new() { Text = value, FontSize = size, Foreground = foreground, FontWeight = weight ?? Microsoft.UI.Text.FontWeights.Normal };
 
     private static LinearGradientBrush AccentGradient()
     {
@@ -458,20 +388,10 @@ public sealed class TrayMenuWindow : Window
     private static class NativeMethods
     {
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-        internal struct Point
-        {
-            internal int X;
-            internal int Y;
-        }
+        internal struct Point { internal int X; internal int Y; }
 
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-        internal struct Rect
-        {
-            internal int Left;
-            internal int Top;
-            internal int Right;
-            internal int Bottom;
-        }
+        internal struct Rect { internal int Left; internal int Top; internal int Right; internal int Bottom; }
 
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         internal struct MonitorInfo
