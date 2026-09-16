@@ -172,11 +172,14 @@
     }
   }
 
-  function showPanel(panelId, updateHash = true) {
+  function showPanel(panelId, updateHash = true, focusTab = false) {
+    let activeTab = null;
     for (const tab of tabs) {
       const active = tab.dataset.panel === panelId;
       tab.classList.toggle("active", active);
       tab.setAttribute("aria-selected", active ? "true" : "false");
+      tab.tabIndex = active ? 0 : -1;
+      if (active) activeTab = tab;
       const panel = document.getElementById(tab.dataset.panel);
       if (panel) panel.hidden = !active;
     }
@@ -184,7 +187,34 @@
     if (updateHash) {
       history.replaceState(null, "", panelId === "recent-panel" ? "#recent" : "#settings");
     }
+    if (focusTab && activeTab) activeTab.focus();
     if (panelId === "recent-panel") void loadRecent();
+  }
+
+  function handleTabKeydown(event) {
+    const currentIndex = tabs.indexOf(event.currentTarget);
+    if (currentIndex < 0 || tabs.length === 0) return;
+
+    let targetIndex = null;
+    switch (event.key) {
+      case "ArrowRight":
+        targetIndex = (currentIndex + 1) % tabs.length;
+        break;
+      case "ArrowLeft":
+        targetIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+        break;
+      case "Home":
+        targetIndex = 0;
+        break;
+      case "End":
+        targetIndex = tabs.length - 1;
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    showPanel(tabs[targetIndex].dataset.panel, true, true);
   }
 
   form.addEventListener("submit", async (event) => {
@@ -200,6 +230,7 @@
 
   for (const tab of tabs) {
     tab.addEventListener("click", () => showPanel(tab.dataset.panel));
+    tab.addEventListener("keydown", handleTabKeydown);
   }
   refreshRecent.addEventListener("click", () => void loadRecent());
   openDownloadsFolder.addEventListener("click", openDefaultDownloadsFolder);
