@@ -25,9 +25,22 @@
   "regionInstruction": { "message": "Drag to select an area. Press Esc to cancel." },
   "fullPageLimitNote": { "message": "Full-page results can vary on video, canvas, cross-origin frames and highly dynamic pages." },
   "optionsTitle": { "message": "Capture settings" },
+  "optionsNavigation": { "message": "SNAPVERE options" },
   "fileNamingNote": { "message": "Saved captures always use the SNAPVERE filename prefix." },
   "askWhereToSave": { "message": "Ask where to save visible and region captures" },
   "saveSettings": { "message": "Save settings" },
   "settingsSaved": { "message": "Settings saved." },
-  "privacyNote": { "message": "Screenshots are processed locally. SNAPVERE does not upload captures, run analytics or use telemetry." }
+  "settingsLoadFailed": { "message": "Settings could not be loaded. Safe defaults remain active." },
+  "settingsSaveFailed": { "message": "Settings could not be saved. Try again." },
+  "privacyNote": { "message": "Screenshots are processed locally. SNAPVERE does not upload captures, run analytics or use telemetry." },
+  "recentCaptures": { "message": "Recent captures" },
+  "recentDescription": { "message": "The latest completed SNAPVERE PNG downloads from this browser profile." },
+  "refresh": { "message": "Refresh" },
+  "loadingRecent": { "message": "Loading recent captures…" },
+  "recentReady": { "message": "Recent captures are up to date." },
+  "noRecentCaptures": { "message": "No completed SNAPVERE captures were found in browser downloads." },
+  "recentCapture": { "message": "SNAPVERE capture" },
+  "openCapture": { "message": "Open" },
+  "recentLoadFailed": { "message": "Recent captures could not be read from browser downloads." },
+  "openCaptureFailed": { "message": "This capture could not be opened. It may have been moved or deleted." }
 }
