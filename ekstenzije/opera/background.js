@@ -389,6 +389,22 @@
     }
   }
 
+  const commandTasks = Object.freeze({
+    "capture-region": startRegionCapture,
+    "capture-visible": startVisibleCapture,
+    "capture-full-page": startFullPageCapture
+  });
+
+  if (chrome.commands && chrome.commands.onCommand) {
+    chrome.commands.onCommand.addListener((command) => {
+      const task = commandTasks[command];
+      if (typeof task !== "function") return undefined;
+      return serializeStart(task).catch((error) => {
+        console.warn(`SNAPVERE command ${command} failed`, error);
+      });
+    });
+  }
+
   chrome.tabs.onRemoved.addListener((tabId) => {
     releasePendingRegionLockBestEffort(tabId);
   });

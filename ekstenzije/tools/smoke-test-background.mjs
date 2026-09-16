@@ -19,6 +19,7 @@ function createRuntime(initialStorage = {}, options = {}) {
     : [7];
   let activeTabQueryIndex = 0;
   let messageListener = null;
+  let commandListener = null;
   let tabRemovedListener = null;
   let tabUpdatedListener = null;
 
@@ -26,6 +27,9 @@ function createRuntime(initialStorage = {}, options = {}) {
     runtime: {
       lastError: null,
       onMessage: { addListener(listener) { messageListener = listener; } }
+    },
+    commands: {
+      onCommand: { addListener(listener) { commandListener = listener; } }
     },
     storage: {
       local: {
@@ -106,6 +110,10 @@ function createRuntime(initialStorage = {}, options = {}) {
       assert.equal(typeof messageListener, 'function');
       return messageListener;
     },
+    command(command) {
+      assert.equal(typeof commandListener, 'function');
+      return commandListener(command);
+    },
     removeTab(tabId) {
       assert.equal(typeof tabRemovedListener, 'function');
       tabRemovedListener(tabId, { windowId: 3, isWindowClosing: false });
@@ -149,6 +157,47 @@ async function runVariant(browser) {
     assert.equal(runtime.downloads[0].conflictAction, 'uniquify');
     assert.match(runtime.downloads[0].filename, /^SNAPVERE-visible-\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.png$/);
     assert.doesNotMatch(runtime.downloads[0].filename, /OTHER|BRAND/i);
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined);
+  }
+
+  {
+    const runtime = createRuntime();
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    const result = await runtime.command('capture-visible');
+    assert.equal(result.ok, true);
+    assert.equal(runtime.downloads.length, 1);
+    assert.match(runtime.downloads[0].filename, /^SNAPVERE-visible-/);
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined);
+  }
+
+  {
+    const runtime = createRuntime();
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    const result = await runtime.command('capture-region');
+    assert.equal(result.ok, true);
+    assert.equal(result.pending, true);
+    assert.equal(runtime.storage.snapvereActiveCapture?.kind, 'region');
+    runtime.removeTab(7);
+    await flush();
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined);
+  }
+
+  {
+    const runtime = createRuntime();
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    const result = await runtime.command('capture-full-page');
+    assert.equal(result.ok, true);
+    assert.match(result.filename, /^SNAPVERE-full-page-/);
+    assert.equal(runtime.captures.length, 1);
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined);
+  }
+
+  {
+    const runtime = createRuntime();
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    const result = runtime.command('unknown-command');
+    assert.equal(result, undefined);
+    assert.equal(runtime.downloads.length, 0);
     assert.equal(runtime.storage.snapvereActiveCapture, undefined);
   }
 
