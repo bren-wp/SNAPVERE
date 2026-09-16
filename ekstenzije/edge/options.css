@@ -115,6 +115,12 @@ button:focus-visible,
   font-size: 12px;
   line-height: 1.45;
 }
+.section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
 .recent-list {
   display: grid;
   gap: 8px;
@@ -153,6 +159,8 @@ button:focus-visible,
   body { padding: 18px 10px; }
   .panel { padding: 18px; }
   .section-heading { align-items: flex-start; flex-direction: column; }
+  .section-actions { justify-content: flex-start; width: 100%; }
+  .section-actions .secondary { flex: 1 1 180px; }
   .recent-item { grid-template-columns: 1fr; }
   .recent-open { width: 100%; }
 }
