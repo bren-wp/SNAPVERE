@@ -16,6 +16,29 @@
       "128": "icons/icon-128.png"
     }
   },
+  "commands": {
+    "capture-region": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+1",
+        "mac": "Command+Shift+1"
+      },
+      "description": "__MSG_captureRegion__"
+    },
+    "capture-full-page": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+2",
+        "mac": "Command+Shift+2"
+      },
+      "description": "__MSG_captureFull__"
+    },
+    "capture-visible": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+3",
+        "mac": "Command+Shift+3"
+      },
+      "description": "__MSG_captureVisible__"
+    }
+  },
   "options_page": "options.html",
   "icons": {
     "16": "icons/icon-16.png",

@@ -9,6 +9,11 @@
   const MAX_CANVAS_DIMENSION = 32767;
   const MAX_TOTAL_PIXELS = 60_000_000;
   const MAX_REGION_DATA_URL = 64 * 1024 * 1024;
+  const COMMAND_TYPES = Object.freeze({
+    "capture-region": "CAPTURE_REGION",
+    "capture-full-page": "CAPTURE_FULL",
+    "capture-visible": "CAPTURE_VISIBLE"
+  });
   let startQueue = Promise.resolve();
 
   class SnapvereError extends Error {
@@ -389,6 +394,50 @@
     }
   }
 
+  function localizedMessage(key, fallback) {
+    try {
+      return chrome.i18n && typeof chrome.i18n.getMessage === "function"
+        ? chrome.i18n.getMessage(key) || fallback
+        : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  function bestEffortAction(method, details) {
+    try {
+      if (!chrome.action || typeof chrome.action[method] !== "function") return;
+      const result = chrome.action[method](details);
+      if (result && typeof result.catch === "function") {
+        result.catch(() => undefined);
+      }
+    } catch {
+    }
+  }
+
+  function clearCommandFeedback() {
+    bestEffortAction("setBadgeText", { text: "" });
+    bestEffortAction("setTitle", {
+      title: localizedMessage("actionTitle", "SNAPVERE capture")
+    });
+  }
+
+  function reportCommandFailure(error) {
+    const key = error instanceof SnapvereError ? error.key : "captureFailed";
+    const message = localizedMessage(key, "Capture could not be completed.");
+    bestEffortAction("setBadgeBackgroundColor", { color: "#B42336" });
+    bestEffortAction("setBadgeText", { text: "!" });
+    bestEffortAction("setTitle", { title: `SNAPVERE — ${message}` });
+  }
+
+  function executeBrowserCommand(command) {
+    const type = COMMAND_TYPES[command];
+    if (!type) return;
+    clearCommandFeedback();
+    Promise.resolve(dispatch({ type }, {}))
+      .catch(reportCommandFailure);
+  }
+
   chrome.tabs.onRemoved.addListener((tabId) => {
     releasePendingRegionLockBestEffort(tabId);
   });
@@ -398,6 +447,10 @@
       releasePendingRegionLockBestEffort(tabId);
     }
   });
+
+  if (chrome.commands && chrome.commands.onCommand && typeof chrome.commands.onCommand.addListener === "function") {
+    chrome.commands.onCommand.addListener(executeBrowserCommand);
+  }
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     Promise.resolve(dispatch(message, sender))
