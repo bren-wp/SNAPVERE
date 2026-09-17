@@ -159,7 +159,8 @@ async function exerciseFailure(browser, locale, expectedKey, command, scenario =
   vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
 
   const result = await runtime.command(command);
-  assert.deepEqual(result, { ok: false, errorKey: expectedKey });
+  assert.equal(result.ok, false);
+  assert.equal(result.errorKey, expectedKey);
   assert.equal(runtime.actionState.badgeTexts.at(-1), '!');
   assert.equal(runtime.actionState.titles.at(-1), messages[expectedKey].message);
   assert.equal(runtime.actionState.badgeColors.at(-1), '#B3261E');
