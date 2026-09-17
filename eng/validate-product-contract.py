@@ -182,12 +182,23 @@ def main() -> int:
     ]
     for path in current_docs:
         text = read_text(path)
-        if version not in text and path.name not in {"README.md", "PRIVACY.md"}:
-            fail(f"active documentation does not identify current release: {path.relative_to(ROOT)}")
         if re.search(r"\bandroid\b", text, re.IGNORECASE):
             fail(f"active documentation still describes the retired mobile product: {path.relative_to(ROOT)}")
         if re.search(r"\b(?:placeholder|coming soon|todo|dev build)\b", text, re.IGNORECASE):
             fail(f"active documentation contains development-only wording: {path.relative_to(ROOT)}")
+
+    version_pinned_docs = [
+        ROOT / "SECURITY.md",
+        ROOT / "CONTRIBUTING.md",
+        ROOT / "docs" / "README.md",
+        ROOT / "docs" / "PRODUCT-STATUS.md",
+        ROOT / "docs" / "VERSIONING-RELEASES.md",
+        ROOT / "docs" / "hr" / "README.md",
+        ROOT / "docs" / "hr" / "PRODUCT-STATUS.md",
+    ]
+    for path in version_pinned_docs:
+        if version not in read_text(path):
+            fail(f"current release marker missing from {path.relative_to(ROOT)}")
 
     for readme in (ROOT / "README.md", ROOT / "README.hr.md"):
         text = read_text(readme)

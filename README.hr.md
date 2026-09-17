@@ -16,7 +16,7 @@ Bez računa. Bez telemetrije snimki. Bez automatskog cloud uploada.
 [![Product Contract](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Web stranica](https://snapvere.com) · [Preuzmi v0.1.2](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.2) · [Dokumentacija](docs/hr/README.md) · [English](README.md)
+[Web stranica](https://snapvere.com) · [Preuzmi v0.1.3](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.3) · [Dokumentacija](docs/hr/README.md) · [English](README.md)
 
 </div>
 
@@ -24,7 +24,7 @@ Bez računa. Bez telemetrije snimki. Bez automatskog cloud uploada.
 
 ## Zašto SNAPVERE
 
-SNAPVERE 0.1.2 namijenjen je korisnicima koji žele brz i čist screenshot workflow: snimiti točne piksele, označiti ih, kopirati ili spremiti lokalno i nastaviti raditi.
+SNAPVERE 0.1.3 namijenjen je korisnicima koji žele brz i čist screenshot workflow: snimiti točne piksele, označiti ih, kopirati ili spremiti lokalno i nastaviti raditi.
 
 | | Što dobivate |
 | --- | --- |
@@ -35,7 +35,7 @@ SNAPVERE 0.1.2 namijenjen je korisnicima koji žele brz i čist screenshot workf
 | 📦 **Setup ili Portable** | Universal Windows paketi s x86, x64 i ARM64 aplikacijskim payloadima. |
 | 🌐 **Četiri preglednika** | Chrome, Edge, Opera i Firefox dijele isti zaključani SNAPVERE brand i ograničeno capture ponašanje. |
 
-Verzija 0.1.2 dodatno čisti korisničko Windows iskustvo: interni detalji iznimki ostaju u ograničenom lokalnom diagnostic logu umjesto u Settings, Language, About, Setup ili Region Capture sučelju; oznake prečaca u trayu odgovaraju stvarno registriranim tipkama; a nepromijenjene postavke više se nepotrebno ne zapisuju na disk.
+Verzija 0.1.3 dodatno čisti korisničko Windows iskustvo: interni detalji iznimki ostaju u ograničenom lokalnom diagnostic logu umjesto u Settings, Language, About, Setup ili Region Capture sučelju; oznake prečaca u trayu odgovaraju stvarno registriranim tipkama; a nepromijenjene postavke više se nepotrebno ne zapisuju na disk.
 
 ## Windows workflow
 
@@ -82,8 +82,8 @@ Ovo su **stvarne renderirane Windows površine koje je snimio SNAPVERE visual-QA
 
 ## Preuzimanja
 
-Aktualno izdanje: **SNAPVERE 0.1.2**  
-Izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.2
+Aktualno izdanje: **SNAPVERE 0.1.3**<br>
+Izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.3
 
 | Platforma | Paket |
 | --- | --- |

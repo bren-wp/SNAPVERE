@@ -1,11 +1,20 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
-  "permissions": ["activeTab", "scripting", "downloads", "storage"],
-  "background": { "scripts": ["background.js"] },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "downloads",
+    "storage"
+  ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
   "action": {
     "default_title": "__MSG_actionTitle__",
     "default_popup": "popup.html",
@@ -18,15 +27,24 @@
   },
   "commands": {
     "capture-region": {
-      "suggested_key": { "default": "Ctrl+Shift+1", "mac": "Command+Shift+1" },
+      "suggested_key": {
+        "default": "Ctrl+Shift+1",
+        "mac": "Command+Shift+1"
+      },
       "description": "__MSG_commandCaptureRegion__"
     },
     "capture-visible": {
-      "suggested_key": { "default": "Ctrl+Shift+2", "mac": "Command+Shift+2" },
+      "suggested_key": {
+        "default": "Ctrl+Shift+2",
+        "mac": "Command+Shift+2"
+      },
       "description": "__MSG_commandCaptureVisible__"
     },
     "capture-full-page": {
-      "suggested_key": { "default": "Ctrl+Shift+3", "mac": "Command+Shift+3" },
+      "suggested_key": {
+        "default": "Ctrl+Shift+3",
+        "mac": "Command+Shift+3"
+      },
       "description": "__MSG_commandCaptureFullPage__"
     }
   },
