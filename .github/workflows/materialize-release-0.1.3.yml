@@ -1,0 +1,56 @@
+name: Materialize 0.1.3 Release
+
+on:
+  push:
+    branches: [release/v0.1.3]
+    paths:
+      - '.github/release-triggers/materialize-v0.1.3'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: snapvere-materialize-release-0.1.3
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Generate release workflow from audited archive
+        run: python3 eng/materialize-release-0.1.3.py
+
+      - name: Validate generated release workflow contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fqx 'name: Release 0.1.3' .github/workflows/release-0.1.3.yml
+          grep -Fq 'SNAPVERE_VERSION: 0.1.3' .github/workflows/release-0.1.3.yml
+          grep -Fq '.github/release-triggers/v0.1.3' .github/workflows/release-0.1.3.yml
+          ! grep -Fq '0.1.2' .github/workflows/release-0.1.3.yml
+          grep -Fq 'gh release create $tag' .github/workflows/release-0.1.3.yml
+          python3 eng/validate-product-contract.py
+          git diff --check
+
+      - name: Commit production release path and remove one-shot helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/release-0.1.3.yml .github/release-triggers/v0.1.3
+          git rm \
+            .github/workflows/materialize-release-0.1.3.yml \
+            .github/release-triggers/materialize-v0.1.3 \
+            eng/materialize-release-0.1.3.py \
+            .github/workflows/prepare-release-0.1.3.yml \
+            .github/release-triggers/prepare-v0.1.3 \
+            eng/prepare-release-0.1.3.py
+          git commit -m 'Finalize SNAPVERE 0.1.3 release path'
+          git push origin HEAD:release/v0.1.3
