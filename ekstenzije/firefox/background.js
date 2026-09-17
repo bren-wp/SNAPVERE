@@ -9,7 +9,16 @@
   const MAX_CANVAS_DIMENSION = 32767;
   const MAX_TOTAL_PIXELS = 60_000_000;
   const MAX_REGION_DATA_URL = 64 * 1024 * 1024;
+  const COMMAND_FEEDBACK_MS = 5000;
+  const COMMAND_FEEDBACK_KEYS = new Set([
+    "captureBusy",
+    "unsupportedPage",
+    "captureTabChanged",
+    "fullPageTooLarge",
+    "captureFailed"
+  ]);
   let startQueue = Promise.resolve();
+  let commandFeedbackGeneration = 0;
 
   class SnapvereError extends Error {
     constructor(key, message) {
@@ -66,6 +75,70 @@
     const run = startQueue.then(task, task);
     startQueue = run.catch(() => undefined);
     return run;
+  }
+
+  function commandFeedbackKey(error) {
+    const key = error instanceof SnapvereError ? error.key : "captureFailed";
+    return COMMAND_FEEDBACK_KEYS.has(key) ? key : "captureFailed";
+  }
+
+  function localizedMessage(key) {
+    if (chrome.i18n && typeof chrome.i18n.getMessage === "function") {
+      const message = chrome.i18n.getMessage(key);
+      if (message) return message;
+      const fallback = chrome.i18n.getMessage("captureFailed");
+      if (fallback) return fallback;
+    }
+    return "Capture could not be completed.";
+  }
+
+  async function clearCommandFeedback(expectedGeneration) {
+    if (Number.isInteger(expectedGeneration)) {
+      if (expectedGeneration !== commandFeedbackGeneration) return;
+    } else {
+      commandFeedbackGeneration += 1;
+    }
+
+    const action = chrome.action;
+    if (!action) return;
+
+    const updates = [];
+    if (typeof action.setBadgeText === "function") {
+      updates.push(invoke(action, "setBadgeText", { text: "" }));
+    }
+    if (typeof action.setTitle === "function") {
+      updates.push(invoke(action, "setTitle", { title: localizedMessage("actionTitle") }));
+    }
+    await Promise.allSettled(updates);
+  }
+
+  async function showCommandFailureFeedback(error) {
+    const errorKey = commandFeedbackKey(error);
+    const generation = ++commandFeedbackGeneration;
+    const action = chrome.action;
+
+    if (action) {
+      const updates = [];
+      if (typeof action.setBadgeText === "function") {
+        updates.push(invoke(action, "setBadgeText", { text: "!" }));
+      }
+      if (typeof action.setBadgeBackgroundColor === "function") {
+        updates.push(invoke(action, "setBadgeBackgroundColor", { color: "#B3261E" }));
+      }
+      if (typeof action.setTitle === "function") {
+        updates.push(invoke(action, "setTitle", { title: localizedMessage(errorKey) }));
+      }
+      await Promise.allSettled(updates);
+    }
+
+    if (typeof setTimeout === "function") {
+      setTimeout(() => {
+        if (generation !== commandFeedbackGeneration) return;
+        Promise.resolve(clearCommandFeedback(generation)).catch(() => undefined);
+      }, COMMAND_FEEDBACK_MS);
+    }
+
+    return errorKey;
   }
 
   function makeToken() {
@@ -399,9 +472,17 @@
     chrome.commands.onCommand.addListener((command) => {
       const task = commandTasks[command];
       if (typeof task !== "function") return undefined;
-      return serializeStart(task).catch((error) => {
-        console.warn(`SNAPVERE command ${command} failed`, error);
-      });
+      return serializeStart(task).then(
+        async (result) => {
+          await clearCommandFeedback();
+          return result;
+        },
+        async (error) => {
+          const errorKey = await showCommandFailureFeedback(error);
+          console.warn(`SNAPVERE command ${command} failed: ${errorKey}`);
+          return { ok: false, errorKey };
+        }
+      );
     });
   }
 
