@@ -42,10 +42,10 @@ jobs:
             ekstenzije/edge/manifest.json \
             ekstenzije/opera/manifest.json \
             ekstenzije/firefox/manifest.json; do
-            grep -Eq '"version"[[:space:]]*:[[:space:]]*"0\.1\.2"' "$manifest"
+            grep -Eq '"version"[[:space:]]*:[[:space:]]*"0\.1\.3"' "$manifest"
           done
-          grep -Eq '"extensionVersion"[[:space:]]*:[[:space:]]*"0\.1\.2"' ekstenzije/store/listing.json
-          grep -Eq '"developmentChannel"[[:space:]]*:[[:space:]]*"v0\.1\.2-release"' ekstenzije/store/listing.json
+          grep -Eq '"extensionVersion"[[:space:]]*:[[:space:]]*"0\.1\.3"' ekstenzije/store/listing.json
+          grep -Eq '"developmentChannel"[[:space:]]*:[[:space:]]*"v0\.1\.3-release"' ekstenzije/store/listing.json
           grep -Eq '"storePublication"[[:space:]]*:[[:space:]]*"not-published"' product-version.json
           python -m pip install --disable-pip-version-check --no-cache-dir 'Pillow==11.3.0'
           python ekstenzije/tools/generate-store-assets.py
