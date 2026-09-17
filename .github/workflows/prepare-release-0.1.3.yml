@@ -1,0 +1,59 @@
+name: Prepare 0.1.3
+
+on:
+  push:
+    branches: [release/v0.1.3]
+    paths:
+      - '.github/release-triggers/prepare-v0.1.3'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: snapvere-prepare-0.1.3
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Prepare source version and release documentation
+        run: python3 eng/prepare-release-0.1.3.py
+
+      - name: Validate prepared contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 eng/validate-product-contract.py
+          node ekstenzije/tools/validate-extensions.mjs
+          node ekstenzije/tools/verify-extension-parity.mjs
+          node ekstenzije/tools/smoke-test-background.mjs
+          node ekstenzije/tools/test-hotkey-failure-feedback.mjs
+          git diff --check
+
+      - name: Commit prepared release state
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo 'Release source is already prepared.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add product-version.json Directory.Build.props \
+            ekstenzije/chrome/manifest.json ekstenzije/edge/manifest.json \
+            ekstenzije/opera/manifest.json ekstenzije/firefox/manifest.json \
+            ekstenzije/store/listing.json README.md README.hr.md SECURITY.md \
+            CONTRIBUTING.md docs/README.md docs/hr/README.md \
+            docs/PRODUCT-STATUS.md docs/hr/PRODUCT-STATUS.md \
+            docs/VERSIONING-RELEASES.md eng/validate-product-contract.py \
+            RELEASES.md CHANGELOG.md
+          git commit -m 'Prepare SNAPVERE 0.1.3 release'
+          git push origin HEAD:release/v0.1.3
