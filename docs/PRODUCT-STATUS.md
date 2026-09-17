@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.2 Product Status
+# SNAPVERE 0.1.3 Product Status
 
 Active maintained product surfaces are **Windows** and **browser extensions**.
 
@@ -16,7 +16,7 @@ GitHub release ZIPs are not represented as externally approved store listings un
 
 ## Packaging
 
-The active 0.1.2 package contract contains:
+The active 0.1.3 package contract contains:
 
 - `SNAPVERE-Setup.exe`
 - `SNAPVERE-Portable.exe`
@@ -31,4 +31,4 @@ CI covers Windows builds/tests, rendered WinUI visual QA, package construction, 
 
 These gates provide strong regression evidence; they are not a guarantee that every operating-system, driver or browser environment can never produce a platform-specific defect.
 
-See [Performance & Stability](PERFORMANCE.md), [QA Matrix](QA-MATRIX.md) and the [current release](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.2).
+See [Performance & Stability](PERFORMANCE.md), [QA Matrix](QA-MATRIX.md) and the [current release](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.3).

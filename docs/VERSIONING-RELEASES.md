@@ -1,5 +1,7 @@
 # SNAPVERE 0.1.2 Versioning and Releases
 
+Current public release: **v0.1.3**.
+
 `product-version.json` is the canonical active product contract. Current active distribution consists of exactly six packages: Windows Setup/Portable plus Chrome, Edge, Opera and Firefox ZIP packages.
 
 Published tags and assets are historical output and are not silently rewritten by later maintenance. New binary behavior belongs in a future version/tag. Detailed historical release notes are kept in the root `RELEASES.md`; no root `RELEASE_NOTES_<version>.md` file is created for the active release line. Active product documentation describes the current maintained product surface.
