@@ -81,6 +81,44 @@ function validateMessages(browserDir) {
   }
 }
 
+function validateLocalizationReferences(browser, browserDir) {
+  const messages = readJson(path.join(browserDir, "_locales/en/messages.json"));
+  const availableKeys = new Set(Object.keys(messages));
+  const files = [
+    ["manifest.json", [/__MSG_([A-Za-z0-9_]+)__/g]],
+    ["popup.html", [/\bdata-i18n(?:-aria-label)?=["']([A-Za-z0-9_]+)["']/g]],
+    ["options.html", [/\bdata-i18n(?:-aria-label)?=["']([A-Za-z0-9_]+)["']/g]],
+    ["popup.js", [
+      /\b(?:t|setStatus)\(\s*["']([A-Za-z0-9_]+)["']/g,
+      /chrome\.i18n\.getMessage\(\s*["']([A-Za-z0-9_]+)["']/g
+    ]],
+    ["options.js", [
+      /\bt\(\s*["']([A-Za-z0-9_]+)["']/g,
+      /chrome\.i18n\.getMessage\(\s*["']([A-Za-z0-9_]+)["']/g
+    ]],
+    ["background.js", [
+      /\blocalizedMessage\(\s*["']([A-Za-z0-9_]+)["']/g,
+      /new\s+SnapvereError\(\s*["']([A-Za-z0-9_]+)["']/g,
+      /chrome\.i18n\.getMessage\(\s*["']([A-Za-z0-9_]+)["']/g
+    ]],
+    ["capture.js", [
+      /chrome\.i18n\.getMessage\(\s*["']([A-Za-z0-9_]+)["']/g
+    ]]
+  ];
+
+  for (const [relative, patterns] of files) {
+    const text = fs.readFileSync(path.join(browserDir, relative), "utf8");
+    for (const pattern of patterns) {
+      for (const match of text.matchAll(pattern)) {
+        const key = match[1];
+        if (!availableKeys.has(key)) {
+          fail(`${browser}/${relative} references missing locale key: ${key}`);
+        }
+      }
+    }
+  }
+}
+
 function validateCommandContract(browser, manifest) {
   const commands = manifest.commands && typeof manifest.commands === "object" ? manifest.commands : {};
   const actualIds = Object.keys(commands).sort();
@@ -247,9 +285,10 @@ for (const browser of browsers) {
 
   validateManifest(browser, browserDir);
   validateMessages(browserDir);
+  validateLocalizationReferences(browser, browserDir);
   validateBrandLock(browser, browserDir);
   validateSource(browser, browserDir);
   console.log(`Validated ${browser}.`);
 }
 
-console.log("SNAPVERE browser extension validation passed: branding locked, permissions bounded, command shortcuts locked, capture memory lifecycle enforced.");
+console.log("SNAPVERE browser extension validation passed: branding locked, permissions bounded, localization references verified, command shortcuts locked, capture memory lifecycle enforced.");
