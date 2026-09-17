@@ -7,6 +7,23 @@ const repoRoot = path.resolve(here, "..", "..");
 const extensionsRoot = path.join(repoRoot, "ekstenzije");
 const browsers = ["chrome", "edge", "opera", "firefox"];
 const allowedPermissions = new Set(["activeTab", "scripting", "downloads", "storage"]);
+const expectedCommands = Object.freeze({
+  "capture-region": {
+    default: "Ctrl+Shift+1",
+    mac: "Command+Shift+1",
+    description: "__MSG_commandCaptureRegion__"
+  },
+  "capture-visible": {
+    default: "Ctrl+Shift+2",
+    mac: "Command+Shift+2",
+    description: "__MSG_commandCaptureVisible__"
+  },
+  "capture-full-page": {
+    default: "Ctrl+Shift+3",
+    mac: "Command+Shift+3",
+    description: "__MSG_commandCaptureFullPage__"
+  }
+});
 const requiredFiles = [
   "manifest.json",
   "background.js",
@@ -64,6 +81,36 @@ function validateMessages(browserDir) {
   }
 }
 
+function validateCommandContract(browser, manifest) {
+  const commands = manifest.commands && typeof manifest.commands === "object" ? manifest.commands : {};
+  const actualIds = Object.keys(commands).sort();
+  const expectedIds = Object.keys(expectedCommands).sort();
+  if (JSON.stringify(actualIds) !== JSON.stringify(expectedIds)) {
+    fail(`${browser} must declare exactly the three SNAPVERE capture commands.`);
+  }
+
+  const defaults = new Set();
+  const macKeys = new Set();
+  for (const [commandId, expected] of Object.entries(expectedCommands)) {
+    const command = commands[commandId];
+    if (!command || typeof command !== "object") fail(`${browser} is missing command: ${commandId}`);
+    if (command.description !== expected.description) {
+      fail(`${browser} command ${commandId} must use ${expected.description}.`);
+    }
+    if (command.suggested_key?.default !== expected.default) {
+      fail(`${browser} command ${commandId} default shortcut must be ${expected.default}.`);
+    }
+    if (command.suggested_key?.mac !== expected.mac) {
+      fail(`${browser} command ${commandId} mac shortcut must be ${expected.mac}.`);
+    }
+    if (defaults.has(expected.default) || macKeys.has(expected.mac)) {
+      fail(`${browser} command shortcuts must be unique.`);
+    }
+    defaults.add(expected.default);
+    macKeys.add(expected.mac);
+  }
+}
+
 function validateManifest(browser, browserDir) {
   const manifest = readJson(path.join(browserDir, "manifest.json"));
   if (manifest.manifest_version !== 3) fail(`${browser} must use Manifest V3.`);
@@ -86,6 +133,8 @@ function validateManifest(browser, browserDir) {
 
   const hostPermissions = Array.isArray(manifest.host_permissions) ? manifest.host_permissions : [];
   if (hostPermissions.length !== 0) fail(`${browser} must not declare host_permissions.`);
+
+  validateCommandContract(browser, manifest);
 
   const background = manifest.background || {};
   if (browser === "firefox") {
@@ -203,4 +252,4 @@ for (const browser of browsers) {
   console.log(`Validated ${browser}.`);
 }
 
-console.log("SNAPVERE browser extension validation passed: branding locked, permissions bounded, capture memory lifecycle enforced.");
+console.log("SNAPVERE browser extension validation passed: branding locked, permissions bounded, command shortcuts locked, capture memory lifecycle enforced.");

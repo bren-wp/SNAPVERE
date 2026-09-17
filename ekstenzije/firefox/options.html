@@ -16,7 +16,7 @@
       </div>
     </header>
 
-    <nav class="tabs" role="tablist" data-i18n-aria-label="optionsNavigation">
+    <nav class="tabs" role="tablist" aria-orientation="horizontal" data-i18n-aria-label="optionsNavigation">
       <button id="settings-tab" class="tab active" type="button" role="tab" aria-selected="true" aria-controls="settings-panel" data-panel="settings-panel" data-i18n="settings"></button>
       <button id="recent-tab" class="tab" type="button" role="tab" aria-selected="false" aria-controls="recent-panel" data-panel="recent-panel" data-i18n="recentCaptures"></button>
     </nav>
@@ -45,7 +45,10 @@
           <h2 data-i18n="recentCaptures"></h2>
           <p data-i18n="recentDescription"></p>
         </div>
-        <button id="refresh-recent" class="secondary" type="button" data-i18n="refresh"></button>
+        <div class="section-actions">
+          <button id="open-downloads-folder" class="secondary" type="button" data-i18n="openDownloadsFolder"></button>
+          <button id="refresh-recent" class="secondary" type="button" data-i18n="refresh"></button>
+        </div>
       </div>
       <div id="recent-list" class="recent-list" aria-live="polite"></div>
       <div id="recent-status" class="status" role="status" aria-live="polite"></div>

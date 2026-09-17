@@ -394,50 +394,6 @@
     }
   }
 
-  function localizedMessage(key, fallback) {
-    try {
-      return chrome.i18n && typeof chrome.i18n.getMessage === "function"
-        ? chrome.i18n.getMessage(key) || fallback
-        : fallback;
-    } catch {
-      return fallback;
-    }
-  }
-
-  function bestEffortAction(method, details) {
-    try {
-      if (!chrome.action || typeof chrome.action[method] !== "function") return;
-      const result = chrome.action[method](details);
-      if (result && typeof result.catch === "function") {
-        result.catch(() => undefined);
-      }
-    } catch {
-    }
-  }
-
-  function clearCommandFeedback() {
-    bestEffortAction("setBadgeText", { text: "" });
-    bestEffortAction("setTitle", {
-      title: localizedMessage("actionTitle", "SNAPVERE capture")
-    });
-  }
-
-  function reportCommandFailure(error) {
-    const key = error instanceof SnapvereError ? error.key : "captureFailed";
-    const message = localizedMessage(key, "Capture could not be completed.");
-    bestEffortAction("setBadgeBackgroundColor", { color: "#B42336" });
-    bestEffortAction("setBadgeText", { text: "!" });
-    bestEffortAction("setTitle", { title: `SNAPVERE — ${message}` });
-  }
-
-  function executeBrowserCommand(command) {
-    const type = COMMAND_TYPES[command];
-    if (!type) return;
-    clearCommandFeedback();
-    Promise.resolve(dispatch({ type }, {}))
-      .catch(reportCommandFailure);
-  }
-
   chrome.tabs.onRemoved.addListener((tabId) => {
     releasePendingRegionLockBestEffort(tabId);
   });
