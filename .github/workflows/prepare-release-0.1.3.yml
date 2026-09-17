@@ -26,6 +26,27 @@ jobs:
       - name: Prepare source version and release documentation
         run: python3 eng/prepare-release-0.1.3.py
 
+      - name: Normalize current-release README line breaks
+        shell: python
+        run: |
+          from pathlib import Path
+          replacements = {
+              "README.md": (
+                  "Current release: **SNAPVERE 0.1.3**  \nRelease page:",
+                  "Current release: **SNAPVERE 0.1.3**<br>\nRelease page:",
+              ),
+              "README.hr.md": (
+                  "Aktualno izdanje: **SNAPVERE 0.1.3**  \nIzdanje:",
+                  "Aktualno izdanje: **SNAPVERE 0.1.3**<br>\nIzdanje:",
+              ),
+          }
+          for filename, (old, new) in replacements.items():
+              path = Path(filename)
+              text = path.read_text(encoding="utf-8")
+              if old not in text:
+                  raise SystemExit(f"{filename}: expected release line break not found")
+              path.write_text(text.replace(old, new, 1), encoding="utf-8", newline="\n")
+
       - name: Validate prepared contract
         shell: bash
         run: |
