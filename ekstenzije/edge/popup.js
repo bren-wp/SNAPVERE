@@ -115,12 +115,12 @@
 
   settingsButton.addEventListener("click", async () => {
     setBusy(true);
-    setStatus("openingOptions");
+    setStatus("openingSettings");
     try {
       await openOptionsPage();
       window.close();
     } catch {
-      setStatus("optionsOpenFailed", "error");
+      setStatus("openSettingsFailed", "error");
       setBusy(false);
     }
   });
