@@ -72,7 +72,13 @@
   }
 
   function isSnapvereCapture(item) {
-    if (!item || !Number.isInteger(item.id) || item.state !== "complete" || typeof item.filename !== "string") {
+    if (
+      !item ||
+      !Number.isInteger(item.id) ||
+      item.state !== "complete" ||
+      item.exists === false ||
+      typeof item.filename !== "string"
+    ) {
       return false;
     }
     const fileName = item.filename.split(/[\\/]/).pop() || "";
