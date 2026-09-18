@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.2 Image Pipeline
+# SNAPVERE Image Pipeline
 
 Windows image pipeline odvaja capture acquisition, obradu piksela, anotacije, PNG encode i trajno objavljivanje datoteke. Zajednički `CaptureFrame` koristi BGRA8 piksele, eksplicitne dimenzije i stride te capture vrijeme i source identity.
 
@@ -30,11 +30,11 @@ Svaki red prolazi kroz validirani frame contract, pretvara se u jedan ponovno ko
 
 ## Trajno lokalno spremanje
 
-`CaptureFileWriter` određuje lokalni capture direktorij i slobodan završni naziv, a zatim u istom direktoriju izrađuje jedinstvenu privremenu datoteku. Encoder piše u temp file asinkronim I/O putem, a stream se flush-a prije završne objave.
+`CaptureFileWriter` određuje lokalni capture direktorij i u istom direktoriju izrađuje jedinstvenu privremenu datoteku. Encoder piše u temp file asinkronim I/O putem, a stream se flush-a prije završne objave.
 
-Završni `File.Move` je commit boundary. Cancellation se provjerava neposredno prije move operacije. Ako encode, flush ili cancellation završe greškom, SNAPVERE pokušava obrisati privremenu datoteku i zatim ponovno baca izvornu grešku.
+Završni `File.Move` je commit boundary. Vidljivi naziv sada se dodjeljuje upravo na toj granici: ako druga snimka ili lokalni proces prije zauzmu isti naziv temeljen na timestampu, SNAPVERE prelazi na sljedeći deterministički sufiks i ponovno pokušava atomski move bez ponovnog PNG encodea. Cancellation se provjerava prije svakog pokušaja objave.
 
-Budući da se temp i final file nalaze u istom direktoriju, dizajn ne prikazuje namjerno nedovršeni encode pod konačnim capture nazivom. Greška cleanup-a ne smije zamijeniti izvornu capture grešku.
+Budući da se temp i final file nalaze u istom direktoriju, dizajn ne prikazuje namjerno nedovršeni encode pod konačnim capture nazivom. Neuspjeli encode, flush, cancellation ili publication koriste best-effort cleanup, a greška cleanup-a ne smije zamijeniti izvornu capture grešku.
 
 ## Memorija i odzivnost
 
@@ -46,7 +46,7 @@ Aktualni hardening uključuje direktan BGRA zapis u Region/Window overlay bitmap
 
 ## Regresijski dokaz
 
-Unit suite provjerava crop granice i kopiranje redova, annotation rendering, PNG dimenzije i dekodirane RGBA piksele, uspješnu atomsku objavu PNG-a, cancellation bez finalne datoteke te cleanup oko zajedničkog writera.
+Unit suite provjerava crop granice i kopiranje redova, annotation rendering, PNG dimenzije i dekodirane RGBA piksele, uspješnu atomsku objavu PNG-a, dvije istodobne snimke s istim timestampom bez kolizije naziva, cancellation bez finalne datoteke te cleanup oko zajedničkog writera.
 
 Windows CI te testove izvršava na x64 test putu, uz odvojene x86 i ARM64 buildove. Package CI dodatno provjerava size budgete javnih executablea.
 
