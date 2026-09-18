@@ -19,6 +19,7 @@ internal static class Program
             // launcher path and does not replace the in-app single-instance guard.
             if (DesktopInstanceIdentity.IsDesktopInstanceRunning())
             {
+                _ = DesktopInstanceIdentity.TrySignalDesktopInstance();
                 Environment.ExitCode = 0;
                 return;
             }

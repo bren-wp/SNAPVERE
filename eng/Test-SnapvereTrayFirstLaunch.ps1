@@ -20,6 +20,7 @@ $install = Join-Path $env:LOCALAPPDATA 'Programs/SNAPVERE'
 $startupLog = Join-Path $env:LOCALAPPDATA 'SNAPVERE/Logs/startup.log'
 $setupUiMarker = Join-Path $env:TEMP 'SNAPVERE/setup-ui-probe.ready'
 $trayMarker = Join-Path $env:TEMP 'SNAPVERE/tray-startup-probe.ready'
+$secondLaunchMarker = Join-Path $env:TEMP 'SNAPVERE/second-launch-probe.ready'
 
 function Write-StartupLogIfPresent {
     if (Test-Path -LiteralPath $startupLog) {
@@ -73,6 +74,7 @@ function Assert-SecondLaunchDoesNotDuplicate(
     [System.Diagnostics.Process] $PrimaryProcess,
     [string] $Name
 ) {
+    Remove-Item -LiteralPath $secondLaunchMarker -Force -ErrorAction SilentlyContinue
     $secondary = Start-Process -FilePath $FilePath -PassThru
     try {
         if (-not $secondary.WaitForExit(10000)) {
@@ -83,7 +85,20 @@ function Assert-SecondLaunchDoesNotDuplicate(
             throw "$Name second launch exited with code $($secondary.ExitCode)."
         }
 
-        Start-Sleep -Milliseconds 750
+        $activationDeadline = (Get-Date).AddSeconds(5)
+        while (-not (Test-Path -LiteralPath $secondLaunchMarker) -and (Get-Date) -lt $activationDeadline) {
+            Start-Sleep -Milliseconds 100
+        }
+        if (-not (Test-Path -LiteralPath $secondLaunchMarker)) {
+            throw "$Name second launch did not activate the existing SNAPVERE instance."
+        }
+
+        $activationText = Get-Content -LiteralPath $secondLaunchMarker -Raw
+        if ($activationText -notmatch 'SECOND_LAUNCH_ACTIVATED') {
+            throw "$Name second-launch activation marker is invalid: $activationText"
+        }
+
+        Start-Sleep -Milliseconds 250
         $PrimaryProcess.Refresh()
         if ($PrimaryProcess.HasExited) {
             throw "$Name second launch terminated the primary SNAPVERE process."
@@ -95,9 +110,10 @@ function Assert-SecondLaunchDoesNotDuplicate(
             throw "$Name second launch left an invalid process set. Expected PID=$($PrimaryProcess.Id); actual PIDs=[$ids]."
         }
 
-        Write-Host "$Name rejected a duplicate launch and kept primary PID=$($PrimaryProcess.Id)."
+        Write-Host "$Name activated the existing instance and kept primary PID=$($PrimaryProcess.Id)."
     }
     finally {
+        Remove-Item -LiteralPath $secondLaunchMarker -Force -ErrorAction SilentlyContinue
         $secondary.Dispose()
     }
 }
@@ -168,14 +184,21 @@ if (-not (Test-Path -LiteralPath $installedApp -PathType Leaf)) {
 Invoke-TrayProbe $installedApp "Installed SNAPVERE $Arch"
 Stop-SnapvereProcesses
 
-$installed = Start-Process -FilePath $installedApp -PassThru
+$env:SNAPVERE_SECOND_LAUNCH_PROBE = '1'
 try {
-    Assert-TrayOnlyProcess $installed "Installed SNAPVERE $Arch normal launch"
-    Assert-SecondLaunchDoesNotDuplicate $installedApp $installed "Installed SNAPVERE $Arch"
+    $installed = Start-Process -FilePath $installedApp -PassThru
+    try {
+        Assert-TrayOnlyProcess $installed "Installed SNAPVERE $Arch normal launch"
+        Assert-SecondLaunchDoesNotDuplicate $installedApp $installed "Installed SNAPVERE $Arch"
+    }
+    finally {
+        try { if (-not $installed.HasExited) { Stop-Process -Id $installed.Id -Force -ErrorAction SilentlyContinue } } catch {}
+        $installed.Dispose()
+    }
 }
 finally {
-    try { if (-not $installed.HasExited) { Stop-Process -Id $installed.Id -Force -ErrorAction SilentlyContinue } } catch {}
-    $installed.Dispose()
+    Remove-Item Env:SNAPVERE_SECOND_LAUNCH_PROBE -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $secondLaunchMarker -Force -ErrorAction SilentlyContinue
 }
 Stop-SnapvereProcesses
 
@@ -188,25 +211,32 @@ $uninstallProcess.Dispose()
 Invoke-TrayProbe $portable "Portable SNAPVERE $Arch"
 Stop-SnapvereProcesses
 
-$portableLauncher = Start-Process -FilePath $portable -PassThru
-if (-not $portableLauncher.WaitForExit(15000)) {
-    try { Stop-Process -Id $portableLauncher.Id -Force -ErrorAction SilentlyContinue } catch {}
-    throw "$Arch Portable launcher did not return after starting the tray-only app."
-}
-if ($portableLauncher.ExitCode -ne 0) {
-    Write-StartupLogIfPresent
-    throw "$Arch Portable launcher failed normal startup: $($portableLauncher.ExitCode)."
-}
-$portableLauncher.Dispose()
-
-$portableApp = Get-SingleSnapvereProcess "Portable SNAPVERE $Arch normal launch"
+$env:SNAPVERE_SECOND_LAUNCH_PROBE = '1'
 try {
-    Assert-TrayOnlyProcess $portableApp "Portable SNAPVERE $Arch normal launch"
-    Assert-SecondLaunchDoesNotDuplicate $portable $portableApp "Portable SNAPVERE $Arch"
+    $portableLauncher = Start-Process -FilePath $portable -PassThru
+    if (-not $portableLauncher.WaitForExit(15000)) {
+        try { Stop-Process -Id $portableLauncher.Id -Force -ErrorAction SilentlyContinue } catch {}
+        throw "$Arch Portable launcher did not return after starting the tray-only app."
+    }
+    if ($portableLauncher.ExitCode -ne 0) {
+        Write-StartupLogIfPresent
+        throw "$Arch Portable launcher failed normal startup: $($portableLauncher.ExitCode)."
+    }
+    $portableLauncher.Dispose()
+
+    $portableApp = Get-SingleSnapvereProcess "Portable SNAPVERE $Arch normal launch"
+    try {
+        Assert-TrayOnlyProcess $portableApp "Portable SNAPVERE $Arch normal launch"
+        Assert-SecondLaunchDoesNotDuplicate $portable $portableApp "Portable SNAPVERE $Arch"
+    }
+    finally {
+        try { if (-not $portableApp.HasExited) { Stop-Process -Id $portableApp.Id -Force -ErrorAction SilentlyContinue } } catch {}
+        $portableApp.Dispose()
+    }
 }
 finally {
-    try { if (-not $portableApp.HasExited) { Stop-Process -Id $portableApp.Id -Force -ErrorAction SilentlyContinue } } catch {}
-    $portableApp.Dispose()
+    Remove-Item Env:SNAPVERE_SECOND_LAUNCH_PROBE -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $secondLaunchMarker -Force -ErrorAction SilentlyContinue
 }
 Stop-SnapvereProcesses
 

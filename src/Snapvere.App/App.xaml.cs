@@ -25,6 +25,8 @@ public partial class App : Microsoft.UI.Xaml.Application
     private const string WindowOverlayProbeMarkerFileName = "window-overlay-probe.ready";
     private const string SecondaryUiProbeEnvironmentVariable = "SNAPVERE_SECONDARY_UI_PROBE";
     private const string SecondaryUiProbeMarkerFileName = "secondary-ui-probe.ready";
+    private const string SecondLaunchProbeEnvironmentVariable = "SNAPVERE_SECOND_LAUNCH_PROBE";
+    private const string SecondLaunchProbeMarkerFileName = "second-launch-probe.ready";
     private const string ProbeSessionEnvironmentVariable = "SNAPVERE_PROBE_SESSION_ID";
 
     private readonly ServiceProvider _services;
@@ -114,6 +116,7 @@ public partial class App : Microsoft.UI.Xaml.Application
             _window = _services.GetRequiredService<CaptureCenterWindow>();
             _window.Closed += OnMainWindowClosed;
             StartupDiagnostics.WriteLine("Capture coordinator created in tray-first hidden mode.");
+            SingleInstanceGuard.RegisterSecondLaunchHandler(OnSecondLaunchRequested);
 
             if (IsStartupProbeRequested())
             {
@@ -196,6 +199,43 @@ public partial class App : Microsoft.UI.Xaml.Application
 
         return Environment.GetCommandLineArgs().Any(
             argument => string.Equals(argument, "--secondary-ui-probe", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsSecondLaunchProbeRequested()
+        => string.Equals(
+            Environment.GetEnvironmentVariable(SecondLaunchProbeEnvironmentVariable),
+            "1",
+            StringComparison.Ordinal);
+
+    private void OnSecondLaunchRequested()
+    {
+        var queue = _dispatcherQueue;
+        if (queue is null)
+        {
+            return;
+        }
+
+        _ = queue.TryEnqueue(() =>
+        {
+            if (_window is null)
+            {
+                return;
+            }
+
+            CloseTrayMenu();
+            ShowOptions(OptionsSection.Preferences);
+            StartupDiagnostics.WriteLine(
+                "Existing SNAPVERE instance activated after a duplicate launch request.");
+
+            if (IsSecondLaunchProbeRequested())
+            {
+                WriteProbeMarker(
+                    SecondLaunchProbeMarkerFileName,
+                    "SECOND_LAUNCH_ACTIVATED",
+                    "Second-launch probe activated the existing SNAPVERE Options surface.",
+                    exitProcess: false);
+            }
+        });
     }
 
     private static void CompleteStartupProbe()

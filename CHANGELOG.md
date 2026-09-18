@@ -4,6 +4,13 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Second-launch activation
+
+- Replace silent duplicate-launch dismissal with a per-user activation signal that wakes the existing tray-first instance and surfaces Preferences without creating another app process.
+- Make the Portable duplicate fast path signal the same existing instance before returning, preserving the no-rehash/no-reextract optimization.
+- Extend x64/x86 installed and Portable lifecycle validation so a second launch must prove both single-process integrity and delivery of the activation request.
+- Refresh active EN/HR tray-lifecycle guidance and remove the stale 0.1.2 document heading.
+
 ### Portable startup error containment
 
 - Stop rendering raw Portable launcher exception messages in user-visible dialogs.
