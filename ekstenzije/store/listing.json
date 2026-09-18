@@ -12,7 +12,8 @@
     "activeTab": "Access only the tab on which the user explicitly invokes SNAPVERE so the requested screenshot can be captured.",
     "scripting": "Inject the local region/full-page capture helper into the active page after an explicit capture action.",
     "downloads": "Save user-requested screenshot PNG files to the local device.",
-    "storage": "Persist local settings and short-lived capture-session metadata needed to survive Manifest V3 background suspension."
+    "storage": "Persist local settings and short-lived capture-session metadata needed to survive Manifest V3 background suspension.",
+    "downloads.open": "Open a completed SNAPVERE download only after the user explicitly presses Open in Recent captures."
   },
   "dataPractices": {
     "collectsOffDevice": false,

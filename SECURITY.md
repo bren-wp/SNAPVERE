@@ -43,10 +43,11 @@ The exact permission set is:
 activeTab
 scripting
 downloads
+downloads.open
 storage
 ```
 
-There is no broad host access, remote runtime script, first-party telemetry, advertising SDK, automatic screenshot uploader or remote-control channel.
+`downloads.open` grants only the browser API capability needed to open a completed download after an explicit user action; it does not grant host access. There is no broad host access, remote runtime script, first-party telemetry, advertising SDK, automatic screenshot uploader or remote-control channel.
 
 Capture messages use explicit types and bounded session state. Region completion validates sender tab/window identity. Visible/full/region capture revalidates the active tab around frame acquisition so a tab switch cannot silently admit another tab's frame. Full-page capture is bounded by tile, canvas and pixel limits and releases decoded tile resources after drawing.
 
