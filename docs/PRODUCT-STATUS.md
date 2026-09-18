@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.4 Product Status
+# SNAPVERE 0.1.5 Product Status
 
 Active maintained product surfaces are **Windows** and **browser extensions**.
 
@@ -6,17 +6,17 @@ Active maintained product surfaces are **Windows** and **browser extensions**.
 
 Production implementation includes tray-first startup, Region/Window/Screen capture, frozen-frame selection, local annotation, clipboard and PNG save workflows, local settings, recent captures, diagnostics and x86/x64/ARM64 application payloads inside universal Setup and Portable packages.
 
-Recent capture-path hardening removes redundant full-frame staging allocations from Region and Window overlay rendering and releases raw frozen monitor buffers after the corresponding UI bitmap is ready. Post-v0.1.4 `main` additionally publishes PNG files with collision-safe commit-time naming, contains expected Settings/Recent shell and local-security failures, keeps failed language saves visually consistent with persisted state, and clamps the tray fallback inside the Windows virtual desktop. These changes target reliability without changing capture semantics.
+Recent capture-path hardening removes redundant full-frame staging allocations from Region and Window overlay rendering and releases raw frozen monitor buffers after the corresponding UI bitmap is ready. SNAPVERE 0.1.5 publishes PNG files with collision-safe commit-time naming, contains expected Settings/Recent shell and local-security failures, keeps failed language saves visually consistent with persisted state, and clamps the tray fallback inside the Windows virtual desktop. These changes target reliability without changing capture semantics.
 
 ## Browsers
 
-Production source is maintained for Chrome, Edge, Opera and Firefox. Implemented capture modes are visible area, selected region and bounded full page. Brand identity is locked to SNAPVERE. The validated permission contract is `activeTab`, `scripting`, `downloads`, `downloads.open` and `storage`; `downloads.open` is used only by the explicit Recent > Open action. Broad host access is not part of the maintained design. Post-v0.1.4 `main` also hardens capture-lock ownership, Recent async ordering, duplicate action handling, browser API compatibility and reduced-motion/responsive UI behavior.
+Production source is maintained for Chrome, Edge, Opera and Firefox. Implemented capture modes are visible area, selected region and bounded full page. Brand identity is locked to SNAPVERE. The validated permission contract is `activeTab`, `scripting`, `downloads`, `downloads.open` and `storage`; `downloads.open` is used only by the explicit Recent > Open action. Broad host access is not part of the maintained design. SNAPVERE 0.1.5 also hardens capture-lock ownership, Recent async ordering, duplicate action handling, browser API compatibility and reduced-motion/responsive UI behavior, and moves the macOS Full Page default away from the system-reserved Command+Shift+3 shortcut.
 
 GitHub release ZIPs are not represented as externally approved store listings unless that publication has actually happened.
 
 ## Packaging
 
-The active 0.1.4 package contract contains:
+The active 0.1.5 package contract contains:
 
 - `SNAPVERE-Setup.exe`
 - `SNAPVERE-Portable.exe`
@@ -31,6 +31,6 @@ CI covers Windows builds/tests, rendered WinUI visual QA, package construction, 
 
 These gates provide strong regression evidence; they are not a guarantee that every operating-system, driver or browser environment can never produce a platform-specific defect.
 
-The public release remains **v0.1.4**. Unreleased `main` hardening is source state only until a future version is explicitly packaged and published.
+The public release is **v0.1.5**. Later `main` hardening remains source state only until a future version is explicitly packaged and published.
 
-See [Performance & Stability](PERFORMANCE.md), [QA Matrix](QA-MATRIX.md) and the [current release](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.4).
+See [Performance & Stability](PERFORMANCE.md), [QA Matrix](QA-MATRIX.md) and the [current release](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.5).

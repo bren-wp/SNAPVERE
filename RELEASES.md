@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.4**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.4
+- Current public release: **v0.1.5**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.5
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,51 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No post-v0.1.4 release changes are documented yet.
+No post-v0.1.5 release changes are documented yet.
+
+---
+
+## v0.1.5 — 2026-09-18
+
+SNAPVERE 0.1.5 promotes the validated post-v0.1.4 hardening into the public **Windows + Chrome/Edge/Opera/Firefox** release line. The release preserves the local-first model and exact six-package contract while improving concurrency, error recovery, browser API correctness, accessibility and responsive UI behavior.
+
+### Reliability and concurrency
+
+- Windows PNG publication allocates the visible filename at the atomic move boundary, so simultaneous captures with the same timestamp retry deterministic suffixes instead of failing after a race.
+- Browser capture-lock mutations are owner-safe; stale cleanup revalidates lock ownership before removal and cannot delete a newer capture lock within the service-worker lifecycle.
+- Browser Recent views invalidate stale asynchronous searches so an older response cannot overwrite newer navigation state.
+- User-triggered Open, Open downloads folder and Settings-save actions suppress duplicate activation while work is pending or cooling down.
+
+### Browser correctness, permissions and UX
+
+- The exact permission contract is `activeTab`, `scripting`, `downloads`, `downloads.open` and `storage`. The scoped `downloads.open` capability is used only after the user explicitly chooses **Open** for a completed SNAPVERE download; no broad host permissions or `<all_urls>` access are added.
+- `downloads.showDefaultFolder()` is called using its actual zero-argument API shape instead of an over-general callback wrapper.
+- Chrome, Edge, Opera and Firefox receive matching narrow-layout, disabled-state, metadata-truncation and `prefers-reduced-motion` polish.
+- The macOS Full Page default shortcut moves from system-reserved `Command+Shift+3` to `Command+Shift+7`; Windows/Linux remain `Ctrl+Shift+3`.
+- Behavioral tests cover stale Recent ordering, duplicate action suppression, browser command feedback and stale-lock/new-lock interleavings.
+
+### Windows UX and resilience
+
+- Settings/Recent contains expected local filesystem, shell and security-policy failures and reports sanitized status instead of allowing those errors to escape UI handlers.
+- Failed language preference writes restore the actually persisted selection and expose status through an accessibility live region.
+- About link and support-email fallback handling contains missing shell handlers plus expected security/clipboard failures.
+- Tray fallback positioning clamps to the Windows virtual desktop when monitor work-area lookup is unavailable.
+- Long Recent filenames and metadata are safely truncated while preserving the complete filename in a tooltip.
+
+### Public packages and validation
+
+The v0.1.5 GitHub Release contains exactly:
+
+```text
+SNAPVERE-Setup.exe
+SNAPVERE-Portable.exe
+SNAPVERE-Chrome.zip
+SNAPVERE-Edge.zip
+SNAPVERE-Opera.zip
+SNAPVERE-Firefox.zip
+```
+
+Publication remains gated by Product Contract CI, CodeQL, audited Windows x64/x86/ARM64 builds, unit tests, rendered WinUI visual QA, universal package construction and size budgets, real x64/x86 Setup/Portable lifecycle validation, deterministic browser packaging, exact asset-name enforcement and SHA-256 verification before and after GitHub Release publication.
 
 ---
 
