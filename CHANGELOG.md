@@ -4,6 +4,12 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Capture persistence cleanup
+
+- Remove only stale SNAPVERE-owned atomic-write temp files before a new capture, using an ownership-shaped filename check and a 24-hour age threshold.
+- Preserve recent/in-flight temp files and similarly named non-SNAPVERE files, and keep cleanup best-effort so a locked stale temp cannot block a new capture.
+- Add unit coverage for stale/recent/foreign/locked temp-file boundaries.
+
 ### Windows install-target ownership
 
 - Refuse to replace an existing non-empty install target unless it is empty or carries the exact SNAPVERE installation marker together with SNAPVERE application files.
