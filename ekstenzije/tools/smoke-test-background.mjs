@@ -14,6 +14,9 @@ function createRuntime(initialStorage = {}, options = {}) {
   const storage = structuredClone(initialStorage);
   const downloads = [];
   const captures = [];
+  const deferredRemovals = [];
+  const deferredCaptures = [];
+  let storageRemoveCount = 0;
   const activeTabSequence = Array.isArray(options.activeTabSequence) && options.activeTabSequence.length > 0
     ? [...options.activeTabSequence]
     : [7];
@@ -46,8 +49,17 @@ function createRuntime(initialStorage = {}, options = {}) {
           callback();
         },
         remove(keys, callback) {
-          for (const key of Array.isArray(keys) ? keys : [keys]) delete storage[key];
-          callback();
+          storageRemoveCount += 1;
+          const requested = Array.isArray(keys) ? [...keys] : [keys];
+          const apply = () => {
+            for (const key of requested) delete storage[key];
+            callback();
+          };
+          if (options.deferFirstStorageRemove === true && storageRemoveCount === 1) {
+            deferredRemovals.push(apply);
+            return;
+          }
+          apply();
         }
       }
     },
@@ -62,6 +74,10 @@ function createRuntime(initialStorage = {}, options = {}) {
         assert.equal(windowId, 3);
         assert.equal(captureOptions?.format, 'png');
         captures.push(windowId);
+        if (options.deferCapture === true) {
+          deferredCaptures.push(() => callback(PNG));
+          return;
+        }
         callback(PNG);
       },
       sendMessage(_tabId, message, callback) {
@@ -121,6 +137,16 @@ function createRuntime(initialStorage = {}, options = {}) {
     updateTab(tabId, changeInfo) {
       assert.equal(typeof tabUpdatedListener, 'function');
       tabUpdatedListener(tabId, changeInfo, { id: tabId, windowId: 3 });
+    },
+    resolveDeferredRemove() {
+      const operation = deferredRemovals.shift();
+      assert.equal(typeof operation, 'function');
+      operation();
+    },
+    resolveCapture() {
+      const operation = deferredCaptures.shift();
+      assert.equal(typeof operation, 'function');
+      operation();
     }
   };
 }
@@ -265,6 +291,42 @@ async function runVariant(browser) {
     assert.equal(response.ok, true);
     runtime.updateTab(7, { status: 'loading', url: 'https://example.test/next' });
     await flush();
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined);
+  }
+
+  {
+    const runtime = createRuntime({
+      snapvereActiveCapture: {
+        token: 'stale-region-token',
+        kind: 'region',
+        tabId: 7,
+        windowId: 3,
+        startedAt: Date.now() - (6 * 60 * 1000)
+      }
+    }, {
+      deferFirstStorageRemove: true,
+      deferCapture: true
+    });
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+
+    runtime.updateTab(7, { status: 'loading', url: 'https://example.test/reload' });
+    await flush();
+
+    const visiblePromise = send(runtime.listener, { type: 'CAPTURE_VISIBLE' });
+    await flush();
+
+    runtime.resolveDeferredRemove();
+    await flush();
+
+    assert.equal(
+      runtime.storage.snapvereActiveCapture?.kind,
+      'visible',
+      'stale lock cleanup must not delete a newer capture lock'
+    );
+
+    runtime.resolveCapture();
+    const visible = await visiblePromise;
+    assert.equal(visible.ok, true);
     assert.equal(runtime.storage.snapvereActiveCapture, undefined);
   }
 
