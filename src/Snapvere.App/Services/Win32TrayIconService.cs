@@ -38,6 +38,7 @@ public sealed class Win32TrayIconService : ITrayIconService
 {
     private const uint CallbackMessage = 0x8000 + 0x53;
     private const uint WindowMessageRefreshTooltip = 0x8000 + 0x54;
+    private const uint WindowMessageRetryNotificationIcon = 0x8000 + 0x55;
     private const uint WindowMessageClose = 0x0010;
     private const uint WindowMessageDestroy = 0x0002;
     private const uint WindowMessageContextMenu = 0x007B;
@@ -65,12 +66,14 @@ public sealed class Win32TrayIconService : ITrayIconService
     private readonly ManualResetEventSlim _startupSignal = new(false);
 
     private Thread? _thread;
+    private Timer? _trayRecoveryTimer;
     private Exception? _startupException;
     private nint _windowHandle;
     private nint _iconHandle;
     private uint _taskbarCreatedMessage;
     private bool _started;
     private bool _disposed;
+    private int _trayRecoveryAttempt;
     private long _lastRegionClickTicks;
 
     public Win32TrayIconService()
@@ -131,6 +134,8 @@ public sealed class Win32TrayIconService : ITrayIconService
             thread = _thread;
             windowHandle = _windowHandle;
         }
+
+        CancelTrayRecoveryRetry();
 
         if (windowHandle != nint.Zero)
         {
@@ -251,6 +256,101 @@ public sealed class Win32TrayIconService : ITrayIconService
         }
     }
 
+    private void BeginTrayRecovery()
+    {
+        CancelTrayRecoveryRetry();
+        _trayRecoveryAttempt = 0;
+        TryRecoverNotificationIcon();
+    }
+
+    private void TryRecoverNotificationIcon()
+    {
+        lock (_gate)
+        {
+            if (_disposed || _windowHandle == nint.Zero)
+            {
+                return;
+            }
+        }
+
+        _trayRecoveryAttempt++;
+        try
+        {
+            AddNotificationIcon();
+            _trayRecoveryAttempt = 0;
+            CancelTrayRecoveryRetry();
+            StartupDiagnostics.WriteLine("SNAPVERE tray icon restored after Explorer notification-area recreation.");
+        }
+        catch (Win32Exception exception)
+        {
+            var delay = TrayIconRecoveryPolicy.GetRetryDelayAfterFailure(_trayRecoveryAttempt);
+            if (delay is null)
+            {
+                StartupDiagnostics.Record("Restore tray icon after Explorer restart", exception);
+                return;
+            }
+
+            ScheduleTrayRecoveryRetry(delay.Value);
+        }
+    }
+
+    private void ScheduleTrayRecoveryRetry(TimeSpan delay)
+    {
+        nint windowHandle;
+        Timer? previousTimer;
+
+        lock (_gate)
+        {
+            if (_disposed || _windowHandle == nint.Zero)
+            {
+                return;
+            }
+
+            windowHandle = _windowHandle;
+            previousTimer = _trayRecoveryTimer;
+            _trayRecoveryTimer = new Timer(
+                _ =>
+                {
+                    nint currentWindow;
+                    lock (_gate)
+                    {
+                        if (_disposed)
+                        {
+                            return;
+                        }
+
+                        currentWindow = _windowHandle;
+                    }
+
+                    if (currentWindow != nint.Zero)
+                    {
+                        _ = NativeMethods.PostMessage(
+                            currentWindow,
+                            WindowMessageRetryNotificationIcon,
+                            nuint.Zero,
+                            nint.Zero);
+                    }
+                },
+                null,
+                delay,
+                Timeout.InfiniteTimeSpan);
+        }
+
+        previousTimer?.Dispose();
+    }
+
+    private void CancelTrayRecoveryRetry()
+    {
+        Timer? timer;
+        lock (_gate)
+        {
+            timer = _trayRecoveryTimer;
+            _trayRecoveryTimer = null;
+        }
+
+        timer?.Dispose();
+    }
+
     private void RefreshNotificationIcon()
     {
         if (_windowHandle == nint.Zero)
@@ -291,15 +391,14 @@ public sealed class Win32TrayIconService : ITrayIconService
     {
         if (_taskbarCreatedMessage != 0 && message == _taskbarCreatedMessage)
         {
-            try
-            {
-                AddNotificationIcon();
-            }
-            catch
-            {
-                // Explorer recovery is best effort. Global hotkeys remain active.
-            }
+            BeginTrayRecovery();
+            return nint.Zero;
+        }
 
+        if (message == WindowMessageRetryNotificationIcon)
+        {
+            CancelTrayRecoveryRetry();
+            TryRecoverNotificationIcon();
             return nint.Zero;
         }
 
@@ -388,6 +487,7 @@ public sealed class Win32TrayIconService : ITrayIconService
 
     private void Cleanup(nint instance, string className, ushort classAtom)
     {
+        CancelTrayRecoveryRetry();
         DeleteNotificationIcon();
 
         if (_iconHandle != nint.Zero)
