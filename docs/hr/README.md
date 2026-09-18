@@ -2,7 +2,7 @@
 
 Aktualna održavana linija proizvoda je **SNAPVERE 0.1.4** za Windows te Chrome, Edge, Operu i Firefox.
 
-Ova dokumentacija opisuje produkcijske funkcije, tehničke granice i provjere koje stvarno izvodi CI. Povijesne činjenice o starijim izdanjima ostaju u release dokumentaciji.
+Ova dokumentacija opisuje produkcijske funkcije, tehničke granice i provjere koje stvarno izvodi CI. Aktualne javne binarne datoteke ostaju v0.1.4, dok `main` može sadržavati izričito dokumentiran neobjavljeni reliability/security/UX hardening. Povijesne činjenice o starijim izdanjima ostaju u release dokumentaciji.
 
 ## Počnite ovdje
 
