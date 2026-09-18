@@ -24,7 +24,7 @@ Brzi uzastopni Region Capture klikovi debounceaju se. Exception u UI subscriberu
 
 ## Explorer recovery i lokalizacija
 
-Tray host registrira `TaskbarCreated`. Nakon ponovnog pokretanja Explorera SNAPVERE pokušava ponovno dodati notification icon. Taj recovery je best effort; neuspjeh ponovnog dodavanja ikone ne bi trebao ugasiti proces, a globalni hotkeys mogu ostati aktivni.
+Tray host registrira `TaskbarCreated`. Nakon ponovnog pokretanja Explorera SNAPVERE odmah pokušava ponovno dodati notification icon. Ako Explorerov notification area još nije spreman, recovery koristi ograničene neblokirajuće retry pokušaje nakon 250 ms, 500 ms, 1 sekunde i 2 sekunde, ukupno najviše pet pokušaja registracije. Retry timer samo šalje privatnu poruku natrag u native tray loop i ne blokira tray input. Generation token odbacuje stale timer callback nakon novijeg recovery ciklusa ili uspješnog vraćanja ikone. Ako svi pokušaji ne uspiju, proces ostaje aktivan i registrirani globalni hotkeys mogu nastaviti raditi.
 
 Kada korisnik promijeni SNAPVERE jezik, native loop prima privatnu refresh poruku i osvježava lokalizirani tray tooltip bez restartanja aplikacije.
 
