@@ -35,36 +35,43 @@ internal sealed class SetupForm : Form
     private readonly CheckBox _launchAfterInstall;
     private readonly Label _licenseLabel;
     private readonly Label _installLocationLabel;
+    private readonly Panel _sidebar;
+    private readonly Panel _mainPanel;
     private bool _completed;
+    private bool _busy;
 
     public SetupForm(bool uninstallMode)
     {
         _uninstallMode = uninstallMode;
 
         Text = uninstallMode ? "Remove SNAPVERE" : "SNAPVERE Setup";
-        StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.FixedSingle;
-        MaximizeBox = false;
+        StartPosition = FormStartPosition.Manual;
+        FormBorderStyle = FormBorderStyle.Sizable;
+        MaximizeBox = true;
         MinimizeBox = true;
         ShowIcon = false;
         ClientSize = new Size(980, 650);
-        MinimumSize = new Size(996, 689);
-        MaximumSize = new Size(996, 689);
+        MinimumSize = new Size(760, 560);
         AutoScaleMode = AutoScaleMode.Dpi;
+        KeyPreview = true;
         BackColor = Canvas;
         ForeColor = Color.White;
         Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
 
-        var sidebar = BuildSidebar(uninstallMode);
-        Controls.Add(sidebar);
+        _sidebar = BuildSidebar(uninstallMode);
+        _sidebar.AutoScroll = true;
+        Controls.Add(_sidebar);
 
-        var main = new Panel
+        _mainPanel = new Panel
         {
             Dock = DockStyle.Fill,
-            BackColor = Canvas
+            BackColor = Canvas,
+            AutoScroll = true
         };
-        Controls.Add(main);
-        main.BringToFront();
+        Controls.Add(_mainPanel);
+        _mainPanel.BringToFront();
+
+        var main = _mainPanel;
 
         var eyebrow = new Label
         {
@@ -135,7 +142,9 @@ internal sealed class SetupForm : Form
             BackColor = Color.FromArgb(9, 11, 17),
             ForeColor = Color.FromArgb(222, 221, 230),
             DetectUrls = true,
-            TabStop = false,
+            TabStop = true,
+            AccessibleName = "SNAPVERE commercial license terms",
+            AccessibleDescription = "Read-only license terms. Review them before accepting the license.",
             Font = new Font("Segoe UI", 9F)
         };
         card.Controls.Add(_licenseBox);
@@ -146,7 +155,8 @@ internal sealed class SetupForm : Form
             Text = "I have read and accept the commercial license terms",
             ForeColor = Color.FromArgb(240, 238, 247),
             Location = new Point(22, 232),
-            Cursor = Cursors.Hand
+            Cursor = Cursors.Hand,
+            AccessibleName = "Accept commercial license terms"
         };
         _acceptLicense.CheckedChanged += (_, _) => UpdatePrimaryButtonState();
         card.Controls.Add(_acceptLicense);
@@ -168,11 +178,13 @@ internal sealed class SetupForm : Form
             Text = InstallerEngine.GetDefaultInstallDirectory(),
             BackColor = Color.FromArgb(9, 11, 17),
             ForeColor = Color.White,
-            BorderStyle = BorderStyle.FixedSingle
+            BorderStyle = BorderStyle.FixedSingle,
+            AccessibleName = "Install location"
         };
         card.Controls.Add(_installPath);
 
         _browseButton = CreateSecondaryButton("Browse", new Point(496, 289), new Size(118, 34));
+        _browseButton.AccessibleName = "Browse for install location";
         _browseButton.Click += BrowseButton_Click;
         card.Controls.Add(_browseButton);
 
@@ -183,7 +195,8 @@ internal sealed class SetupForm : Form
             Text = "Start menu",
             ForeColor = Color.FromArgb(235, 233, 242),
             Location = new Point(22, 337),
-            Cursor = Cursors.Hand
+            Cursor = Cursors.Hand,
+            AccessibleName = "Create Start menu shortcut"
         };
         card.Controls.Add(_startMenuShortcut);
 
@@ -194,7 +207,8 @@ internal sealed class SetupForm : Form
             Text = "Desktop icon",
             ForeColor = Color.FromArgb(235, 233, 242),
             Location = new Point(150, 337),
-            Cursor = Cursors.Hand
+            Cursor = Cursors.Hand,
+            AccessibleName = "Create Desktop shortcut"
         };
         card.Controls.Add(_desktopShortcut);
 
@@ -205,14 +219,17 @@ internal sealed class SetupForm : Form
             Text = "Start with Windows",
             ForeColor = Color.FromArgb(235, 233, 242),
             Location = new Point(296, 337),
-            Cursor = Cursors.Hand
+            Cursor = Cursors.Hand,
+            AccessibleName = "Start SNAPVERE with Windows"
         };
         card.Controls.Add(_startupWithWindows);
 
         _progressBar = new PremiumProgressBar(SurfaceRaised, Accent)
         {
             Location = new Point(32, 530),
-            Size = new Size(636, 7)
+            Size = new Size(636, 7),
+            AccessibleName = "Installation progress",
+            AccessibleRole = AccessibleRole.ProgressBar
         };
         main.Controls.Add(_progressBar);
 
@@ -236,7 +253,8 @@ internal sealed class SetupForm : Form
             ForeColor = Color.FromArgb(235, 233, 242),
             Location = new Point(32, 605),
             Visible = false,
-            Cursor = Cursors.Hand
+            Cursor = Cursors.Hand,
+            AccessibleName = "Launch SNAPVERE after installation"
         };
         main.Controls.Add(_launchAfterInstall);
 
@@ -251,8 +269,13 @@ internal sealed class SetupForm : Form
         _primaryButton.Click += PrimaryButton_Click;
         main.Controls.Add(_primaryButton);
 
+        _primaryButton.AccessibleName = uninstallMode ? "Remove SNAPVERE" : "Install SNAPVERE";
+        _cancelButton.AccessibleName = "Cancel Setup";
+
         AcceptButton = _primaryButton;
         CancelButton = _cancelButton;
+        FormClosing += SetupForm_FormClosing;
+        Resize += (_, _) => UpdateResponsiveLayout();
 
         if (uninstallMode)
         {
@@ -264,6 +287,43 @@ internal sealed class SetupForm : Form
         }
 
         UpdatePrimaryButtonState();
+        UpdateResponsiveLayout();
+    }
+
+    protected override void OnShown(EventArgs e)
+    {
+        base.OnShown(e);
+        PositionWithinActiveMonitor();
+    }
+
+    private void PositionWithinActiveMonitor()
+    {
+        var workingArea = Screen.FromPoint(Cursor.Position).WorkingArea;
+        var width = Math.Min(Width, Math.Max(MinimumSize.Width, workingArea.Width - 24));
+        var height = Math.Min(Height, Math.Max(MinimumSize.Height, workingArea.Height - 24));
+
+        Size = new Size(width, height);
+        Location = new Point(
+            workingArea.Left + Math.Max(0, (workingArea.Width - Width) / 2),
+            workingArea.Top + Math.Max(0, (workingArea.Height - Height) / 2));
+        UpdateResponsiveLayout();
+    }
+
+    private void UpdateResponsiveLayout()
+    {
+        _sidebar.Visible = ClientSize.Width >= 900;
+    }
+
+    private void SetupForm_FormClosing(object? sender, FormClosingEventArgs e)
+    {
+        if (!_busy)
+        {
+            return;
+        }
+
+        e.Cancel = true;
+        System.Media.SystemSounds.Beep.Play();
+        _statusLabel.Text = "Setup is finishing the current file operation. You can close it when this step completes.";
     }
 
     private static Panel BuildSidebar(bool uninstallMode)
@@ -491,7 +551,7 @@ internal sealed class SetupForm : Form
                 startMenu,
                 desktop,
                 silent: false,
-                progress => BeginInvoke(() => _progressBar.SetValue(Math.Clamp(progress, 0, 100)))));
+                ReportProgress));
 
             if (result.Succeeded && !SetupStartupRegistration.TrySetEnabled(installPath, startWithWindows, out var startupWarning))
             {
@@ -531,12 +591,37 @@ internal sealed class SetupForm : Form
 
         if (dialog.ShowDialog(this) == DialogResult.OK)
         {
-            _installPath.Text = Path.Combine(dialog.SelectedPath, "SNAPVERE");
+            _installPath.Text = Snapvere.Packaging.InstallSafetyPolicy.NormalizeProductDirectory(
+                dialog.SelectedPath,
+                "SNAPVERE");
+        }
+    }
+
+    private void ReportProgress(int progress)
+    {
+        if (IsDisposed || Disposing || !IsHandleCreated)
+        {
+            return;
+        }
+
+        try
+        {
+            BeginInvoke(() =>
+            {
+                if (!IsDisposed && !Disposing)
+                {
+                    _progressBar.SetValue(Math.Clamp(progress, 0, 100));
+                }
+            });
+        }
+        catch (InvalidOperationException)
+        {
         }
     }
 
     private void SetBusy(bool busy)
     {
+        _busy = busy;
         _primaryButton.Enabled = !busy && (_uninstallMode || _acceptLicense.Checked || _completed);
         _cancelButton.Enabled = !busy;
         _acceptLicense.Enabled = !busy;
@@ -721,6 +806,7 @@ internal sealed class SetupForm : Form
         internal void SetValue(int value)
         {
             _value = Math.Clamp(value, MinimumValue, MaximumValue);
+            AccessibleDescription = $"{_value}% complete";
             Invalidate();
         }
 

@@ -52,6 +52,7 @@ internal static class InstallerEngine
             var parent = Directory.GetParent(installRoot)?.FullName
                 ?? throw new InvalidOperationException("The selected installation directory has no parent folder.");
             Directory.CreateDirectory(parent);
+            InstallSafetyPolicy.EnsureExistingDirectoryChainHasNoReparsePoints(installRoot);
 
             if (!TryCloseRunningApplication(installRoot, out var runningMessage))
             {
@@ -143,7 +144,7 @@ internal static class InstallerEngine
             return new InstallerResult(
                 false,
                 exception is UnauthorizedAccessException ? 5 : 1,
-                GetInstallFailureMessage(exception, silent));
+                GetInstallFailureMessage(exception));
         }
     }
 
@@ -180,7 +181,7 @@ internal static class InstallerEngine
             return new InstallerResult(
                 false,
                 exception is UnauthorizedAccessException ? 5 : 1,
-                GetUninstallFailureMessage(exception, silent));
+                GetUninstallFailureMessage(exception));
         }
     }
 
@@ -191,7 +192,14 @@ internal static class InstallerEngine
     {
         try
         {
-            WaitForProcessExit(waitForProcessId);
+            if (!WaitForProcessExit(waitForProcessId))
+            {
+                return new InstallerResult(
+                    false,
+                    1618,
+                    "SNAPVERE cleanup could not continue because Setup is still running. Close Setup and run uninstall again.");
+            }
+
             var installRoot = ValidateExistingInstallForRemoval(installDirectory);
             DeleteValidatedInstallationWithRetries(installRoot);
             ScheduleMaintenanceSelfCleanup();
@@ -199,7 +207,7 @@ internal static class InstallerEngine
         }
         catch (Exception exception)
         {
-            return new InstallerResult(false, 1, silent ? exception.Message : "SNAPVERE could not complete uninstall cleanup.");
+            return new InstallerResult(false, 1, GetUninstallFailureMessage(exception));
         }
     }
 
@@ -226,13 +234,8 @@ internal static class InstallerEngine
         }
     }
 
-    private static string GetInstallFailureMessage(Exception exception, bool silent)
+    private static string GetInstallFailureMessage(Exception exception)
     {
-        if (silent)
-        {
-            return exception.Message;
-        }
-
         return exception switch
         {
             UnauthorizedAccessException =>
@@ -250,13 +253,8 @@ internal static class InstallerEngine
         };
     }
 
-    private static string GetUninstallFailureMessage(Exception exception, bool silent)
+    private static string GetUninstallFailureMessage(Exception exception)
     {
-        if (silent)
-        {
-            return exception.Message;
-        }
-
         return exception switch
         {
             UnauthorizedAccessException =>
@@ -290,23 +288,25 @@ internal static class InstallerEngine
         DeleteUninstallRegistration();
     }
 
-    private static void WaitForProcessExit(int processId)
+    private static bool WaitForProcessExit(int processId)
     {
         if (processId <= 0)
         {
-            return;
+            return true;
         }
 
         try
         {
             using var process = Process.GetProcessById(processId);
-            _ = process.WaitForExit(20_000);
+            return process.WaitForExit(20_000);
         }
         catch (ArgumentException)
         {
+            return true;
         }
         catch (InvalidOperationException)
         {
+            return true;
         }
     }
 
@@ -340,6 +340,8 @@ internal static class InstallerEngine
             return fullPath;
         }
 
+        InstallSafetyPolicy.EnsureExistingDirectoryChainHasNoReparsePoints(fullPath);
+
         var markerPath = Path.Combine(fullPath, InstallationMarkerName);
         if (!File.Exists(markerPath))
         {
@@ -347,7 +349,7 @@ internal static class InstallerEngine
         }
 
         var marker = File.ReadAllText(markerPath);
-        if (!marker.StartsWith(InstallationMarkerPrefix, StringComparison.Ordinal))
+        if (!InstallSafetyPolicy.HasExactMarkerHeader(marker, InstallationMarkerPrefix))
         {
             throw new InvalidOperationException("The registered path has an invalid SNAPVERE installation marker. Nothing was removed.");
         }
@@ -389,6 +391,13 @@ internal static class InstallerEngine
                 }
                 catch (System.ComponentModel.Win32Exception)
                 {
+                    message = "SNAPVERE Setup could not verify a running SNAPVERE process. Close SNAPVERE manually and try again.";
+                    return false;
+                }
+                catch (System.Security.SecurityException)
+                {
+                    message = "Windows blocked SNAPVERE Setup from verifying a running SNAPVERE process. Close SNAPVERE manually and try again.";
+                    return false;
                 }
             }
         }
@@ -431,6 +440,9 @@ internal static class InstallerEngine
         catch (UnauthorizedAccessException)
         {
         }
+        catch (System.Security.SecurityException)
+        {
+        }
     }
 
     private static void DeleteInstalledStartupRegistration(string installRoot)
@@ -462,15 +474,30 @@ internal static class InstallerEngine
     private static int CalculateEstimatedSizeKilobytes(string installRoot)
     {
         long bytes = 0;
-        foreach (var file in Directory.EnumerateFiles(installRoot, "*", SearchOption.AllDirectories))
+        try
         {
-            try
+            foreach (var file in Directory.EnumerateFiles(installRoot, "*", SearchOption.AllDirectories))
             {
-                bytes = checked(bytes + new FileInfo(file).Length);
+                try
+                {
+                    bytes = checked(bytes + new FileInfo(file).Length);
+                }
+                catch (IOException)
+                {
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
             }
-            catch (IOException)
-            {
-            }
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+        catch (System.Security.SecurityException)
+        {
         }
 
         return checked((int)Math.Min(int.MaxValue, (bytes + 1023) / 1024));
@@ -581,6 +608,9 @@ internal static class InstallerEngine
         {
         }
         catch (UnauthorizedAccessException)
+        {
+        }
+        catch (System.Security.SecurityException)
         {
         }
     }
