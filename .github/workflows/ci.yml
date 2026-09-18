@@ -10,8 +10,6 @@ concurrency:
   group: snapvere-ci-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  SNAPVERE_VERSION: 0.1.3
 
 permissions:
   contents: read
@@ -88,6 +86,256 @@ jobs:
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           global-json-file: global.json
+
+      - name: Resolve package version from product contract
+        shell: pwsh
+        run: |
+          $contract = Get-Content -LiteralPath 'product-version.json' -Raw | ConvertFrom-Json
+          $version = [string]$contract.currentRelease
+          if ($version -notmatch '^\d+\.\d+\.\d+
+        shell: pwsh
+        run: |
+          $platforms = @{ 'x86' = 'x86'; 'x64' = 'x64'; 'arm64' = 'ARM64' }
+          foreach ($arch in @('x86', 'x64', 'arm64')) {
+            $rid = "win-$arch"
+            $output = "artifacts/app-$arch"
+            dotnet publish src/Snapvere.App/Snapvere.App.csproj `
+              --configuration Release `
+              --runtime $rid `
+              -p:Platform=$($platforms[$arch]) `
+              -p:SelfContained=true `
+              -p:WindowsAppSDKSelfContained=true `
+              -p:PublishReadyToRun=true `
+              -p:DebugType=None `
+              -p:DebugSymbols=false `
+              -p:Version=$env:SNAPVERE_VERSION `
+              --output $output
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+            $outputRoot = (Resolve-Path $output).Path
+            $manifestFiles = @(
+              Get-ChildItem -LiteralPath $outputRoot -Recurse -File |
+                ForEach-Object {
+                  $relativePath = [System.IO.Path]::GetRelativePath($outputRoot, $_.FullName).Replace('\\', '/')
+                  [pscustomobject]@{
+                    Path = $relativePath
+                    Length = $_.Length
+                    Sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToUpperInvariant()
+                  }
+                } |
+                Sort-Object Path
+            )
+            $manifest = [pscustomobject]@{
+              FormatVersion = 1
+              Files = $manifestFiles
+            }
+            $manifestPath = "artifacts/SNAPVERE-payload-$arch.integrity.json"
+            $manifest | ConvertTo-Json -Depth 4 -Compress | Set-Content -LiteralPath $manifestPath -Encoding utf8NoBOM
+
+            Compress-Archive -Path "$output/*" -DestinationPath "artifacts/SNAPVERE-payload-$arch.zip" -CompressionLevel Optimal
+          }
+
+      - name: Validate native payload structure
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          foreach ($arch in @('x86', 'x64', 'arm64')) {
+            $zipPath = (Resolve-Path "artifacts/SNAPVERE-payload-$arch.zip").Path
+            $integrityPath = (Resolve-Path "artifacts/SNAPVERE-payload-$arch.integrity.json").Path
+            $archive = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
+            try {
+              if (-not ($archive.Entries | Where-Object { $_.FullName -ieq 'Snapvere.exe' })) {
+                throw "$arch payload does not contain Snapvere.exe at its root."
+              }
+            }
+            finally { $archive.Dispose() }
+
+            $manifest = Get-Content -LiteralPath $integrityPath -Raw | ConvertFrom-Json
+            if ($manifest.FormatVersion -ne 1 -or @($manifest.Files).Count -eq 0) {
+              throw "$arch payload integrity manifest is invalid."
+            }
+            if (-not ($manifest.Files | Where-Object { $_.Path -ieq 'Snapvere.exe' -and $_.Sha256 -match '^[0-9A-F]{64}$' })) {
+              throw "$arch payload integrity manifest does not contain a valid Snapvere.exe digest."
+            }
+
+            Write-Host "$arch payload validated: $([Math]::Round((Get-Item $zipPath).Length / 1MB, 1)) MB, $(@($manifest.Files).Count) integrity entries"
+          }
+
+      - name: Capture real rendered UI snapshots
+        id: visual_capture
+        shell: pwsh
+        run: |
+          & ./eng/Capture-SnapvereVisualQa.ps1 `
+            -AppPath (Resolve-Path 'artifacts/app-x64/Snapvere.exe').Path `
+            -OutputDirectory (Join-Path $PWD 'artifacts/visual-qa')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Download last successful main visual baseline
+        if: github.event_name == 'pull_request'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $repository = '${{ github.repository }}'
+          $runs = gh api "repos/$repository/actions/workflows/ci.yml/runs?branch=main&event=push&status=success&per_page=20" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          $baselineRun = $null
+          $baselineArtifact = $null
+          foreach ($run in $runs.workflow_runs) {
+            $artifacts = gh api "repos/$repository/actions/runs/$($run.id)/artifacts?per_page=100" | ConvertFrom-Json
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+            $expectedName = "snapvere-visual-qa-$($run.head_sha)"
+            $artifact = $artifacts.artifacts |
+              Where-Object { $_.name -eq $expectedName -and -not $_.expired } |
+              Select-Object -First 1
+            if ($null -ne $artifact) {
+              $baselineRun = $run
+              $baselineArtifact = $artifact
+              break
+            }
+          }
+
+          if ($null -eq $baselineRun -or $null -eq $baselineArtifact) {
+            throw 'No non-expired rendered UI artifact from a successful main CI run is available as the regression baseline.'
+          }
+
+          $baselineDirectory = Join-Path $PWD 'artifacts/visual-baseline'
+          New-Item -ItemType Directory -Force -Path $baselineDirectory | Out-Null
+          gh run download $baselineRun.id `
+            --repo $repository `
+            --name $baselineArtifact.name `
+            --dir $baselineDirectory
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          Write-Host "Visual regression baseline: run #$($baselineRun.run_number), $($baselineRun.head_sha), artifact $($baselineArtifact.name)"
+
+      - name: Compare rendered UI against main baseline
+        if: github.event_name == 'pull_request'
+        shell: pwsh
+        run: |
+          & ./eng/Compare-SnapvereVisualQa.ps1 `
+            -BaselineDirectory (Join-Path $PWD 'artifacts/visual-baseline') `
+            -CurrentDirectory (Join-Path $PWD 'artifacts/visual-qa') `
+            -OutputPath (Join-Path $PWD 'artifacts/visual-qa/comparison.json')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload rendered UI snapshots
+        if: ${{ !cancelled() && steps.visual_capture.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: snapvere-visual-qa-${{ github.sha }}
+          path: |
+            artifacts/visual-qa/*.png
+            artifacts/visual-qa/*.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Build two universal public executables
+        shell: pwsh
+        run: |
+          $x86 = (Resolve-Path 'artifacts/SNAPVERE-payload-x86.zip').Path
+          $x64 = (Resolve-Path 'artifacts/SNAPVERE-payload-x64.zip').Path
+          $arm64 = (Resolve-Path 'artifacts/SNAPVERE-payload-arm64.zip').Path
+          $x86Integrity = (Resolve-Path 'artifacts/SNAPVERE-payload-x86.integrity.json').Path
+          $x64Integrity = (Resolve-Path 'artifacts/SNAPVERE-payload-x64.integrity.json').Path
+          $arm64Integrity = (Resolve-Path 'artifacts/SNAPVERE-payload-arm64.integrity.json').Path
+
+          dotnet publish src/Snapvere.Setup/Snapvere.Setup.csproj `
+            --configuration Release `
+            --runtime win-x86 `
+            -p:Platform=x86 `
+            -p:SelfContained=true `
+            "-p:Version=$env:SNAPVERE_VERSION" `
+            "-p:SnapverePayloadX86Path=$x86" `
+            "-p:SnapverePayloadX64Path=$x64" `
+            "-p:SnapverePayloadArm64Path=$arm64" `
+            --output artifacts/setup-universal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          dotnet publish src/Snapvere.Portable/Snapvere.Portable.csproj `
+            --configuration Release `
+            --runtime win-x86 `
+            -p:Platform=x86 `
+            -p:SelfContained=true `
+            "-p:Version=$env:SNAPVERE_VERSION" `
+            "-p:SnapverePayloadX86Path=$x86" `
+            "-p:SnapverePayloadX64Path=$x64" `
+            "-p:SnapverePayloadArm64Path=$arm64" `
+            "-p:SnapverePayloadX86IntegrityPath=$x86Integrity" `
+            "-p:SnapverePayloadX64IntegrityPath=$x64Integrity" `
+            "-p:SnapverePayloadArm64IntegrityPath=$arm64Integrity" `
+            --output artifacts/portable-universal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          New-Item -ItemType Directory -Force -Path artifacts/universal | Out-Null
+          Copy-Item artifacts/setup-universal/SNAPVERE-Setup.exe artifacts/universal/SNAPVERE-Setup.exe
+          Copy-Item artifacts/portable-universal/SNAPVERE-Portable.exe artifacts/universal/SNAPVERE-Portable.exe
+
+      - name: Enforce two-file public package contract
+        shell: pwsh
+        run: |
+          $expected = @('SNAPVERE-Portable.exe', 'SNAPVERE-Setup.exe')
+          $actual = @(Get-ChildItem artifacts/universal -File | Select-Object -ExpandProperty Name | Sort-Object)
+          if ($actual.Count -ne $expected.Count) {
+            throw "Universal public package must contain exactly two files. Actual: $($actual -join ', ')"
+          }
+          if (@(Compare-Object $expected $actual).Count -ne 0) {
+            throw "Universal public package names do not match the contract. Actual: $($actual -join ', ')"
+          }
+          foreach ($name in $expected) {
+            $file = Get-Item (Join-Path artifacts/universal $name)
+            if ($file.Length -lt 50MB) { throw "$name is unexpectedly small." }
+            Write-Host "${name}: $([Math]::Round($file.Length / 1MB, 1)) MB"
+          }
+
+      - name: Enforce package size regression budgets
+        shell: pwsh
+        run: |
+          & ./eng/Assert-SnapverePackageSize.ps1 -ArtifactsRoot (Join-Path $PWD 'artifacts')
+
+      - name: Validate universal Setup and Portable with x64 and x86 payloads
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $setup = (Resolve-Path 'artifacts/universal/SNAPVERE-Setup.exe').Path
+          $portable = (Resolve-Path 'artifacts/universal/SNAPVERE-Portable.exe').Path
+          $markerDirectory = Join-Path $PWD 'artifacts/lifecycle-completion'
+          New-Item -ItemType Directory -Force -Path $markerDirectory | Out-Null
+
+          try {
+            foreach ($arch in @('x64', 'x86')) {
+              $env:SNAPVERE_PAYLOAD_ARCH = $arch
+              & ./eng/Test-SnapverePackageLifecycle.ps1 -SetupPath $setup -PortablePath $portable -Version $env:SNAPVERE_VERSION -Arch $arch
+              & ./eng/Test-SnapvereTrayFirstLaunch.ps1 -SetupPath $setup -PortablePath $portable -Version $env:SNAPVERE_VERSION -Arch $arch
+              Set-Content -LiteralPath (Join-Path $markerDirectory "$arch.ok") -Value "SNAPVERE $env:SNAPVERE_VERSION $arch LIFECYCLE_OK" -Encoding utf8NoBOM
+            }
+          }
+          finally { Remove-Item Env:SNAPVERE_PAYLOAD_ARCH -ErrorAction SilentlyContinue }
+
+      - name: Enforce x64 and x86 lifecycle completion
+        shell: pwsh
+        run: |
+          $markerDirectory = Join-Path $PWD 'artifacts/lifecycle-completion'
+          foreach ($arch in @('x64', 'x86')) {
+            $marker = Join-Path $markerDirectory "$arch.ok"
+            if (-not (Test-Path -LiteralPath $marker -PathType Leaf)) {
+              throw "Missing $arch package lifecycle completion marker."
+            }
+
+            $expected = "SNAPVERE $env:SNAPVERE_VERSION $arch LIFECYCLE_OK"
+            $actual = (Get-Content -LiteralPath $marker -Raw).Trim()
+            if ($actual -ne $expected) {
+              throw "$arch package lifecycle marker is invalid: $actual"
+            }
+            Write-Host "$actual"
+          }
+) { throw 'product-version.json currentRelease must use x.y.z.' }
+          if ([string]$contract.windows.productVersion -ne $version) { throw 'Windows productVersion does not match currentRelease.' }
+          if ([string]$contract.browsers.extensionVersion -ne $version) { throw 'Browser extensionVersion does not match currentRelease.' }
+          "SNAPVERE_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "Resolved SNAPVERE_VERSION=$version from product-version.json"
 
       - name: Build x86 x64 and ARM64 application payloads
         shell: pwsh
