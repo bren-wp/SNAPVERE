@@ -16,7 +16,7 @@ No account. No screenshot telemetry. No automatic cloud upload.
 [![Product Contract](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Website](https://snapvere.com) · [Download v0.1.4](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.4) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
+[Website](https://snapvere.com) · [Download v0.1.5](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.5) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
 
 </div>
 
@@ -24,7 +24,7 @@ No account. No screenshot telemetry. No automatic cloud upload.
 
 ## Why SNAPVERE
 
-SNAPVERE 0.1.4 is built for people who want screenshot tools that stay focused on the job: capture the right pixels, annotate quickly, copy or save locally, and get out of the way.
+SNAPVERE 0.1.5 is built for people who want screenshot tools that stay focused on the job: capture the right pixels, annotate quickly, copy or save locally, and get out of the way.
 
 | | What you get |
 | --- | --- |
@@ -35,9 +35,9 @@ SNAPVERE 0.1.4 is built for people who want screenshot tools that stay focused o
 | 📦 **Portable or installed** | Universal Windows Setup and Portable packages carry x86, x64 and ARM64 application payloads. |
 | 🌐 **Browser coverage** | Chrome, Edge, Opera and Firefox share the same locked SNAPVERE brand and bounded capture behavior. |
 
-0.1.4 also tightens the user-facing Windows experience: internal exception details stay in bounded local diagnostics instead of appearing in Settings, Language, About, Setup or Region Capture surfaces; the tray shortcut labels match the registered hotkeys; and repeated unchanged preference writes are avoided.
+0.1.5 also tightens the user-facing Windows experience: internal exception details stay in bounded local diagnostics instead of appearing in Settings, Language, About, Setup or Region Capture surfaces; the tray shortcut labels match the registered hotkeys; and repeated unchanged preference writes are avoided.
 
-Current `main` additionally contains **unreleased post-0.1.4 reliability hardening**: collision-safe concurrent PNG publication, owner-safe browser capture locks, stale Recent-load suppression, guarded browser/Windows actions, multi-monitor tray fallback clamping, secondary-window recovery/accessibility fixes and responsive/reduced-motion browser UI polish. These source changes do not retroactively modify the published v0.1.4 binaries.
+SNAPVERE 0.1.5 promotes the post-v0.1.4 reliability hardening into the public line: collision-safe concurrent PNG publication, owner-safe browser capture locks, stale Recent-load suppression, guarded browser/Windows actions, multi-monitor tray fallback clamping, secondary-window recovery/accessibility fixes, responsive/reduced-motion browser UI polish, and a macOS Full Page shortcut that avoids the system-reserved Command+Shift+3 combination.
 
 ## Windows capture workflow
 
@@ -91,8 +91,8 @@ These are **real rendered Windows surfaces captured by SNAPVERE's visual-QA pipe
 
 ## Downloads
 
-Current release: **SNAPVERE 0.1.4**<br>
-Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.4
+Current release: **SNAPVERE 0.1.5**<br>
+Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.5
 
 | Platform | Package |
 | --- | --- |
