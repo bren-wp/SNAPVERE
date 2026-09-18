@@ -17,6 +17,15 @@
     "fullPageTooLarge",
     "captureFailed"
   ]);
+  const EXTENSION_PAGE_MESSAGE_TYPES = new Set([
+    "CAPTURE_VISIBLE",
+    "CAPTURE_FULL",
+    "CAPTURE_REGION"
+  ]);
+  const TAB_SESSION_MESSAGE_TYPES = new Set([
+    "REGION_SELECTED",
+    "REGION_CANCELLED"
+  ]);
   let startQueue = Promise.resolve();
   let lockMutationQueue = Promise.resolve();
   let commandFeedbackGeneration = 0;
@@ -476,10 +485,37 @@
     return { ok: true, cancelled: true };
   }
 
+  function ensureDispatchSender(messageType, sender) {
+    const runtimeId = chrome.runtime && typeof chrome.runtime.id === "string"
+      ? chrome.runtime.id
+      : "";
+    const senderId = sender && typeof sender.id === "string" ? sender.id : "";
+
+    if (!runtimeId || senderId !== runtimeId) {
+      throw new SnapvereError("captureFailed", "Message sender is not this SNAPVERE extension.");
+    }
+
+    const tab = sender && sender.tab;
+    if (EXTENSION_PAGE_MESSAGE_TYPES.has(messageType)) {
+      if (tab) {
+        throw new SnapvereError("captureFailed", "Capture commands must originate from a SNAPVERE extension page.");
+      }
+      return;
+    }
+
+    if (TAB_SESSION_MESSAGE_TYPES.has(messageType)) {
+      if (!tab || !Number.isInteger(tab.id) || !Number.isInteger(tab.windowId)) {
+        throw new SnapvereError("captureFailed", "Capture-session callbacks must originate from the owning browser tab.");
+      }
+    }
+  }
+
   async function dispatch(message, sender) {
     if (!message || typeof message.type !== "string") {
       throw new SnapvereError("captureFailed", "Invalid extension message.");
     }
+
+    ensureDispatchSender(message.type, sender);
 
     switch (message.type) {
       case "CAPTURE_VISIBLE": return serializeStart(startVisibleCapture);
@@ -532,8 +568,7 @@
         const errorKey = error instanceof SnapvereError ? error.key : "captureFailed";
         sendResponse({
           ok: false,
-          errorKey,
-          message: error && typeof error.message === "string" ? error.message : errorKey
+          errorKey
         });
       });
     return true;
