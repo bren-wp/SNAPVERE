@@ -4,6 +4,10 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+No changes documented yet.
+
+## [0.1.5] - 2026-09-18
+
 ### Reliability and concurrency
 
 - Make Windows PNG publication collision-safe when simultaneous captures share the same timestamp by allocating the visible filename at the atomic move boundary and retrying deterministic suffixes without re-encoding.
