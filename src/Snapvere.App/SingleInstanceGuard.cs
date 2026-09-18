@@ -5,7 +5,12 @@ namespace Snapvere.App;
 
 internal static class SingleInstanceGuard
 {
+    private static readonly object ActivationGate = new();
+
     private static Mutex? _lifetimeMutex;
+    private static EventWaitHandle? _activationEvent;
+    private static Action? _secondLaunchHandler;
+    private static bool _pendingSecondLaunch;
 
     [ModuleInitializer]
     internal static void Initialize()
@@ -14,6 +19,11 @@ internal static class SingleInstanceGuard
         {
             return;
         }
+
+        var activationEvent = new EventWaitHandle(
+            false,
+            EventResetMode.AutoReset,
+            DesktopInstanceIdentity.GetActivationEventName());
 
         var mutex = new Mutex(
             initiallyOwned: true,
@@ -37,14 +47,90 @@ internal static class SingleInstanceGuard
 
         if (!ownsMutex)
         {
+            // The duplicate launch does not create a second UI/tray process.
+            // Instead it wakes the existing per-user instance so the user's
+            // launch action produces visible feedback.
+            _ = activationEvent.Set();
+            activationEvent.Dispose();
             mutex.Dispose();
             Environment.Exit(0);
             return;
         }
 
-        // The named mutex is intentionally kept for the complete process lifetime.
-        // Windows releases ownership automatically if the process exits or crashes.
+        // The named mutex and activation event intentionally live for the full
+        // process lifetime. Windows releases them automatically on process exit.
         _lifetimeMutex = mutex;
+        _activationEvent = activationEvent;
+
+        var activationThread = new Thread(() => WaitForSecondLaunchSignals(activationEvent))
+        {
+            IsBackground = true,
+            Name = "SNAPVERE Activation"
+        };
+        activationThread.Start();
+    }
+
+    internal static void RegisterSecondLaunchHandler(Action handler)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+
+        var invokePending = false;
+        lock (ActivationGate)
+        {
+            _secondLaunchHandler = handler;
+            if (_pendingSecondLaunch)
+            {
+                _pendingSecondLaunch = false;
+                invokePending = true;
+            }
+        }
+
+        if (invokePending)
+        {
+            TryInvokeSecondLaunchHandler(handler);
+        }
+    }
+
+    private static void WaitForSecondLaunchSignals(EventWaitHandle activationEvent)
+    {
+        while (true)
+        {
+            try
+            {
+                activationEvent.WaitOne();
+            }
+            catch (ObjectDisposedException)
+            {
+                return;
+            }
+
+            Action? handler;
+            lock (ActivationGate)
+            {
+                handler = _secondLaunchHandler;
+                if (handler is null)
+                {
+                    _pendingSecondLaunch = true;
+                    continue;
+                }
+            }
+
+            TryInvokeSecondLaunchHandler(handler);
+        }
+    }
+
+    private static void TryInvokeSecondLaunchHandler(Action handler)
+    {
+        try
+        {
+            handler();
+        }
+        catch
+        {
+            // Activation feedback must never terminate the singleton listener.
+            // The normal application diagnostics path handles UI work after the
+            // request reaches the dispatcher.
+        }
     }
 
     private static bool IsAutomationProbeLaunch()
