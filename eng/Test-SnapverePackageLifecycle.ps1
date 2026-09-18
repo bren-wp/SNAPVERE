@@ -356,6 +356,67 @@ if ($installProcess.ExitCode -ne 0) {
 
 $installedApp = Join-Path $install 'Snapvere.exe'
 $installedSetup = Join-Path $install 'SNAPVERE-Setup.exe'
+
+# Deferred cleanup is an internal maintenance path. Invalid parent-process
+# identity must fail closed without touching the installed application.
+$invalidCleanup = Start-Process -FilePath $setup -ArgumentList @(
+    '--cleanup-install',
+    $install,
+    '--wait-pid',
+    '0',
+    '--silent'
+) -Wait -PassThru
+try {
+    if ($invalidCleanup.ExitCode -ne 87) {
+        throw "$Arch cleanup with an invalid parent PID must exit with code 87; got $($invalidCleanup.ExitCode)."
+    }
+}
+finally {
+    $invalidCleanup.Dispose()
+}
+& $contractScript -State Installed -InstallDirectory $install -ExpectedVersion $Version
+
+# If another Setup operation wins the race after the original uninstall parent
+# exits, deferred cleanup must not delete a newer/repaired installation.
+$setupMutex = [System.Threading.Mutex]::new($false, 'Local\Brendigo.SNAPVERE.Setup')
+$ownsSetupMutex = $false
+try {
+    try {
+        $ownsSetupMutex = $setupMutex.WaitOne(0)
+    }
+    catch [System.Threading.AbandonedMutexException] {
+        $ownsSetupMutex = $true
+    }
+
+    if (-not $ownsSetupMutex) {
+        throw "$Arch lifecycle test could not acquire the SNAPVERE Setup mutex."
+    }
+
+    $contendedCleanup = Start-Process -FilePath $setup -ArgumentList @(
+        '--cleanup-install',
+        $install,
+        '--wait-pid',
+        '2147483646',
+        '--silent'
+    ) -Wait -PassThru
+    try {
+        if ($contendedCleanup.ExitCode -ne 1618) {
+            throw "$Arch cleanup while Setup mutex is owned must exit with code 1618; got $($contendedCleanup.ExitCode)."
+        }
+    }
+    finally {
+        $contendedCleanup.Dispose()
+    }
+
+    & $contractScript -State Installed -InstallDirectory $install -ExpectedVersion $Version
+}
+finally {
+    if ($ownsSetupMutex) {
+        $setupMutex.ReleaseMutex()
+    }
+    $setupMutex.Dispose()
+}
+
 Invoke-StartupProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-TrayStartupProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-RegionOverlayProbe $installedApp "Installed SNAPVERE $Arch"

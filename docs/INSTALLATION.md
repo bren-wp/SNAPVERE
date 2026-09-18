@@ -18,7 +18,8 @@ The interactive installer:
 - can create Start menu/Desktop shortcuts and enable current-user Windows startup,
 - prevents the wizard from being closed while a file mutation is actively completing,
 - keeps user-facing installation and removal errors sanitized,
-- keeps Installed Apps metadata, startup registration and SNAPVERE-owned shortcuts in place if file deletion fails, so a blocked removal can be repaired or retried instead of leaving an unregistered installation.
+- keeps Installed Apps metadata, startup registration and SNAPVERE-owned shortcuts in place if file deletion fails, so a blocked removal can be repaired or retried instead of leaving an unregistered installation,
+- requires a positive parent PID for internal deferred cleanup, waits for that process when present and serializes cleanup with normal Setup operations so a delayed uninstall cannot race a newer install or repair.
 
 Silent per-user installation is supported with:
 

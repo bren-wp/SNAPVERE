@@ -4,7 +4,6 @@ namespace Snapvere.Setup;
 
 internal static class Program
 {
-    private const string SetupMutexName = @"Local\Brendigo.SNAPVERE.Setup";
     private const string UiProbeArgument = "--ui-probe";
     private const string UiProbeMarkerFileName = "setup-ui-probe.ready";
 
@@ -26,7 +25,7 @@ internal static class Program
             return;
         }
 
-        using var instanceMutex = new Mutex(initiallyOwned: false, SetupMutexName);
+        using var instanceMutex = new Mutex(initiallyOwned: false, InstallerEngine.SetupMutexName);
         var ownsMutex = false;
         try
         {

@@ -15,6 +15,7 @@ This matrix documents automated regression evidence for the actively maintained 
 - package-size regression budgets for payloads and public executables.
 - x64 and x86 Setup/Portable lifecycle completion markers.
 - locked-file uninstall failure injection that requires Installed Apps/startup/shortcut metadata to remain until file cleanup succeeds, followed by repair and successful removal.
+- deferred-cleanup rejection for invalid parent PID plus Setup-mutex contention coverage, with the installed contract required to remain unchanged.
 - tray-first launch behavior inside the package lifecycle probes.
 - installer safety regression tests for exact marker matching, install-folder normalization and normal directory-chain validation.
 
