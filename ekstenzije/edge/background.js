@@ -18,6 +18,7 @@
     "captureFailed"
   ]);
   let startQueue = Promise.resolve();
+  let lockMutationQueue = Promise.resolve();
   let commandFeedbackGeneration = 0;
 
   class SnapvereError extends Error {
@@ -74,6 +75,12 @@
   function serializeStart(task) {
     const run = startQueue.then(task, task);
     startQueue = run.catch(() => undefined);
+    return run;
+  }
+
+  function serializeLockMutation(task) {
+    const run = lockMutationQueue.then(task, task);
+    lockMutationQueue = run.catch(() => undefined);
     return run;
   }
 
@@ -167,39 +174,61 @@
     }
   }
 
-  async function getLock() {
+  async function readLock() {
     const values = await storageGet(LOCK_KEY);
     const lock = values ? values[LOCK_KEY] : null;
-    if (!lock || typeof lock !== "object") return null;
-    if (!Number.isFinite(lock.startedAt) || Date.now() - lock.startedAt > LOCK_TTL_MS) {
-      await storageRemove(LOCK_KEY);
-      return null;
-    }
-    return lock;
+    return lock && typeof lock === "object" ? lock : null;
+  }
+
+  function isStaleLock(lock) {
+    return !Number.isFinite(lock?.startedAt) || Date.now() - lock.startedAt > LOCK_TTL_MS;
+  }
+
+  async function getLock() {
+    const observed = await readLock();
+    if (!observed) return null;
+    if (!isStaleLock(observed)) return observed;
+
+    await serializeLockMutation(async () => {
+      const current = await readLock();
+      if (current && current.token === observed.token && isStaleLock(current)) {
+        await storageRemove(LOCK_KEY);
+      }
+    });
+    return null;
   }
 
   async function acquireLock(kind, tab) {
-    const existing = await getLock();
-    if (existing) {
-      throw new SnapvereError("captureBusy", "Another SNAPVERE capture is already active.");
-    }
+    return serializeLockMutation(async () => {
+      let existing = await readLock();
+      if (existing && isStaleLock(existing)) {
+        await storageRemove(LOCK_KEY);
+        existing = null;
+      }
+      if (existing) {
+        throw new SnapvereError("captureBusy", "Another SNAPVERE capture is already active.");
+      }
 
-    const lock = {
-      token: makeToken(),
-      kind,
-      tabId: tab.id,
-      windowId: tab.windowId,
-      startedAt: Date.now()
-    };
-    await storageSet({ [LOCK_KEY]: lock });
-    return lock;
+      const lock = {
+        token: makeToken(),
+        kind,
+        tabId: tab.id,
+        windowId: tab.windowId,
+        startedAt: Date.now()
+      };
+      await storageSet({ [LOCK_KEY]: lock });
+      return lock;
+    });
   }
 
   async function releaseLock(token) {
-    const current = await getLock();
-    if (current && current.token === token) {
-      await storageRemove(LOCK_KEY);
-    }
+    if (typeof token !== "string" || token.length === 0) return;
+    await serializeLockMutation(async () => {
+      const current = await readLock();
+      if (current && current.token === token) {
+        await storageRemove(LOCK_KEY);
+      }
+    });
   }
 
   async function releasePendingRegionLockForTab(tabId) {
