@@ -19,7 +19,7 @@ Interaktivni installer:
 - ne dopušta zatvaranje čarobnjaka dok aktivna file operacija još završava,
 - korisniku prikazuje sanitizirane install/uninstall greške bez raw exception detalja,
 - zadržava Installed Apps podatke, startup registraciju i SNAPVERE prečace ako brisanje datoteka ne uspije, tako da se blokirani uninstall može popraviti ili ponoviti bez neregistrirane instalacije,
-- provjerava parent proces internog deferred-cleanup workflowa i serijalizira cleanup s normalnim Setup operacijama kako odgođeni uninstall ne bi ušao u race s novim install/repair postupkom.
+- zahtijeva pozitivan parent PID za interni deferred-cleanup workflow, čeka taj proces kada još postoji i serijalizira cleanup s normalnim Setup operacijama kako odgođeni uninstall ne bi ušao u race s novim install/repair postupkom.
 
 Tihi per-user install podržava:
 
