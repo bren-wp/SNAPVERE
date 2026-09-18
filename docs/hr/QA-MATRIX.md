@@ -15,6 +15,7 @@ Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani 
 - package-size regression budget.
 - x64 i x86 Setup/Portable lifecycle completion.
 - locked-file uninstall failure injection koji zahtijeva da Installed Apps/startup/prečac metadata ostane dok file cleanup stvarno ne uspije, nakon čega slijede repair i uspješan uninstall.
+- provjera odbijanja deferred cleanupa s neispravnim parent PID-om i Setup-mutex contentiona, uz zahtjev da instalacijski ugovor ostane nepromijenjen.
 - tray-first launch provjera unutar lifecycle probea.
 - installer safety regresijski testovi za exact marker matching, normalizaciju instalacijske mape, validaciju normalnog directory chaina i ownership install targeta (missing/empty/owned/unowned/invalid-marker/marker-only).
 
