@@ -1,6 +1,6 @@
 # SNAPVERE QA matrica
 
-Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani Windows/browser proizvod. Aktualno javno izdanje je v0.1.4, dok `main` može sadržavati neobjavljeni hardening. Zeleni gate znači da je provjereni ugovor prošao na tom commitu; ne predstavlja apsolutno jamstvo platformskog ponašanja.
+Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani Windows/browser proizvod. Aktualno javno izdanje je v0.1.6, dok `main` može sadržavati neobjavljeni hardening. Zeleni gate znači da je provjereni ugovor prošao na tom commitu; ne predstavlja apsolutno jamstvo platformskog ponašanja.
 
 ## Windows gateovi
 
@@ -15,6 +15,7 @@ Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani 
 - package-size regression budget.
 - x64 i x86 Setup/Portable lifecycle completion.
 - tray-first launch provjera unutar lifecycle probea.
+- installer safety regresijski testovi za exact marker matching, normalizaciju instalacijske mape i validaciju normalnog directory chaina.
 
 ## Browser gateovi
 
@@ -22,7 +23,7 @@ Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani 
 - zaključan SNAPVERE naziv, wordmark i filename prefix.
 - Chrome/Edge/Opera paritet i dokumentirane Firefox razlike.
 - EN/HR locale paritet.
-- runtime background smoke testovi, uključujući owner-safe stale-lock cleanup interleaving.
+- runtime background smoke testovi, uključujući owner-safe stale-lock cleanup interleaving i provjeru sender/active-tab ownershipa za poruke ekstenzije.
 - active-tab ownership provjere prije i nakon capturea.
 - bounded full-page memory ponašanje.
 - Settings/Recent behavioral testovi za odbacivanje zastarjelih async rezultata i zaštitu od dvostrukih Open/folder akcija.

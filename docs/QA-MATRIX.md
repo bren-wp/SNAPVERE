@@ -1,6 +1,6 @@
 # SNAPVERE QA Matrix
 
-This matrix documents automated regression evidence for the actively maintained Windows/browser product. The current public release is v0.1.4; `main` may contain unreleased hardening. A green gate means the tested contract passed on that commit; it does not convert platform behavior into an absolute guarantee.
+This matrix documents automated regression evidence for the actively maintained Windows/browser product. The current public release is v0.1.6; `main` may contain unreleased hardening. A green gate means the tested contract passed on that commit; it does not convert platform behavior into an absolute guarantee.
 
 ## Windows build and runtime gates
 
@@ -15,6 +15,7 @@ This matrix documents automated regression evidence for the actively maintained 
 - package-size regression budgets for payloads and public executables.
 - x64 and x86 Setup/Portable lifecycle completion markers.
 - tray-first launch behavior inside the package lifecycle probes.
+- installer safety regression tests for exact marker matching, install-folder normalization and normal directory-chain validation.
 
 ## Capture-path regression focus
 
@@ -26,7 +27,7 @@ The current Windows gates exercise the same Region and Window overlay surfaces a
 - locked SNAPVERE name, wordmark and filename-prefix contract.
 - Chrome/Edge/Opera parity plus documented Firefox differences.
 - EN/HR locale-key parity.
-- runtime background smoke tests, including owner-safe stale-lock cleanup interleavings.
+- runtime background smoke tests, including owner-safe stale-lock cleanup interleavings and extension-message sender/active-tab ownership validation.
 - active-tab ownership checks before and after capture.
 - bounded full-page memory behavior.
 - region failure feedback after popup closure.
