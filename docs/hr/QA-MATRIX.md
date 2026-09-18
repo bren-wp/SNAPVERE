@@ -16,7 +16,7 @@ Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani 
 - x64 i x86 Setup/Portable lifecycle completion.
 - locked-file uninstall failure injection koji zahtijeva da Installed Apps/startup/prečac metadata ostane dok file cleanup stvarno ne uspije, nakon čega slijede repair i uspješan uninstall.
 - tray-first launch provjera unutar lifecycle probea.
-- installer safety regresijski testovi za exact marker matching, normalizaciju instalacijske mape i validaciju normalnog directory chaina.
+- installer safety regresijski testovi za exact marker matching, normalizaciju instalacijske mape, validaciju normalnog directory chaina i ownership install targeta (missing/empty/owned/unowned/invalid-marker/marker-only).
 
 ## Browser gateovi
 
