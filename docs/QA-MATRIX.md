@@ -5,7 +5,7 @@ This matrix documents automated regression evidence for the actively maintained 
 ## Windows build and runtime gates
 
 - .NET restore with vulnerability auditing.
-- x64 build and unit-test suite, including concurrent same-timestamp PNG publication coverage.
+- x64 build and unit-test suite, including concurrent same-timestamp PNG publication coverage and stale/recent/foreign/locked capture-temp cleanup boundaries.
 - x86 build and ARM64 cross-build.
 - native payload-structure validation.
 - real rendered WinUI snapshot capture for Region, Window, Tray, Options, Language and About surfaces.
