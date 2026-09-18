@@ -28,6 +28,12 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
+### Explorer tray recovery
+
+- When Explorer recreates the notification area, SNAPVERE now retries tray-icon registration on a bounded backoff instead of giving up after the first transient `Shell_NotifyIcon` failure.
+- Recovery remains event-driven: delayed retries post back into the native tray message loop and do not block tray input or global hotkeys.
+- Stale retry callbacks are generation-checked, and recovery stops after five total attempts while retaining the existing hotkey fallback if Explorer remains unavailable.
+
 ### Local shell error containment
 
 - Tray and Options local file/folder opening now share one bounded expected-failure policy for Windows I/O, access, security-policy, invalid shell state and Win32 handler failures.
