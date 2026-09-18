@@ -81,11 +81,7 @@ public static class EmbeddedAppLauncher
     }
 
     public static string GetStartupLogPath()
-        => Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "SNAPVERE",
-            "Logs",
-            "startup.log");
+        => PortableStartupDiagnostics.GetStartupLogPath();
 
     private static void EnsureCacheReady(
         Assembly hostAssembly,
