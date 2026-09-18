@@ -19,6 +19,8 @@ $startupKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $startupValueName = 'SNAPVERE'
 $desktop = [Environment]::GetFolderPath([Environment+SpecialFolder]::DesktopDirectory)
 $desktopShortcut = Join-Path $desktop 'SNAPVERE.lnk'
+$startMenuFolder = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::StartMenu)) 'Programs\SNAPVERE'
+$startMenuShortcut = Join-Path $startMenuFolder 'SNAPVERE.lnk'
 $expectedStartup = '"' + $app + '"'
 
 if ($State -eq 'Installed') {
@@ -40,6 +42,10 @@ if ($State -eq 'Installed') {
 
     if (-not (Test-Path -LiteralPath $desktopShortcut -PathType Leaf)) {
         throw "Default Desktop shortcut is missing: $desktopShortcut"
+    }
+
+    if (-not (Test-Path -LiteralPath $startMenuShortcut -PathType Leaf)) {
+        throw "Default Start menu shortcut is missing: $startMenuShortcut"
     }
 
     if (-not (Test-Path -LiteralPath $startupKey)) {
@@ -79,7 +85,7 @@ if ($State -eq 'Installed') {
         throw "QuietUninstallString must use the installed SNAPVERE-Setup.exe. Actual: $($registration.QuietUninstallString)"
     }
 
-    Write-Host 'SNAPVERE install contract verified: Setup, Desktop shortcut, startup registration and Installed apps metadata are present.'
+    Write-Host 'SNAPVERE install contract verified: Setup, Start menu/Desktop shortcuts, startup registration and Installed apps metadata are present.'
     return
 }
 
@@ -91,6 +97,17 @@ if (Test-Path -LiteralPath $desktopShortcut) {
     throw "Desktop shortcut remains after uninstall: $desktopShortcut"
 }
 
+if (Test-Path -LiteralPath $startMenuShortcut) {
+    throw "Start menu shortcut remains after uninstall: $startMenuShortcut"
+}
+
+if (Test-Path -LiteralPath $startMenuFolder) {
+    $remainingStartMenuEntries = @(Get-ChildItem -LiteralPath $startMenuFolder -Force -ErrorAction Stop)
+    if ($remainingStartMenuEntries.Count -eq 0) {
+        throw "Empty SNAPVERE Start menu folder remains after uninstall: $startMenuFolder"
+    }
+}
+
 $startupAfterRemoval = Get-ItemProperty -LiteralPath $startupKey -Name $startupValueName -ErrorAction SilentlyContinue
 if ($null -ne $startupAfterRemoval -and $null -ne $startupAfterRemoval.$startupValueName) {
     throw "SNAPVERE startup registration remains after uninstall: $($startupAfterRemoval.$startupValueName)"
@@ -100,4 +117,4 @@ if (Test-Path -LiteralPath $uninstallKey) {
     throw 'Windows Installed apps registration remains after uninstall.'
 }
 
-Write-Host 'SNAPVERE uninstall contract verified: app, Desktop shortcut, startup registration and Installed apps registration were removed.'
+Write-Host 'SNAPVERE uninstall contract verified: app, SNAPVERE-owned shortcuts/folder, startup registration and Installed apps registration were removed.'
