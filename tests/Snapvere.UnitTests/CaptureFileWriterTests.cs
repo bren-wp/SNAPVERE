@@ -33,6 +33,35 @@ public sealed class CaptureFileWriterTests
     }
 
     [Fact]
+    public async Task SavePngAsync_ConcurrentSameTimestampPublishesUniqueFiles()
+    {
+        var directory = CreateTemporaryDirectory();
+        try
+        {
+            var fixedTime = new DateTimeOffset(2026, 9, 18, 18, 0, 0, TimeSpan.Zero);
+            var writer = new CaptureFileWriter(
+                new PngCaptureEncoder(),
+                new CapturePathProvider(directory),
+                new FixedTimeProvider(fixedTime));
+
+            var first = writer.SavePngAsync(CreateFrame());
+            var second = writer.SavePngAsync(CreateFrame());
+            var results = await Task.WhenAll(first, second);
+
+            Assert.Equal(2, results.Select(result => result.FilePath).Distinct(StringComparer.OrdinalIgnoreCase).Count());
+            Assert.All(results, result => Assert.True(File.Exists(result.FilePath)));
+            Assert.Equal(2, Directory.EnumerateFiles(directory, "*.png", SearchOption.TopDirectoryOnly).Count());
+            Assert.DoesNotContain(
+                Directory.EnumerateFiles(directory),
+                path => path.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task SavePngAsync_CancelledTokenDoesNotPublishCapture()
     {
         var directory = CreateTemporaryDirectory();
@@ -73,5 +102,12 @@ public sealed class CaptureFileWriterTests
         var directory = Path.Combine(Path.GetTempPath(), "SNAPVERE-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         return directory;
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
+
+        public override DateTimeOffset GetUtcNow() => utcNow.ToUniversalTime();
     }
 }

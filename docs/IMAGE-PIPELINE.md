@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.2 Image Pipeline
+# SNAPVERE Image Pipeline
 
 SNAPVERE's Windows image pipeline keeps capture acquisition, pixel transformation, annotation, PNG encoding and durable file publication as separate responsibilities. The shared frame contract uses BGRA8 pixels, explicit dimensions and stride, capture time and source identity.
 
@@ -30,11 +30,11 @@ Each source row is validated through the frame contract, transformed into one re
 
 ## Durable local publication
 
-`CaptureFileWriter` resolves the local capture directory and an available final name, then creates a unique hidden-style temporary file in the same directory. The encoder writes to that temp file with asynchronous I/O and the stream is flushed before publication.
+`CaptureFileWriter` resolves the local capture directory and creates a unique hidden-style temporary file in the same directory. The encoder writes to that temp file with asynchronous I/O and the stream is flushed before publication.
 
-The final `File.Move` is the commit boundary. Cancellation is checked immediately before the move. If encoding, flushing or cancellation fails, SNAPVERE performs best-effort temp-file cleanup and rethrows the original failure.
+The final `File.Move` is the commit boundary. The visible filename is now allocated at that boundary: if another capture or local process wins the same timestamp-based filename first, SNAPVERE advances to the next deterministic suffix and retries the atomic move without re-encoding the PNG. Cancellation is checked before every publication attempt.
 
-Because the temp file and final file are in the same directory, the design avoids deliberately presenting an incomplete encode under the final capture name. Cleanup failure is not allowed to replace the original capture error.
+Because the temp file and final file are in the same directory, the design avoids deliberately presenting an incomplete encode under the final capture name. Failed encoding, flushing, cancellation or publication performs best-effort temp-file cleanup, and cleanup failure is not allowed to replace the original capture error.
 
 ## Memory and responsiveness posture
 
@@ -46,7 +46,7 @@ See [Performance & Stability](PERFORMANCE.md) for the current evidence boundary 
 
 ## Regression evidence
 
-The unit suite covers crop bounds and row copying, annotation rendering, PNG dimensions and decoded RGBA pixel content, successful atomic PNG publication, cancellation without a published final file and cleanup behavior around the shared writer.
+The unit suite covers crop bounds and row copying, annotation rendering, PNG dimensions and decoded RGBA pixel content, successful atomic PNG publication, two concurrent saves sharing the same timestamp without filename collision, cancellation without a published final file and cleanup behavior around the shared writer.
 
 Windows CI executes those tests on the x64 test path and separately builds x86 and ARM64 application payloads. Package CI also validates public executable size budgets so image/runtime changes cannot silently cause unbounded package growth.
 
