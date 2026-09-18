@@ -52,7 +52,12 @@ internal static class InstallerEngine
             var parent = Directory.GetParent(installRoot)?.FullName
                 ?? throw new InvalidOperationException("The selected installation directory has no parent folder.");
             Directory.CreateDirectory(parent);
-            InstallSafetyPolicy.EnsureExistingDirectoryChainHasNoReparsePoints(installRoot);
+            InstallSafetyPolicy.EnsureInstallTargetIsOwnedOrEmpty(
+                installRoot,
+                InstallationMarkerName,
+                InstallationMarkerPrefix,
+                AppExecutableName,
+                InstalledSetupName);
 
             if (!TryCloseRunningApplication(installRoot, out var runningMessage))
             {
@@ -90,6 +95,13 @@ internal static class InstallerEngine
                         string.Empty));
 
                 progress?.Invoke(78);
+
+                InstallSafetyPolicy.EnsureInstallTargetIsOwnedOrEmpty(
+                    installRoot,
+                    InstallationMarkerName,
+                    InstallationMarkerPrefix,
+                    AppExecutableName,
+                    InstalledSetupName);
 
                 if (Directory.Exists(installRoot))
                 {
