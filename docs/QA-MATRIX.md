@@ -5,7 +5,7 @@ This matrix documents automated regression evidence for the actively maintained 
 ## Windows build and runtime gates
 
 - .NET restore with vulnerability auditing.
-- x64 build and unit-test suite, including concurrent same-timestamp PNG publication coverage.
+- x64 build and unit-test suite, including concurrent same-timestamp PNG publication coverage and Portable startup-message sanitization against injected private-path exception text.
 - x86 build and ARM64 cross-build.
 - native payload-structure validation.
 - real rendered WinUI snapshot capture for Region, Window, Tray, Options, Language and About surfaces.
@@ -41,7 +41,7 @@ The current Windows gates exercise the same Region and Window overlay surfaces a
 
 ## Repository and security gates
 
-- Product Contract CI.
+- Product Contract CI, including a source contract that rejects direct Portable `exception.Message` exposure and requires the centralized sanitized diagnostics path.
 - CodeQL for C#, JavaScript/TypeScript, Python and GitHub Actions.
 - pinned workflow actions.
 - dependency monitoring.
