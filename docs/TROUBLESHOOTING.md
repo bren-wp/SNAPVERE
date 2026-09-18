@@ -1,4 +1,6 @@
-# SNAPVERE 0.1.2 Troubleshooting
+# SNAPVERE Troubleshooting
+
+Current public release: **v0.1.6**. The `main` branch may contain later unreleased reliability and security hardening.
 
 ## Windows does not capture
 
@@ -11,6 +13,12 @@ Another application may own the same global shortcut. Use the tray menu and revi
 ## Region save or copy fails
 
 Confirm the capture folder is writable and that the Windows clipboard is available. SNAPVERE uses staged file writes so an interrupted PNG encode is not presented as a completed capture.
+
+## Portable does not start
+
+Close any running SNAPVERE process and retry the Portable executable. If SNAPVERE reports a package/cache validation problem, download a fresh copy from the official release. For filesystem failures, confirm that Windows can write to the current user's temporary and local application-data folders and that sufficient disk space is available.
+
+Portable startup dialogs intentionally show sanitized error categories rather than raw runtime exception messages. Technical details are written locally to `%LOCALAPPDATA%\SNAPVERE\Logs\startup.log`; SNAPVERE does not automatically upload that log.
 
 ## Browser capture fails
 
