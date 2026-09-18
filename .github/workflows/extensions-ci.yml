@@ -5,12 +5,18 @@ on:
     branches: [main]
     paths:
       - 'ekstenzije/**'
+      - 'product-version.json'
+      - 'eng/validate-product-contract.py'
       - '.github/workflows/extensions-ci.yml'
+      - '.github/workflows/release-*.yml'
   pull_request:
     branches: [main]
     paths:
       - 'ekstenzije/**'
+      - 'product-version.json'
+      - 'eng/validate-product-contract.py'
       - '.github/workflows/extensions-ci.yml'
+      - '.github/workflows/release-*.yml'
 
 concurrency:
   group: snapvere-extensions-${{ github.ref }}
