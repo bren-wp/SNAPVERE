@@ -1,4 +1,6 @@
-# SNAPVERE 0.1.2 Tray i lifecycle
+# SNAPVERE Tray i lifecycle
+
+Aktualno javno izdanje: **v0.1.6**. Grana `main` može sadržavati kasniji neobjavljeni lifecycle hardening.
 
 Windows aplikacija radi kao **tray-first** proces. Normalan launch drži SNAPVERE spremnim za capture bez stalno otvorenog dashboarda, dok globalni prečaci i notification-area host služe kao glavni ulazi u capture workflow.
 
@@ -6,11 +8,11 @@ Windows aplikacija radi kao **tray-first** proces. Normalan launch drži SNAPVER
 
 `SingleInstanceGuard` se pokreće kroz module initializer prije normalnog WinUI startupa. Preuzima named per-user desktop mutex i drži ga tijekom cijelog životnog vijeka procesa.
 
-Ako drugi normalni SNAPVERE proces već drži mutex, novi proces izlazi s uspješnim statusom prije pokretanja tray i hotkey hostova. Ako je prethodni proces pao i ostavio abandoned mutex, novi launch prihvaća vlasništvo koje je `WaitOne` već preuzeo, pa stale stanje ne može trajno blokirati aplikaciju.
+Ako drugi normalni SNAPVERE proces već drži mutex, novi proces šalje per-user activation signal i zatim izlazi s uspješnim statusom prije pokretanja tray i hotkey hostova. Primarna instanca taj signal prosljeđuje WinUI dispatcheru i prikazuje svoj Preferences prozor, pa ponovno pokretanje već aktivne tray-first aplikacije daje vidljiv odgovor bez stvaranja drugog app procesa. Ako je prethodni proces pao i ostavio abandoned mutex, novi launch prihvaća vlasništvo koje je `WaitOne` već preuzeo, pa stale stanje ne može trajno blokirati aplikaciju.
 
 Posebni CI automation probe launch-evi izuzeti su iz produkcijskog singleton guarda kako bi visual i lifecycle provjere mogle deterministički pokrenuti tražene površine. Izuzeće vrijedi samo za eksplicitne probe environment varijable i command-line switch-eve koje koristi repozitorijska validacija.
 
-Portable launcher prije skupog payload verification/extraction koraka provjerava isti desktop-instance identity. Child aplikacija i dalje ostaje konačni race-safe vlasnik mutexa.
+Portable launcher prije skupog payload verification/extraction koraka provjerava isti desktop-instance identity. Ako je instanca već pokrenuta, fast path šalje isti activation signal i završava bez hashiranja ili izdvajanja velikog payloada. Child aplikacija i dalje ostaje konačni race-safe vlasnik mutexa.
 
 ## Native tray host
 
@@ -36,15 +38,15 @@ Cleanup uklanja notification icon, uništava generirani icon handle, message-onl
 
 Tray-first lifecycle test radi nad instaliranom aplikacijom i Portable paketom za x64 i x86.
 
-Za Setup provjerava materializaciju setup UI-a, radi silent install, potvrđuje da installed app postoji, izvršava tray initialization probe te normalni launch koji mora ostati aktivan bez vidljivog glavnog prozora. Zatim pokreće drugu instancu: duplicate mora završiti uspješno, primarni proces mora ostati aktivan i u sustavu smije ostati samo jedan SNAPVERE app proces. Na kraju se uninstall izvršava kroz instalirani Setup executable.
+Za Setup provjerava materializaciju setup UI-a, radi silent install, potvrđuje da installed app postoji, izvršava tray initialization probe te normalni launch koji mora ostati aktivan bez vidljivog glavnog prozora. Zatim pokreće drugu instancu: duplicate mora završiti uspješno, primarni proces mora potvrditi primitak activation signala, ostati aktivan i u sustavu smije ostati samo jedan SNAPVERE app proces. Na kraju se uninstall izvršava kroz instalirani Setup executable.
 
-Za Portable se izvršava isti tray probe, pokreće se Portable launcher i zahtijeva se da launcher završi nakon pokretanja tray-only child procesa. Test potvrđuje točno jedan SNAPVERE app proces, odsutnost glavnog prozora i odbijanje drugog Portable launch-a bez stvaranja duplikata.
+Za Portable se izvršava isti tray probe, pokreće se Portable launcher i zahtijeva se da launcher završi nakon pokretanja tray-only child procesa. Test potvrđuje točno jedan SNAPVERE app proces, odsutnost glavnog prozora i da drugi Portable launch aktivira postojeći child kroz isti per-user signal bez stvaranja duplikata.
 
 Puni package lifecycle gate zasebno provjerava universal Setup/Portable contract i zapisuje arhitekturne completion markere tek nakon završetka x64 i x86 lifecycle skripti. CI zahtijeva te markere umjesto zaključivanja uspjeha iz dvosmislenog PowerShell process statea.
 
 ## Korisničko ponašanje
 
-Tray-first rad namjerno se razlikuje od aplikacije koja pri svakom launchu otvara dashboard. Capture se pokreće iz traya ili globalnim prečacima; sekundarne površine poput Options, Language i About otvaraju se samo kada ih korisnik zatraži.
+Tray-first rad namjerno se razlikuje od aplikacije koja pri svakom launchu otvara dashboard. Capture se pokreće iz traya ili globalnim prečacima; sekundarne površine poput Options, Language i About otvaraju se samo kada ih korisnik zatraži. Ponovno pokretanje SNAPVERE-a dok već radi tretira se kao izričit zahtjev da se postojeća instanca prikaže, pa se primarni Preferences prozor dovodi u fokus umjesto tihog odbacivanja launch-a.
 
 CI dokazuje deklarirane startup/lifecycle scenarije na svojim Windows runnerima. To nije jamstvo da Explorer, third-party shell software, security alat ili svaka Windows konfiguracija nikad ne može utjecati na notification-area ponašanje.
 
