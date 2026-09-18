@@ -4,6 +4,15 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Windows uninstall recoverability
+
+- Keep Windows Installed Apps metadata, startup registration and SNAPVERE-owned shortcuts intact until installation-directory deletion has actually succeeded.
+- Move registration/shortcut cleanup into successful deferred cleanup instead of unregistering the product before the maintenance process removes files.
+- Stop creating the SNAPVERE Start menu directory as a side effect of uninstall path lookup and remove the product folder when it becomes empty.
+- Add a real package-lifecycle regression probe that intentionally locks an installed file, requires uninstall failure, verifies registration metadata is preserved, repairs the installation and then completes a normal uninstall.
+
+## [0.1.6] - 2026-09-18
+
 ### Browser message ownership and error containment
 
 - Separate extension-page capture commands from tab-owned capture-session callbacks in the browser background runtime.

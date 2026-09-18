@@ -17,7 +17,8 @@ The interactive installer:
 - registers uninstall metadata for Windows Installed Apps,
 - can create Start menu/Desktop shortcuts and enable current-user Windows startup,
 - prevents the wizard from being closed while a file mutation is actively completing,
-- keeps user-facing installation and removal errors sanitized.
+- keeps user-facing installation and removal errors sanitized,
+- keeps Installed Apps metadata, startup registration and SNAPVERE-owned shortcuts in place if file deletion fails, so a blocked removal can be repaired or retried instead of leaving an unregistered installation.
 
 Silent per-user installation is supported with:
 
