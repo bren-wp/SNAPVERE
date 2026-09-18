@@ -4,6 +4,12 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Windows install-target ownership
+
+- Refuse to replace an existing non-empty install target unless it is empty or carries the exact SNAPVERE installation marker together with SNAPVERE application files.
+- Revalidate target ownership immediately before directory replacement so payload extraction does not leave a broad replacement race window.
+- Add regression coverage for missing, empty, owned, unowned, invalid-marker and marker-only target directories.
+
 ### Windows uninstall recoverability
 
 - Keep Windows Installed Apps metadata, startup registration and SNAPVERE-owned shortcuts intact until installation-directory deletion has actually succeeded.
