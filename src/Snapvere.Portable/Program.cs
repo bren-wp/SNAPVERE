@@ -29,8 +29,9 @@ internal static class Program
         }
         catch (Exception exception)
         {
+            PortableStartupDiagnostics.RecordLaunchFailure(exception);
             MessageBox.Show(
-                $"SNAPVERE Portable could not start.\r\n\r\n{exception.Message}\r\n\r\nStartup log (when available):\r\n{EmbeddedAppLauncher.GetStartupLogPath()}",
+                PortableStartupDiagnostics.GetUserFacingFailureMessage(exception),
                 "SNAPVERE Portable",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
