@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.2 Status proizvoda
+# SNAPVERE 0.1.4 Status proizvoda
 
 Aktualne održavane površine proizvoda su **Windows** i **browser ekstenzije**.
 
@@ -14,7 +14,7 @@ Chrome, Edge, Opera i Firefox održavaju visible-area, selected-region i bounded
 
 ## Paketi
 
-Aktualni 0.1.2 ugovor sadrži `SNAPVERE-Setup.exe`, `SNAPVERE-Portable.exe`, `SNAPVERE-Chrome.zip`, `SNAPVERE-Edge.zip`, `SNAPVERE-Opera.zip` i `SNAPVERE-Firefox.zip`.
+Aktualni 0.1.4 ugovor sadrži `SNAPVERE-Setup.exe`, `SNAPVERE-Portable.exe`, `SNAPVERE-Chrome.zip`, `SNAPVERE-Edge.zip`, `SNAPVERE-Opera.zip` i `SNAPVERE-Firefox.zip`.
 
 ## Kvaliteta
 
@@ -22,4 +22,4 @@ CI provjerava Windows buildove/testove, renderirani WinUI visual QA, package-siz
 
 To je jaka regresijska evidencija, ali nije obećanje da svaka platforma, driver ili preglednik nikada ne može imati specifičan problem.
 
-Povezano: [Performanse i stabilnost](PERFORMANCE.md), [QA matrica](QA-MATRIX.md) i https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.2
+Povezano: [Performanse i stabilnost](PERFORMANCE.md), [QA matrica](QA-MATRIX.md) i https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.4

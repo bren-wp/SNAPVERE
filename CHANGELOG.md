@@ -4,7 +4,41 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
-No post-0.1.2 changes are documented yet.
+No post-0.1.4 changes are documented yet.
+
+## [0.1.4] - 2026-09-18
+
+### CI and release reliability
+
+- Derive the Windows package/lifecycle version from the canonical `product-version.json` contract instead of a hand-maintained CI constant.
+- Fail Product Contract CI if standard CI reintroduces a hardcoded release version or if the active release workflow/trigger drifts from the canonical version.
+- Archive the completed v0.1.3 release workflow and add the controlled v0.1.4 publication workflow.
+
+### Version and documentation alignment
+
+- Move Windows product/assembly/file versions and Chrome, Edge, Opera and Firefox package versions to 0.1.4 together.
+- Correct stale versioning-document title/examples and align current EN/HR product documentation and release links.
+- Preserve the exact six-package release contract and existing local-first permission/privacy boundaries.
+
+## [0.1.3] - 2026-09-17
+
+### Windows UX and recovery
+
+- Wire tray Settings and Recent captures into production behavior.
+- Surface sanitized user-facing feedback for busy, unsupported and failed Region/Window/Screen capture actions without exposing raw exceptions.
+
+### Browser UX, accessibility and capture reliability
+
+- Add Settings/Recent captures parity, Open/Refresh/Open-downloads-folder actions and stale deleted/moved download filtering across Chrome, Edge, Opera and Firefox.
+- Add keyboard-accessible ARIA tab navigation for Settings/Recent panels.
+- Add functional Region/Visible/Full Page keyboard commands that reuse the existing serialized capture/lock pipeline.
+- Add localized action badge/title feedback for hotkey-triggered busy, unsupported-page, active-tab-changed, full-page-too-large and generic capture failures.
+- Harden popup localization-key validation and Settings-opening failure feedback.
+
+### Validation and packaging
+
+- Expand behavioral command/failure-feedback coverage and lock command IDs, shortcut mappings and EN/HR localization references in CI.
+- Preserve the exact six-package Windows/browser release contract, deterministic browser packaging and local-first permission/privacy boundaries.
 
 ## [0.1.2] - 2026-09-16
 

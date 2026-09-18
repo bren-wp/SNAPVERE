@@ -97,6 +97,18 @@ def main() -> int:
     if "java-kotlin" in codeql:
         fail("Java/Kotlin CodeQL target must not remain after mobile removal")
 
+    ci = read_text(ROOT / ".github" / "workflows" / "ci.yml")
+    if re.search(r"(?m)^\s*SNAPVERE_VERSION:\s*\d+\.\d+\.\d+\s*$", ci):
+        fail("standard CI must derive SNAPVERE_VERSION from product-version.json instead of hardcoding a release")
+    for required in (
+        "Resolve package version from product contract",
+        "product-version.json",
+        "SNAPVERE_VERSION=$version",
+        "GITHUB_ENV",
+    ):
+        if required not in ci:
+            fail(f"standard CI is missing canonical version resolution fragment: {required}")
+
     windows = contract.get("windows", {})
     props = ROOT / "Directory.Build.props"
     if xml_property(props, "VersionPrefix") != version or windows.get("productVersion") != version:
@@ -137,6 +149,17 @@ def main() -> int:
     ]
     if contract.get("releaseAssets") != expected_assets:
         fail("active release asset contract mismatch")
+
+    release_workflow = ROOT / ".github" / "workflows" / f"release-{version}.yml"
+    release_workflow_text = read_text(release_workflow)
+    for required in (
+        f"name: Release {version}",
+        f"SNAPVERE_VERSION: {version}",
+        f".github/release-triggers/v{version}",
+        f"v{version}",
+    ):
+        if required not in release_workflow_text:
+            fail(f"active release workflow is not aligned with {tag}: {required}")
 
     releases = read_text(ROOT / "RELEASES.md")
     if f"Current public release: **v{version}**" not in releases or "## Unreleased" not in releases:
@@ -182,12 +205,23 @@ def main() -> int:
     ]
     for path in current_docs:
         text = read_text(path)
-        if version not in text and path.name not in {"README.md", "PRIVACY.md"}:
-            fail(f"active documentation does not identify current release: {path.relative_to(ROOT)}")
         if re.search(r"\bandroid\b", text, re.IGNORECASE):
             fail(f"active documentation still describes the retired mobile product: {path.relative_to(ROOT)}")
         if re.search(r"\b(?:placeholder|coming soon|todo|dev build)\b", text, re.IGNORECASE):
             fail(f"active documentation contains development-only wording: {path.relative_to(ROOT)}")
+
+    version_pinned_docs = [
+        ROOT / "SECURITY.md",
+        ROOT / "CONTRIBUTING.md",
+        ROOT / "docs" / "README.md",
+        ROOT / "docs" / "PRODUCT-STATUS.md",
+        ROOT / "docs" / "VERSIONING-RELEASES.md",
+        ROOT / "docs" / "hr" / "README.md",
+        ROOT / "docs" / "hr" / "PRODUCT-STATUS.md",
+    ]
+    for path in version_pinned_docs:
+        if version not in read_text(path):
+            fail(f"current release marker missing from {path.relative_to(ROOT)}")
 
     for readme in (ROOT / "README.md", ROOT / "README.hr.md"):
         text = read_text(readme)

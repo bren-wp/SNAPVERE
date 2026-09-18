@@ -46,10 +46,14 @@ jobs:
           node --check ekstenzije/tools/verify-extension-parity.mjs
           node --check ekstenzije/tools/validate-store-readiness.mjs
           node --check ekstenzije/tools/smoke-test-background.mjs
+          node --check ekstenzije/tools/test-hotkey-failure-feedback.mjs
           python -m py_compile ekstenzije/tools/generate-store-assets.py
 
       - name: Exercise background runtime behavior
         run: node ekstenzije/tools/smoke-test-background.mjs
+
+      - name: Exercise hotkey failure feedback
+        run: node ekstenzije/tools/test-hotkey-failure-feedback.mjs
 
       - name: Generate browser store assets
         shell: bash

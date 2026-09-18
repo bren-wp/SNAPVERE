@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.2**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.2
+- Current public release: **v0.1.4**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.4
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,83 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No post-v0.1.2 release changes are documented yet.
+No post-v0.1.4 release changes are documented yet.
+
+---
+
+## v0.1.4 — 2026-09-18
+
+SNAPVERE 0.1.4 is a maintenance release focused on **release correctness and version-contract reliability** for the maintained Windows + Chrome/Edge/Opera/Firefox product line. Capture behavior, local-first privacy boundaries and the exact six-package public contract remain unchanged from 0.1.3.
+
+### CI and version-contract hardening
+
+- Standard Windows CI no longer carries a hand-maintained hardcoded `SNAPVERE_VERSION`; the package/lifecycle job resolves the version from the canonical `product-version.json` contract and checks Windows/browser version parity before building public package candidates.
+- Product Contract CI now rejects a reintroduced hardcoded standard-CI version and requires the active version-specific release workflow, trigger path and release environment to match the canonical product contract.
+- This removes the class of stale CI-version mismatch that could cause otherwise-correct Setup/Portable lifecycle validation to test against the previous release number.
+
+### Release automation and documentation
+
+- The successful v0.1.3 publication workflow is archived as historical release automation and v0.1.4 receives its own main-only controlled publication workflow.
+- Versioning documentation is corrected so its title, current-release examples and development-channel example all describe the active release instead of retaining stale 0.1.2 wording.
+- Windows assembly/product/file versions and all four browser manifest/store-package versions move together to 0.1.4.
+
+### Public packages
+
+The v0.1.4 GitHub Release contains exactly:
+
+```text
+SNAPVERE-Setup.exe
+SNAPVERE-Portable.exe
+SNAPVERE-Chrome.zip
+SNAPVERE-Edge.zip
+SNAPVERE-Opera.zip
+SNAPVERE-Firefox.zip
+```
+
+Publication remains gated by audited Windows builds/tests, x86/x64 lifecycle and tray-first validation, ARM64 cross-build evidence, deterministic browser packaging, exact package-name enforcement and SHA-256 verification before and after GitHub Release publication. No new browser permissions, telemetry, analytics, cloud upload or tracking are introduced.
+
+---
+
+## v0.1.3 — 2026-09-17
+
+SNAPVERE 0.1.3 promotes the post-v0.1.2 reliability and UX work into the public **Windows + Chrome/Edge/Opera/Firefox** release line while preserving the local-first privacy model and exact six-package release contract.
+
+### Windows UX and failure recovery
+
+- Tray **Settings** and **Recent captures** are fully wired instead of presentation-only surfaces.
+- User-triggered Region, Window and Screen capture failures now receive sanitized feedback for busy, unsupported and capture-failure states without exposing raw exception text.
+- Existing tray-first startup, capture-folder access, language switching, About, Exit, global shortcuts, x86/x64 payloads and ARM64 build coverage remain intact.
+
+### Browser capture parity and accessibility
+
+- Chrome, Edge, Opera and Firefox now expose Settings and Recent captures with the same EN/HR UX, including Open, Refresh and **Open downloads folder** actions using the existing downloads permission.
+- Recent-capture views ignore completed download records whose local file no longer exists, avoiding stale **Open** actions after a file has been removed or moved.
+- Settings/Recent navigation follows the ARIA keyboard tab pattern with roving `tabIndex`, Arrow Left/Right, Home and End behavior.
+- Browser capture hotkeys are now functional: `Ctrl+Shift+1` Region, `Ctrl+Shift+2` Visible Area and `Ctrl+Shift+3` Full Page, with Command+Shift equivalents on macOS. They reuse the existing serialized capture pipeline and capture lock rather than introducing a second implementation.
+- Hotkey-triggered capture failures now surface localized, non-invasive action badge/title feedback for capture busy, unsupported pages, active-tab changes, oversized full-page captures and generic region/capture failures. Raw exceptions and stack traces remain internal.
+- Opening browser Settings provides progress and localized failure feedback when the options page cannot be opened.
+
+### CI and contract hardening
+
+- Behavioral browser tests activate real command handlers and cover visible, region-lock/cleanup, full-page completion, unknown-command no-op and localized hotkey-failure feedback paths.
+- Extension validation locks the expected command IDs, default/macOS shortcuts and localization keys, and also catches popup localization-reference drift.
+- Chrome, Edge, Opera and Firefox shared source parity remains enforced; Firefox retains only required Gecko differences.
+- No new extension permission, broad host access, telemetry, analytics, cloud upload, tracking or remote runtime dependency is introduced.
+
+### Public packages
+
+The v0.1.3 GitHub Release contains exactly:
+
+```text
+SNAPVERE-Setup.exe
+SNAPVERE-Portable.exe
+SNAPVERE-Chrome.zip
+SNAPVERE-Edge.zip
+SNAPVERE-Opera.zip
+SNAPVERE-Firefox.zip
+```
+
+Publication re-runs the audited Windows/browser build gates, validates x64/x86 lifecycle completion, verifies deterministic browser ZIPs and checks SHA-256 digests before and after GitHub Release publication. Browser-store publication remains a separate external publisher/reviewer process.
 
 ---
 
