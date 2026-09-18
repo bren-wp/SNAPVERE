@@ -70,6 +70,7 @@ elements["settings-form"].submitButton = new FakeElement("save-settings");
 
 const searchCallbacks = [];
 const openCallbacks = [];
+const timers = [];
 let openCalls = 0;
 let folderCalls = 0;
 
@@ -88,7 +89,7 @@ const chrome = {
   downloads: {
     search: (_query, callback) => { searchCallbacks.push(callback); },
     open: (_id, callback) => { openCalls += 1; openCallbacks.push(callback); },
-    showDefaultFolder: (callback) => { folderCalls += 1; openCallbacks.push(callback); }
+    showDefaultFolder: () => { folderCalls += 1; }
   }
 };
 
@@ -112,7 +113,10 @@ const context = {
   Number,
   Array,
   Promise,
-  setTimeout,
+  setTimeout: (callback, delay) => {
+    timers.push({ callback, delay });
+    return timers.length;
+  },
   clearTimeout
 };
 vm.createContext(context);
@@ -150,9 +154,12 @@ assert.equal(openButton.disabled, false);
 
 elements["open-downloads-folder"].dispatch("click");
 elements["open-downloads-folder"].dispatch("click");
-assert.equal(folderCalls, 1, "Open downloads folder must suppress duplicate activation while pending");
-openCallbacks.shift()();
+assert.equal(folderCalls, 1, "Open downloads folder must suppress duplicate activation during the cooldown");
 await flush();
+assert.equal(elements["open-downloads-folder"].disabled, true);
+assert.equal(timers.length, 1);
+assert.equal(timers[0].delay, 500);
+timers.shift().callback();
 assert.equal(elements["open-downloads-folder"].disabled, false);
 
 console.log("SNAPVERE options runtime race/double-activation tests passed.");
