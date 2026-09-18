@@ -10,6 +10,8 @@ namespace Snapvere.Application.Capture;
 /// </summary>
 public sealed class CaptureFileWriter
 {
+    private const int MaximumFileNameAttempts = 1000;
+
     private readonly PngCaptureEncoder _pngEncoder;
     private readonly CapturePathProvider _pathProvider;
     private readonly TimeProvider _timeProvider;
@@ -36,10 +38,10 @@ public sealed class CaptureFileWriter
         Directory.CreateDirectory(directory);
 
         var timestamp = _timeProvider.GetLocalNow();
-        var finalPath = CapturePathProvider.GetAvailablePath(directory, timestamp);
         var temporaryPath = Path.Combine(
             directory,
-            $".{Path.GetFileName(finalPath)}.{Guid.NewGuid():N}.tmp");
+            $".{CapturePathProvider.BuildFileName(timestamp)}.{Guid.NewGuid():N}.tmp");
+        string? finalPath = null;
 
         try
         {
@@ -55,11 +57,14 @@ public sealed class CaptureFileWriter
                 await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
             }
 
-            // The atomic move is the commit boundary. Honor cancellation one
-            // final time immediately before making the completed PNG visible;
-            // cancellation before this point leaves only a disposable temp file.
-            cancellationToken.ThrowIfCancellationRequested();
-            File.Move(temporaryPath, finalPath, overwrite: false);
+            // The move is the commit boundary. Allocate the visible file name
+            // at commit time rather than before encoding so simultaneous
+            // captures with the same timestamp cannot race on one candidate.
+            finalPath = PublishTemporaryFile(
+                temporaryPath,
+                directory,
+                timestamp,
+                cancellationToken);
         }
         catch
         {
@@ -72,6 +77,35 @@ public sealed class CaptureFileWriter
             frame.Size.Width,
             frame.Size.Height,
             frame.CapturedAt);
+    }
+
+    private static string PublishTemporaryFile(
+        string temporaryPath,
+        string directory,
+        DateTimeOffset timestamp,
+        CancellationToken cancellationToken)
+    {
+        for (var counter = 0; counter < MaximumFileNameAttempts; counter++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var finalPath = Path.Combine(
+                directory,
+                CapturePathProvider.BuildFileName(timestamp, counter));
+
+            try
+            {
+                File.Move(temporaryPath, finalPath, overwrite: false);
+                return finalPath;
+            }
+            catch (IOException) when (File.Exists(finalPath))
+            {
+                // Another capture/process won this filename after our previous
+                // check. Retry the next deterministic suffix without
+                // re-encoding or exposing a partial file.
+            }
+        }
+
+        throw new IOException("SNAPVERE could not allocate a unique capture file name.");
     }
 
     private static void TryDeleteTemporaryFile(string path)
