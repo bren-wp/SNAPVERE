@@ -121,6 +121,13 @@ def main() -> int:
     browsers = contract.get("browsers", {})
     if browsers.get("extensionVersion") != version:
         fail("browser version mismatch")
+
+    store_listing = read_json(ROOT / "ekstenzije" / "store" / "listing.json")
+    if store_listing.get("extensionVersion") != version:
+        fail("browser store listing version mismatch")
+    if store_listing.get("developmentChannel") != f"v{version}-release":
+        fail("browser store development channel mismatch")
+
     variants = ["chrome", "edge", "opera", "firefox"]
     if browsers.get("variants") != variants:
         fail("browser variant list mismatch")
@@ -157,6 +164,7 @@ def main() -> int:
         f"SNAPVERE_VERSION: {version}",
         f".github/release-triggers/v{version}",
         f"v{version}",
+        "python eng/validate-product-contract.py",
     ):
         if required not in release_workflow_text:
             fail(f"active release workflow is not aligned with {tag}: {required}")
