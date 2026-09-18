@@ -1,6 +1,7 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Snapvere.Application.Capture;
@@ -49,6 +50,7 @@ public sealed class LanguagePickerWindow : Window
 
         _status = Text(L("LanguageSaved"), 10.5, Muted);
         _status.TextWrapping = TextWrapping.Wrap;
+        AutomationProperties.SetLiveSetting(_status, AutomationLiveSetting.Polite);
 
         Content = BuildContent();
         SelectCurrentLanguage();
@@ -186,9 +188,24 @@ public sealed class LanguagePickerWindow : Window
             _status.Text = L("LanguageSaved");
             _status.Foreground = Success;
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        catch (Exception exception) when (
+            exception is IOException or
+            UnauthorizedAccessException or
+            System.Security.SecurityException or
+            InvalidOperationException)
         {
             StartupDiagnostics.Record("Save language preference", exception);
+
+            _initializing = true;
+            try
+            {
+                SelectCurrentLanguage();
+            }
+            finally
+            {
+                _initializing = false;
+            }
+
             _status.Text = LanguageSaveFailureText();
             _status.Foreground = Error;
         }

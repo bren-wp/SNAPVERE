@@ -206,10 +206,19 @@ public sealed class AboutWindow : Window
         {
             try
             {
-                _ = Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+                var process = Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+                if (process is null)
+                {
+                    throw new InvalidOperationException("Windows did not start a handler for the requested link.");
+                }
+
                 _supportStatus.Visibility = Visibility.Collapsed;
             }
-            catch (Exception exception) when (exception is System.ComponentModel.Win32Exception or InvalidOperationException)
+            catch (Exception exception) when (
+                exception is System.ComponentModel.Win32Exception or
+                InvalidOperationException or
+                IOException or
+                System.Security.SecurityException)
             {
                 StartupDiagnostics.Record($"Open {url}", exception);
                 if (clipboardFallbackText is null)
@@ -238,7 +247,10 @@ public sealed class AboutWindow : Window
                     _supportStatus.Visibility = Visibility.Visible;
                 }
                 catch (Exception clipboardException) when (
-                    clipboardException is System.Runtime.InteropServices.COMException or InvalidOperationException)
+                    clipboardException is System.Runtime.InteropServices.COMException or
+                    InvalidOperationException or
+                    UnauthorizedAccessException or
+                    System.Security.SecurityException)
                 {
                     StartupDiagnostics.Record("Copy support email fallback", clipboardException);
                     label.Text = clipboardFallbackText;
