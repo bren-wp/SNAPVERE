@@ -4,7 +4,21 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
-No post-0.1.3 changes are documented yet.
+No post-0.1.4 changes are documented yet.
+
+## [0.1.4] - 2026-09-18
+
+### CI and release reliability
+
+- Derive the Windows package/lifecycle version from the canonical `product-version.json` contract instead of a hand-maintained CI constant.
+- Fail Product Contract CI if standard CI reintroduces a hardcoded release version or if the active release workflow/trigger drifts from the canonical version.
+- Archive the completed v0.1.3 release workflow and add the controlled v0.1.4 publication workflow.
+
+### Version and documentation alignment
+
+- Move Windows product/assembly/file versions and Chrome, Edge, Opera and Firefox package versions to 0.1.4 together.
+- Correct stale versioning-document title/examples and align current EN/HR product documentation and release links.
+- Preserve the exact six-package release contract and existing local-first permission/privacy boundaries.
 
 ## [0.1.3] - 2026-09-17
 
