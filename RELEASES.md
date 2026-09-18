@@ -28,6 +28,12 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
+### Second-launch activation
+
+- Relaunching an already-running SNAPVERE instance now signals the existing tray-first process and surfaces Preferences instead of appearing to do nothing.
+- Installed and Portable launches share the same per-user activation event; Portable keeps its fast duplicate path and avoids unnecessary payload hashing/extraction.
+- Lifecycle CI requires the second launch to exit successfully, the primary process to acknowledge the activation signal and exactly one SNAPVERE app process to remain.
+
 ### Portable startup error containment
 
 - Portable startup failures now show sanitized, actionable categories instead of raw runtime exception messages that can contain local paths or internal details.
