@@ -346,7 +346,25 @@ public sealed class TrayMenuWindow : Window
         var info = new NativeMethods.MonitorInfo { Size = (uint)System.Runtime.InteropServices.Marshal.SizeOf<NativeMethods.MonitorInfo>() };
         if (monitor == nint.Zero || !NativeMethods.GetMonitorInfo(monitor, ref info))
         {
-            AppWindow.Move(new PointInt32(cursor.X - flyoutWidth + 24, cursor.Y - flyoutHeight - 12));
+            var fallbackX = cursor.X - flyoutWidth + 24;
+            var fallbackY = cursor.Y - flyoutHeight - 12;
+            var virtualLeft = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenX);
+            var virtualTop = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenY);
+            var virtualWidth = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenWidth);
+            var virtualHeight = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenHeight);
+
+            if (virtualWidth > 0 && virtualHeight > 0)
+            {
+                const int margin = 8;
+                var fallbackMinX = virtualLeft + margin;
+                var fallbackMaxX = Math.Max(fallbackMinX, virtualLeft + virtualWidth - flyoutWidth - margin);
+                var fallbackMinY = virtualTop + margin;
+                var fallbackMaxY = Math.Max(fallbackMinY, virtualTop + virtualHeight - flyoutHeight - margin);
+                fallbackX = Math.Clamp(fallbackX, fallbackMinX, fallbackMaxX);
+                fallbackY = Math.Clamp(fallbackY, fallbackMinY, fallbackMaxY);
+            }
+
+            AppWindow.Move(new PointInt32(fallbackX, fallbackY));
             return;
         }
         var minX = info.WorkArea.Left + 8;
@@ -387,6 +405,11 @@ public sealed class TrayMenuWindow : Window
 
     private static class NativeMethods
     {
+        internal const int SystemMetricVirtualScreenX = 76;
+        internal const int SystemMetricVirtualScreenY = 77;
+        internal const int SystemMetricVirtualScreenWidth = 78;
+        internal const int SystemMetricVirtualScreenHeight = 79;
+
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         internal struct Point { internal int X; internal int Y; }
 
@@ -412,5 +435,8 @@ public sealed class TrayMenuWindow : Window
         [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint = "GetMonitorInfoW", SetLastError = true)]
         [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
         internal static extern bool GetMonitorInfo(nint monitor, ref MonitorInfo monitorInfo);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        internal static extern int GetSystemMetrics(int index);
     }
 }
