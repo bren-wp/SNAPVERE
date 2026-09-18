@@ -10,8 +10,8 @@
   ],
   "windows": {
     "productVersion": "0.1.6",
-    "assemblyVersion": "0.1.5.0",
-    "fileVersion": "0.1.5.0",
+    "assemblyVersion": "0.1.6.0",
+    "fileVersion": "0.1.6.0",
     "minimumWindowsBuild": 17763,
     "wgcMinimumWindowsBuild": 19041
   },
