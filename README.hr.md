@@ -37,6 +37,8 @@ SNAPVERE 0.1.4 namijenjen je korisnicima koji žele brz i čist screenshot workf
 
 Verzija 0.1.4 dodatno čisti korisničko Windows iskustvo: interni detalji iznimki ostaju u ograničenom lokalnom diagnostic logu umjesto u Settings, Language, About, Setup ili Region Capture sučelju; oznake prečaca u trayu odgovaraju stvarno registriranim tipkama; a nepromijenjene postavke više se nepotrebno ne zapisuju na disk.
 
+Aktualni `main` dodatno sadrži **neobjavljeni post-0.1.4 reliability hardening**: sigurno paralelno spremanje PNG-a bez kolizije naziva, owner-safe browser capture lockove, zaštitu od zastarjelih Recent rezultata, kontrolirane browser/Windows akcije, multi-monitor tray fallback clamp, poboljšani recovery/accessibility sekundarnih prozora te responsive/reduced-motion browser UI. Te promjene izvornog koda ne mijenjaju retroaktivno objavljene v0.1.4 binarne datoteke.
+
 ## Windows workflow
 
 SNAPVERE radi prvenstveno iz područja obavijesti, bez stalno otvorenog dashboarda.
@@ -61,7 +63,7 @@ Detalji su u [Performanse i stabilnost](docs/hr/PERFORMANCE.md), [Window Capture
 
 Chrome, Edge, Opera i Firefox nude visible-area, selected-region i bounded full-page capture, lokalno PNG spremanje te EN/HR sučelje. Naziv proizvoda, wordmark i prefiks spremljene datoteke ostaju fiksno **SNAPVERE**.
 
-Dozvole su točno `activeTab`, `scripting`, `downloads` i `storage`, bez širokog host pristupa. Full-page capture koristi ograničeni destination canvas i oslobađa dekodirane tile resurse odmah nakon crtanja.
+Dozvole su točno `activeTab`, `scripting`, `downloads`, `downloads.open` i `storage`, bez širokog host pristupa. `downloads.open` koristi se samo nakon izričitog korisničkog klika na **Otvori** za dovršenu SNAPVERE snimku u Nedavnim snimkama. Full-page capture koristi ograničeni destination canvas i oslobađa dekodirane tile resurse odmah nakon crtanja.
 
 Browser ZIP paketi namijenjeni su ručnoj instalaciji. Vanjsko store odobrenje ne tvrdi se dok stvarni listing nije objavljen.
 
