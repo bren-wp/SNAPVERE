@@ -52,7 +52,7 @@ public static class PortableStartupDiagnostics
         };
 
         return $"{guidance}{Environment.NewLine}{Environment.NewLine}" +
-               $"Technical details were written locally to:{Environment.NewLine}{DisplayLogPath}";
+               $"Technical details are kept locally when available at:{Environment.NewLine}{DisplayLogPath}";
     }
 
     public static void RecordLaunchFailure(Exception exception)
