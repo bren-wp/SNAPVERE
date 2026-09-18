@@ -363,6 +363,59 @@ Invoke-WindowOverlayProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-SecondaryUiProbe $installedApp "Installed SNAPVERE $Arch"
 Invoke-NormalAppLaunch $installedApp "Installed SNAPVERE $Arch"
 
+# A failed external uninstall must not unregister a still-present installation.
+# Hold one application file without delete sharing so recursive removal fails,
+# then verify Windows metadata and shortcuts remain available for recovery.
+$uninstallLockPath = Join-Path $install 'uninstall-recovery-probe.lock'
+Set-Content -LiteralPath $uninstallLockPath -Value 'SNAPVERE uninstall recovery probe' -Encoding ascii
+$uninstallLock = [System.IO.File]::Open(
+    $uninstallLockPath,
+    [System.IO.FileMode]::Open,
+    [System.IO.FileAccess]::Read,
+    [System.IO.FileShare]::None)
+try {
+    $failedUninstall = Start-Process -FilePath $setup -ArgumentList @('--uninstall', '--silent') -Wait -PassThru
+    try {
+        if ($failedUninstall.ExitCode -eq 0) {
+            throw "$Arch external uninstall unexpectedly succeeded while an install file was locked."
+        }
+    }
+    finally {
+        $failedUninstall.Dispose()
+    }
+
+    if (-not (Test-Path -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\SNAPVERE')) {
+        throw "$Arch failed uninstall removed the Installed apps registration before file deletion succeeded."
+    }
+
+    $startupAfterFailedRemoval = Get-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'SNAPVERE' -ErrorAction SilentlyContinue
+    if ($null -eq $startupAfterFailedRemoval -or $null -eq $startupAfterFailedRemoval.SNAPVERE) {
+        throw "$Arch failed uninstall removed the Windows startup registration before file deletion succeeded."
+    }
+
+    $desktopShortcutAfterFailedRemoval = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::DesktopDirectory)) 'SNAPVERE.lnk'
+    if (-not (Test-Path -LiteralPath $desktopShortcutAfterFailedRemoval -PathType Leaf)) {
+        throw "$Arch failed uninstall removed the Desktop shortcut before file deletion succeeded."
+    }
+}
+finally {
+    $uninstallLock.Dispose()
+    Remove-Item -LiteralPath $uninstallLockPath -Force -ErrorAction SilentlyContinue
+}
+
+# Repair any files that the failed recursive delete may have removed before it
+# reached the locked probe file, then validate the complete installed contract.
+$repairProcess = Start-Process -FilePath $setup -ArgumentList @('--silent', '--accept-license') -Wait -PassThru
+try {
+    if ($repairProcess.ExitCode -ne 0) {
+        throw "$Arch Setup failed to repair after the intentional uninstall failure; exit code $($repairProcess.ExitCode)."
+    }
+}
+finally {
+    $repairProcess.Dispose()
+}
+& $contractScript -State Installed -InstallDirectory $install -ExpectedVersion $Version
+
 $uninstallProcess = Start-Process -FilePath $installedSetup -ArgumentList @('--uninstall', '--silent') -Wait -PassThru
 if ($uninstallProcess.ExitCode -ne 0) {
     throw "$Arch Setup failed to uninstall with code $($uninstallProcess.ExitCode)."
