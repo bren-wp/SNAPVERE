@@ -74,6 +74,7 @@ public sealed class Win32TrayIconService : ITrayIconService
     private bool _started;
     private bool _disposed;
     private int _trayRecoveryAttempt;
+    private int _trayRecoveryToken;
     private long _lastRegionClickTicks;
 
     public Win32TrayIconService()
@@ -259,6 +260,7 @@ public sealed class Win32TrayIconService : ITrayIconService
     private void BeginTrayRecovery()
     {
         CancelTrayRecoveryRetry();
+        _ = Interlocked.Increment(ref _trayRecoveryToken);
         _trayRecoveryAttempt = 0;
         TryRecoverNotificationIcon();
     }
@@ -278,6 +280,7 @@ public sealed class Win32TrayIconService : ITrayIconService
         {
             AddNotificationIcon();
             _trayRecoveryAttempt = 0;
+            _ = Interlocked.Increment(ref _trayRecoveryToken);
             CancelTrayRecoveryRetry();
             StartupDiagnostics.WriteLine("SNAPVERE tray icon restored after Explorer notification-area recreation.");
         }
@@ -296,8 +299,8 @@ public sealed class Win32TrayIconService : ITrayIconService
 
     private void ScheduleTrayRecoveryRetry(TimeSpan delay)
     {
-        nint windowHandle;
         Timer? previousTimer;
+        var token = Interlocked.Increment(ref _trayRecoveryToken);
 
         lock (_gate)
         {
@@ -306,7 +309,6 @@ public sealed class Win32TrayIconService : ITrayIconService
                 return;
             }
 
-            windowHandle = _windowHandle;
             previousTimer = _trayRecoveryTimer;
             _trayRecoveryTimer = new Timer(
                 _ =>
@@ -314,7 +316,7 @@ public sealed class Win32TrayIconService : ITrayIconService
                     nint currentWindow;
                     lock (_gate)
                     {
-                        if (_disposed)
+                        if (_disposed || token != Volatile.Read(ref _trayRecoveryToken))
                         {
                             return;
                         }
@@ -327,7 +329,7 @@ public sealed class Win32TrayIconService : ITrayIconService
                         _ = NativeMethods.PostMessage(
                             currentWindow,
                             WindowMessageRetryNotificationIcon,
-                            nuint.Zero,
+                            unchecked((nuint)(uint)token),
                             nint.Zero);
                     }
                 },
@@ -397,6 +399,12 @@ public sealed class Win32TrayIconService : ITrayIconService
 
         if (message == WindowMessageRetryNotificationIcon)
         {
+            var token = unchecked((int)(uint)wParam);
+            if (token != Volatile.Read(ref _trayRecoveryToken))
+            {
+                return nint.Zero;
+            }
+
             CancelTrayRecoveryRetry();
             TryRecoverNotificationIcon();
             return nint.Zero;
