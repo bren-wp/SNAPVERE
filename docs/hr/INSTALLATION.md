@@ -18,7 +18,8 @@ Interaktivni installer:
 - može izraditi Start menu/Desktop prečace i uključiti pokretanje s Windowsima za trenutnog korisnika,
 - ne dopušta zatvaranje čarobnjaka dok aktivna file operacija još završava,
 - korisniku prikazuje sanitizirane install/uninstall greške bez raw exception detalja,
-- zadržava Installed Apps podatke, startup registraciju i SNAPVERE prečace ako brisanje datoteka ne uspije, tako da se blokirani uninstall može popraviti ili ponoviti bez neregistrirane instalacije.
+- zadržava Installed Apps podatke, startup registraciju i SNAPVERE prečace ako brisanje datoteka ne uspije, tako da se blokirani uninstall može popraviti ili ponoviti bez neregistrirane instalacije,
+- provjerava parent proces internog deferred-cleanup workflowa i serijalizira cleanup s normalnim Setup operacijama kako odgođeni uninstall ne bi ušao u race s novim install/repair postupkom.
 
 Tihi per-user install podržava:
 
