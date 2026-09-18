@@ -67,6 +67,11 @@
     });
   }
 
+  async function invokeWithoutCallback(api, method, ...args) {
+    const result = api[method](...args);
+    return result && typeof result.then === "function" ? await result : result;
+  }
+
   async function getLocal(key) {
     return (await invoke(chrome.storage.local, "get", key)) || {};
   }
@@ -142,11 +147,13 @@
     openDownloadsFolder.disabled = true;
     setStatus(recentStatus, "");
     try {
-      await invoke(chrome.downloads, "showDefaultFolder");
+      await invokeWithoutCallback(chrome.downloads, "showDefaultFolder");
     } catch {
       setStatus(recentStatus, t("openDownloadsFolderFailed"), true);
     } finally {
-      openDownloadsFolder.disabled = false;
+      setTimeout(() => {
+        openDownloadsFolder.disabled = false;
+      }, 500);
     }
   }
 

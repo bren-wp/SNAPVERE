@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.2 Browser Extensions
+# SNAPVERE Browser Extensions
 
 Production extension packages are maintained for Google Chrome, Microsoft Edge, Opera and Mozilla Firefox.
 
@@ -28,10 +28,11 @@ The exact permission set is:
 activeTab
 scripting
 downloads
+downloads.open
 storage
 ```
 
-There is no `<all_urls>` permission and no broad `host_permissions` entry. Protected browser pages can reject capture; SNAPVERE reports a controlled error instead of attempting to bypass browser policy.
+`downloads.open` is limited to the user-triggered **Open** action for a completed SNAPVERE item in Recent captures. There is no `<all_urls>` permission and no broad `host_permissions` entry. Protected browser pages can reject capture; SNAPVERE reports a controlled error instead of attempting to bypass browser policy.
 
 ## Privacy
 

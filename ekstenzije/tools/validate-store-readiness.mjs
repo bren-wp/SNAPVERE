@@ -15,7 +15,7 @@ const expectedPackages = {
   opera: 'SNAPVERE-Opera.zip',
   firefox: 'SNAPVERE-Firefox.zip'
 };
-const allowedPermissions = ['activeTab', 'downloads', 'scripting', 'storage'].sort();
+const allowedPermissions = ['activeTab', 'downloads', 'downloads.open', 'scripting', 'storage'].sort();
 
 function fail(message) {
   throw new Error(`Store readiness validation failed: ${message}`);
@@ -108,7 +108,7 @@ if (listing.stores.edge.largePromo !== 'assets/promo-marquee-1400x560.png') fail
 if (listing.stores.firefox.sourceCodePackageRequired !== false) fail('Firefox source-code-package declaration must match the current unminified/no-build package');
 
 for (const [file, requiredPhrases] of [
-  [privacyPath, ['does not automatically upload screenshots', 'activeTab', 'scripting', 'downloads', 'storage', 'does not request `<all_urls>`']],
+  [privacyPath, ['does not automatically upload screenshots', 'activeTab', 'scripting', 'downloads', 'downloads.open', 'storage', 'does not request `<all_urls>`']],
   [reviewerPath, ['Suggested functional test', 'No account, login, payment', 'Firefox-specific note']]
 ]) {
   if (!fs.existsSync(file)) fail(`missing ${path.relative(extensionsRoot, file)}`);

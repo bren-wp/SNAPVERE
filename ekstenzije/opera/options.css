@@ -30,6 +30,7 @@ h1 { margin: 4px 0 0; font-size: 22px; }
 h2 { margin: 0; font-size: 17px; }
 .tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 14px;
 }
@@ -73,7 +74,8 @@ form { display: grid; gap: 18px; }
   font-size: 12px;
   line-height: 1.55;
 }
-.actions { display: flex; align-items: center; gap: 12px; min-height: 42px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; min-height: 42px; }
+.actions .status { flex: 1 1 220px; min-width: 0; }
 button.primary,
 button.secondary,
 .recent-open {
@@ -145,7 +147,14 @@ button:focus-visible,
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.recent-meta { margin-top: 3px; color: #8f98b0; font-size: 11px; }
+.recent-meta {
+  margin-top: 3px;
+  overflow: hidden;
+  color: #8f98b0;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .recent-open { min-height: 34px; padding: 0 12px; font-size: 12px; }
 .empty {
   padding: 22px 14px;
@@ -163,4 +172,13 @@ button:focus-visible,
   .section-actions .secondary { flex: 1 1 180px; }
   .recent-item { grid-template-columns: 1fr; }
   .recent-open { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.2 Browser Extension Privacy Policy
+# SNAPVERE Browser Extension Privacy Policy
 
 This policy applies to the SNAPVERE extensions for Chrome, Edge, Opera and Firefox.
 
@@ -23,7 +23,7 @@ The capture filename prefix is fixed to **SNAPVERE**; it is not a user profile o
 
 ## Permissions
 
-The extension requests only `activeTab`, `scripting`, `downloads` and `storage`. It does not request `<all_urls>` or broad host permissions.
+The extension requests only `activeTab`, `scripting`, `downloads`, `downloads.open` and `storage`. `downloads.open` is used only when the user explicitly chooses **Open** for a completed SNAPVERE item in Recent captures. It does not request `<all_urls>` or broad host permissions.
 
 ## Data transmission
 
