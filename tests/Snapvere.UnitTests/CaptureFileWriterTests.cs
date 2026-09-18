@@ -61,6 +61,84 @@ public sealed class CaptureFileWriterTests
         }
     }
 
+
+    [Fact]
+    public async Task SavePngAsync_RemovesOnlyStaleOwnedTemporaryFiles()
+    {
+        var directory = CreateTemporaryDirectory();
+        try
+        {
+            var fixedTime = new DateTimeOffset(2026, 9, 19, 0, 0, 0, TimeSpan.Zero);
+            var staleOwned = Path.Combine(
+                directory,
+                $".SNAPVERE_2026-09-17_120000.png.{Guid.NewGuid():N}.tmp");
+            var recentOwned = Path.Combine(
+                directory,
+                $".SNAPVERE_2026-09-18_235500.png.{Guid.NewGuid():N}.tmp");
+            var foreignSimilar = Path.Combine(
+                directory,
+                ".SNAPVERE_manual-note.png.not-a-guid.tmp");
+
+            File.WriteAllText(staleOwned, "stale");
+            File.WriteAllText(recentOwned, "recent");
+            File.WriteAllText(foreignSimilar, "foreign");
+            File.SetLastWriteTimeUtc(staleOwned, fixedTime.UtcDateTime.AddDays(-2));
+            File.SetLastWriteTimeUtc(recentOwned, fixedTime.UtcDateTime.AddMinutes(-5));
+            File.SetLastWriteTimeUtc(foreignSimilar, fixedTime.UtcDateTime.AddDays(-2));
+
+            var writer = new CaptureFileWriter(
+                new PngCaptureEncoder(),
+                new CapturePathProvider(directory),
+                new FixedTimeProvider(fixedTime));
+
+            var result = await writer.SavePngAsync(CreateFrame());
+
+            Assert.True(File.Exists(result.FilePath));
+            Assert.False(File.Exists(staleOwned));
+            Assert.True(File.Exists(recentOwned));
+            Assert.True(File.Exists(foreignSimilar));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task SavePngAsync_LeavesStaleOwnedTemporaryFileWhenItIsLocked()
+    {
+        var directory = CreateTemporaryDirectory();
+        try
+        {
+            var fixedTime = new DateTimeOffset(2026, 9, 19, 0, 0, 0, TimeSpan.Zero);
+            var staleOwned = Path.Combine(
+                directory,
+                $".SNAPVERE_2026-09-17_120000.png.{Guid.NewGuid():N}.tmp");
+            File.WriteAllText(staleOwned, "locked");
+            File.SetLastWriteTimeUtc(staleOwned, fixedTime.UtcDateTime.AddDays(-2));
+
+            await using var lockStream = new FileStream(
+                staleOwned,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.None);
+
+            var writer = new CaptureFileWriter(
+                new PngCaptureEncoder(),
+                new CapturePathProvider(directory),
+                new FixedTimeProvider(fixedTime));
+
+            var result = await writer.SavePngAsync(CreateFrame());
+
+            Assert.True(File.Exists(result.FilePath));
+            Assert.True(File.Exists(staleOwned));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     [Fact]
     public async Task SavePngAsync_CancelledTokenDoesNotPublishCapture()
     {

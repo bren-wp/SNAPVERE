@@ -28,6 +28,12 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
+### Capture persistence cleanup
+
+- New captures opportunistically remove stale SNAPVERE-owned atomic-write temp files older than 24 hours.
+- Cleanup validates the SNAPVERE temp filename shape before deletion, leaves recent/in-flight files untouched and ignores similarly named foreign files.
+- Cleanup failures are contained so a locked stale temp file never prevents capture publication.
+
 ### Windows install-target ownership
 
 - Setup no longer replaces an existing non-empty target merely because the selected directory is named SNAPVERE.
