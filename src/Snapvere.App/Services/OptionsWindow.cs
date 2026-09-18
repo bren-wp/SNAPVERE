@@ -449,7 +449,10 @@ public sealed class OptionsWindow : Window
             _preferences.SetIncludeCursorOnCapture(_cursorToggle.IsOn);
             SetStatus(_cursorToggle.IsOn ? L("CursorEnabled") : L("CursorDisabled"), Success);
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        catch (Exception exception) when (
+            exception is IOException or
+            UnauthorizedAccessException or
+            System.Security.SecurityException)
         {
             _updatingControls = true;
             try
@@ -568,8 +571,16 @@ public sealed class OptionsWindow : Window
         });
 
         var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
-        text.Children.Add(Text(capture.FileName, 11, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
-        text.Children.Add(Text(capture.MetadataText, 9, Subtle));
+        var fileName = Text(capture.FileName, 11, Strong, Microsoft.UI.Text.FontWeights.SemiBold);
+        fileName.TextWrapping = TextWrapping.NoWrap;
+        fileName.TextTrimming = TextTrimming.CharacterEllipsis;
+        ToolTipService.SetToolTip(fileName, capture.FileName);
+        text.Children.Add(fileName);
+
+        var metadata = Text(capture.MetadataText, 9, Subtle);
+        metadata.TextWrapping = TextWrapping.NoWrap;
+        metadata.TextTrimming = TextTrimming.CharacterEllipsis;
+        text.Children.Add(metadata);
         Grid.SetColumn(text, 1);
         content.Children.Add(text);
 
@@ -613,7 +624,11 @@ public sealed class OptionsWindow : Window
             _ = Process.Start(new ProcessStartInfo(capture.FilePath) { UseShellExecute = true });
         }
         catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+            exception is IOException or
+            UnauthorizedAccessException or
+            System.Security.SecurityException or
+            InvalidOperationException or
+            System.ComponentModel.Win32Exception)
         {
             StartupDiagnostics.Record("Open recent capture", exception);
             SetStatus(
@@ -633,7 +648,11 @@ public sealed class OptionsWindow : Window
             _ = Process.Start(new ProcessStartInfo(directory) { UseShellExecute = true });
         }
         catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+            exception is IOException or
+            UnauthorizedAccessException or
+            System.Security.SecurityException or
+            InvalidOperationException or
+            System.ComponentModel.Win32Exception)
         {
             StartupDiagnostics.Record("Open capture folder", exception);
             SetStatus(

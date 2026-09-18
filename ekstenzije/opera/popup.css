@@ -40,18 +40,19 @@ button { font: inherit; }
   text-align: left;
   cursor: pointer;
 }
-.capture-button:hover,
-.settings-button:hover {
+.capture-button:hover:not(:disabled),
+.settings-button:hover:not(:disabled) {
   border-color: rgba(179, 141, 255, .55);
   background: rgba(132, 88, 255, .09);
 }
-.capture-button:active { transform: translateY(1px); }
+.capture-button:active:not(:disabled) { transform: translateY(1px); }
 .capture-button:focus-visible,
 .settings-button:focus-visible {
   outline: 3px solid rgba(193, 139, 255, .8);
   outline-offset: 2px;
 }
-.capture-button:disabled { opacity: .55; cursor: progress; }
+.capture-button:disabled,
+.settings-button:disabled { opacity: .55; cursor: progress; }
 .capture-button svg,
 .settings-button svg {
   width: 22px;
@@ -94,4 +95,15 @@ button { font: inherit; }
   color: #777f9c;
   font-size: 10px;
   line-height: 1.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .capture-button,
+  .settings-button {
+    transition: none;
+  }
+
+  .capture-button:active:not(:disabled) {
+    transform: none;
+  }
 }

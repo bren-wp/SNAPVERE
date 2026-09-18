@@ -6,7 +6,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "..", "..");
 const extensionsRoot = path.join(repoRoot, "ekstenzije");
 const browsers = ["chrome", "edge", "opera", "firefox"];
-const allowedPermissions = new Set(["activeTab", "scripting", "downloads", "storage"]);
+const allowedPermissions = new Set(["activeTab", "scripting", "downloads", "downloads.open", "storage"]);
 const expectedCommands = Object.freeze({
   "capture-region": {
     default: "Ctrl+Shift+1",

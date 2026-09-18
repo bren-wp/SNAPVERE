@@ -14,14 +14,16 @@ No account, login, payment, remote server or network connection is required for 
 4. Choose **Capture visible area** and confirm that a PNG download starts locally.
 5. Choose **Capture full page** and confirm that SNAPVERE scrolls/stitches the page and starts a local PNG download. The page should return to its original scroll position.
 6. Choose **Select region**, drag a rectangle on the page and confirm that only the selected area is downloaded as PNG. Pressing Escape instead should cancel cleanly.
-7. Open **Settings**, change the filename prefix/save preference, save, reopen settings and confirm the local preference persists.
-8. Optionally test on a browser-internal/protected page. A controlled unsupported-page error is expected; the extension does not attempt to bypass browser restrictions.
+7. Open **Settings**, change the save preference, save, reopen Settings and confirm the local preference persists.
+8. Open **Recent captures** and choose **Open** on a completed SNAPVERE download; confirm the associated local application opens the file.
+9. Optionally test on a browser-internal/protected page. A controlled unsupported-page error is expected; the extension does not attempt to bypass browser restrictions.
 
 ## Permissions
 
 - `activeTab`: required to capture only the active tab after explicit user invocation.
 - `scripting`: required to inject the local full-page/region helper into that active page.
-- `downloads`: required to save requested PNG captures locally.
+- `downloads`: required to save requested PNG captures locally and enumerate completed SNAPVERE downloads for Recent captures.
+- `downloads.open`: required only for the explicit user-triggered **Open** action on a completed SNAPVERE download.
 - `storage`: required for local preferences and short-lived capture-session state.
 
 There are no `host_permissions` and no `<all_urls>` permission.

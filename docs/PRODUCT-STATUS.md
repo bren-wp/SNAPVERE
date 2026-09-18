@@ -6,11 +6,11 @@ Active maintained product surfaces are **Windows** and **browser extensions**.
 
 Production implementation includes tray-first startup, Region/Window/Screen capture, frozen-frame selection, local annotation, clipboard and PNG save workflows, local settings, recent captures, diagnostics and x86/x64/ARM64 application payloads inside universal Setup and Portable packages.
 
-Recent capture-path hardening removes redundant full-frame staging allocations from Region and Window overlay rendering and releases raw frozen monitor buffers after the corresponding UI bitmap is ready. These changes target peak memory without changing capture semantics.
+Recent capture-path hardening removes redundant full-frame staging allocations from Region and Window overlay rendering and releases raw frozen monitor buffers after the corresponding UI bitmap is ready. Post-v0.1.4 `main` additionally publishes PNG files with collision-safe commit-time naming, contains expected Settings/Recent shell and local-security failures, keeps failed language saves visually consistent with persisted state, and clamps the tray fallback inside the Windows virtual desktop. These changes target reliability without changing capture semantics.
 
 ## Browsers
 
-Production source is maintained for Chrome, Edge, Opera and Firefox. Implemented capture modes are visible area, selected region and bounded full page. Brand identity is locked to SNAPVERE. Permissions are constrained to the validated extension contract and broad host access is not part of the maintained design.
+Production source is maintained for Chrome, Edge, Opera and Firefox. Implemented capture modes are visible area, selected region and bounded full page. Brand identity is locked to SNAPVERE. The validated permission contract is `activeTab`, `scripting`, `downloads`, `downloads.open` and `storage`; `downloads.open` is used only by the explicit Recent > Open action. Broad host access is not part of the maintained design. Post-v0.1.4 `main` also hardens capture-lock ownership, Recent async ordering, duplicate action handling, browser API compatibility and reduced-motion/responsive UI behavior.
 
 GitHub release ZIPs are not represented as externally approved store listings unless that publication has actually happened.
 
@@ -30,5 +30,7 @@ The active 0.1.4 package contract contains:
 CI covers Windows builds/tests, rendered WinUI visual QA, package construction, package-size budgets and x64/x86 lifecycle completion. Browser CI validates source/runtime behavior, permissions, locales, brand lock, cross-browser parity and deterministic packaging. Product Contract CI and CodeQL run independently.
 
 These gates provide strong regression evidence; they are not a guarantee that every operating-system, driver or browser environment can never produce a platform-specific defect.
+
+The public release remains **v0.1.4**. Unreleased `main` hardening is source state only until a future version is explicitly packaged and published.
 
 See [Performance & Stability](PERFORMANCE.md), [QA Matrix](QA-MATRIX.md) and the [current release](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.4).

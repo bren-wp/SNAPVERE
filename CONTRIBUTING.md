@@ -48,13 +48,14 @@ Changes affecting capture geometry, DPI, paths, payload integrity, file publicat
 node ekstenzije/tools/validate-extensions.mjs
 node ekstenzije/tools/verify-extension-parity.mjs
 node ekstenzije/tools/smoke-test-background.mjs
+node ekstenzije/tools/test-options-runtime.mjs
 node ekstenzije/tools/validate-store-readiness.mjs
 bash ekstenzije/tools/package-extensions.sh
 ```
 
 Browser changes must preserve:
 
-- the exact permission allow-list: `activeTab`, `scripting`, `downloads`, `storage`;
+- the exact permission allow-list: `activeTab`, `scripting`, `downloads`, `downloads.open`, `storage`;
 - no broad host permissions or remote runtime code;
 - locked SNAPVERE product identity and filename prefix;
 - EN/HR resource parity;
