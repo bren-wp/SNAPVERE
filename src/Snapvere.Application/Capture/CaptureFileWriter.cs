@@ -11,6 +11,7 @@ namespace Snapvere.Application.Capture;
 public sealed class CaptureFileWriter
 {
     private const int MaximumFileNameAttempts = 1000;
+    private static readonly TimeSpan StaleTemporaryFileAge = TimeSpan.FromHours(24);
 
     private readonly PngCaptureEncoder _pngEncoder;
     private readonly CapturePathProvider _pathProvider;
@@ -36,6 +37,7 @@ public sealed class CaptureFileWriter
 
         var directory = _pathProvider.GetDefaultCaptureDirectory();
         Directory.CreateDirectory(directory);
+        CleanupStaleTemporaryFiles(directory, _timeProvider.GetUtcNow());
 
         var timestamp = _timeProvider.GetLocalNow();
         var temporaryPath = Path.Combine(
@@ -108,6 +110,69 @@ public sealed class CaptureFileWriter
         throw new IOException("SNAPVERE could not allocate a unique capture file name.");
     }
 
+    private static void CleanupStaleTemporaryFiles(string directory, DateTimeOffset utcNow)
+    {
+        try
+        {
+            var cutoffUtc = utcNow.UtcDateTime - StaleTemporaryFileAge;
+            foreach (var path in Directory.EnumerateFiles(
+                         directory,
+                         ".SNAPVERE_*.tmp",
+                         SearchOption.TopDirectoryOnly))
+            {
+                try
+                {
+                    var fileName = Path.GetFileName(path);
+                    if (!IsOwnedTemporaryFileName(fileName) ||
+                        File.GetLastWriteTimeUtc(path) > cutoffUtc)
+                    {
+                        continue;
+                    }
+
+                    File.Delete(path);
+                }
+                catch (Exception exception) when (
+                    exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+                {
+                    // Cleanup is opportunistic and must never block a new capture.
+                }
+            }
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+        {
+            // Enumerating stale temp files is best effort for the same reason.
+        }
+    }
+
+    private static bool IsOwnedTemporaryFileName(string fileName)
+    {
+        const string prefix = ".SNAPVERE_";
+        const string marker = ".png.";
+        const string suffix = ".tmp";
+
+        if (!fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ||
+            !fileName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var markerIndex = fileName.LastIndexOf(marker, StringComparison.OrdinalIgnoreCase);
+        if (markerIndex < prefix.Length)
+        {
+            return false;
+        }
+
+        var tokenStart = markerIndex + marker.Length;
+        var tokenLength = fileName.Length - tokenStart - suffix.Length;
+        if (tokenLength != 32)
+        {
+            return false;
+        }
+
+        return Guid.TryParseExact(fileName.AsSpan(tokenStart, tokenLength), "N", out _);
+    }
+
     private static void TryDeleteTemporaryFile(string path)
     {
         try
@@ -121,8 +186,8 @@ public sealed class CaptureFileWriter
             exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
         {
             // Best-effort cleanup. Never replace the original capture failure
-            // with a secondary cleanup error; a future cleanup pass can remove
-            // any leftover temporary file.
+            // with a secondary cleanup error; a later capture pass removes
+            // stale SNAPVERE-owned temporary files.
         }
     }
 }
