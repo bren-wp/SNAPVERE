@@ -32,6 +32,55 @@ public static class InstallSafetyPolicy
         return string.Equals(reader.ReadLine(), expectedHeader, StringComparison.Ordinal);
     }
 
+    public static void EnsureInstallTargetIsOwnedOrEmpty(
+        string directoryPath,
+        string markerFileName,
+        string expectedHeader,
+        params string[] ownedFileNames)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(directoryPath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(markerFileName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(expectedHeader);
+        ArgumentNullException.ThrowIfNull(ownedFileNames);
+
+        var fullPath = Path.GetFullPath(directoryPath);
+        if (!Directory.Exists(fullPath))
+        {
+            return;
+        }
+
+        EnsureExistingDirectoryChainHasNoReparsePoints(fullPath);
+
+        using var entries = Directory.EnumerateFileSystemEntries(fullPath).GetEnumerator();
+        if (!entries.MoveNext())
+        {
+            return;
+        }
+
+        var markerPath = Path.Combine(fullPath, markerFileName);
+        if (!File.Exists(markerPath))
+        {
+            throw new InvalidOperationException(
+                "SNAPVERE cannot be installed into a non-empty folder that is not a validated SNAPVERE installation.");
+        }
+
+        var markerText = File.ReadAllText(markerPath);
+        if (!HasExactMarkerHeader(markerText, expectedHeader))
+        {
+            throw new InvalidOperationException(
+                "SNAPVERE cannot be installed over a folder with an invalid SNAPVERE installation marker.");
+        }
+
+        if (ownedFileNames.Length > 0 &&
+            !ownedFileNames.Any(fileName =>
+                !string.IsNullOrWhiteSpace(fileName) &&
+                File.Exists(Path.Combine(fullPath, fileName))))
+        {
+            throw new InvalidOperationException(
+                "SNAPVERE cannot replace this folder because its installation marker is not accompanied by SNAPVERE application files.");
+        }
+    }
+
     public static void EnsureExistingDirectoryChainHasNoReparsePoints(string directoryPath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(directoryPath);
