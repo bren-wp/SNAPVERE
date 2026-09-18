@@ -160,19 +160,19 @@ internal static class InstallerEngine
                 return new InstallerResult(false, 1618, runningMessage);
             }
 
-            DeleteInstalledStartupRegistration(installRoot);
-
             var currentSetupPath = Environment.ProcessPath;
             if (currentSetupPath is not null && PathBoundary.IsSameOrDescendant(currentSetupPath, installRoot))
             {
                 StartDeferredCleanup(currentSetupPath, installRoot);
-                RemoveRegistrationsAndShortcuts();
+                return new InstallerResult(
+                    true,
+                    0,
+                    $"SNAPVERE {VersionText} removal will finish after Setup closes.");
             }
-            else
-            {
-                RemoveRegistrationsAndShortcuts();
-                DeleteValidatedInstallationWithRetries(installRoot);
-            }
+
+            DeleteValidatedInstallationWithRetries(installRoot);
+            DeleteInstalledStartupRegistration(installRoot);
+            RemoveRegistrationsAndShortcuts();
 
             return new InstallerResult(true, 0, $"SNAPVERE {VersionText} was removed from this Windows account.");
         }
@@ -202,6 +202,8 @@ internal static class InstallerEngine
 
             var installRoot = ValidateExistingInstallForRemoval(installDirectory);
             DeleteValidatedInstallationWithRetries(installRoot);
+            DeleteInstalledStartupRegistration(installRoot);
+            RemoveRegistrationsAndShortcuts();
             ScheduleMaintenanceSelfCleanup();
             return new InstallerResult(true, 0, "SNAPVERE cleanup completed.");
         }
@@ -283,7 +285,9 @@ internal static class InstallerEngine
 
     private static void RemoveRegistrationsAndShortcuts()
     {
-        DeleteFileBestEffort(GetStartMenuShortcutPath());
+        var startMenuShortcut = GetStartMenuShortcutPath();
+        DeleteFileBestEffort(startMenuShortcut);
+        DeleteDirectoryIfEmptyBestEffort(Path.GetDirectoryName(startMenuShortcut)!);
         DeleteFileBestEffort(GetDesktopShortcutPath());
         DeleteUninstallRegistration();
     }
@@ -504,14 +508,11 @@ internal static class InstallerEngine
     }
 
     private static string GetStartMenuShortcutPath()
-    {
-        var folder = Path.Combine(
+        => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.StartMenu),
             "Programs",
-            ProductName);
-        Directory.CreateDirectory(folder);
-        return Path.Combine(folder, "SNAPVERE.lnk");
-    }
+            ProductName,
+            "SNAPVERE.lnk");
 
     private static string GetDesktopShortcutPath()
         => Path.Combine(
@@ -602,6 +603,26 @@ internal static class InstallerEngine
             if (File.Exists(path))
             {
                 File.Delete(path);
+            }
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+        catch (System.Security.SecurityException)
+        {
+        }
+    }
+
+    private static void DeleteDirectoryIfEmptyBestEffort(string path)
+    {
+        try
+        {
+            if (Directory.Exists(path) && !Directory.EnumerateFileSystemEntries(path).Any())
+            {
+                Directory.Delete(path, recursive: false);
             }
         }
         catch (IOException)
