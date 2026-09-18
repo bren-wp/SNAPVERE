@@ -109,6 +109,16 @@ def main() -> int:
         if required not in ci:
             fail(f"standard CI is missing canonical version resolution fragment: {required}")
 
+    portable_program = read_text(ROOT / "src" / "Snapvere.Portable" / "Program.cs")
+    if re.search(r"\bexception\.Message\b", portable_program):
+        fail("Portable startup UI must not expose raw exception.Message details")
+    for required in (
+        "PortableStartupDiagnostics.RecordLaunchFailure(exception)",
+        "PortableStartupDiagnostics.GetUserFacingFailureMessage(exception)",
+    ):
+        if required not in portable_program:
+            fail(f"Portable startup error containment is missing required fragment: {required}")
+
     windows = contract.get("windows", {})
     props = ROOT / "Directory.Build.props"
     if xml_property(props, "VersionPrefix") != version or windows.get("productVersion") != version:

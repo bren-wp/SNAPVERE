@@ -33,7 +33,7 @@ A capture failure on protected content or a browser-reserved page is not by itse
 - Setup/Portable payload integrity is checked against architecture-specific trusted metadata.
 - Portable cache corruption or unexpected content causes rejection/rebuild rather than silent execution.
 - Package lifecycle is validated for x64 and x86; x86/x64/ARM64 application payloads are built and structurally checked.
-- Startup diagnostics are local and size-bounded. User-facing fatal startup messages do not intentionally expose raw exception details; technical information remains in the local log.
+- Startup diagnostics are local and size-bounded. Desktop and Portable user-facing fatal startup messages use sanitized categories rather than raw exception text; technical exception details remain only in the local log. Product Contract CI rejects direct Portable `exception.Message` exposure.
 
 ## Browser extension security boundaries
 

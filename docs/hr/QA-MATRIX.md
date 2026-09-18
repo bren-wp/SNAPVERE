@@ -5,7 +5,7 @@ Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani 
 ## Windows gateovi
 
 - .NET restore s vulnerability auditom.
-- x64 build i unit-test suite, uključujući paralelno PNG spremanje dviju snimki s istim timestampom te stale/recent/foreign/locked capture-temp cleanup granice.
+- x64 build i unit-test suite, uključujući paralelno PNG spremanje dviju snimki s istim timestampom, stale/recent/foreign/locked capture-temp cleanup granice i provjeru da Portable startup poruke ne izlažu umetnute privatne putanje iz exception teksta.
 - x86 build i ARM64 cross-build.
 - provjera native payload strukture.
 - stvarni renderirani WinUI snapshotovi za Region, Window, Tray, Options, Language i About.
@@ -35,7 +35,7 @@ Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani 
 
 ## Repository i sigurnost
 
-- Product Contract CI.
+- Product Contract CI, uključujući source contract koji odbija izravno Portable `exception.Message` izlaganje i zahtijeva centralizirani sanitizirani diagnostics put.
 - CodeQL za C#, JavaScript/TypeScript, Python i GitHub Actions.
 - pinned workflow actions.
 - dependency monitoring.
