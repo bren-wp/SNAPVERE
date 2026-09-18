@@ -4,7 +4,16 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
-No changes documented yet.
+### Setup security, lifecycle and accessibility
+
+- Require an exact installation-marker header during uninstall validation instead of accepting arbitrary strings that merely start with the trusted marker prefix.
+- Reject installer paths whose existing directory chain traverses a symbolic link or reparse-point directory before Setup mutates the target.
+- Sanitize silent/deferred install and uninstall failures instead of returning raw exception messages.
+- Fail closed when Setup cannot verify a same-installation running SNAPVERE process.
+- Prevent closing the interactive wizard while an active file operation is still completing, and make progress callbacks safe against UI disposal.
+- Avoid duplicate `SNAPVERE\\SNAPVERE` folder selection, improve keyboard/accessibility metadata and position the wizard on the active monitor with scrollable narrow-screen fallback.
+- Add regression tests for marker matching, install-folder normalization and normal directory-chain validation.
+- Refresh EN/HR installation documentation, including the existing silent install/uninstall contract.
 
 ## [0.1.5] - 2026-09-18
 
