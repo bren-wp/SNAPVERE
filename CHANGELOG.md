@@ -16,6 +16,8 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 - Move registration/shortcut cleanup into successful deferred cleanup instead of unregistering the product before the maintenance process removes files.
 - Stop creating the SNAPVERE Start menu directory as a side effect of uninstall path lookup and remove the product folder when it becomes empty.
 - Add a real package-lifecycle regression probe that intentionally locks an installed file, requires uninstall failure, verifies registration metadata is preserved, repairs the installation and then completes a normal uninstall.
+- Reject malformed deferred-cleanup requests without a positive parent PID and serialize maintenance cleanup with the same Setup mutex used by normal install/uninstall operations.
+- Add lifecycle coverage proving invalid cleanup requests return `87` and cleanup loses safely with `1618` when another Setup operation owns the mutex.
 
 ## [0.1.6] - 2026-09-18
 
