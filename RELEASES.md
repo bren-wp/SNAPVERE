@@ -28,6 +28,13 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
+### Portable startup error containment
+
+- Portable startup failures now show sanitized, actionable categories instead of raw runtime exception messages that can contain local paths or internal details.
+- Full technical exception information remains local in the bounded SNAPVERE startup log and is not uploaded automatically.
+- Product Contract CI locks the sanitization call path, and unit tests verify injected private-path text never reaches the user-facing message.
+- Active EN/HR troubleshooting guidance no longer carries the stale 0.1.2 title.
+
 ### Windows install-target ownership
 
 - Setup no longer replaces an existing non-empty target merely because the selected directory is named SNAPVERE.
