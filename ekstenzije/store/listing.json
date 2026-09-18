@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "product": "SNAPVERE",
-  "extensionVersion": "0.1.5",
-  "developmentChannel": "v0.1.5-release",
+  "extensionVersion": "0.1.6",
+  "developmentChannel": "v0.1.6-release",
   "category": "Productivity",
   "singlePurpose": "Capture the visible area, a full page, or a user-selected region of the active browser tab and save the result locally as a PNG.",
-  "website": "https://github.com/bren-wp/SNAPVERE",
-  "supportUrl": "https://github.com/bren-wp/SNAPVERE/issues",
+  "website": "https://snapvere.com",
+  "supportUrl": "https://snapvere.com",
   "privacyPolicyUrl": "https://github.com/bren-wp/SNAPVERE/blob/main/ekstenzije/PRIVACY.md",
   "permissions": {
     "activeTab": "Access only the tab on which the user explicitly invokes SNAPVERE so the requested screenshot can be captured.",

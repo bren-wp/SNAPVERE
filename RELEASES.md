@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.5**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.5
+- Current public release: **v0.1.6**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.6
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,43 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No post-v0.1.5 release changes are documented yet.
+No post-v0.1.6 release changes are documented yet.
+
+---
+
+## v0.1.6 — 2026-09-18
+
+SNAPVERE 0.1.6 is a maintenance, security and UX release for the active **Windows + Chrome/Edge/Opera/Firefox** product line. It preserves the local-first privacy model and exact six-package public contract while hardening Setup path handling, uninstall validation, browser message ownership and accessibility.
+
+### Setup security, lifecycle and UX
+
+- Uninstall validation requires an exact trusted installation-marker header instead of accepting prefix matches.
+- Setup rejects existing path chains that traverse symbolic links or reparse-point directories before mutating the target.
+- Silent and deferred install/uninstall failures remain sanitized and do not expose raw exception details.
+- Running-process verification fails closed when Windows prevents reliable inspection.
+- The interactive wizard prevents closure during active file mutation, handles progress callbacks safely during disposal, normalizes custom install folders and improves keyboard/accessibility metadata.
+- The wizard uses DPI-aware scaling, active-monitor positioning, scrollable narrow-screen fallback and a resizable Windows 11-style dark layout.
+
+### Browser message ownership and regression coverage
+
+- Chrome, Edge, Opera and Firefox validate extension-origin message senders and active-tab ownership before privileged capture/download actions proceed.
+- Capture-session ownership remains bounded to the initiating tab/window and stale ownership cannot authorize a later unrelated request.
+- Shared background-runtime tests cover sender ownership and preserve cross-browser parity.
+
+### Release integrity
+
+The v0.1.6 release contract remains exactly:
+
+```text
+SNAPVERE-Setup.exe
+SNAPVERE-Portable.exe
+SNAPVERE-Chrome.zip
+SNAPVERE-Edge.zip
+SNAPVERE-Opera.zip
+SNAPVERE-Firefox.zip
+```
+
+Publication is gated by Product Contract CI, Browser Extensions CI, Windows CI, CodeQL, deterministic browser packaging, x64/x86 Setup and Portable lifecycle validation, package-size budgets and post-publication SHA-256 verification.
 
 ---
 

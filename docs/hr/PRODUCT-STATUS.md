@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.5 Status proizvoda
+# SNAPVERE 0.1.6 Status proizvoda
 
 Aktualne održavane površine proizvoda su **Windows** i **browser ekstenzije**.
 
@@ -6,15 +6,15 @@ Aktualne održavane površine proizvoda su **Windows** i **browser ekstenzije**.
 
 Produkcijska implementacija uključuje tray-first startup, Region/Window/Screen capture, frozen-frame odabir, lokalne anotacije, clipboard i PNG save workflow, lokalne postavke, nedavne snimke, dijagnostiku te x86/x64/ARM64 aplikacijske payloade u universal Setup i Portable paketima.
 
-Najnoviji capture-path hardening uklanja redundantne full-frame staging alokacije iz Region i Window prikaza te oslobađa raw frozen monitor buffere nakon što je odgovarajući UI bitmap spreman. SNAPVERE 0.1.5 dodatno objavljuje PNG datoteke uz collision-safe dodjelu naziva na commit granici, kontrolira očekivane Settings/Recent shell i lokalne security greške, vraća jezični odabir na stvarno spremljenu vrijednost nakon neuspjelog zapisa te drži tray fallback unutar Windows virtualnog desktopa.
+Najnoviji capture-path hardening uklanja redundantne full-frame staging alokacije iz Region i Window prikaza te oslobađa raw frozen monitor buffere nakon što je odgovarajući UI bitmap spreman. SNAPVERE 0.1.6 dodatno učvršćuje Setup protiv reparse-point/symlink putanja i marker-prefix spoofinga, sanitizira deferred installer greške te poboljšava tipkovnicu, DPI i narrow-screen ponašanje instalera. SNAPVERE 0.1.6 dodatno objavljuje PNG datoteke uz collision-safe dodjelu naziva na commit granici, kontrolira očekivane Settings/Recent shell i lokalne security greške, vraća jezični odabir na stvarno spremljenu vrijednost nakon neuspjelog zapisa te drži tray fallback unutar Windows virtualnog desktopa.
 
 ## Browseri
 
-Chrome, Edge, Opera i Firefox održavaju visible-area, selected-region i bounded full-page capture. SNAPVERE brand je zaključan. Validirani permission contract je `activeTab`, `scripting`, `downloads`, `downloads.open` i `storage`; `downloads.open` koristi se samo za izričitu Recent > Otvori radnju. Široki host pristup nije dio održavanog dizajna. SNAPVERE 0.1.5 dodatno učvršćuje capture-lock ownership, async redoslijed Recent rezultata, zaštitu od dvostrukih akcija, kompatibilnost browser API poziva i responsive/reduced-motion ponašanje te premješta macOS Full Page prečac sa sistemski rezervirane kombinacije Command+Shift+3.
+Chrome, Edge, Opera i Firefox održavaju visible-area, selected-region i bounded full-page capture. SNAPVERE brand je zaključan. Validirani permission contract je `activeTab`, `scripting`, `downloads`, `downloads.open` i `storage`; `downloads.open` koristi se samo za izričitu Recent > Otvori radnju. Široki host pristup nije dio održavanog dizajna. SNAPVERE 0.1.6 dodatno provjerava sender i active-tab ownership prije privilegiranih capture/download radnji. SNAPVERE 0.1.6 dodatno učvršćuje capture-lock ownership, async redoslijed Recent rezultata, zaštitu od dvostrukih akcija, kompatibilnost browser API poziva i responsive/reduced-motion ponašanje te premješta macOS Full Page prečac sa sistemski rezervirane kombinacije Command+Shift+3.
 
 ## Paketi
 
-Aktualni 0.1.5 ugovor sadrži `SNAPVERE-Setup.exe`, `SNAPVERE-Portable.exe`, `SNAPVERE-Chrome.zip`, `SNAPVERE-Edge.zip`, `SNAPVERE-Opera.zip` i `SNAPVERE-Firefox.zip`.
+Aktualni 0.1.6 ugovor sadrži `SNAPVERE-Setup.exe`, `SNAPVERE-Portable.exe`, `SNAPVERE-Chrome.zip`, `SNAPVERE-Edge.zip`, `SNAPVERE-Opera.zip` i `SNAPVERE-Firefox.zip`.
 
 ## Kvaliteta
 
@@ -22,6 +22,6 @@ CI provjerava Windows buildove/testove, renderirani WinUI visual QA, package-siz
 
 To je jaka regresijska evidencija, ali nije obećanje da svaka platforma, driver ili preglednik nikada ne može imati specifičan problem.
 
-Javno izdanje je **v0.1.5**. Kasniji neobjavljeni hardening na `main` grani predstavlja izvorni kod dok se buduća verzija izričito ne zapakira i objavi.
+Javno izdanje je **v0.1.6**. Kasniji neobjavljeni hardening na `main` grani predstavlja izvorni kod dok se buduća verzija izričito ne zapakira i objavi.
 
-Povezano: [Performanse i stabilnost](PERFORMANCE.md), [QA matrica](QA-MATRIX.md) i https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.5
+Povezano: [Performanse i stabilnost](PERFORMANCE.md), [QA matrica](QA-MATRIX.md) i https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.6
