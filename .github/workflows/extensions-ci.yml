@@ -53,6 +53,7 @@ jobs:
           node --check ekstenzije/tools/validate-store-readiness.mjs
           node --check ekstenzije/tools/smoke-test-background.mjs
           node --check ekstenzije/tools/test-hotkey-failure-feedback.mjs
+          node --check ekstenzije/tools/test-options-runtime.mjs
           python -m py_compile ekstenzije/tools/generate-store-assets.py
 
       - name: Exercise background runtime behavior
@@ -60,6 +61,9 @@ jobs:
 
       - name: Exercise hotkey failure feedback
         run: node ekstenzije/tools/test-hotkey-failure-feedback.mjs
+
+      - name: Exercise options runtime race and activation behavior
+        run: node ekstenzije/tools/test-options-runtime.mjs
 
       - name: Generate browser store assets
         shell: bash

@@ -11,6 +11,8 @@
   const refreshRecent = document.getElementById("refresh-recent");
   const openDownloadsFolder = document.getElementById("open-downloads-folder");
   const tabs = Array.from(document.querySelectorAll("[data-panel]"));
+  let recentLoadGeneration = 0;
+  let activePanelId = null;
 
   function t(key, substitutions) {
     return chrome.i18n.getMessage(key, substitutions) || key;
@@ -30,34 +32,52 @@
     return chrome.runtime.lastError ? new Error(chrome.runtime.lastError.message) : null;
   }
 
-  function getLocal(key) {
+  function invoke(api, method, ...args) {
     return new Promise((resolve, reject) => {
-      chrome.storage.local.get(key, (value) => {
+      let settled = false;
+      const callback = (value) => {
+        if (settled) return;
+        settled = true;
         const error = runtimeError();
         if (error) reject(error);
-        else resolve(value || {});
-      });
+        else resolve(value);
+      };
+
+      try {
+        const maybePromise = api[method](...args, callback);
+        if (maybePromise && typeof maybePromise.then === "function") {
+          maybePromise.then((value) => {
+            if (!settled) {
+              settled = true;
+              resolve(value);
+            }
+          }, (error) => {
+            if (!settled) {
+              settled = true;
+              reject(error);
+            }
+          });
+        }
+      } catch (error) {
+        if (!settled) {
+          settled = true;
+          reject(error);
+        }
+      }
     });
+  }
+
+  async function getLocal(key) {
+    return (await invoke(chrome.storage.local, "get", key)) || {};
   }
 
   function setLocal(value) {
-    return new Promise((resolve, reject) => {
-      chrome.storage.local.set(value, () => {
-        const error = runtimeError();
-        if (error) reject(error);
-        else resolve();
-      });
-    });
+    return invoke(chrome.storage.local, "set", value);
   }
 
-  function searchDownloads(query) {
-    return new Promise((resolve, reject) => {
-      chrome.downloads.search(query, (items) => {
-        const error = runtimeError();
-        if (error) reject(error);
-        else resolve(Array.isArray(items) ? items : []);
-      });
-    });
+  async function searchDownloads(query) {
+    const items = await invoke(chrome.downloads, "search", query);
+    return Array.isArray(items) ? items : [];
   }
 
   function setStatus(node, message, error = false) {
@@ -104,25 +124,29 @@
     return parts.join(" · ");
   }
 
-  function openDownload(item) {
+  async function openDownload(item, button) {
+    if (!button || button.disabled) return;
+    button.disabled = true;
+    setStatus(recentStatus, "");
     try {
-      const result = chrome.downloads.open(item.id);
-      if (result && typeof result.catch === "function") {
-        result.catch(() => setStatus(recentStatus, t("openCaptureFailed"), true));
-      }
+      await invoke(chrome.downloads, "open", item.id);
     } catch {
       setStatus(recentStatus, t("openCaptureFailed"), true);
+    } finally {
+      if (button.isConnected) button.disabled = false;
     }
   }
 
-  function openDefaultDownloadsFolder() {
+  async function openDefaultDownloadsFolder() {
+    if (openDownloadsFolder.disabled) return;
+    openDownloadsFolder.disabled = true;
+    setStatus(recentStatus, "");
     try {
-      const result = chrome.downloads.showDefaultFolder();
-      if (result && typeof result.catch === "function") {
-        result.catch(() => setStatus(recentStatus, t("openDownloadsFolderFailed"), true));
-      }
+      await invoke(chrome.downloads, "showDefaultFolder");
     } catch {
       setStatus(recentStatus, t("openDownloadsFolderFailed"), true);
+    } finally {
+      openDownloadsFolder.disabled = false;
     }
   }
 
@@ -155,7 +179,7 @@
       open.type = "button";
       open.className = "recent-open";
       open.textContent = t("openCapture");
-      open.addEventListener("click", () => openDownload(item));
+      open.addEventListener("click", () => void openDownload(item, open));
 
       row.append(copy, open);
       recentList.appendChild(row);
@@ -163,22 +187,37 @@
   }
 
   async function loadRecent() {
+    const generation = ++recentLoadGeneration;
     refreshRecent.disabled = true;
+    recentList.setAttribute("aria-busy", "true");
     setStatus(recentStatus, t("loadingRecent"));
     try {
       const items = await searchDownloads({ orderBy: ["-startTime"], limit: 100 });
+      if (generation !== recentLoadGeneration || activePanelId !== "recent-panel") return;
       const recent = items.filter(isSnapvereCapture).slice(0, RECENT_LIMIT);
       renderRecent(recent);
       setStatus(recentStatus, recent.length ? t("recentReady") : "");
     } catch {
+      if (generation !== recentLoadGeneration || activePanelId !== "recent-panel") return;
       recentList.replaceChildren();
       setStatus(recentStatus, t("recentLoadFailed"), true);
     } finally {
-      refreshRecent.disabled = false;
+      if (generation === recentLoadGeneration) {
+        refreshRecent.disabled = false;
+        recentList.setAttribute("aria-busy", "false");
+      }
     }
   }
 
   function showPanel(panelId, updateHash = true, focusTab = false) {
+    const previousPanelId = activePanelId;
+    activePanelId = panelId;
+    if (previousPanelId === "recent-panel" && panelId !== "recent-panel") {
+      recentLoadGeneration += 1;
+      refreshRecent.disabled = false;
+      recentList.setAttribute("aria-busy", "false");
+    }
+
     let activeTab = null;
     for (const tab of tabs) {
       const active = tab.dataset.panel === panelId;
@@ -194,7 +233,7 @@
       history.replaceState(null, "", panelId === "recent-panel" ? "#recent" : "#settings");
     }
     if (focusTab && activeTab) activeTab.focus();
-    if (panelId === "recent-panel") void loadRecent();
+    if (panelId === "recent-panel" && previousPanelId !== "recent-panel") void loadRecent();
   }
 
   function handleTabKeydown(event) {
@@ -225,12 +264,17 @@
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const submit = form.querySelector('button[type="submit"]');
+    if (submit && submit.disabled) return;
+    if (submit) submit.disabled = true;
     setStatus(settingsStatus, "");
     try {
       await setLocal({ [SETTINGS_KEY]: { saveAs: saveAsInput.checked === true } });
       setStatus(settingsStatus, t("settingsSaved"));
     } catch {
       setStatus(settingsStatus, t("settingsSaveFailed"), true);
+    } finally {
+      if (submit) submit.disabled = false;
     }
   });
 
@@ -239,7 +283,7 @@
     tab.addEventListener("keydown", handleTabKeydown);
   }
   refreshRecent.addEventListener("click", () => void loadRecent());
-  openDownloadsFolder.addEventListener("click", openDefaultDownloadsFolder);
+  openDownloadsFolder.addEventListener("click", () => void openDefaultDownloadsFolder());
 
   localize();
   loadSettings().catch(() => setStatus(settingsStatus, t("settingsLoadFailed"), true));
