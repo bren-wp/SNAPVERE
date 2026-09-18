@@ -4,6 +4,13 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Portable startup error containment
+
+- Stop rendering raw Portable launcher exception messages in user-visible dialogs.
+- Keep technical exception details in the local bounded startup diagnostic log while returning stable, actionable error categories to the user.
+- Add Product Contract and unit-test regression coverage that rejects direct `exception.Message` exposure and verifies sensitive local paths stay out of Portable failure dialogs.
+- Refresh EN/HR troubleshooting documentation and remove stale version-specific 0.1.2 headings from active guidance.
+
 ### Capture persistence cleanup
 
 - Remove only stale SNAPVERE-owned atomic-write temp files before a new capture, using an ownership-shaped filename check and a 24-hour age threshold.
