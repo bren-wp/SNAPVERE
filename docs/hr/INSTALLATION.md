@@ -13,6 +13,7 @@ Interaktivni installer:
 - omogućuje odabir druge mape bez slučajnog `SNAPVERE\SNAPVERE` dupliranja,
 - izdvaja payload u staging prije objave,
 - odbija instalaciju izravno u root diska, Windows sistemsku mapu i kroz reparse-point/symlink putanju,
+- odbija zamijeniti neprazni custom target ako nije validirana postojeća SNAPVERE instalacija,
 - čuva prethodnu validiranu instalaciju ako upgrade ne može završiti,
 - registrira uninstall podatke za Windows Installed Apps,
 - može izraditi Start menu/Desktop prečace i uključiti pokretanje s Windowsima za trenutnog korisnika,
