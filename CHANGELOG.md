@@ -4,6 +4,13 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Browser message ownership and error containment
+
+- Separate extension-page capture commands from tab-owned capture-session callbacks in the browser background runtime.
+- Reject `CAPTURE_VISIBLE`, `CAPTURE_REGION` and `CAPTURE_FULL` when they originate from an injected tab script or another extension identity.
+- Preserve region token/tab/window ownership checks and stop returning raw internal error messages in background message responses.
+- Add cross-browser behavioral regression coverage for wrong-sender command attempts while preserving byte-identical shared runtime files.
+
 ### Setup security, lifecycle and accessibility
 
 - Require an exact installation-marker header during uninstall validation instead of accepting arbitrary strings that merely start with the trusted marker prefix.

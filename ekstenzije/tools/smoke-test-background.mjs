@@ -28,6 +28,7 @@ function createRuntime(initialStorage = {}, options = {}) {
 
   const chrome = {
     runtime: {
+      id: "snapvere-test-extension",
       lastError: null,
       onMessage: { addListener(listener) { messageListener = listener; } }
     },
@@ -151,7 +152,7 @@ function createRuntime(initialStorage = {}, options = {}) {
   };
 }
 
-function send(listener, message, sender = {}) {
+function send(listener, message, sender = { id: "snapvere-test-extension" }) {
   return new Promise((resolve, reject) => {
     let settled = false;
     const timeout = setTimeout(() => {
@@ -339,13 +340,42 @@ async function runVariant(browser) {
     const selected = await send(
       runtime.listener,
       { type: 'REGION_SELECTED', token, rect: { x: 10, y: 12, width: 80, height: 60 } },
-      { tab: { id: 7, windowId: 3 } }
+      { id: "snapvere-test-extension", tab: { id: 7, windowId: 3 } }
     );
     assert.equal(selected.ok, false);
     assert.equal(selected.errorKey, 'captureTabChanged');
     assert.equal(runtime.captures.length, 0);
     assert.equal(runtime.downloads.length, 0);
     assert.equal(runtime.storage.snapvereActiveCapture, undefined);
+  }
+
+  {
+    const runtime = createRuntime();
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    const response = await send(
+      runtime.listener,
+      { type: 'CAPTURE_VISIBLE' },
+      { id: 'snapvere-test-extension', tab: { id: 7, windowId: 3 } }
+    );
+    assert.equal(response.ok, false);
+    assert.equal(response.errorKey, 'captureFailed');
+    assert.equal(runtime.captures.length, 0);
+    assert.equal(runtime.downloads.length, 0);
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined);
+  }
+
+  {
+    const runtime = createRuntime();
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    const response = await send(
+      runtime.listener,
+      { type: 'CAPTURE_VISIBLE' },
+      { id: 'different-extension' }
+    );
+    assert.equal(response.ok, false);
+    assert.equal(response.errorKey, 'captureFailed');
+    assert.equal(runtime.captures.length, 0);
+    assert.equal(runtime.downloads.length, 0);
   }
 
   {

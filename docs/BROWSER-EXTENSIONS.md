@@ -32,6 +32,10 @@ Full-page capture uses explicit limits for tile count, canvas dimensions and tot
 
 Region-capture failures that occur after the popup closes are shown as a transient localized in-page SNAPVERE status.
 
+## Message ownership
+
+The background runtime separates capture commands from capture-session callbacks. `CAPTURE_VISIBLE`, `CAPTURE_REGION` and `CAPTURE_FULL` are accepted only from SNAPVERE extension pages, not from an injected tab content script. Region-session callbacks are accepted only from the owning tab and still require the matching capture token, tab ID and window ID. Responses exposed to extension UI use bounded error keys instead of returning raw internal exception messages.
+
 ## Keyboard shortcuts
 
 Default browser capture shortcuts are `Ctrl+Shift+1` (Region), `Ctrl+Shift+2` (Visible area) and `Ctrl+Shift+3` (Full page). On macOS the defaults are `Command+Shift+1`, `Command+Shift+2` and `Command+Shift+7`; Full page intentionally avoids the system-reserved `Shift+Command+3` screenshot shortcut. Users can remap extension commands through their browser's extension-shortcut UI.

@@ -6,6 +6,10 @@ Ekstenzije traže samo `activeTab`, `scripting`, `downloads`, `downloads.open` i
 
 Kod cijele stranice svaki dekodirani tile odmah se crta u jedan ograničeni canvas i zatim oslobađa, čime se smanjuje vršno korištenje memorije. Promjena aktivne kartice prekida snimanje kako se ne bi spremio sadržaj pogrešne kartice.
 
+## Ownership poruka
+
+Background runtime odvaja korisničke capture naredbe od callbackova aktivne capture sesije. `CAPTURE_VISIBLE`, `CAPTURE_REGION` i `CAPTURE_FULL` prihvaćaju se samo iz SNAPVERE extension stranica, a ne iz injektiranog content scripta kartice. Callbackovi region sesije prihvaćaju se samo od vlasničke kartice i dodatno moraju odgovarati capture tokenu, ID-u kartice i ID-u prozora. Odgovori prema extension UI-ju koriste ograničene error ključeve umjesto raw internih exception poruka.
+
 ## Tipkovnički prečaci
 
 Zadani browser prečaci su `Ctrl+Shift+1` (područje), `Ctrl+Shift+2` (vidljivo područje) i `Ctrl+Shift+3` (cijela stranica). Na macOS-u zadane kombinacije su `Command+Shift+1`, `Command+Shift+2` i `Command+Shift+7`; cijela stranica namjerno izbjegava sistemski rezervirani `Shift+Command+3` screenshot prečac. Korisnik ih može promijeniti kroz browser sučelje za prečace ekstenzija.
