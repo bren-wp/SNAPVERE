@@ -4,7 +4,32 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
-No post-0.1.4 changes are documented yet.
+### Reliability and concurrency
+
+- Make Windows PNG publication collision-safe when simultaneous captures share the same timestamp by allocating the visible filename at the atomic move boundary and retrying deterministic suffixes without re-encoding.
+- Make browser capture-lock mutation owner-safe so stale cleanup cannot remove a newer capture lock.
+- Prevent stale asynchronous Recent-capture searches from overwriting newer browser UI state.
+- Guard repeated Open, Open downloads folder and Settings-save activation while the corresponding browser action is in flight or cooling down.
+
+### Browser correctness, permissions and UI
+
+- Add the scoped `downloads.open` permission required by the existing user-triggered Recent > Open action, while retaining no broad host permissions or `<all_urls>` access.
+- Match `downloads.showDefaultFolder()` to its actual no-callback API shape and keep duplicate folder-open activation bounded.
+- Improve narrow-layout behavior, disabled states, metadata truncation and `prefers-reduced-motion` handling consistently across Chrome, Edge, Opera and Firefox.
+- Expand behavioral regression coverage for Recent ordering, duplicate actions and capture-lock interleavings.
+
+### Windows UX and resilience
+
+- Contain expected local security/shell/filesystem failures in Settings/Recent instead of allowing them to escape UI handlers.
+- Keep language selection consistent with the actually persisted preference after a failed write and announce status changes through accessibility live regions.
+- Harden About link/clipboard fallback handling and treat missing shell handlers as controlled failures.
+- Clamp the tray flyout fallback to the Windows virtual desktop when monitor work-area lookup is unavailable.
+- Truncate unusually long Recent filenames/metadata without losing the complete filename tooltip.
+
+### Documentation
+
+- Align browser permission, security, QA and contribution documentation with the implemented post-v0.1.4 behavior.
+- Remove stale active-document version labels while preserving immutable historical release records.
 
 ## [0.1.4] - 2026-09-18
 
