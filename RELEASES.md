@@ -28,6 +28,12 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
+### Local shell error containment
+
+- Tray and Options local file/folder opening now share one bounded expected-failure policy for Windows I/O, access, security-policy, invalid shell state and Win32 handler failures.
+- The tray **Open capture folder** path now contains the same restrictive-policy and shell-state failures already handled by the Options surface, preventing those expected local failures from escaping the UI callback.
+- Unit tests lock the expected exception taxonomy without turning arbitrary application failures into silent shell errors.
+
 ### Second-launch activation
 
 - Relaunching an already-running SNAPVERE instance now signals the existing tray-first process and surfaces Preferences instead of appearing to do nothing.
