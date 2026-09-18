@@ -16,7 +16,7 @@ Bez računa. Bez telemetrije snimki. Bez automatskog cloud uploada.
 [![Product Contract](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Web stranica](https://snapvere.com) · [Preuzmi v0.1.5](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.5) · [Dokumentacija](docs/hr/README.md) · [English](README.md)
+[Web stranica](https://snapvere.com) · [Preuzmi v0.1.6](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.6) · [Dokumentacija](docs/hr/README.md) · [English](README.md)
 
 </div>
 
@@ -24,7 +24,7 @@ Bez računa. Bez telemetrije snimki. Bez automatskog cloud uploada.
 
 ## Zašto SNAPVERE
 
-SNAPVERE 0.1.5 namijenjen je korisnicima koji žele brz i čist screenshot workflow: snimiti točne piksele, označiti ih, kopirati ili spremiti lokalno i nastaviti raditi.
+SNAPVERE 0.1.6 namijenjen je korisnicima koji žele brz i čist screenshot workflow: snimiti točne piksele, označiti ih, kopirati ili spremiti lokalno i nastaviti raditi.
 
 | | Što dobivate |
 | --- | --- |
@@ -35,9 +35,9 @@ SNAPVERE 0.1.5 namijenjen je korisnicima koji žele brz i čist screenshot workf
 | 📦 **Setup ili Portable** | Universal Windows paketi s x86, x64 i ARM64 aplikacijskim payloadima. |
 | 🌐 **Četiri preglednika** | Chrome, Edge, Opera i Firefox dijele isti zaključani SNAPVERE brand i ograničeno capture ponašanje. |
 
-Verzija 0.1.5 dodatno čisti korisničko Windows iskustvo: interni detalji iznimki ostaju u ograničenom lokalnom diagnostic logu umjesto u Settings, Language, About, Setup ili Region Capture sučelju; oznake prečaca u trayu odgovaraju stvarno registriranim tipkama; a nepromijenjene postavke više se nepotrebno ne zapisuju na disk.
+SNAPVERE 0.1.6 ovaj maintenance ciklus usmjerava na sigurniji Setup lifecycle i ownership browser poruka. Setup sada točno validira installation marker, odbija postojeće reparse-point/symlink lance prije izmjene datoteka, sanitizira silent/deferred greške, ne dopušta zatvaranje čarobnjaka tijekom aktivne file operacije, normalizira odabranu install mapu te poboljšava active-monitor i accessibility ponašanje.
 
-SNAPVERE 0.1.5 prenosi post-v0.1.4 reliability hardening u javno izdanje: sigurno paralelno spremanje PNG-a bez kolizije naziva, owner-safe browser capture lockove, zaštitu od zastarjelih Recent rezultata, kontrolirane browser/Windows akcije, multi-monitor tray fallback clamp, poboljšani recovery/accessibility sekundarnih prozora, responsive/reduced-motion browser UI te macOS Full Page prečac koji izbjegava sistemski rezervirani Command+Shift+3.
+Browser runtime sada odvaja capture naredbe iz SNAPVERE extension stranica od callbackova capture sesije u vlasničkoj kartici. Injektirani tab script i strani extension identitet ne mogu pokrenuti top-level SNAPVERE capture naredbe; region callbackovi i dalje moraju odgovarati tokenu, kartici i prozoru, a background odgovor prema UI-ju više ne vraća raw interne exception poruke. Postojeći v0.1.5 concurrency, memory, responsive UI i shortcut hardening ostaje zadržan.
 
 ## Windows workflow
 
@@ -84,8 +84,8 @@ Ovo su **stvarne renderirane Windows površine koje je snimio SNAPVERE visual-QA
 
 ## Preuzimanja
 
-Aktualno izdanje: **SNAPVERE 0.1.5**<br>
-Izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.5
+Aktualno izdanje: **SNAPVERE 0.1.6**<br>
+Izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.6
 
 | Platforma | Paket |
 | --- | --- |
