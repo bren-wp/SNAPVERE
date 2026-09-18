@@ -1,6 +1,6 @@
 # Installing SNAPVERE
 
-Current public release: **v0.1.5**. Published tags and assets are immutable; later `main` hardening is not retroactively part of that release.
+Current public release: **v0.1.6**. Published tags and assets are immutable; later `main` hardening is not retroactively part of that release.
 
 ## Windows Setup
 
@@ -48,4 +48,4 @@ The current release provides:
 
 The ZIP files are source-ready release packages for manual installation. Store publication is a separate external process and is not claimed unless an actual store listing exists.
 
-Current release: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.5
+Current release: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.6
