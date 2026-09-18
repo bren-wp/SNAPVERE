@@ -16,6 +16,7 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 - Add the scoped `downloads.open` permission required by the existing user-triggered Recent > Open action, while retaining no broad host permissions or `<all_urls>` access.
 - Match `downloads.showDefaultFolder()` to its actual no-callback API shape and keep duplicate folder-open activation bounded.
 - Improve narrow-layout behavior, disabled states, metadata truncation and `prefers-reduced-motion` handling consistently across Chrome, Edge, Opera and Firefox.
+- Move the macOS Full Page default from system-reserved `Command+Shift+3` to `Command+Shift+7`, while keeping Windows/Linux `Ctrl+Shift+3` unchanged.
 - Expand behavioral regression coverage for Recent ordering, duplicate actions and capture-lock interleavings.
 
 ### Windows UX and resilience

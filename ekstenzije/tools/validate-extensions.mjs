@@ -20,7 +20,7 @@ const expectedCommands = Object.freeze({
   },
   "capture-full-page": {
     default: "Ctrl+Shift+3",
-    mac: "Command+Shift+3",
+    mac: "Command+Shift+7",
     description: "__MSG_commandCaptureFullPage__"
   }
 });
