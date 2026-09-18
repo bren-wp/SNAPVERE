@@ -28,6 +28,12 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
+### Windows install-target ownership
+
+- Setup no longer replaces an existing non-empty target merely because the selected directory is named SNAPVERE.
+- Existing non-empty targets must carry the exact SNAPVERE installation marker and at least one SNAPVERE application file before Setup may treat them as an upgrade target.
+- Ownership is checked again immediately before replacement after staging has completed.
+
 ### Windows uninstall recoverability
 
 - Failed file removal no longer unregisters SNAPVERE from Windows Installed Apps before the installation directory has actually been deleted.

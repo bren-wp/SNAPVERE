@@ -13,6 +13,7 @@ The interactive installer:
 - lets you choose a different folder without accidentally duplicating a trailing `SNAPVERE\SNAPVERE` segment,
 - stages payload extraction before publication,
 - refuses direct drive-root, Windows-system and reparse-point installation paths,
+- refuses to replace a non-empty custom target unless it is a validated existing SNAPVERE installation,
 - preserves the previous validated installation when an upgrade cannot complete,
 - registers uninstall metadata for Windows Installed Apps,
 - can create Start menu/Desktop shortcuts and enable current-user Windows startup,
