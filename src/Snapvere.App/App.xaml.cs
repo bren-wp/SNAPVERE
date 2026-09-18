@@ -8,6 +8,7 @@ using Snapvere.Capture.Hotkeys;
 using Snapvere.Capture.Windows;
 using Snapvere.Domain.Capture;
 using Snapvere.Imaging;
+using Snapvere.Shared;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -945,8 +946,7 @@ public partial class App : Microsoft.UI.Xaml.Application
             Directory.CreateDirectory(directory);
             _ = Process.Start(new ProcessStartInfo(directory) { UseShellExecute = true });
         }
-        catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        catch (Exception exception) when (LocalShellActionFailurePolicy.IsExpected(exception))
         {
             StartupDiagnostics.Record("Open capture folder from tray", exception);
         }
