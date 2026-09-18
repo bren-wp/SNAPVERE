@@ -1,9 +1,31 @@
-# SNAPVERE 0.1.2 rješavanje problema
+# SNAPVERE — rješavanje problema
 
-Ako Windows snimanje ne uspije, pokušaj ponovno nakon zatvaranja zaštićenog ili full-screen sadržaja. Zaštićeni sadržaj može namjerno ostati prazan.
+Aktualno javno izdanje: **v0.1.6**. Grana `main` može sadržavati kasniji neobjavljeni reliability i security hardening.
 
-Ako globalni prečac ne radi, druga aplikacija možda koristi isti prečac; pokreni snimanje iz tray izbornika.
+## Windows snimanje ne radi
 
-Ako browser snimanje ne uspije, provjeri radi li se o običnoj web stranici. Privilegirane stranice preglednika mogu blokirati snimanje. Promjena aktivne kartice tijekom snimanja prekida postupak radi sigurnosti.
+Pokušaj ponovno nakon zatvaranja zaštićenog ili full-screen sadržaja. SNAPVERE preferira moderni Windows capture put i za očekivane acquisition greške može koristiti kompatibilni monitor fallback. Zaštićeni sadržaj može namjerno ostati prazan.
 
-Ako je cijela stranica odbijena, stranica je prešla sigurni limit za tileove/canvas/piksele.
+## Globalni prečac ne radi
+
+Druga aplikacija možda koristi isti globalni prečac. Pokreni snimanje iz tray izbornika i provjeri Windows startup/shortcut stanje.
+
+## Region spremanje ili kopiranje ne uspijeva
+
+Provjeri je li capture mapa zapisiva i je li Windows clipboard dostupan. SNAPVERE koristi staged zapisivanje pa prekinuti PNG encode nije prikazan kao dovršena snimka.
+
+## Portable se ne pokreće
+
+Zatvori sve pokrenute SNAPVERE procese i ponovno pokreni Portable izvršnu datoteku. Ako SNAPVERE prijavi problem validacije paketa ili cachea, preuzmi svježu kopiju iz službenog izdanja. Kod filesystem grešaka provjeri može li Windows pisati u privremenu mapu i local application-data mapu trenutnog korisnika te ima li dovoljno slobodnog prostora.
+
+Portable startup dijalog namjerno prikazuje sanitiziranu kategoriju greške umjesto sirovog runtime exception teksta. Tehnički detalji ostaju lokalno u `%LOCALAPPDATA%\SNAPVERE\Logs\startup.log`; SNAPVERE taj log ne šalje automatski.
+
+## Browser snimanje ne radi
+
+Provjeri radi li se o običnoj web stranici. Privilegirane browser stranice mogu blokirati script injection ili screenshot API. Ako se aktivna kartica promijeni tijekom snimanja, SNAPVERE odbacuje frame umjesto spremanja sadržaja pogrešne kartice.
+
+## Full Page je odbijen
+
+Stranica je prešla ograničeni tile/canvas/pixel budget. To je zaštita stabilnosti, a ne skrivena background greška.
+
+Windows startup dijagnostika, kada je potrebna, ostaje lokalno pod `%LOCALAPPDATA%\SNAPVERE\Logs`.
