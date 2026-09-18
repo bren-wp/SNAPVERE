@@ -11,6 +11,7 @@ internal sealed record InstallerResult(bool Succeeded, int ExitCode, string Mess
 
 internal static class InstallerEngine
 {
+    internal const string SetupMutexName = @"Local\Brendigo.SNAPVERE.Setup";
     private const string ProductName = "SNAPVERE";
     private const string AppExecutableName = "Snapvere.exe";
     private const string InstalledSetupName = "SNAPVERE-Setup.exe";
@@ -204,6 +205,14 @@ internal static class InstallerEngine
     {
         try
         {
+            if (waitForProcessId <= 0)
+            {
+                return new InstallerResult(
+                    false,
+                    87,
+                    "SNAPVERE cleanup request is invalid. Run uninstall again from Windows Installed Apps or SNAPVERE Setup.");
+            }
+
             if (!WaitForProcessExit(waitForProcessId))
             {
                 return new InstallerResult(
@@ -212,12 +221,41 @@ internal static class InstallerEngine
                     "SNAPVERE cleanup could not continue because Setup is still running. Close Setup and run uninstall again.");
             }
 
-            var installRoot = ValidateExistingInstallForRemoval(installDirectory);
-            DeleteValidatedInstallationWithRetries(installRoot);
-            DeleteInstalledStartupRegistration(installRoot);
-            RemoveRegistrationsAndShortcuts();
-            ScheduleMaintenanceSelfCleanup();
-            return new InstallerResult(true, 0, "SNAPVERE cleanup completed.");
+            using var cleanupMutex = new Mutex(initiallyOwned: false, SetupMutexName);
+            var ownsMutex = false;
+            try
+            {
+                try
+                {
+                    ownsMutex = cleanupMutex.WaitOne(0);
+                }
+                catch (AbandonedMutexException)
+                {
+                    ownsMutex = true;
+                }
+
+                if (!ownsMutex)
+                {
+                    return new InstallerResult(
+                        false,
+                        1618,
+                        "Another SNAPVERE Setup operation started before cleanup could continue. Run uninstall again after it finishes.");
+                }
+
+                var installRoot = ValidateExistingInstallForRemoval(installDirectory);
+                DeleteValidatedInstallationWithRetries(installRoot);
+                DeleteInstalledStartupRegistration(installRoot);
+                RemoveRegistrationsAndShortcuts();
+                ScheduleMaintenanceSelfCleanup();
+                return new InstallerResult(true, 0, "SNAPVERE cleanup completed.");
+            }
+            finally
+            {
+                if (ownsMutex)
+                {
+                    cleanupMutex.ReleaseMutex();
+                }
+            }
         }
         catch (Exception exception)
         {
@@ -306,11 +344,6 @@ internal static class InstallerEngine
 
     private static bool WaitForProcessExit(int processId)
     {
-        if (processId <= 0)
-        {
-            return true;
-        }
-
         try
         {
             using var process = Process.GetProcessById(processId);
@@ -323,6 +356,14 @@ internal static class InstallerEngine
         catch (InvalidOperationException)
         {
             return true;
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            return false;
+        }
+        catch (System.Security.SecurityException)
+        {
+            return false;
         }
     }
 
