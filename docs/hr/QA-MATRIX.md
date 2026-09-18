@@ -5,7 +5,7 @@ Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani 
 ## Windows gateovi
 
 - .NET restore s vulnerability auditom.
-- x64 build i unit-test suite, uključujući paralelno PNG spremanje dviju snimki s istim timestampom, stale/recent/foreign/locked capture-temp cleanup granice i provjeru da Portable startup poruke ne izlažu umetnute privatne putanje iz exception teksta.
+- x64 build i unit-test suite, uključujući paralelno PNG spremanje dviju snimki s istim timestampom, stale/recent/foreign/locked capture-temp cleanup granice, provjeru da Portable startup poruke ne izlažu umetnute privatne putanje iz exception teksta i bounded provjeru local-shell failure taksonomije.
 - x86 build i ARM64 cross-build.
 - provjera native payload strukture.
 - stvarni renderirani WinUI snapshotovi za Region, Window, Tray, Options, Language i About.
