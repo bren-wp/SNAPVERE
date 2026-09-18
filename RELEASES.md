@@ -28,7 +28,12 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No post-v0.1.6 release changes are documented yet.
+### Windows uninstall recoverability
+
+- Failed file removal no longer unregisters SNAPVERE from Windows Installed Apps before the installation directory has actually been deleted.
+- Windows startup and SNAPVERE-owned shortcuts are removed only after successful direct or deferred file cleanup, preserving a repair/retry path when removal is blocked.
+- Uninstall no longer creates an empty Start menu product folder while resolving the shortcut path, and an empty SNAPVERE-owned Start menu folder is removed after successful cleanup.
+- Package lifecycle CI now injects a real locked-file uninstall failure, verifies registration metadata remains, repairs the installation and then proves normal removal still completes.
 
 ---
 
