@@ -37,6 +37,8 @@ SNAPVERE 0.1.4 is built for people who want screenshot tools that stay focused o
 
 0.1.4 also tightens the user-facing Windows experience: internal exception details stay in bounded local diagnostics instead of appearing in Settings, Language, About, Setup or Region Capture surfaces; the tray shortcut labels match the registered hotkeys; and repeated unchanged preference writes are avoided.
 
+Current `main` additionally contains **unreleased post-0.1.4 reliability hardening**: collision-safe concurrent PNG publication, owner-safe browser capture locks, stale Recent-load suppression, guarded browser/Windows actions, multi-monitor tray fallback clamping, secondary-window recovery/accessibility fixes and responsive/reduced-motion browser UI polish. These source changes do not retroactively modify the published v0.1.4 binaries.
+
 ## Windows capture workflow
 
 SNAPVERE runs tray-first instead of keeping a permanent dashboard open.
@@ -68,7 +70,7 @@ The Chrome, Edge, Opera and Firefox variants provide:
 - English and Croatian UI;
 - fixed SNAPVERE product name, wordmark and saved-file prefix.
 
-The permission contract is exactly `activeTab`, `scripting`, `downloads` and `storage`, without broad host access. Full-page capture decodes and draws tiles into one bounded destination canvas and releases tile resources immediately instead of retaining an unbounded image set.
+The permission contract is exactly `activeTab`, `scripting`, `downloads`, `downloads.open` and `storage`, without broad host access. `downloads.open` is used only after the user explicitly chooses **Open** for a completed SNAPVERE item in Recent captures. Full-page capture decodes and draws tiles into one bounded destination canvas and releases tile resources immediately instead of retaining an unbounded image set.
 
 Browser ZIP packages are release packages for manual installation. External store approval is not claimed unless an actual store listing exists.
 
