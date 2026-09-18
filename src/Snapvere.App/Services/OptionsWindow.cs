@@ -623,12 +623,7 @@ public sealed class OptionsWindow : Window
             }
             _ = Process.Start(new ProcessStartInfo(capture.FilePath) { UseShellExecute = true });
         }
-        catch (Exception exception) when (
-            exception is IOException or
-            UnauthorizedAccessException or
-            System.Security.SecurityException or
-            InvalidOperationException or
-            System.ComponentModel.Win32Exception)
+        catch (Exception exception) when (LocalShellActionFailurePolicy.IsExpected(exception))
         {
             StartupDiagnostics.Record("Open recent capture", exception);
             SetStatus(
@@ -647,12 +642,7 @@ public sealed class OptionsWindow : Window
             Directory.CreateDirectory(directory);
             _ = Process.Start(new ProcessStartInfo(directory) { UseShellExecute = true });
         }
-        catch (Exception exception) when (
-            exception is IOException or
-            UnauthorizedAccessException or
-            System.Security.SecurityException or
-            InvalidOperationException or
-            System.ComponentModel.Win32Exception)
+        catch (Exception exception) when (LocalShellActionFailurePolicy.IsExpected(exception))
         {
             StartupDiagnostics.Record("Open capture folder", exception);
             SetStatus(
