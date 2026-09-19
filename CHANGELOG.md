@@ -4,6 +4,12 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Local shell error containment
+
+- Centralize the expected Windows local-file/folder shell failure taxonomy so tray and Options actions no longer drift in which policy, permission and shell-handler failures they contain.
+- Contain `SecurityException` and `InvalidOperationException` from tray **Open capture folder** alongside the existing I/O/access/Win32 failures instead of allowing an expected local Windows restriction to escape the UI callback.
+- Add unit coverage for the bounded expected taxonomy while leaving unrelated programming exceptions outside the containment policy.
+
 ### Second-launch activation
 
 - Replace silent duplicate-launch dismissal with a per-user activation signal that wakes the existing tray-first instance and surfaces Preferences without creating another app process.
