@@ -4,6 +4,16 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-09-19
+
+### Startup diagnostics UI privacy
+
+- Stop exposing the full local diagnostics-log path in the fatal startup dialog.
+- Keep exception type, message and stack details confined to the bounded local diagnostics log.
+- Centralize the startup failure copy in the shared layer so it can be regression-tested without invoking Win32 UI.
+- Add unit coverage that rejects filesystem-looking paths and exception/stack wording in the user-facing startup failure message.
+
+
 ## [0.1.7] - 2026-09-19
 
 ### Capture persistence failure recovery

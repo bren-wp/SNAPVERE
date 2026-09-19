@@ -1,6 +1,6 @@
 # SNAPVERE QA Matrix
 
-This matrix documents automated regression evidence for the actively maintained Windows/browser product. The current public release is v0.1.7; `main` may contain later unreleased hardening. A green gate means the tested contract passed on that commit; it does not convert platform behavior into an absolute guarantee.
+This matrix documents automated regression evidence for the actively maintained Windows/browser product. The current public release is v0.1.8; `main` may contain later unreleased hardening. A green gate means the tested contract passed on that commit; it does not convert platform behavior into an absolute guarantee.
 
 ## Windows build and runtime gates
 
@@ -41,7 +41,7 @@ The current Windows gates exercise the same Region and Window overlay surfaces a
 
 ## Repository and security gates
 
-- Product Contract CI, including a source contract that rejects direct Portable `exception.Message` exposure and requires the centralized sanitized diagnostics path.
+- Product Contract CI, including source contracts that reject direct Portable `exception.Message` exposure and prevent the Windows fatal-startup UI from rendering the local diagnostics-log path.
 - CodeQL for C#, JavaScript/TypeScript, Python and GitHub Actions.
 - pinned workflow actions.
 - dependency monitoring.
