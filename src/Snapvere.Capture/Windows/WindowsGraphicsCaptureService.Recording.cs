@@ -5,6 +5,7 @@ using Windows.Graphics.DirectX.Direct3D11;
 using Windows.Media.Core;
 using Windows.Media.MediaProperties;
 using Windows.Media.Transcoding;
+using Windows.Win32;
 using WinRT;
 using D3D = Windows.Win32.Graphics.Direct3D11;
 using D3DCommon = Windows.Win32.Graphics.Direct3D;
