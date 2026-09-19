@@ -1,6 +1,6 @@
 # SNAPVERE Tray and Process Lifecycle
 
-Current public release: **v0.1.6**. The `main` branch may contain later unreleased lifecycle hardening.
+Current public release: **v0.1.12**. The `main` branch may contain later unreleased lifecycle hardening.
 
 The Windows application is designed as a **tray-first** process. A normal launch keeps SNAPVERE available for capture without opening a permanent dashboard window, while global shortcuts and the notification-area host provide the primary entry points.
 
@@ -29,6 +29,10 @@ The tray host registers the `TaskbarCreated` message. When Explorer recreates th
 When the active SNAPVERE language changes, the message loop receives a private refresh message and updates the localized tray tooltip without recreating the application process.
 
 ## Shutdown and native resource cleanup
+
+Exit requests are sticky once shutdown starts. If a capture is active, the lifecycle gate records the pending shutdown immediately and rejects any later capture start instead of reopening a race window after the active operation finishes. The hidden capture coordinator closes automatically after that operation has completed its cleanup.
+
+If screen recording is active when Exit is requested, SNAPVERE requests the existing recording stop token rather than tearing down recording services underneath the encoder. A recording that already produced valid output can finish normal MP4 publication; an incomplete recording follows the existing cancellation/failure cleanup path. The process exits automatically after recording cleanup completes.
 
 `Dispose()` unsubscribes language events, posts `WM_CLOSE` to the message-only window and joins the tray thread for a bounded interval when appropriate. Window destruction posts the quit message for the native loop.
 

@@ -53,8 +53,8 @@ public sealed class CaptureFeedbackWindow : Window
         {
             (CaptureFeedbackKind.Busy, true) => "Snimanje je već aktivno",
             (CaptureFeedbackKind.Busy, false) => "Capture already active",
-            (CaptureFeedbackKind.ShutdownBlocked, true) => "Snimanje je još aktivno",
-            (CaptureFeedbackKind.ShutdownBlocked, false) => "Capture is still active",
+            (CaptureFeedbackKind.ShutdownBlocked, true) => "Priprema izlaska",
+            (CaptureFeedbackKind.ShutdownBlocked, false) => "Preparing to exit",
             (CaptureFeedbackKind.RecordingSaved, _) => L("RecordingSavedTitle"),
             (CaptureFeedbackKind.RecordingFailed, _) => L("RecordingFailedTitle"),
             (CaptureFeedbackKind.RecordingUnsupported, _) => L("RecordingUnsupportedTitle"),
@@ -74,9 +74,9 @@ public sealed class CaptureFeedbackWindow : Window
             (CaptureFeedbackKind.Busy, false) =>
                 "Finish or cancel the current capture before starting another one.",
             (CaptureFeedbackKind.ShutdownBlocked, true) =>
-                "Završi ili odustani od trenutačnog snimanja prije izlaska iz SNAPVERE-a.",
+                "SNAPVERE će sigurno dovršiti aktivno snimanje, po potrebi zaustaviti snimanje zaslona i automatski izaći nakon dovršetka čišćenja.",
             (CaptureFeedbackKind.ShutdownBlocked, false) =>
-                "Finish or cancel the current capture before exiting SNAPVERE.",
+                "SNAPVERE will finish the active capture safely, stop screen recording when needed, and exit automatically after cleanup completes.",
             (CaptureFeedbackKind.RecordingSaved, _) => L("RecordingSavedMessage"),
             (CaptureFeedbackKind.RecordingFailed, _) => L("RecordingFailedMessage"),
             (CaptureFeedbackKind.RecordingUnsupported, _) => L("RecordingUnsupportedMessage"),

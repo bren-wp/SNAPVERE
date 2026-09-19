@@ -12,10 +12,13 @@ public sealed class CaptureActivityGateTests
         Assert.True(gate.TryBeginCapture());
         Assert.True(gate.IsCaptureInProgress);
         Assert.False(gate.TryBeginShutdown());
+        Assert.True(gate.IsShutdownRequested);
+        Assert.False(gate.TryBeginCapture());
 
         gate.EndCapture();
 
         Assert.False(gate.IsCaptureInProgress);
+        Assert.True(gate.IsShutdownRequested);
         Assert.True(gate.TryBeginShutdown());
     }
 
@@ -25,6 +28,7 @@ public sealed class CaptureActivityGateTests
         var gate = new CaptureActivityGate();
 
         Assert.True(gate.TryBeginShutdown());
+        Assert.True(gate.IsShutdownRequested);
         Assert.False(gate.TryBeginCapture());
         Assert.False(gate.IsCaptureInProgress);
     }
@@ -54,8 +58,11 @@ public sealed class CaptureActivityGateTests
 
             Assert.NotEqual(captureWon, shutdownWon);
 
+            Assert.True(gate.IsShutdownRequested);
+
             if (captureWon)
             {
+                Assert.False(gate.TryBeginCapture());
                 gate.EndCapture();
                 Assert.True(gate.TryBeginShutdown());
             }

@@ -32,13 +32,19 @@ public sealed class CaptureActivityGate
     {
         lock (_sync)
         {
-            if (_captureInProgress)
-            {
-                return false;
-            }
-
             _shutdownRequested = true;
-            return true;
+            return !_captureInProgress;
+        }
+    }
+
+    public bool IsShutdownRequested
+    {
+        get
+        {
+            lock (_sync)
+            {
+                return _shutdownRequested;
+            }
         }
     }
 
