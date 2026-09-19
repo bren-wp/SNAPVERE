@@ -4,6 +4,8 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.10] - 2026-09-19
+
 ### Local screen recording
 
 - Add real local-first primary-display screen recording for Windows using Windows.Graphics.Capture and H.264 MP4 output.

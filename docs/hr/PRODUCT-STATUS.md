@@ -1,20 +1,20 @@
-# SNAPVERE 0.1.9 Status proizvoda
+# SNAPVERE 0.1.10 Status proizvoda
 
 Aktualne održavane površine proizvoda su **Windows** i **browser ekstenzije**.
 
 ## Windows
 
-Produkcijska implementacija uključuje tray-first startup, Region/Window/Screen capture, frozen-frame odabir, lokalne anotacije, clipboard i PNG save workflow, lokalne postavke, nedavne snimke, dijagnostiku te x86/x64/ARM64 aplikacijske payloade u universal Setup i Portable paketima.
+Produkcijska implementacija uključuje tray-first startup, Region/Window/Screen capture, lokalno snimanje primarnog zaslona kao video, frozen-frame odabir, lokalne anotacije, clipboard, PNG i MP4 persistence workflow, lokalne postavke, nedavne snimke, dijagnostiku te x86/x64/ARM64 aplikacijske payloade u universal Setup i Portable paketima.
 
-Najnoviji capture-path hardening uklanja redundantne full-frame staging alokacije iz Region i Window prikaza te oslobađa raw frozen monitor buffere nakon što je odgovarajući UI bitmap spreman. SNAPVERE 0.1.9 također serializira capture i gašenje aplikacije tako da tray Exit ne može disposeati capture dependencyje dok je Region, Window ili Screen capture aktivan, a prihvaćeni shutdown blokira nova snimanja. SNAPVERE 0.1.9 dodatno učvršćuje Setup protiv reparse-point/symlink putanja i marker-prefix spoofinga, sanitizira deferred installer greške te poboljšava tipkovnicu, DPI i narrow-screen ponašanje instalera. SNAPVERE 0.1.9 dodatno objavljuje PNG datoteke uz collision-safe dodjelu naziva na commit granici, kontrolira očekivane Settings/Recent shell i lokalne security greške, vraća jezični odabir na stvarno spremljenu vrijednost nakon neuspjelog zapisa te drži tray fallback unutar Windows virtualnog desktopa.
+SNAPVERE 0.1.10 dodaje local-first snimanje primarnog Windows zaslona preko Windows.Graphics.Capture uz H.264 MP4 enkodiranje, Start/Stop kontrole u trayu, integraciju cursor postavke, ograničeno vlasništvo pending/in-flight frameova, 30 FPS i 4–32 Mbps policy granice, 8K envelope izvora, odbijanje zero-frame/zero-byte rezultata i atomic publish dovršenih MP4 datoteka. Početni način je samo video; sistemski zvuk i mikrofon nisu navedeni kao podržani. Postojeći capture-safe shutdown, collision-safe PNG publish, shell-error containment, jezična konzistentnost, tray recovery i Setup hardening ostaju zadržani.
 
 ## Browseri
 
-Chrome, Edge, Opera i Firefox održavaju visible-area, selected-region i bounded full-page capture. SNAPVERE brand je zaključan. Validirani permission contract je `activeTab`, `scripting`, `downloads`, `downloads.open` i `storage`; `downloads.open` koristi se samo za izričitu Recent > Otvori radnju. Široki host pristup nije dio održavanog dizajna. SNAPVERE 0.1.9 dodatno provjerava sender i active-tab ownership prije privilegiranih capture/download radnji. SNAPVERE 0.1.9 dodatno učvršćuje capture-lock ownership, async redoslijed Recent rezultata, zaštitu od dvostrukih akcija, kompatibilnost browser API poziva i responsive/reduced-motion ponašanje te premješta macOS Full Page prečac sa sistemski rezervirane kombinacije Command+Shift+3.
+Chrome, Edge, Opera i Firefox održavaju visible-area, selected-region i bounded full-page capture. SNAPVERE brand je zaključan. Validirani permission contract je `activeTab`, `scripting`, `downloads`, `downloads.open` i `storage`; `downloads.open` koristi se samo za izričitu Recent > Otvori radnju. Široki host pristup nije dio održavanog dizajna. SNAPVERE 0.1.10 dodatno provjerava sender i active-tab ownership prije privilegiranih capture/download radnji. SNAPVERE 0.1.10 dodatno učvršćuje capture-lock ownership, async redoslijed Recent rezultata, zaštitu od dvostrukih akcija, kompatibilnost browser API poziva i responsive/reduced-motion ponašanje te premješta macOS Full Page prečac sa sistemski rezervirane kombinacije Command+Shift+3.
 
 ## Paketi
 
-Aktualni 0.1.9 ugovor sadrži `SNAPVERE-Setup.exe`, `SNAPVERE-Portable.exe`, `SNAPVERE-Chrome.zip`, `SNAPVERE-Edge.zip`, `SNAPVERE-Opera.zip` i `SNAPVERE-Firefox.zip`.
+Aktualni 0.1.10 ugovor sadrži `SNAPVERE-Setup.exe`, `SNAPVERE-Portable.exe`, `SNAPVERE-Chrome.zip`, `SNAPVERE-Edge.zip`, `SNAPVERE-Opera.zip` i `SNAPVERE-Firefox.zip`.
 
 ## Kvaliteta
 
@@ -22,6 +22,6 @@ CI provjerava Windows buildove/testove, renderirani WinUI visual QA, package-siz
 
 To je jaka regresijska evidencija, ali nije obećanje da svaka platforma, driver ili preglednik nikada ne može imati specifičan problem.
 
-Javno izdanje je **v0.1.9**. Kasniji neobjavljeni hardening na `main` grani predstavlja izvorni kod dok se buduća verzija izričito ne zapakira i objavi.
+Javno izdanje je **v0.1.10**. Kasniji neobjavljeni hardening na `main` grani predstavlja izvorni kod dok se buduća verzija izričito ne zapakira i objavi.
 
-Povezano: [Performanse i stabilnost](PERFORMANCE.md), [QA matrica](QA-MATRIX.md) i https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.9
+Povezano: [Performanse i stabilnost](PERFORMANCE.md), [QA matrica](QA-MATRIX.md) i https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.10

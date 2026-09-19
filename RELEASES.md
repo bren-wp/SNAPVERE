@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.9**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.9
+- Current public release: **v0.1.10**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.10
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,36 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No unreleased changes are documented after v0.1.9 yet.
+No unreleased changes are documented after v0.1.10 yet.
+
+---
+
+## v0.1.10 — 2026-09-19
+
+SNAPVERE 0.1.10 adds production local-first Windows screen recording while preserving the existing screenshot workflows, browser permission contract and six-asset release model.
+
+### Local Windows screen recording
+
+- Add **Start screen recording** / **Stop screen recording** to the Windows tray menu.
+- Record the primary Windows display through Windows.Graphics.Capture and encode video locally as H.264 in an MP4 container.
+- Keep the initial recording mode deliberately video-only: system audio and microphone capture are not claimed as supported.
+- Use the existing Include cursor preference for recording and expose active recording state in the tray menu and native tray tooltip.
+- Bound recording to 30 FPS, 4–32 Mbps and an 8K source envelope in landscape or portrait orientation, with even H.264 output dimensions and no source upscaling.
+- Keep frame retention bounded to one pending frame plus encoder-owned in-flight frames rather than an unbounded frame queue.
+- Publish completed MP4 files through SNAPVERE-owned temporary files and an atomic final move with collision-safe naming and stale-temp cleanup.
+- Reject zero-frame/zero-byte completion and remove partial temporary output on cancellation or failure.
+- Include completed MP4 recordings in Recent captures while unrelated file extensions remain excluded.
+- Serialize recording with screenshot capture and shutdown so capture dependencies cannot be disposed mid-operation.
+- Preserve the Windows 10 version 2004 / build 19041 minimum for the Windows.Graphics.Capture recording path.
+- Browser runtime permissions and capture behavior are unchanged; browser packages are rebuilt only to keep the synchronized v0.1.10 release contract.
+
+### Validation
+
+- Product Contract CI, CodeQL Advanced and Windows CI passed on the feature head before merge.
+- x64 build/unit tests, x86 build and ARM64 build passed.
+- Real rendered WinUI snapshots and visual comparison against the successful main baseline passed.
+- Universal Setup/Portable construction, package-size budgets and real x64/x86 lifecycle validation passed.
+
 
 ---
 

@@ -8,7 +8,7 @@
 
 ### Snimi. Uredi. Gotovo.
 
-**Brz, lokalno usmjeren alat za snimke zaslona na Windowsu i modernim preglednicima.**  
+**Brz, lokalno usmjeren alat za snimke zaslona i Windows video snimanje.**  
 Bez računa. Bez telemetrije snimki. Bez automatskog cloud uploada.
 
 [![Windows CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/ci.yml)
@@ -16,7 +16,7 @@ Bez računa. Bez telemetrije snimki. Bez automatskog cloud uploada.
 [![Product Contract](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Web stranica](https://snapvere.com) · [Preuzmi v0.1.9](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.9) · [Dokumentacija](docs/hr/README.md) · [English](README.md)
+[Web stranica](https://snapvere.com) · [Preuzmi v0.1.10](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.10) · [Dokumentacija](docs/hr/README.md) · [English](README.md)
 
 </div>
 
@@ -24,18 +24,18 @@ Bez računa. Bez telemetrije snimki. Bez automatskog cloud uploada.
 
 ## Zašto SNAPVERE
 
-SNAPVERE 0.1.9 namijenjen je korisnicima koji žele brz i čist screenshot workflow: snimiti točne piksele, označiti ih, kopirati ili spremiti lokalno i nastaviti raditi.
+SNAPVERE 0.1.10 namijenjen je korisnicima koji žele brz i čist screenshot workflow: snimiti točne piksele, označiti ih, kopirati ili spremiti lokalno i nastaviti raditi.
 
 | | Što dobivate |
 | --- | --- |
-| ⚡ **Brzo snimanje** | Region, window i screen capture na Windowsu te visible-area, region i ograničeni full-page capture u preglednicima. |
+| ⚡ **Brzo snimanje** | Region, window i screen capture na Windowsu te visible-area, region i ograničeni full-page capture u preglednicima. |\n| 🎥 **Lokalno video snimanje** | Start/Stop snimanja primarnog Windows zaslona iz tray izbornika uz lokalni H.264 MP4 bez cloud uploada. |
 | ✏️ **Ugrađene anotacije** | Pen, Line, Arrow, Box i Highlight izravno u Windows region workflowu. |
 | 🖥️ **Nativni Windows workflow** | Tray-first rad, globalni prečaci, nedavne snimke, lokalne postavke i DPI-aware multi-monitor podrška. |
 | 🔒 **Local-first pristup** | Osnovna obrada snimki ostaje lokalna; račun nije potreban i capture runtime nema first-party telemetriju snimki. |
 | 📦 **Setup ili Portable** | Universal Windows paketi s x86, x64 i ARM64 aplikacijskim payloadima. |
 | 🌐 **Četiri preglednika** | Chrome, Edge, Opera i Firefox dijele isti zaključani SNAPVERE brand i ograničeno capture ponašanje. |
 
-SNAPVERE 0.1.9 dodaje capture-safe gašenje aplikacije: tray Exit više ne može ugasiti runtime service graph dok je Region, Window ili Screen capture aktivan, a nakon prihvaćenog shutdowna nova snimanja se ne mogu pokrenuti. Postojeći Setup lifecycle i browser ownership hardening ostaju dio održavane linije.
+SNAPVERE 0.1.10 dodaje local-first Windows video snimanje zaslona. Snimanje se pokreće i zaustavlja iz tray izbornika, primarni zaslon lokalno se enkodira u H.264 MP4, memorijski lifecycle ostaje ograničen, a samo dovršene snimke objavljuju se atomically. Početni način je samo video: mikrofon i sistemski zvuk nisu navedeni kao podržani. Postojeći capture-safe shutdown, Setup lifecycle i browser ownership hardening ostaju dio održavane linije.
 
 Browser runtime sada odvaja capture naredbe iz SNAPVERE extension stranica od callbackova capture sesije u vlasničkoj kartici. Injektirani tab script i strani extension identitet ne mogu pokrenuti top-level SNAPVERE capture naredbe; region callbackovi i dalje moraju odgovarati tokenu, kartici i prozoru, a background odgovor prema UI-ju više ne vraća raw interne exception poruke. Postojeći v0.1.5 concurrency, memory, responsive UI i shortcut hardening ostaje zadržan.
 
@@ -47,7 +47,7 @@ SNAPVERE radi prvenstveno iz područja obavijesti, bez stalno otvorenog dashboar
 | --- | --- | --- |
 | **Region Capture** | `Print Screen` ili `Ctrl+Shift+1` | Zamrzni prikaz, odaberi regiju, promijeni veličinu, označi, kopiraj ili spremi. |
 | **Window Capture** | `Ctrl+Shift+2` | Odaberi vidljivi prozor sa zamrznutog prikaza i snimi ga. |
-| **Screen Capture** | `Ctrl+Shift+3` | Brzo pokreni snimanje zaslona. |
+| **Screen Capture** | `Ctrl+Shift+3` | Brzo pokreni snimku zaslona. |\n| **Screen Recording** | Start/Stop u trayu | Lokalno snimi primarni Windows zaslon kao H.264 MP4. |
 
 Snimke se zadano spremaju u `Pictures\SNAPVERE`. PNG zapis koristi staging prije završnog premještanja kako prekinuti encode ne bi izgledao kao gotova snimka.
 
@@ -84,8 +84,8 @@ Ovo su **stvarne renderirane Windows površine koje je snimio SNAPVERE visual-QA
 
 ## Preuzimanja
 
-Aktualno izdanje: **SNAPVERE 0.1.9**<br>
-Izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.9
+Aktualno izdanje: **SNAPVERE 0.1.10**<br>
+Izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.10
 
 | Platforma | Paket |
 | --- | --- |
@@ -106,7 +106,7 @@ Ti gateovi smanjuju rizik regresija; nisu tvrdnja da Windows, driver ili pregled
 
 ## Privatnost i sigurnost
 
-Osnovna obrada snimki je lokalna. SNAPVERE ne zahtijeva korisnički račun za capture, capture runtime nema first-party screenshot analitiku i snimke se ne šalju automatski u cloud.
+Osnovna obrada snimki zaslona i videosnimki je lokalna. SNAPVERE ne zahtijeva korisnički račun za capture ili recording, runtime nema first-party capture analitiku i sadržaj se ne šalje automatski u cloud.
 
 Pročitajte [Privatnost](docs/hr/PRIVACY.md), [Security Policy](SECURITY.md), [Status proizvoda](docs/hr/PRODUCT-STATUS.md) i [QA matricu](docs/hr/QA-MATRIX.md).
 

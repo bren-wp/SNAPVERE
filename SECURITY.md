@@ -1,10 +1,10 @@
 # SNAPVERE Security Policy
 
-Current public line: **SNAPVERE 0.1.9** — https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.9
+Current public line: **SNAPVERE 0.1.10** — https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.10
 
 SNAPVERE currently maintains the **Windows application** plus **Chrome, Edge, Opera and Firefox extensions**. Security reports affecting capture behavior, local screenshot data, settings/history, package extraction, Setup/Portable lifecycle, extension permissions/runtime, release integrity, CI or dependency supply chain are in scope.
 
-`main` may contain later unreleased security/reliability fixes that are not retroactively part of the immutable v0.1.9 binaries. Historical release tags and assets are not rewritten in place.
+`main` may contain later unreleased security/reliability fixes that are not retroactively part of the immutable v0.1.10 binaries. Historical release tags and assets are not rewritten in place.
 
 ## Report a vulnerability privately
 
@@ -29,6 +29,7 @@ A capture failure on protected content or a browser-reserved page is not by itse
 - Screen capture prefers Windows.Graphics.Capture and uses a compatibility monitor backend only for expected acquisition failures.
 - Caller cancellation is not converted into fallback work.
 - Local PNG output uses staged writes before final atomic publication. Expected access-denied, storage-full and local write failures are classified without exposing raw filesystem exception text or private paths in user-facing recovery copy.
+- Local screen recording uses Windows.Graphics.Capture with bounded frame ownership and H.264 MP4 encoding; completed recordings are atomically published, while cancellation, zero-frame output and failures leave no completed partial recording.
 - Embedded payload extraction rejects unsafe paths and reparse-point escapes before payload files are admitted. Setup also rejects existing install-directory chains that traverse symbolic links or reparse points and requires an exact trusted installation-marker header before removal.
 - Setup/Portable payload integrity is checked against architecture-specific trusted metadata.
 - Portable cache corruption or unexpected content causes rejection/rebuild rather than silent execution.

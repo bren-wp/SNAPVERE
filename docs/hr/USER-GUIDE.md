@@ -1,6 +1,6 @@
 # SNAPVERE korisnički vodič
 
-SNAPVERE je lokalno usmjeren alat za snimanje sadržaja na Windowsu i u modernim preglednicima. Aktualno javno izdanje ostaje v0.1.9; ovaj vodič može opisivati i izričito označeno neobjavljeno ponašanje koje je u aktivnoj validaciji.
+SNAPVERE je lokalno usmjeren alat za snimanje sadržaja na Windowsu i u modernim preglednicima. Aktualno javno izdanje je v0.1.10.
 
 ## Windows
 
@@ -15,7 +15,7 @@ Aplikacija radi prvenstveno iz područja obavijesti.
 
 Odabrano područje može se označiti olovkom, linijom, strelicom, okvirom ili markerom te kopirati ili spremiti kao PNG.
 
-Funkcija snimanja zaslona koja se validira za v0.1.10 snima primarni Windows zaslon lokalno u H.264 MP4 preko Windows.Graphics.Capture. Pokretanje i zaustavljanje obavlja se iz tray izbornika, koristi postojeću postavku uključivanja pokazivača miša i prikazuje aktivno stanje snimanja. Početna implementacija je samo video: mikrofon i sistemski zvuk još nisu navedeni kao podržani.
+Snimanje zaslona snima primarni Windows zaslon lokalno u H.264 MP4 preko Windows.Graphics.Capture. Pokretanje i zaustavljanje obavlja se iz tray izbornika, koristi postojeću postavku uključivanja pokazivača miša i prikazuje aktivno stanje snimanja. Početna implementacija je samo video: mikrofon i sistemski zvuk još nisu navedeni kao podržani.
 
 Snimke zaslona i dovršene videosnimke zadano se spremaju u `Pictures\SNAPVERE`. Dovršeni MP4 objavljuje se tek nakon završetka enkodiranja; privremene datoteke ne predstavljaju dovršene snimke.
 
