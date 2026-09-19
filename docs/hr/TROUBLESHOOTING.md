@@ -10,9 +10,9 @@ Pokušaj ponovno nakon zatvaranja zaštićenog ili full-screen sadržaja. SNAPVE
 
 Druga aplikacija možda koristi isti globalni prečac. Pokreni snimanje iz tray izbornika i provjeri Windows startup/shortcut stanje.
 
-## Region spremanje ili kopiranje ne uspijeva
+## Spremanje snimke ili Region kopiranje ne uspijeva
 
-Provjeri je li capture mapa zapisiva i je li Windows clipboard dostupan. SNAPVERE koristi staged zapisivanje pa prekinuti PNG encode nije prikazan kao dovršena snimka.
+Ako spremanje ne uspije, SNAPVERE razlikuje blokiranu mapu snimki, puni uređaj za pohranu i drugi lokalni kvar zapisa PNG datoteke. Provjeri dozvole za Pictures/SNAPVERE, slobodan prostor i pokušaj ponovno. Region clipboard greške ostaju odvojene od file persistencea. SNAPVERE koristi staged zapisivanje i atomic final move pa prekinuti PNG encode nije prikazan kao dovršena snimka. Tehnički filesystem exception tekst ostaje u lokalnoj dijagnostici umjesto u recovery poruci.
 
 ## Portable se ne pokreće
 

@@ -35,8 +35,26 @@ public sealed class CaptureFileWriter
         frame.Validate();
         cancellationToken.ThrowIfCancellationRequested();
 
-        var directory = _pathProvider.GetDefaultCaptureDirectory();
-        Directory.CreateDirectory(directory);
+        string directory;
+        try
+        {
+            directory = _pathProvider.GetDefaultCaptureDirectory();
+            Directory.CreateDirectory(directory);
+        }
+        catch (Exception exception) when (
+            CapturePersistenceFailurePolicy.TryClassify(exception, out _))
+        {
+            throw CapturePersistenceFailurePolicy.Wrap(exception);
+        }
+        catch (InvalidOperationException exception)
+        {
+            // Windows did not provide a usable local capture directory. This
+            // is a persistence-location failure, not a capture-engine failure.
+            throw new CapturePersistenceException(
+                CapturePersistenceFailureKind.WriteFailed,
+                exception);
+        }
+
         CleanupStaleTemporaryFiles(directory, _timeProvider.GetUtcNow());
 
         var timestamp = _timeProvider.GetLocalNow();
@@ -67,6 +85,12 @@ public sealed class CaptureFileWriter
                 directory,
                 timestamp,
                 cancellationToken);
+        }
+        catch (Exception exception) when (
+            CapturePersistenceFailurePolicy.TryClassify(exception, out _))
+        {
+            TryDeleteTemporaryFile(temporaryPath);
+            throw CapturePersistenceFailurePolicy.Wrap(exception);
         }
         catch
         {

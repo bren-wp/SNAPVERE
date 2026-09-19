@@ -190,6 +190,11 @@ public sealed class CaptureCenterWindow : Window
             StartupDiagnostics.WriteLine(
                 $"Window capture saved {result.Width}x{result.Height} PNG locally from '{target.Title}'.");
         }
+        catch (CapturePersistenceException exception)
+        {
+            StartupDiagnostics.Record("Persist window capture", exception);
+            ShowCaptureFeedback(ToPersistenceFeedbackKind(exception.Kind));
+        }
         catch (Exception exception)
         {
             StartupDiagnostics.Record("Window capture", exception);
@@ -216,6 +221,11 @@ public sealed class CaptureCenterWindow : Window
             StartupDiagnostics.WriteLine(
                 $"Screen capture saved {result.Width}x{result.Height} PNG locally.");
         }
+        catch (CapturePersistenceException exception)
+        {
+            StartupDiagnostics.Record("Persist screen capture", exception);
+            ShowCaptureFeedback(ToPersistenceFeedbackKind(exception.Kind));
+        }
         catch (Exception exception)
         {
             StartupDiagnostics.Record("Screen capture", exception);
@@ -226,6 +236,15 @@ public sealed class CaptureCenterWindow : Window
             EndCapture();
         }
     }
+
+    private static CaptureFeedbackKind ToPersistenceFeedbackKind(
+        CapturePersistenceFailureKind kind)
+        => kind switch
+        {
+            CapturePersistenceFailureKind.AccessDenied => CaptureFeedbackKind.SaveAccessDenied,
+            CapturePersistenceFailureKind.StorageFull => CaptureFeedbackKind.StorageFull,
+            _ => CaptureFeedbackKind.SaveFailed
+        };
 
     private bool TryBeginCapture()
     {

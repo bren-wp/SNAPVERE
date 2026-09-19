@@ -1507,6 +1507,12 @@ public sealed class RegionCaptureWindow : Window
     private static string GetUserFacingError(Exception exception)
         => exception switch
         {
+            CapturePersistenceException { Kind: CapturePersistenceFailureKind.AccessDenied } =>
+                L("CaptureSaveAccessDenied"),
+            CapturePersistenceException { Kind: CapturePersistenceFailureKind.StorageFull } =>
+                L("CaptureStorageFull"),
+            CapturePersistenceException =>
+                L("CaptureSaveFailed"),
             UnauthorizedAccessException => L("RegionAccessDenied"),
             IOException => L("RegionIoFailure"),
             ArgumentException => L("RegionInvalidSelection"),

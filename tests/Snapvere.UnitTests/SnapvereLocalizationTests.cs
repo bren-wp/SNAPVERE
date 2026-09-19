@@ -64,6 +64,10 @@ public sealed class SnapvereLocalizationTests
     [InlineData("RegionIoFailure", "Odabrano područje je snimljeno, ali PNG datoteku ili prijenos u međuspremnik nije bilo moguće dovršiti.")]
     [InlineData("RegionInvalidSelection", "Odabrano područje više nije valjano. Ponovno odaberite područje.")]
     [InlineData("RegionCaptureFailed", "SNAPVERE nije mogao dovršiti snimanje područja. Pritisnite Esc i pokušajte ponovno.")]
+    [InlineData("CaptureSaveFailedTitle", "Snimku nije moguće spremiti")]
+    [InlineData("CaptureSaveAccessDenied", "Snimka je izrađena, ali Windows je odbio pristup SNAPVERE mapi snimki. Provjerite dozvole za mapu Slike i pokušajte ponovno.")]
+    [InlineData("CaptureStorageFull", "Snimka je izrađena, ali na uređaju za pohranu nema dovoljno prostora. Oslobodite prostor i pokušajte ponovno.")]
+    [InlineData("CaptureSaveFailed", "Snimka je izrađena, ali SNAPVERE nije mogao zapisati PNG datoteku. Provjerite mapu snimki i pokušajte ponovno.")]
     public void Croatian_CaptureSurfaceText_IsTranslated(string key, string expected)
         => Assert.Equal(expected, SnapvereLocalization.T(key, "hr"));
 
@@ -109,6 +113,7 @@ public sealed class SnapvereLocalizationTests
     [InlineData("RegionMoveHelp", "Move or resize selection")]
     [InlineData("ResizeBottomRight", "Resize bottom right")]
     [InlineData("RegionCaptureFailed", "SNAPVERE could not complete the region capture. Press Esc and try again.")]
+    [InlineData("CaptureStorageFull", "The capture was created, but the storage device is full. Free some space and try again.")]
     public void MissingCaptureSurfaceTranslation_FallsBackToEnglish(string key, string expected)
         => Assert.Equal(expected, SnapvereLocalization.T(key, "ja"));
 
