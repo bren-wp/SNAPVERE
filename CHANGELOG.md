@@ -13,6 +13,10 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 - Make About shortcut copy wrap and capture-feedback messages scroll on constrained heights.
 - Improve Setup narrow-window behavior by shrinking the content card/path controls and reducing the minimum window footprint while retaining AutoScroll and lifecycle behavior.
 - Remove the browser popup's fixed 340 px desktop minimum, add a 280 px safe floor plus a 320 px compact breakpoint, and enforce responsive popup/options contracts across Chrome, Edge, Opera and Firefox.
+- Make Setup release its normal minimum size when the active work area is smaller, then reflow license, path, shortcut, status and action controls without forcing horizontal overflow.
+- Prevent the post-install Launch option from overlapping Finish on compact Setup layouts and keep uninstall messaging/cards width-responsive.
+- Add tray compact reflow that collapses shortcut hints and reduces branding/padding when the work area forces a narrow flyout.
+- Add extra 280 px popup and 420/320 px Options breakpoints with stacked navigation/actions and long-copy wrapping across all four browser variants.
 
 
 ## [0.1.10] - 2026-09-19
