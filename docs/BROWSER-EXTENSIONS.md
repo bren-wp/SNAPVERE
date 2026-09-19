@@ -28,7 +28,7 @@ storage
 
 ## Stability and memory
 
-Full-page capture uses explicit limits for tile count, canvas dimensions and total pixels. Tiles are decoded, drawn into one bounded destination canvas and released immediately instead of being retained as a second full image set. Capture-session tokens, tab ownership checks and cleanup watchdogs prevent stale work from silently completing against the wrong tab.
+Full-page capture uses explicit limits for tile count, canvas dimensions and total pixels. Tiles are decoded, drawn into one bounded destination canvas and released immediately instead of being retained as a second full image set. Capture-session tokens, tab ownership checks and cleanup watchdogs prevent stale work from silently completing against the wrong tab. Active-tab ownership is revalidated before Region/Full Page script injection and before page-mutating preparation, scrolling, floating-element hiding and assembly boundaries; a Region overlay created just before a tab switch is removed through a token-scoped cleanup request.
 
 Region-capture failures that occur after the popup closes are shown as a transient localized in-page SNAPVERE status.
 

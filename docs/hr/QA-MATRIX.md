@@ -26,7 +26,7 @@ Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani 
 - Chrome/Edge/Opera paritet i dokumentirane Firefox razlike.
 - EN/HR locale paritet.
 - runtime background smoke testovi, uključujući owner-safe stale-lock cleanup interleaving i provjeru sender/active-tab ownershipa za poruke ekstenzije.
-- active-tab ownership provjere prije i nakon capturea.
+- active-tab ownership provjere prije i nakon pixel capturea te behavioral coverage da se Region/Full Page page-mutating side effecti odbijaju ili token-cleanupaju kada se aktivna kartica promijeni.
 - bounded full-page memory ponašanje.
 - Settings/Recent behavioral testovi za odbacivanje zastarjelih async rezultata i zaštitu od dvostrukih Open/folder akcija.
 - točan `downloads.open` permission za izričitu Recent > Otvori radnju uz trajnu zabranu širokog host pristupa.

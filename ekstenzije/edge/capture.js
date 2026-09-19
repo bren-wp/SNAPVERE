@@ -172,6 +172,14 @@
     removeOverlayStyle();
   }
 
+  function cleanupRegionForToken(token) {
+    if (!validToken(token) || !regionState || regionState.token !== token) {
+      return;
+    }
+
+    cleanupRegion();
+  }
+
   async function notifyRegionCancelled(token) {
     try {
       await sendRuntime({ type: "REGION_CANCELLED", token });
@@ -278,7 +286,7 @@
       void notifyRegionCancelled(token);
     };
 
-    regionState = { root, onPointerDown, onPointerMove, onPointerUp, onKeyDown };
+    regionState = { token, root, onPointerDown, onPointerMove, onPointerUp, onKeyDown };
     root.addEventListener("pointerdown", onPointerDown, true);
     root.addEventListener("pointermove", onPointerMove, true);
     root.addEventListener("pointerup", onPointerUp, true);
@@ -531,6 +539,7 @@
 
     switch (message.type) {
       case "REGION_START": startRegion(message.token); return {};
+      case "REGION_CLEANUP": cleanupRegionForToken(message.token); return {};
       case "REGION_CROP": return { dataUrl: await cropRegion(message.token, message.rect, message.dataUrl) };
       case "FULL_PREP": return prepFull(message.token);
       case "FULL_SCROLL": return fullScroll(message.token, Number(message.x), Number(message.y));
@@ -544,7 +553,7 @@
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     const accepted = new Set([
-      "REGION_START", "REGION_CROP", "FULL_PREP", "FULL_SCROLL",
+      "REGION_START", "REGION_CLEANUP", "REGION_CROP", "FULL_PREP", "FULL_SCROLL",
       "FULL_HIDE_FLOATING", "FULL_STORE_TILE", "FULL_ASSEMBLE", "FULL_CLEANUP"
     ]);
     if (!message || !accepted.has(message.type)) return false;
