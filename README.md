@@ -35,7 +35,7 @@ SNAPVERE 0.1.9 is built for people who want screenshot tools that stay focused o
 | 📦 **Portable or installed** | Universal Windows Setup and Portable packages carry x86, x64 and ARM64 application payloads. |
 | 🌐 **Browser coverage** | Chrome, Edge, Opera and Firefox share the same locked SNAPVERE brand and bounded capture behavior. |
 
-SNAPVERE 0.1.9 focuses this maintenance cycle on Setup lifecycle safety and browser message ownership. Setup now validates the installation marker exactly, rejects existing reparse-point/symlink directory chains before mutation, sanitizes silent/deferred failures, prevents the wizard from closing during active file work, normalizes selected install folders and improves active-monitor/accessibility behavior.
+SNAPVERE 0.1.9 adds capture-safe application shutdown: tray Exit cannot tear down the runtime service graph while Region, Window or Screen capture is active, and accepted shutdown prevents new capture work from starting. The existing Setup lifecycle safety and browser message-ownership hardening remain part of the maintained product line.
 
 The browser runtime now separates extension-page capture commands from tab-owned capture-session callbacks. Injected tab scripts and foreign extension identities cannot initiate top-level SNAPVERE capture commands; region callbacks retain token/tab/window ownership checks, and background responses expose bounded error keys rather than raw internal exception messages. The existing v0.1.5 concurrency, memory, responsive UI and shortcut hardening remains in place.
 
