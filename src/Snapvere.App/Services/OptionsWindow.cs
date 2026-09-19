@@ -29,6 +29,14 @@ public sealed class OptionsWindow : Window
     private readonly StartupRegistrationService _startupRegistration;
     private readonly string _languageCode;
     private readonly Grid _preferencesPanel = new();
+    private readonly ScrollViewer _preferencesScroller = new()
+    {
+        VerticalScrollMode = ScrollMode.Auto,
+        VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+        HorizontalScrollMode = ScrollMode.Disabled,
+        HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+        IsTabStop = false
+    };
     private readonly Grid _recentPanel = new() { Visibility = Visibility.Collapsed };
     private readonly StackPanel _recentItems = new() { Spacing = 8 };
     private readonly TextBlock _recentSummary;
@@ -72,7 +80,7 @@ public sealed class OptionsWindow : Window
 
     public void ShowSection(OptionsSection section)
     {
-        _preferencesPanel.Visibility = section == OptionsSection.Preferences ? Visibility.Visible : Visibility.Collapsed;
+        _preferencesScroller.Visibility = section == OptionsSection.Preferences ? Visibility.Visible : Visibility.Collapsed;
         _recentPanel.Visibility = section == OptionsSection.RecentCaptures ? Visibility.Visible : Visibility.Collapsed;
         ApplyTabVisual(_preferencesTab, section == OptionsSection.Preferences);
         ApplyTabVisual(_recentTab, section == OptionsSection.RecentCaptures);
@@ -125,8 +133,9 @@ public sealed class OptionsWindow : Window
         Grid.SetRow(tabs, 1);
         root.Children.Add(tabs);
 
+        _preferencesScroller.Content = _preferencesPanel;
         var host = new Grid();
-        host.Children.Add(_preferencesPanel);
+        host.Children.Add(_preferencesScroller);
         host.Children.Add(_recentPanel);
         var contentFrame = new Border
         {
@@ -326,6 +335,8 @@ public sealed class OptionsWindow : Window
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(46) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
         grid.Children.Add(new Border
         {
@@ -365,6 +376,23 @@ public sealed class OptionsWindow : Window
         trailing.VerticalAlignment = VerticalAlignment.Center;
         Grid.SetColumn(trailing, 2);
         grid.Children.Add(trailing);
+
+        grid.SizeChanged += (_, args) =>
+        {
+            var compact = args.NewSize.Width < 470;
+            Grid.SetRow(trailing, compact ? 1 : 0);
+            Grid.SetColumn(trailing, compact ? 1 : 2);
+            Grid.SetColumnSpan(trailing, compact ? 2 : 1);
+            trailing.HorizontalAlignment = compact
+                ? HorizontalAlignment.Left
+                : HorizontalAlignment.Stretch;
+            trailing.Margin = compact
+                ? new Thickness(8, 12, 0, 0)
+                : new Thickness(0);
+            copy.Margin = compact
+                ? new Thickness(8, 0, 0, 0)
+                : new Thickness(8, 0, 20, 0);
+        };
 
         return new Border
         {
