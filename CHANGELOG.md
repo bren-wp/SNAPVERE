@@ -4,6 +4,17 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Responsive UI hardening
+
+- Clamp DPI-scaled Windows tray, Settings, Language, About and capture-feedback windows to the active monitor work area instead of allowing high-DPI sizes to exceed the usable screen.
+- Add a pure work-area sizing policy with regression tests for normal, clamped, tiny and invalid geometry.
+- Make tray actions vertically scrollable when the work area cannot fit the full command surface.
+- Make Settings preferences vertically scrollable and move trailing controls below card copy on narrow windows.
+- Make About shortcut copy wrap and capture-feedback messages scroll on constrained heights.
+- Improve Setup narrow-window behavior by shrinking the content card/path controls and reducing the minimum window footprint while retaining AutoScroll and lifecycle behavior.
+- Remove the browser popup's fixed 340 px desktop minimum, add a 280 px safe floor plus a 320 px compact breakpoint, and enforce responsive popup/options contracts across Chrome, Edge, Opera and Firefox.
+
+
 ## [0.1.10] - 2026-09-19
 
 ### Local screen recording
