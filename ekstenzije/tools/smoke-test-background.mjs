@@ -14,6 +14,8 @@ function createRuntime(initialStorage = {}, options = {}) {
   const storage = structuredClone(initialStorage);
   const downloads = [];
   const captures = [];
+  const sentMessages = [];
+  const scriptExecutions = [];
   const deferredRemovals = [];
   const deferredCaptures = [];
   let storageRemoveCount = 0;
@@ -81,7 +83,8 @@ function createRuntime(initialStorage = {}, options = {}) {
         }
         callback(PNG);
       },
-      sendMessage(_tabId, message, callback) {
+      sendMessage(tabId, message, callback) {
+        sentMessages.push({ tabId, message: structuredClone(message) });
         if (message?.type === 'FULL_PREP') {
           callback({ ok: true, totalWidth: 100, totalHeight: 100, viewportWidth: 100, viewportHeight: 100, devicePixelRatio: 1 });
           return;
@@ -99,7 +102,12 @@ function createRuntime(initialStorage = {}, options = {}) {
       onRemoved: { addListener(listener) { tabRemovedListener = listener; } },
       onUpdated: { addListener(listener) { tabUpdatedListener = listener; } }
     },
-    scripting: { executeScript(_details, callback) { callback([]); } },
+    scripting: {
+      executeScript(details, callback) {
+        scriptExecutions.push(structuredClone(details));
+        callback([]);
+      }
+    },
     downloads: {
       download(downloadOptions, callback) {
         downloads.push(structuredClone(downloadOptions));
@@ -123,6 +131,8 @@ function createRuntime(initialStorage = {}, options = {}) {
     storage,
     downloads,
     captures,
+    sentMessages,
+    scriptExecutions,
     get listener() {
       assert.equal(typeof messageListener, 'function');
       return messageListener;
@@ -267,6 +277,47 @@ async function runVariant(browser) {
     const response = await send(runtime.listener, { type: 'CAPTURE_FULL' });
     assert.equal(response.ok, false);
     assert.equal(response.errorKey, 'captureTabChanged');
+    assert.equal(runtime.scriptExecutions.length, 0);
+    assert.equal(runtime.sentMessages.some((entry) => entry.message.type === 'FULL_PREP'), false);
+    assert.equal(runtime.captures.length, 0);
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined);
+  }
+
+  {
+    const runtime = createRuntime({}, { activeTabSequence: [7, 9] });
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    const response = await send(runtime.listener, { type: 'CAPTURE_REGION' });
+    assert.equal(response.ok, false);
+    assert.equal(response.errorKey, 'captureTabChanged');
+    assert.equal(runtime.scriptExecutions.length, 0);
+    assert.equal(runtime.sentMessages.some((entry) => entry.message.type === 'REGION_START'), false);
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined);
+  }
+
+  {
+    const runtime = createRuntime({}, { activeTabSequence: [7, 7, 7, 9] });
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    const response = await send(runtime.listener, { type: 'CAPTURE_REGION' });
+    assert.equal(response.ok, false);
+    assert.equal(response.errorKey, 'captureTabChanged');
+    assert.equal(runtime.scriptExecutions.length, 1);
+    assert.deepEqual(
+      runtime.sentMessages.map((entry) => entry.message.type),
+      ['REGION_START', 'REGION_CLEANUP']
+    );
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined);
+  }
+
+  {
+    const runtime = createRuntime({}, { activeTabSequence: [7, 7, 7, 7, 9] });
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    const response = await send(runtime.listener, { type: 'CAPTURE_FULL' });
+    assert.equal(response.ok, false);
+    assert.equal(response.errorKey, 'captureTabChanged');
+    assert.equal(runtime.scriptExecutions.length, 1);
+    assert.equal(runtime.sentMessages.some((entry) => entry.message.type === 'FULL_PREP'), true);
+    assert.equal(runtime.sentMessages.some((entry) => entry.message.type === 'FULL_SCROLL'), false);
+    assert.equal(runtime.sentMessages.some((entry) => entry.message.type === 'FULL_CLEANUP'), true);
     assert.equal(runtime.captures.length, 0);
     assert.equal(runtime.storage.snapvereActiveCapture, undefined);
   }
@@ -332,7 +383,7 @@ async function runVariant(browser) {
   }
 
   {
-    const runtime = createRuntime({}, { activeTabSequence: [7, 9] });
+    const runtime = createRuntime({}, { activeTabSequence: [7, 7, 7, 7, 9] });
     vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
     const pending = await send(runtime.listener, { type: 'CAPTURE_REGION' });
     assert.equal(pending.ok, true);
