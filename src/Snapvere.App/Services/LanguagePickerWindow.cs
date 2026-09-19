@@ -138,7 +138,15 @@ public sealed class LanguagePickerWindow : Window
         stack.Children.Add(Text(L("Language").ToUpperInvariant(), 9, Accent, Microsoft.UI.Text.FontWeights.Bold));
         stack.Children.Add(_languageCombo);
         stack.Children.Add(_status);
-        card.Child = stack;
+        card.Child = new ScrollViewer
+        {
+            Content = stack,
+            VerticalScrollMode = ScrollMode.Auto,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollMode = ScrollMode.Disabled,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            IsTabStop = false
+        };
         Grid.SetRow(card, 2);
         root.Children.Add(card);
 
