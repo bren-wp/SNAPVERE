@@ -4,6 +4,8 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-09-19
+
 ### Capture-safe shutdown lifecycle
 
 - Prevent tray Exit from disposing the application service graph while a Region, Window or Screen capture is still active.
