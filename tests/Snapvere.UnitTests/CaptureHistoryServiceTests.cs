@@ -42,6 +42,45 @@ public sealed class CaptureHistoryServiceTests
     }
 
     [Fact]
+    public void GetRecentCaptures_IncludesScreenRecordingsButRejectsForeignExtensions()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"snapvere-history-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            var now = DateTime.UtcNow;
+            var screenshot = CreateCapture(
+                directory,
+                "SNAPVERE_2026-09-19_200000.png",
+                10,
+                now.AddSeconds(-2));
+            var recording = CreateCapture(
+                directory,
+                "SNAPVERE_Record_2026-09-19_200001.mp4",
+                20,
+                now.AddSeconds(-1));
+            _ = CreateCapture(
+                directory,
+                "SNAPVERE_2026-09-19_200002.exe",
+                30,
+                now);
+
+            var service = new CaptureHistoryService(new CapturePathProvider(directory));
+            var recent = service.GetRecentCaptures(limit: 12);
+
+            Assert.Equal(2, recent.Count);
+            Assert.Contains(recent, item => item.FilePath == screenshot);
+            Assert.Contains(recent, item => item.FilePath == recording);
+            Assert.DoesNotContain(recent, item => item.FileName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void GetRecentCaptures_BoundsLargeDirectoriesToRequestedTopN()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"snapvere-history-{Guid.NewGuid():N}");
