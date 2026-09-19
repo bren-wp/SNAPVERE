@@ -273,7 +273,7 @@ jobs:
           if end is None:
               raise SystemExit("release section terminator not found")
           section = "\n".join(lines[start:end]).strip() + "\n"
-          if f"## v{version}" not in section or "## v0.1.1" in section:
+          if f"## v{version}" not in section or "## v0.1.9 — " in section:
               raise SystemExit("release note extraction boundary is invalid")
           Path("artifacts/release-notes-final.md").write_text(section, encoding="utf-8", newline="\n")
           '@ | Set-Content -LiteralPath artifacts/extract-release-notes.py -Encoding utf8NoBOM
