@@ -119,6 +119,20 @@ def main() -> int:
         if required not in portable_program:
             fail(f"Portable startup error containment is missing required fragment: {required}")
 
+    startup_diagnostics = read_text(ROOT / "src" / "Snapvere.App" / "Services" / "StartupDiagnostics.cs")
+    show_fatal_match = re.search(
+        r"public static void ShowFatal\(.*?\n    \}\n\n    private static void AppendException",
+        startup_diagnostics,
+        re.DOTALL,
+    )
+    if show_fatal_match is None:
+        fail("Windows startup fatal UI contract could not locate ShowFatal")
+    show_fatal = show_fatal_match.group(0)
+    if "LogFilePath" in show_fatal:
+        fail("Windows startup fatal UI must not expose the local diagnostics-log path")
+    if "UserFacingDiagnosticsText.StartupFailureMessage" not in show_fatal:
+        fail("Windows startup fatal UI must use the centralized sanitized diagnostics message")
+
     windows = contract.get("windows", {})
     props = ROOT / "Directory.Build.props"
     if xml_property(props, "VersionPrefix") != version or windows.get("productVersion") != version:

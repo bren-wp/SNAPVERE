@@ -1,6 +1,6 @@
 # SNAPVERE QA matrica
 
-Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani Windows/browser proizvod. Aktualno javno izdanje je v0.1.7, dok `main` može sadržavati kasniji neobjavljeni hardening. Zeleni gate znači da je provjereni ugovor prošao na tom commitu; ne predstavlja apsolutno jamstvo platformskog ponašanja.
+Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani Windows/browser proizvod. Aktualno javno izdanje je v0.1.8, dok `main` može sadržavati kasniji neobjavljeni hardening. Zeleni gate znači da je provjereni ugovor prošao na tom commitu; ne predstavlja apsolutno jamstvo platformskog ponašanja.
 
 ## Windows gateovi
 
@@ -35,7 +35,7 @@ Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani 
 
 ## Repository i sigurnost
 
-- Product Contract CI, uključujući source contract koji odbija izravno Portable `exception.Message` izlaganje i zahtijeva centralizirani sanitizirani diagnostics put.
+- Product Contract CI, uključujući source contracte koji odbijaju izravno Portable `exception.Message` izlaganje i sprječavaju Windows fatal-startup UI da prikaže lokalnu putanju diagnostics loga.
 - CodeQL za C#, JavaScript/TypeScript, Python i GitHub Actions.
 - pinned workflow actions.
 - dependency monitoring.

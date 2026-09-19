@@ -1,6 +1,6 @@
 # Contributing to SNAPVERE
 
-SNAPVERE 0.1.7 is the current public release. The actively maintained product surface is **Windows plus Chrome, Edge, Opera and Firefox**.
+SNAPVERE 0.1.8 is the current public release. The actively maintained product surface is **Windows plus Chrome, Edge, Opera and Firefox**.
 
 Changes should improve correctness, reliability, accessibility, performance, security or maintainability without weakening the local-first model, capture ownership rules, package integrity or evidence gates.
 
