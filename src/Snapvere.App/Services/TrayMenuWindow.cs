@@ -332,7 +332,7 @@ public sealed class TrayMenuWindow : Window
         }
         if (!_hasActivated)
         {
-            AppWindow.Resize(DpiAwareWindowSizing.ScaleSize(this, FlyoutWidth, FlyoutHeight));
+            AppWindow.Resize(DpiAwareWindowSizing.ScaleSizeToWorkArea(this, FlyoutWidth, FlyoutHeight));
             PositionNearCursor();
         }
         _hasActivated = true;
@@ -348,7 +348,7 @@ public sealed class TrayMenuWindow : Window
             presenter.IsMinimizable = false;
             presenter.IsAlwaysOnTop = true;
         }
-        AppWindow.Resize(DpiAwareWindowSizing.ScaleSize(this, FlyoutWidth, FlyoutHeight));
+        AppWindow.Resize(DpiAwareWindowSizing.ScaleSizeToWorkArea(this, FlyoutWidth, FlyoutHeight));
     }
 
     private void PositionNearCursor()
