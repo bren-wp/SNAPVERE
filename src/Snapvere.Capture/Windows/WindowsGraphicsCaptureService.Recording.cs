@@ -237,6 +237,12 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
             _framePool.FrameArrived += FramePool_FrameArrived;
 
             _session = _framePool.CreateCaptureSession(_item);
+            if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041))
+            {
+                throw new PlatformNotSupportedException(
+                    "Screen recording cursor capture requires Windows 10 version 2004 (build 19041) or later.");
+            }
+
             _session.IsCursorCaptureEnabled = _includeCursor;
             _session.StartCapture();
         }
