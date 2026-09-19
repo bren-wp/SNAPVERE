@@ -16,7 +16,7 @@ No account. No screenshot telemetry. No automatic cloud upload.
 [![Product Contract](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Website](https://snapvere.com) · [Download v0.1.8](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.8) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
+[Website](https://snapvere.com) · [Download v0.1.9](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.9) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
 
 </div>
 
@@ -24,7 +24,7 @@ No account. No screenshot telemetry. No automatic cloud upload.
 
 ## Why SNAPVERE
 
-SNAPVERE 0.1.8 is built for people who want screenshot tools that stay focused on the job: capture the right pixels, annotate quickly, copy or save locally, and get out of the way.
+SNAPVERE 0.1.9 is built for people who want screenshot tools that stay focused on the job: capture the right pixels, annotate quickly, copy or save locally, and get out of the way.
 
 | | What you get |
 | --- | --- |
@@ -35,7 +35,7 @@ SNAPVERE 0.1.8 is built for people who want screenshot tools that stay focused o
 | 📦 **Portable or installed** | Universal Windows Setup and Portable packages carry x86, x64 and ARM64 application payloads. |
 | 🌐 **Browser coverage** | Chrome, Edge, Opera and Firefox share the same locked SNAPVERE brand and bounded capture behavior. |
 
-SNAPVERE 0.1.8 focuses this maintenance cycle on Setup lifecycle safety and browser message ownership. Setup now validates the installation marker exactly, rejects existing reparse-point/symlink directory chains before mutation, sanitizes silent/deferred failures, prevents the wizard from closing during active file work, normalizes selected install folders and improves active-monitor/accessibility behavior.
+SNAPVERE 0.1.9 focuses this maintenance cycle on Setup lifecycle safety and browser message ownership. Setup now validates the installation marker exactly, rejects existing reparse-point/symlink directory chains before mutation, sanitizes silent/deferred failures, prevents the wizard from closing during active file work, normalizes selected install folders and improves active-monitor/accessibility behavior.
 
 The browser runtime now separates extension-page capture commands from tab-owned capture-session callbacks. Injected tab scripts and foreign extension identities cannot initiate top-level SNAPVERE capture commands; region callbacks retain token/tab/window ownership checks, and background responses expose bounded error keys rather than raw internal exception messages. The existing v0.1.5 concurrency, memory, responsive UI and shortcut hardening remains in place.
 
@@ -91,8 +91,8 @@ These are **real rendered Windows surfaces captured by SNAPVERE's visual-QA pipe
 
 ## Downloads
 
-Current release: **SNAPVERE 0.1.8**<br>
-Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.8
+Current release: **SNAPVERE 0.1.9**<br>
+Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.9
 
 | Platform | Package |
 | --- | --- |
