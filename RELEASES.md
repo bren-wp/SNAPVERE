@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.6**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.6
+- Current public release: **v0.1.7**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.7
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,6 +28,14 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
+No unreleased changes are documented after v0.1.7 yet.
+
+---
+
+## v0.1.7 — 2026-09-19
+
+SNAPVERE 0.1.7 promotes the accumulated post-v0.1.6 production hardening from `main` into a new immutable patch release. It preserves the local-first Windows + browser product boundary and exact six-package contract while strengthening capture persistence recovery, Explorer/tray lifecycle, installer recoverability and browser capture ownership.
+
 ### Capture persistence failure recovery
 
 - Windows capture saving now distinguishes access-denied, storage-full and other local write failures from acquisition/capture failures.
@@ -36,6 +44,7 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ### Browser active-tab side-effect ownership
 
+- Capture ownership now also follows the last-focused browser window, so switching focus to another browser window aborts before Region or Full Page page-side effects continue against the previous window.
 - Region and Full Page capture now revalidate active-tab ownership before content-script/page side effects instead of waiting until the next pixel capture.
 - If the active tab changes immediately after Region overlay creation, the background runtime sends a token-scoped cleanup request to the owning tab and releases the capture lock.
 - Full Page capture checks ownership before preparation, every scroll-side-effect boundary, floating-element hiding and final assembly while still running unconditional token-scoped cleanup on failure.
