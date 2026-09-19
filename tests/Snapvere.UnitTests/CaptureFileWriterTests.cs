@@ -140,6 +140,33 @@ public sealed class CaptureFileWriterTests
     }
 
     [Fact]
+    public async Task SavePngAsync_InvalidDirectoryTargetReturnsTypedPersistenceFailure()
+    {
+        var root = CreateTemporaryDirectory();
+        var fileTarget = Path.Combine(root, "capture-target");
+        File.WriteAllText(fileTarget, "not a directory");
+
+        try
+        {
+            var writer = new CaptureFileWriter(
+                new PngCaptureEncoder(),
+                new CapturePathProvider(fileTarget),
+                TimeProvider.System);
+
+            var exception = await Assert.ThrowsAsync<CapturePersistenceException>(
+                () => writer.SavePngAsync(CreateFrame()));
+
+            Assert.Equal(CapturePersistenceFailureKind.WriteFailed, exception.Kind);
+            Assert.IsType<IOException>(exception.InnerException);
+            Assert.False(File.Exists(fileTarget + ".png"));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task SavePngAsync_CancelledTokenDoesNotPublishCapture()
     {
         var directory = CreateTemporaryDirectory();
