@@ -4,6 +4,13 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Explorer tray recovery
+
+- Replace the one-shot `TaskbarCreated` tray-icon restore attempt with a bounded non-blocking retry schedule so short Explorer notification-area races do not leave a healthy SNAPVERE process without its icon.
+- Keep retries on the native tray message loop through a one-shot timer/post-message handoff instead of sleeping or blocking tray input.
+- Invalidate stale timer callbacks with a generation token so a callback from an older recovery cycle cannot re-add or disturb an icon after a later recovery already succeeded.
+- Add unit coverage for the bounded 250 ms / 500 ms / 1 s / 2 s retry policy and hard stop after five total attempts.
+
 ### Local shell error containment
 
 - Centralize the expected Windows local-file/folder shell failure taxonomy so tray and Options actions no longer drift in which policy, permission and shell-handler failures they contain.
