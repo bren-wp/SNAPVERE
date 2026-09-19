@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.7**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.7
+- Current public release: **v0.1.8**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.8
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,20 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No unreleased changes are documented after v0.1.7 yet.
+No unreleased changes are documented after v0.1.8 yet.
+
+---
+
+## v0.1.8 — 2026-09-19
+
+SNAPVERE 0.1.8 is a focused privacy-hardening patch for Windows startup diagnostics. It preserves the Windows + browser product contract and local-first model while removing a private local filesystem path from fatal startup UI.
+
+### Startup diagnostics UI privacy
+
+- Fatal startup dialogs no longer display the absolute local diagnostics-log path.
+- Detailed exception type, message and stack information remains available only in the bounded local startup diagnostics log on the device.
+- User-facing startup failure copy is centralized in the shared layer and covered by a regression test that rejects filesystem-looking paths and exception/stack wording.
+- Browser runtime behavior and permissions are unchanged; browser packages are rebuilt under the synchronized 0.1.8 release contract.
 
 ---
 
