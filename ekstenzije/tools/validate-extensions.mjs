@@ -230,6 +230,31 @@ function validateBrandLock(browser, browserDir) {
   }
 }
 
+function validateResponsiveUi(browser, browserDir) {
+  const popupCss = fs.readFileSync(path.join(browserDir, "popup.css"), "utf8");
+  const optionsCss = fs.readFileSync(path.join(browserDir, "options.css"), "utf8");
+
+  if (/min-width:\s*280px\s*;/i.test(popupCss)) {
+    fail(`${browser}/popup.css must not force a 280px minimum that can overflow a narrower host viewport.`);
+  }
+  for (const breakpoint of [320, 280]) {
+    if (!new RegExp(`@media\\s*\\(max-width:\\s*${breakpoint}px\\)`, "i").test(popupCss)) {
+      fail(`${browser}/popup.css is missing the ${breakpoint}px responsive breakpoint.`);
+    }
+  }
+  for (const breakpoint of [540, 420, 320]) {
+    if (!new RegExp(`@media\\s*\\(max-width:\\s*${breakpoint}px\\)`, "i").test(optionsCss)) {
+      fail(`${browser}/options.css is missing the ${breakpoint}px responsive breakpoint.`);
+    }
+  }
+  if (!/grid-template-columns:\s*26px\s+minmax\(0,\s*1fr\)/i.test(popupCss)) {
+    fail(`${browser}/popup.css must preserve the narrow action-grid reflow.`);
+  }
+  if (!/\.tabs\s*\{[^}]*grid-template-columns:\s*1fr/i.test(optionsCss)) {
+    fail(`${browser}/options.css must stack navigation tabs in compact mode.`);
+  }
+}
+
 function validateSource(browser, browserDir) {
   const forbiddenNameFragments = ["node_modules", ".cache", "__pycache__", ".DS_Store", ".map"];
   const sourcePattern = /\.(?:js|mjs|html|css)$/i;
@@ -287,8 +312,9 @@ for (const browser of browsers) {
   validateMessages(browserDir);
   validateLocalizationReferences(browser, browserDir);
   validateBrandLock(browser, browserDir);
+  validateResponsiveUi(browser, browserDir);
   validateSource(browser, browserDir);
   console.log(`Validated ${browser}.`);
 }
 
-console.log("SNAPVERE browser extension validation passed: branding locked, permissions bounded, localization references verified, command shortcuts locked, capture memory lifecycle enforced.");
+console.log("SNAPVERE browser extension validation passed: branding locked, permissions bounded, localization references verified, responsive UI contract enforced, command shortcuts locked, capture memory lifecycle enforced.");
