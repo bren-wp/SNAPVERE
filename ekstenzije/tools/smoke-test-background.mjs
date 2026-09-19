@@ -67,11 +67,27 @@ function createRuntime(initialStorage = {}, options = {}) {
       }
     },
     tabs: {
-      query(_query, callback) {
+      query(queryInfo, callback) {
+        if (
+          Number.isInteger(queryInfo?.windowId) &&
+          options.windowActiveTabs &&
+          Object.hasOwn(options.windowActiveTabs, queryInfo.windowId)
+        ) {
+          const configured = options.windowActiveTabs[queryInfo.windowId];
+          const tab = Number.isInteger(configured)
+            ? { id: configured, windowId: queryInfo.windowId }
+            : configured;
+          callback(tab ? [structuredClone(tab)] : []);
+          return;
+        }
+
         const index = Math.min(activeTabQueryIndex, activeTabSequence.length - 1);
-        const tabId = activeTabSequence[index];
+        const configured = activeTabSequence[index];
         activeTabQueryIndex += 1;
-        callback([{ id: tabId, windowId: 3 }]);
+        const tab = Number.isInteger(configured)
+          ? { id: configured, windowId: 3 }
+          : configured;
+        callback(tab ? [structuredClone(tab)] : []);
       },
       captureVisibleTab(windowId, captureOptions, callback) {
         assert.equal(windowId, 3);
@@ -273,6 +289,26 @@ async function runVariant(browser) {
 
   {
     const runtime = createRuntime({}, { activeTabSequence: [7, 9] });
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    const response = await send(runtime.listener, { type: 'CAPTURE_FULL' });
+    assert.equal(response.ok, false);
+    assert.equal(response.errorKey, 'captureTabChanged');
+    assert.equal(runtime.scriptExecutions.length, 0);
+    assert.equal(runtime.sentMessages.some((entry) => entry.message.type === 'FULL_PREP'), false);
+    assert.equal(runtime.captures.length, 0);
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined);
+  }
+
+  {
+    const runtime = createRuntime({}, {
+      activeTabSequence: [
+        { id: 7, windowId: 3 },
+        { id: 7, windowId: 9 }
+      ],
+      windowActiveTabs: {
+        3: { id: 7, windowId: 3 }
+      }
+    });
     vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
     const response = await send(runtime.listener, { type: 'CAPTURE_FULL' });
     assert.equal(response.ok, false);

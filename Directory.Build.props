@@ -15,9 +15,9 @@
     <NuGetAudit>true</NuGetAudit>
     <NuGetAuditMode>all</NuGetAuditMode>
     <NuGetAuditLevel>low</NuGetAuditLevel>
-    <VersionPrefix>0.1.6</VersionPrefix>
-    <AssemblyVersion>0.1.6.0</AssemblyVersion>
-    <FileVersion>0.1.6.0</FileVersion>
+    <VersionPrefix>0.1.7</VersionPrefix>
+    <AssemblyVersion>0.1.7.0</AssemblyVersion>
+    <FileVersion>0.1.7.0</FileVersion>
     <Company>Brendigo</Company>
     <Product>SNAPVERE</Product>
     <Authors>Brendigo</Authors>
