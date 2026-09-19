@@ -365,11 +365,22 @@
   async function startRegionCapture() {
     const tab = await getActiveTab();
     const lock = await acquireLock("region", tab);
+    let regionStarted = false;
     try {
+      await ensureCaptureTabActive(lock.tabId, lock.windowId);
       await ensureCaptureScript(tab.id);
+      await ensureCaptureTabActive(lock.tabId, lock.windowId);
       await sendTab(tab.id, { type: "REGION_START", token: lock.token });
+      regionStarted = true;
+      await ensureCaptureTabActive(lock.tabId, lock.windowId);
       return { ok: true, pending: true };
     } catch (error) {
+      if (regionStarted) {
+        try {
+          await sendTab(tab.id, { type: "REGION_CLEANUP", token: lock.token });
+        } catch {
+        }
+      }
       await releaseLock(lock.token);
       throw error;
     }
@@ -381,9 +392,12 @@
     let prepared = false;
 
     try {
+      await ensureCaptureTabActive(lock.tabId, lock.windowId);
       await ensureCaptureScript(tab.id);
+      await ensureCaptureTabActive(lock.tabId, lock.windowId);
       const prep = await sendTab(tab.id, { type: "FULL_PREP", token: lock.token });
       prepared = true;
+      await ensureCaptureTabActive(lock.tabId, lock.windowId);
 
       const totalWidth = Number(prep.totalWidth);
       const totalHeight = Number(prep.totalHeight);
@@ -405,6 +419,7 @@
       let index = 0;
       for (const y of ys) {
         for (const x of xs) {
+          await ensureCaptureTabActive(lock.tabId, lock.windowId);
           const scrolled = await sendTab(tab.id, {
             type: "FULL_SCROLL",
             token: lock.token,
@@ -421,12 +436,14 @@
           });
           index += 1;
           if (index === 1 && xs.length * ys.length > 1) {
+            await ensureCaptureTabActive(lock.tabId, lock.windowId);
             await sendTab(tab.id, { type: "FULL_HIDE_FLOATING", token: lock.token });
           }
         }
       }
 
       const { filename } = await buildFilename("full-page");
+      await ensureCaptureTabActive(lock.tabId, lock.windowId);
       await sendTab(tab.id, { type: "FULL_ASSEMBLE", token: lock.token, filename });
       return { ok: true, filename };
     } finally {
