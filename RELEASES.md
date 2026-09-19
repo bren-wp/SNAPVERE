@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.8**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.8
+- Current public release: **v0.1.9**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.9
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,22 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No unreleased changes are documented after v0.1.8 yet.
+No unreleased changes are documented after v0.1.9 yet.
+
+---
+
+## v0.1.9 — 2026-09-19
+
+SNAPVERE 0.1.9 is a focused Windows lifecycle-safety patch. It prevents application shutdown from disposing capture dependencies while a Region, Window or Screen capture is active, while preserving the existing local-first Windows + browser product contract.
+
+### Capture-safe shutdown lifecycle
+
+- Tray **Exit** is rejected while a capture is active instead of closing the hidden runtime host and disposing the shared service graph mid-operation.
+- Capture start and shutdown start are serialized through a thread-safe lifecycle gate so the two transitions cannot race.
+- Once shutdown has been accepted, new capture requests are rejected.
+- EN/HR feedback explains why Exit is temporarily blocked while a capture is active.
+- Regression tests cover active-capture shutdown rejection and post-shutdown capture rejection.
+- Browser runtime behavior and permissions are unchanged; browser packages are rebuilt under the synchronized 0.1.9 release contract.
 
 ---
 
