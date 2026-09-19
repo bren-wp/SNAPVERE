@@ -18,6 +18,7 @@ Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani 
 - provjera odbijanja deferred cleanupa s neispravnim parent PID-om i Setup-mutex contentiona, uz zahtjev da instalacijski ugovor ostane nepromijenjen.
 - tray-first launch provjera unutar lifecycle probea, uključujući dokaz da drugi Installed ili Portable launch aktivira postojeći proces bez stvaranja duplikata te unit-testirani bounded Explorer tray-recovery backoff.
 - capture/shutdown lifecycle serializacija dokazuje da aktivno snimanje blokira Exit-driven dispose servisa do završetka te da prihvaćeni shutdown blokira nova snimanja.
+- testovi screen-recording policyja provjeravaju parne H.264 dimenzije, 8K granicu izvora, bitrate granice i odbijanje zero-frame/zero-byte izlaza; MP4 writer testovi pokrivaju atomic publish, collision-safe nazive, cleanup privremenih datoteka i zabranu objave nakon greške.
 - installer safety regresijski testovi za exact marker matching, normalizaciju instalacijske mape, validaciju normalnog directory chaina i ownership install targeta (missing/empty/owned/unowned/invalid-marker/marker-only).
 
 ## Browser gateovi
