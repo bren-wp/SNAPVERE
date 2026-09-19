@@ -29,6 +29,21 @@ public sealed class ScreenRecordingPolicyTests
     }
 
     [Theory]
+    [InlineData(1, 1, true)]
+    [InlineData(30, 4096, true)]
+    [InlineData(0, 4096, false)]
+    [InlineData(30, 0, false)]
+    public void PublishableOutput_RequiresFrameAndBytes(
+        int deliveredFrames,
+        ulong outputBytes,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            ScreenRecordingPolicy.HasPublishableOutput(deliveredFrames, outputBytes));
+    }
+
+    [Theory]
     [InlineData(1280, 720)]
     [InlineData(1920, 1080)]
     [InlineData(3840, 2160)]
