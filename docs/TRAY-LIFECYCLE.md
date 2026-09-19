@@ -24,7 +24,7 @@ Rapid Region Capture clicks are debounced. Exceptions raised by UI command subsc
 
 ## Explorer recovery and localization
 
-The tray host registers the `TaskbarCreated` message. When Explorer recreates the taskbar, SNAPVERE attempts to add its notification icon again. This recovery is best effort; failure to recreate the icon does not intentionally terminate the process, and global hotkeys can remain active.
+The tray host registers the `TaskbarCreated` message. When Explorer recreates the taskbar, SNAPVERE immediately attempts to add its notification icon again. If Explorer's notification area is not ready yet, recovery uses bounded non-blocking retries after 250 ms, 500 ms, 1 second and 2 seconds, for at most five total registration attempts. Retry timers only post a private message back to the native tray loop; they do not sleep or block tray input. A generation token rejects stale timer callbacks after a newer recovery cycle or a successful restore. If all attempts fail, the process remains alive and registered global hotkeys can continue to work.
 
 When the active SNAPVERE language changes, the message loop receives a private refresh message and updates the localized tray tooltip without recreating the application process.
 
