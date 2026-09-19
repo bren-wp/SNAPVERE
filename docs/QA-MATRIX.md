@@ -18,6 +18,7 @@ This matrix documents automated regression evidence for the actively maintained 
 - deferred-cleanup rejection for invalid parent PID plus Setup-mutex contention coverage, with the installed contract required to remain unchanged.
 - tray-first launch behavior inside the package lifecycle probes, including proof that a second Installed or Portable launch activates the existing process without creating a duplicate, plus unit-tested bounded Explorer tray-recovery backoff.
 - capture/shutdown lifecycle serialization proving active capture blocks Exit-driven service disposal until completion and that an accepted shutdown request prevents later capture starts.
+- screen-recording policy tests covering even H.264 dimensions, 8K source bounds, bitrate limits and rejection of zero-frame/zero-byte output; MP4 writer tests cover atomic publication, collision-safe naming, temporary-file cleanup and failure non-publication.
 - installer safety regression tests for exact marker matching, install-folder normalization, normal directory-chain validation and install-target ownership (missing/empty/owned/unowned/invalid-marker/marker-only targets).
 
 ## Capture-path regression focus

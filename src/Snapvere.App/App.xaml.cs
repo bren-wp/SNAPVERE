@@ -57,6 +57,8 @@ public partial class App : Microsoft.UI.Xaml.Application
             services.AddSingleton(TimeProvider.System);
             services.AddSingleton<GdiScreenCaptureService>();
             services.AddSingleton<WindowsGraphicsCaptureService>();
+            services.AddSingleton<IScreenRecordingService>(provider =>
+                provider.GetRequiredService<WindowsGraphicsCaptureService>());
             services.AddSingleton<IScreenCaptureService>(provider =>
                 new ResilientScreenCaptureService(
                     provider.GetRequiredService<WindowsGraphicsCaptureService>(),
@@ -66,8 +68,10 @@ public partial class App : Microsoft.UI.Xaml.Application
             services.AddSingleton<PngCaptureEncoder>();
             services.AddSingleton(new CapturePathProvider());
             services.AddSingleton<CaptureFileWriter>();
+            services.AddSingleton<ScreenRecordingFileWriter>();
             services.AddSingleton<CapturePreferencesService>();
             services.AddSingleton<ScreenCaptureWorkflow>();
+            services.AddSingleton<ScreenRecordingWorkflow>();
             services.AddSingleton<RegionCaptureWorkflow>();
             services.AddSingleton<WindowCaptureWorkflow>();
             services.AddSingleton<WindowTargetPicker>();
@@ -116,6 +120,7 @@ public partial class App : Microsoft.UI.Xaml.Application
 
             _window = _services.GetRequiredService<CaptureCenterWindow>();
             _window.Closed += OnMainWindowClosed;
+            _window.ScreenRecordingStateChanged += OnScreenRecordingStateChanged;
             StartupDiagnostics.WriteLine("Capture coordinator created in tray-first hidden mode.");
             SingleInstanceGuard.RegisterSecondLaunchHandler(OnSecondLaunchRequested);
 
@@ -769,12 +774,18 @@ public partial class App : Microsoft.UI.Xaml.Application
         try
         {
             _trayIconService.Start();
+            _trayIconService.SetScreenRecordingState(window.IsScreenRecordingActive);
         }
         catch (Exception exception)
         {
             StartupDiagnostics.Record("System tray host", exception);
             window.ReportTrayHostFailure();
         }
+    }
+
+    private void OnScreenRecordingStateChanged(bool active)
+    {
+        _trayIconService?.SetScreenRecordingState(active);
     }
 
     private void OnGlobalHotkeyPressed(object? sender, CaptureHotkeyPressedEventArgs e)
@@ -829,6 +840,10 @@ public partial class App : Microsoft.UI.Xaml.Application
                 CloseTrayMenu();
                 window.StartCaptureFromHotkey(CaptureMode.FullScreen);
                 break;
+            case TrayCommand.ToggleScreenRecording:
+                CloseTrayMenu();
+                window.ToggleScreenRecording();
+                break;
             case TrayCommand.OpenCaptureFolder:
                 CloseTrayMenu();
                 OpenCaptureFolder();
@@ -860,7 +875,8 @@ public partial class App : Microsoft.UI.Xaml.Application
             ExecuteTrayCommand,
             () => ShowOptions(OptionsSection.RecentCaptures),
             ShowLanguage,
-            preferences.Current.LanguageCode);
+            preferences.Current.LanguageCode,
+            _window?.IsScreenRecordingActive ?? false);
         _trayMenuWindow = menu;
         menu.Closed += (_, _) =>
         {
@@ -966,6 +982,11 @@ public partial class App : Microsoft.UI.Xaml.Application
         _languageWindow = null;
         _aboutWindow?.Close();
         _aboutWindow = null;
+
+        if (_window is not null)
+        {
+            _window.ScreenRecordingStateChanged -= OnScreenRecordingStateChanged;
+        }
 
         if (_hotkeyService is not null)
         {

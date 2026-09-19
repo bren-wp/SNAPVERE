@@ -1,15 +1,32 @@
-# SNAPVERE 0.1.2 korisnički vodič
+# SNAPVERE korisnički vodič
 
-SNAPVERE je lokalno usmjeren alat za snimke zaslona na Windowsu i u modernim preglednicima.
+SNAPVERE je lokalno usmjeren alat za snimanje sadržaja na Windowsu i u modernim preglednicima. Aktualno javno izdanje ostaje v0.1.9; ovaj vodič može opisivati i izričito označeno neobjavljeno ponašanje koje je u aktivnoj validaciji.
 
 ## Windows
 
-Aplikacija radi prvenstveno iz područja obavijesti. Print Screen ili Ctrl+Shift+1 pokreće snimanje područja, Ctrl+Shift+2 snimanje prozora, a Ctrl+Shift+3 snimanje zaslona. Odabrano područje može se označiti olovkom, linijom, strelicom, okvirom ili markerom te kopirati ili spremiti kao PNG.
+Aplikacija radi prvenstveno iz područja obavijesti.
 
-Snimke se zadano spremaju u `Pictures\SNAPVERE`.
+| Radnja | Prečac |
+| --- | --- |
+| Snimanje područja | Print Screen ili Ctrl+Shift+1 |
+| Snimanje prozora | Ctrl+Shift+2 |
+| Snimanje zaslona | Ctrl+Shift+3 |
+| Snimanje zaslona kao video | Start/Stop u tray izborniku |
+
+Odabrano područje može se označiti olovkom, linijom, strelicom, okvirom ili markerom te kopirati ili spremiti kao PNG.
+
+Funkcija snimanja zaslona koja se validira za v0.1.10 snima primarni Windows zaslon lokalno u H.264 MP4 preko Windows.Graphics.Capture. Pokretanje i zaustavljanje obavlja se iz tray izbornika, koristi postojeću postavku uključivanja pokazivača miša i prikazuje aktivno stanje snimanja. Početna implementacija je samo video: mikrofon i sistemski zvuk još nisu navedeni kao podržani.
+
+Snimke zaslona i dovršene videosnimke zadano se spremaju u `Pictures\SNAPVERE`. Dovršeni MP4 objavljuje se tek nakon završetka enkodiranja; privremene datoteke ne predstavljaju dovršene snimke.
 
 ## Browser ekstenzije
 
-Chrome, Edge, Opera i Firefox nude snimanje vidljivog područja, odabranog područja i ograničeno snimanje cijele stranice. Naziv proizvoda i prefiks datoteke fiksno su **SNAPVERE** i ne mogu se promijeniti u postavkama.
+Chrome, Edge, Opera i Firefox nude snimanje vidljivog područja, odabranog područja i ograničeno snimanje cijele stranice. Naziv proizvoda i prefiks datoteke fiksno su **SNAPVERE**.
 
-Osnovna obrada snimke odvija se lokalno bez obaveznog računa, automatskog slanja u oblak, analitike ili telemetrije.
+Snimanje videa trenutačno je Windows funkcija u validaciji. Browser ekstenzije ne navode podršku za videosnimanje.
+
+## Privatnost
+
+Osnovna obrada snimki i videosnimki odvija se lokalno bez obaveznog računa, automatskog slanja u oblak, analitike ili telemetrije.
+
+Povezano: [Privatnost](PRIVACY.md), [QA matrica](QA-MATRIX.md) i [Rješavanje problema](TROUBLESHOOTING.md).

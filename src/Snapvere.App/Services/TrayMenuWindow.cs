@@ -17,12 +17,13 @@ namespace Snapvere.App.Services;
 public sealed class TrayMenuWindow : Window
 {
     private const int FlyoutWidth = 418;
-    private const int FlyoutHeight = 540;
+    private const int FlyoutHeight = 578;
 
     private readonly Action<TrayCommand> _commandHandler;
     private readonly Action _recentCapturesHandler;
     private readonly Action _languageHandler;
     private readonly string _languageCode;
+    private readonly bool _screenRecordingActive;
     private bool _hasActivated;
     private bool _closingForCommand;
 
@@ -30,12 +31,14 @@ public sealed class TrayMenuWindow : Window
         Action<TrayCommand> commandHandler,
         Action recentCapturesHandler,
         Action languageHandler,
-        string? languageCode = null)
+        string? languageCode = null,
+        bool screenRecordingActive = false)
     {
         _commandHandler = commandHandler ?? throw new ArgumentNullException(nameof(commandHandler));
         _recentCapturesHandler = recentCapturesHandler ?? throw new ArgumentNullException(nameof(recentCapturesHandler));
         _languageHandler = languageHandler ?? throw new ArgumentNullException(nameof(languageHandler));
         _languageCode = SnapvereLocalization.NormalizeLanguageCode(languageCode ?? SnapvereLanguageState.CurrentLanguageCode);
+        _screenRecordingActive = screenRecordingActive;
         Title = "SNAPVERE";
         Content = BuildContent();
         ConfigureWindow();
@@ -73,6 +76,12 @@ public sealed class TrayMenuWindow : Window
         actions.Children.Add(CreateMenuButton("\uE722", L("CaptureRegion"), "Print Screen", TrayCommand.RegionCapture, primary: true));
         actions.Children.Add(CreateMenuButton("\uE7F4", L("CaptureWindow"), "Ctrl + Shift + 2", TrayCommand.WindowCapture));
         actions.Children.Add(CreateMenuButton("\uE7F8", L("CaptureScreen"), "Ctrl + Shift + 3", TrayCommand.ScreenCapture));
+        actions.Children.Add(CreateMenuButton(
+            "\uE714",
+            L(_screenRecordingActive ? "StopScreenRecording" : "StartScreenRecording"),
+            string.Empty,
+            TrayCommand.ToggleScreenRecording,
+            danger: _screenRecordingActive));
         actions.Children.Add(CreateSeparator());
         actions.Children.Add(CreateMenuButton("\uE713", L("Settings"), string.Empty, TrayCommand.Show));
         actions.Children.Add(CreateActionButton("\uE81C", L("RecentCaptures"), string.Empty, _recentCapturesHandler));
@@ -92,9 +101,14 @@ public sealed class TrayMenuWindow : Window
             Width = 7,
             Height = 7,
             CornerRadius = new CornerRadius(4),
-            Background = Brush(0xFF, 0x56, 0xD6, 0xAE)
+            Background = _screenRecordingActive
+                ? Brush(0xFF, 0xEC, 0x5F, 0x74)
+                : Brush(0xFF, 0x56, 0xD6, 0xAE)
         });
-        ready.Children.Add(Text(L("Ready"), 10, Muted));
+        ready.Children.Add(Text(
+            L(_screenRecordingActive ? "ScreenRecordingActive" : "Ready"),
+            10,
+            _screenRecordingActive ? Strong : Muted));
         footer.Children.Add(ready);
         var version = typeof(TrayMenuWindow).Assembly.GetName().Version?.ToString(3);
         var versionText = Text(version is null ? "SNAPVERE" : $"v{version}", 10, Subtle);

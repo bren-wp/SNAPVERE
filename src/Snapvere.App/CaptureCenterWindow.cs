@@ -28,7 +28,12 @@ public sealed class CaptureCenterWindow : Window
 
     private RegionCaptureWindow? _regionCaptureWindow;
     private CaptureFeedbackWindow? _feedbackWindow;
+    private CancellationTokenSource? _recordingStopSource;
     private readonly CaptureActivityGate _activityGate = new();
+
+    public event Action<bool>? ScreenRecordingStateChanged;
+
+    public bool IsScreenRecordingActive => _recordingStopSource is not null;
 
     public CaptureCenterWindow(
         IServiceProvider services,
@@ -59,6 +64,99 @@ public sealed class CaptureCenterWindow : Window
             case CaptureMode.Monitor:
                 _ = ExecuteScreenCaptureAsync();
                 break;
+        }
+    }
+
+    public void ToggleScreenRecording()
+    {
+        var activeRecording = _recordingStopSource;
+        if (activeRecording is not null)
+        {
+            if (!activeRecording.IsCancellationRequested)
+            {
+                StartupDiagnostics.WriteLine("Screen recording stop requested by the user.");
+                activeRecording.Cancel();
+            }
+
+            return;
+        }
+
+        if (!WindowsGraphicsCaptureService.IsSupported())
+        {
+            StartupDiagnostics.WriteLine(
+                "Screen recording is unavailable because Windows.Graphics.Capture is not supported.");
+            ShowCaptureFeedback(CaptureFeedbackKind.RecordingUnsupported);
+            return;
+        }
+
+        if (!TryBeginCapture())
+        {
+            return;
+        }
+
+        CloseCaptureFeedback();
+        var stopSource = new CancellationTokenSource();
+        _recordingStopSource = stopSource;
+        NotifyScreenRecordingStateChanged(active: true);
+        _ = ExecuteScreenRecordingAsync(stopSource);
+    }
+
+    private async Task ExecuteScreenRecordingAsync(CancellationTokenSource stopSource)
+    {
+        try
+        {
+            var workflow = _services.GetRequiredService<ScreenRecordingWorkflow>();
+            var includeCursor = _capturePreferencesService.Current.IncludeCursorOnCapture;
+            var result = await workflow
+                .RecordPrimaryDisplayAsync(includeCursor, stopSource.Token)
+                .ConfigureAwait(true);
+
+            StartupDiagnostics.WriteLine(
+                $"Screen recording saved {result.EncodedSize.Width}x{result.EncodedSize.Height} MP4 locally; duration {result.Duration.TotalSeconds:F1}s.");
+            ShowCaptureFeedback(CaptureFeedbackKind.RecordingSaved);
+        }
+        catch (OperationCanceledException) when (stopSource.IsCancellationRequested)
+        {
+            StartupDiagnostics.WriteLine(
+                "Screen recording stopped before a complete MP4 could be produced.");
+        }
+        catch (PlatformNotSupportedException exception)
+        {
+            StartupDiagnostics.Record("Screen recording support", exception);
+            ShowCaptureFeedback(CaptureFeedbackKind.RecordingUnsupported);
+        }
+        catch (CapturePersistenceException exception)
+        {
+            StartupDiagnostics.Record("Persist screen recording", exception);
+            ShowCaptureFeedback(ToPersistenceFeedbackKind(exception.Kind));
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Record("Screen recording", exception);
+            ShowCaptureFeedback(CaptureFeedbackKind.RecordingFailed);
+        }
+        finally
+        {
+            if (ReferenceEquals(_recordingStopSource, stopSource))
+            {
+                _recordingStopSource = null;
+                NotifyScreenRecordingStateChanged(active: false);
+            }
+
+            stopSource.Dispose();
+            EndCapture();
+        }
+    }
+
+    private void NotifyScreenRecordingStateChanged(bool active)
+    {
+        try
+        {
+            ScreenRecordingStateChanged?.Invoke(active);
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Record("Screen recording state notification", exception);
         }
     }
 

@@ -4,6 +4,19 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Local screen recording
+
+- Add real local-first primary-display screen recording for Windows using Windows.Graphics.Capture and H.264 MP4 output.
+- Add tray Start/Stop recording controls, active recording status and cursor-preference integration.
+- Keep the initial recording mode video-only; microphone and system audio are not claimed as supported.
+- Bound recording policy to 30 FPS, 4–32 Mbps and source displays up to 7680x4320, with even encoded dimensions.
+- Keep frame retention bounded to the latest pending frame plus encoder-owned in-flight frames.
+- Publish MP4 files atomically through SNAPVERE-owned temporary files with collision-safe final names and stale-temp cleanup.
+- Reject zero-frame or zero-byte recording output so rapid Start/Stop cannot publish an empty recording as success.
+- Include completed MP4 recordings in Recent captures while rejecting unrelated file extensions.
+- Add unit coverage for encoding policy, atomic recording publication, collisions, failure cleanup, completion validation and history integration.
+
+
 ## [0.1.9] - 2026-09-19
 
 ### Capture-safe shutdown lifecycle
