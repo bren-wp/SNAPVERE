@@ -4,6 +4,16 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Responsive UI hardening
+
+- Fit Windows Setup inside the active monitor work area even when the normal minimum window size would exceed a small display or aggressive DPI-scaled workspace.
+- Reflow Setup content width, license controls, install-path row, shortcut choices, status/actions and uninstall card on narrow windows.
+- Prevent the post-install Launch option from overlapping the Finish action in compact layouts.
+- Add compact tray-menu behavior that removes shortcut hints, reduces padding/branding and wraps long localized actions when the available work area is narrow.
+- Remove the browser popup's hard 280px minimum and add smaller popup/options breakpoints with stacked full-width controls where appropriate.
+- Add unit and browser-validator coverage that locks the responsive layout contracts across Chrome, Edge, Opera and Firefox.
+
+
 ## [0.1.10] - 2026-09-19
 
 ### Local screen recording
