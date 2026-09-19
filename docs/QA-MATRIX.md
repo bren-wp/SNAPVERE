@@ -16,7 +16,7 @@ This matrix documents automated regression evidence for the actively maintained 
 - x64 and x86 Setup/Portable lifecycle completion markers.
 - locked-file uninstall failure injection that requires Installed Apps/startup/shortcut metadata to remain until file cleanup succeeds, followed by repair and successful removal.
 - deferred-cleanup rejection for invalid parent PID plus Setup-mutex contention coverage, with the installed contract required to remain unchanged.
-- tray-first launch behavior inside the package lifecycle probes, including proof that a second Installed or Portable launch activates the existing process without creating a duplicate.
+- tray-first launch behavior inside the package lifecycle probes, including proof that a second Installed or Portable launch activates the existing process without creating a duplicate, plus unit-tested bounded Explorer tray-recovery backoff.
 - installer safety regression tests for exact marker matching, install-folder normalization, normal directory-chain validation and install-target ownership (missing/empty/owned/unowned/invalid-marker/marker-only targets).
 
 ## Capture-path regression focus
