@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.2 Performanse i stabilnost
+# SNAPVERE Performanse i stabilnost
 
 SNAPVERE je optimiziran za kratke capture operacije umjesto za stalno aktivan desktop proces. Fokus je zato na niskom idle trošku, manjem peak RAM-u tijekom snimanja, predvidljivom cleanupu i regresijskim provjerama.
 

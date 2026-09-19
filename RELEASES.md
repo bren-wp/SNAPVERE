@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.11**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.11
+- Current public release: **v0.1.12**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.12
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,35 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No unreleased changes are documented after v0.1.11 yet.
+No unreleased changes are documented after v0.1.12 yet.
+
+---
+
+## v0.1.12 — 2026-09-20
+
+SNAPVERE 0.1.12 completes the responsive hardening that followed v0.1.11, with an emphasis on very narrow Windows/Setup surfaces and browser-extension layouts below the earlier compact breakpoints.
+
+### Windows and Setup responsive completion
+
+- Setup now releases its normal minimum-size floor when the active monitor work area is smaller and reflows license, install-path, shortcut, status and action controls instead of forcing horizontal overflow.
+- Compact Setup text widths now follow the same responsive content policy as the surrounding cards and controls, including long localized copy.
+- The post-install Launch option no longer competes with or overlaps Finish on compact layouts.
+- Uninstall messaging and cards remain width-responsive.
+- The tray has an additional compact reflow that reduces branding/padding and collapses shortcut hints when the available work area is especially narrow.
+
+### Browser narrow-layout completion
+
+- Chrome, Edge, Opera and Firefox add an extra 280 px popup layout below the existing 320 px compact breakpoint.
+- Options surfaces add 420 px and 320 px breakpoints that stack navigation and action controls rather than preserving desktop row geometry.
+- Long localized/status copy is allowed to wrap without forcing horizontal overflow.
+- Cross-browser responsive validation now locks these narrow-layout requirements across all four maintained variants.
+
+### Validation
+
+- Product Contract CI, Browser Extensions CI, CodeQL Advanced and Windows CI must pass on the release head before merge.
+- x64 build/unit tests, x86 build and ARM64 build remain required.
+- Rendered WinUI visual comparison, universal Setup/Portable construction, package-size budgets and real x64/x86 lifecycle validation remain mandatory.
+
 
 ---
 

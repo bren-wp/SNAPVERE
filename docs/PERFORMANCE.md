@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.2 Performance & Stability
+# SNAPVERE Performance & Stability
 
 SNAPVERE is optimized around short-lived capture work instead of a permanently busy desktop process. Performance work therefore focuses on idle cost, peak memory during capture, predictable cleanup and regression detection.
 

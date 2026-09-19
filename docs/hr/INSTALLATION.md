@@ -1,6 +1,6 @@
 # Instalacija SNAPVERE-a
 
-Aktualno javno izdanje: **v0.1.6**. Objavljeni tagovi i asseti su immutable; kasniji hardening na `main` grani nije retroaktivni dio tog izdanja.
+Aktualno javno izdanje: **v0.1.12**. Objavljeni tagovi i asseti su immutable; kasniji hardening na `main` grani nije retroaktivni dio tog izdanja.
 
 ## Windows Setup
 
