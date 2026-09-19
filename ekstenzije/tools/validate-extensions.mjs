@@ -262,13 +262,24 @@ function validateSource(browser, browserDir) {
       if (!/@media\s*\(max-width:\s*320px\)/i.test(text)) {
         fail(`${browser}/popup.css must keep the narrow-popup responsive breakpoint.`);
       }
+      if (!/@media\s*\(max-width:\s*280px\)/i.test(text) ||
+          !/grid-template-columns:\s*26px\s+minmax\(0,\s*1fr\)/i.test(text)) {
+        fail(`${browser}/popup.css must keep the extra-narrow popup reflow.`);
+      }
       if (!/overflow-wrap:\s*anywhere/i.test(text)) {
         fail(`${browser}/popup.css must allow long localized/status copy to wrap on narrow viewports.`);
       }
     }
 
-    if (relative === "options.css" && !/@media\s*\(max-width:\s*540px\)/i.test(text)) {
-      fail(`${browser}/options.css must keep the narrow options-page responsive breakpoint.`);
+    if (relative === "options.css") {
+      for (const breakpoint of [540, 420, 320]) {
+        if (!new RegExp(`@media\\s*\\(max-width:\\s*${breakpoint}px\\)`, "i").test(text)) {
+          fail(`${browser}/options.css must keep the ${breakpoint}px responsive breakpoint.`);
+        }
+      }
+      if (!/\.tabs\s*\{[^}]*grid-template-columns:\s*1fr/i.test(text)) {
+        fail(`${browser}/options.css must stack tabs in compact mode.`);
+      }
     }
 
     if (relative === "capture.js") {

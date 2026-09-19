@@ -20,7 +20,8 @@ This matrix documents automated regression evidence for the actively maintained 
 - capture/shutdown lifecycle serialization proving active capture blocks Exit-driven service disposal until completion and that an accepted shutdown request prevents later capture starts.
 - screen-recording policy tests covering even H.264 dimensions, 8K source bounds, bitrate limits and rejection of zero-frame/zero-byte output; MP4 writer tests cover atomic publication, collision-safe naming, temporary-file cleanup and failure non-publication.
 - responsive-window sizing policy tests proving DPI-scaled secondary surfaces are clamped inside monitor work areas with bounded margins, including tiny-work-area and invalid-geometry cases.
-- browser extension validation rejects desktop-only popup minimum widths and requires narrow popup/options responsive breakpoints across Chrome, Edge, Opera and Firefox.
+- Setup-specific responsive policy tests lock sidebar breakpoints, compact content widths and horizontal-fit invariants used by the installer surface.
+- browser extension validation rejects desktop-only popup minimum widths and requires 320/280 px popup plus 540/420/320 px Options responsive breakpoints across Chrome, Edge, Opera and Firefox.
 - installer safety regression tests for exact marker matching, install-folder normalization, normal directory-chain validation and install-target ownership (missing/empty/owned/unowned/invalid-marker/marker-only targets).
 
 ## Capture-path regression focus

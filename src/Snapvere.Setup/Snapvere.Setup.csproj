@@ -16,6 +16,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Snapvere.Packaging\Snapvere.Packaging.csproj" />
+    <ProjectReference Include="..\Snapvere.Shared\Snapvere.Shared.csproj" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\..\LICENSE" LogicalName="Snapvere.License.txt" />
