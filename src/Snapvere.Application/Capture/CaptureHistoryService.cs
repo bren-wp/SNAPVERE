@@ -58,9 +58,10 @@ public sealed class CaptureHistoryService
         try
         {
             var directoryInfo = new DirectoryInfo(directory);
-            foreach (var file in directoryInfo.EnumerateFiles("SNAPVERE_*.png", SearchOption.TopDirectoryOnly))
+            foreach (var file in directoryInfo.EnumerateFiles("SNAPVERE_*.*", SearchOption.TopDirectoryOnly))
             {
-                if (!TryReadCapture(file, out var item))
+                if (!IsSupportedCaptureFile(file.Name) ||
+                    !TryReadCapture(file, out var item))
                 {
                     continue;
                 }
@@ -89,6 +90,13 @@ public sealed class CaptureHistoryService
 
     public string GetCaptureDirectory()
         => _pathProvider.GetDefaultCaptureDirectory();
+
+    private static bool IsSupportedCaptureFile(string fileName)
+    {
+        var extension = Path.GetExtension(fileName);
+        return string.Equals(extension, ".png", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(extension, ".mp4", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static bool TryReadCapture(FileInfo file, out CaptureHistoryItem item)
     {
