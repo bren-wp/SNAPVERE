@@ -78,7 +78,6 @@ public sealed class ScreenRecordingFileWriter
                 session = await _recordingService
                     .RecordDisplayAsync(display, includeCursor, stream, stopToken)
                     .ConfigureAwait(false);
-                await stream.FlushAsync(CancellationToken.None).ConfigureAwait(false);
             }
 
             var finalPath = PublishTemporaryFile(temporaryPath, directory, timestamp);
