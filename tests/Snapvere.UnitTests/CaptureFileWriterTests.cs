@@ -158,7 +158,9 @@ public sealed class CaptureFileWriterTests
 
             Assert.Equal(CapturePersistenceFailureKind.WriteFailed, exception.Kind);
             Assert.IsType<IOException>(exception.InnerException);
-            Assert.False(File.Exists(fileTarget + ".png"));
+            Assert.True(File.Exists(fileTarget));
+            Assert.Equal("not a directory", File.ReadAllText(fileTarget));
+            Assert.Single(Directory.EnumerateFileSystemEntries(root));
         }
         finally
         {
