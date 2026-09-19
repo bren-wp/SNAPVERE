@@ -13,6 +13,9 @@ public enum CaptureFeedbackKind
 {
     Busy,
     ShutdownBlocked,
+    RecordingSaved,
+    RecordingFailed,
+    RecordingUnsupported,
     WindowUnsupported,
     RegionFailed,
     WindowFailed,
@@ -52,6 +55,9 @@ public sealed class CaptureFeedbackWindow : Window
             (CaptureFeedbackKind.Busy, false) => "Capture already active",
             (CaptureFeedbackKind.ShutdownBlocked, true) => "Snimanje je još aktivno",
             (CaptureFeedbackKind.ShutdownBlocked, false) => "Capture is still active",
+            (CaptureFeedbackKind.RecordingSaved, _) => L("RecordingSavedTitle"),
+            (CaptureFeedbackKind.RecordingFailed, _) => L("RecordingFailedTitle"),
+            (CaptureFeedbackKind.RecordingUnsupported, _) => L("RecordingUnsupportedTitle"),
             (CaptureFeedbackKind.WindowUnsupported, true) => "Snimanje prozora nije dostupno",
             (CaptureFeedbackKind.WindowUnsupported, false) => "Window capture is unavailable",
             (CaptureFeedbackKind.SaveAccessDenied or CaptureFeedbackKind.StorageFull or CaptureFeedbackKind.SaveFailed, _) =>
@@ -71,6 +77,9 @@ public sealed class CaptureFeedbackWindow : Window
                 "Završi ili odustani od trenutačnog snimanja prije izlaska iz SNAPVERE-a.",
             (CaptureFeedbackKind.ShutdownBlocked, false) =>
                 "Finish or cancel the current capture before exiting SNAPVERE.",
+            (CaptureFeedbackKind.RecordingSaved, _) => L("RecordingSavedMessage"),
+            (CaptureFeedbackKind.RecordingFailed, _) => L("RecordingFailedMessage"),
+            (CaptureFeedbackKind.RecordingUnsupported, _) => L("RecordingUnsupportedMessage"),
             (CaptureFeedbackKind.WindowUnsupported, true) =>
                 "Ova verzija sustava Windows ne podržava SNAPVERE snimanje pojedinačnog prozora. Snimanje područja i zaslona i dalje je dostupno.",
             (CaptureFeedbackKind.WindowUnsupported, false) =>
