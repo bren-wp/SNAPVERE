@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.10**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.10
+- Current public release: **v0.1.11**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.11
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,42 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No unreleased changes are documented after v0.1.10 yet.
+No unreleased changes are documented after v0.1.11 yet.
+
+---
+
+## v0.1.11 — 2026-09-19
+
+SNAPVERE 0.1.11 is a focused responsiveness and high-DPI quality release for the Windows application, Setup/Portable surfaces and all four browser extensions.
+
+### Responsive Windows surfaces
+
+- DPI-scaled Tray, Settings, Language, About and capture-feedback windows are clamped to the active monitor work area instead of being allowed to exceed the usable screen.
+- Tray actions can scroll vertically on constrained displays.
+- Settings preferences can scroll and move trailing controls below card copy on narrow widths.
+- Language and capture-feedback content remain scrollable when the work area is short.
+- About shortcut copy wraps instead of overflowing narrow cards.
+- A pure work-area sizing policy adds regression coverage for normal, clamped, tiny and invalid geometry.
+
+### Responsive Setup
+
+- Setup reduces its minimum window footprint and dynamically resizes the content card, license area, install path, progress surface and action buttons as the window narrows.
+- Existing AutoScroll, busy-state protection, install/uninstall behavior and x64/x86 lifecycle checks remain intact.
+
+### Responsive browser extensions
+
+- Chrome, Edge, Opera and Firefox no longer force a fixed 340 px popup minimum.
+- Popup layout uses a 280 px safe floor with a compact 320 px breakpoint and long localized/status copy can wrap safely.
+- Extension validation now fails when desktop-only popup minimums or required narrow responsive breakpoints are reintroduced.
+- Browser permission and capture behavior are otherwise unchanged.
+
+### Validation
+
+- Product Contract CI, Browser Extensions CI, CodeQL Advanced and Windows CI passed before merge.
+- x64 build/unit tests, x86 build and ARM64 build passed.
+- Rendered WinUI snapshots and visual comparison against the successful main baseline passed.
+- Universal Setup/Portable construction, package-size budgets and real x64/x86 lifecycle validation passed.
+
 
 ---
 
