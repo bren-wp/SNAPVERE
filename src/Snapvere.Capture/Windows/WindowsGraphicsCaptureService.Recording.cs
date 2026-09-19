@@ -199,7 +199,7 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
                 _device,
                 DirectXPixelFormat.B8G8R8A8UIntNormalized,
                 numberOfBuffers: 2,
-                new Windows.Graphics.SizeInt32(_sourceSize.Width, _sourceSize.Height));
+                _item.Size);
             _framePool.FrameArrived += FramePool_FrameArrived;
 
             _session = _framePool.CreateCaptureSession(_item);
