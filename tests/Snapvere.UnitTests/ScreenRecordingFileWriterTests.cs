@@ -97,6 +97,32 @@ public sealed class ScreenRecordingFileWriterTests
     }
 
     [Fact]
+    public async Task RecordAsync_CancellationDoesNotPublishPartialRecording()
+    {
+        var directory = CreateTemporaryDirectory();
+
+        try
+        {
+            var writer = new ScreenRecordingFileWriter(
+                new CancellingScreenRecordingService(),
+                new CapturePathProvider(directory),
+                TimeProvider.System);
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => writer.RecordAsync(
+                    CreateDisplay(),
+                    false,
+                    new CancellationToken(canceled: true)));
+
+            Assert.Empty(Directory.EnumerateFileSystemEntries(directory));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void BuildFileName_UsesRecordingPrefixAndCounter()
     {
         var timestamp = new DateTimeOffset(2026, 9, 19, 20, 0, 0, TimeSpan.Zero);
@@ -157,6 +183,19 @@ public sealed class ScreenRecordingFileWriterTests
                 timestamp,
                 timestamp.AddSeconds(2));
         }
+    }
+
+    private sealed class CancellingScreenRecordingService : IScreenRecordingService
+    {
+        public Task<ScreenRecordingSessionResult> RecordDisplayAsync(
+            DisplayDescriptor display,
+            bool includeCursor,
+            Stream destination,
+            CancellationToken stopToken = default)
+            => Task.FromCanceled<ScreenRecordingSessionResult>(
+                stopToken.IsCancellationRequested
+                    ? stopToken
+                    : new CancellationToken(canceled: true));
     }
 
     private sealed class FailingScreenRecordingService : IScreenRecordingService
