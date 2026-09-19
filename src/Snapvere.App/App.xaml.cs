@@ -839,6 +839,11 @@ public partial class App : Microsoft.UI.Xaml.Application
                 break;
             case TrayCommand.Exit:
                 CloseTrayMenu();
+                if (!window.TryBeginShutdown())
+                {
+                    break;
+                }
+
                 _optionsWindow?.Close();
                 _languageWindow?.Close();
                 _aboutWindow?.Close();
