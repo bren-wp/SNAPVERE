@@ -84,6 +84,10 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
                     MediaEncodingSubtypes.Bgra8,
                     (uint)sourceSize.Width,
                     (uint)sourceSize.Height);
+                inputProperties.FrameRate.Numerator = ScreenRecordingPolicy.FrameRate;
+                inputProperties.FrameRate.Denominator = 1;
+                inputProperties.PixelAspectRatio.Numerator = 1;
+                inputProperties.PixelAspectRatio.Denominator = 1;
                 var descriptor = new VideoStreamDescriptor(inputProperties);
                 var mediaSource = new MediaStreamSource(descriptor)
                 {
@@ -127,6 +131,21 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
                         "Screen recording stopped because the capture source became unavailable.",
                         frameSource.Failure);
                 }
+
+                if (!ScreenRecordingPolicy.HasPublishableOutput(
+                        frameSource.DeliveredFrames,
+                        randomAccess.Size))
+                {
+                    if (stopToken.IsCancellationRequested)
+                    {
+                        throw new OperationCanceledException(
+                            "Screen recording stopped before the first video frame was encoded.",
+                            stopToken);
+                    }
+
+                    throw new InvalidOperationException(
+                        "Screen recording completed without producing a video frame.");
+                }
             }
             finally
             {
@@ -163,6 +182,7 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
         private TimeSpan? _firstTimestamp;
         private bool _stopping;
         private bool _disposed;
+        private int _deliveredFrames;
 
         internal RecordingFrameSource(
             IDirect3DDevice device,
@@ -178,6 +198,8 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
         }
 
         internal Exception? Failure { get; private set; }
+
+        internal int DeliveredFrames => Volatile.Read(ref _deliveredFrames);
 
         internal void Attach(MediaStreamSource mediaSource)
         {
@@ -319,6 +341,7 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
                 }
 
                 sample.Processed += (_, _) => ReleaseFrame(frame);
+                _ = Interlocked.Increment(ref _deliveredFrames);
                 args.Request.Sample = sample;
             }
             catch (Exception exception)
