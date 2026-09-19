@@ -17,6 +17,7 @@ Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani 
 - locked-file uninstall failure injection koji zahtijeva da Installed Apps/startup/prečac metadata ostane dok file cleanup stvarno ne uspije, nakon čega slijede repair i uspješan uninstall.
 - provjera odbijanja deferred cleanupa s neispravnim parent PID-om i Setup-mutex contentiona, uz zahtjev da instalacijski ugovor ostane nepromijenjen.
 - tray-first launch provjera unutar lifecycle probea, uključujući dokaz da drugi Installed ili Portable launch aktivira postojeći proces bez stvaranja duplikata te unit-testirani bounded Explorer tray-recovery backoff.
+- capture/shutdown lifecycle serializacija dokazuje da aktivno snimanje blokira Exit-driven dispose servisa do završetka te da prihvaćeni shutdown blokira nova snimanja.
 - installer safety regresijski testovi za exact marker matching, normalizaciju instalacijske mape, validaciju normalnog directory chaina i ownership install targeta (missing/empty/owned/unowned/invalid-marker/marker-only).
 
 ## Browser gateovi
