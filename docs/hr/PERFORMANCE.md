@@ -27,8 +27,10 @@ Windows aplikacija je tray-first. Popis nedavnih snimki čita se kada korisnik o
 
 SNAPVERE ima kontrolirane failure putove za capture, filesystem, tray, hotkey, packaging i UI-host operacije. Cilj nije obećanje da platforma nikada neće pogriješiti, nego ograničen rad, eksplicitni cleanup i jasna regresijska evidencija.
 
+Windows screen recording usklađuje MediaStreamSource zahtjeve za sampleovima preko generation-based async pulse signala umjesto disposeanja semafora dok async callback još može čekati. Stop, gubitak zaslona i teardown bude trenutačnu generaciju, prvi timestamp i failure stanje sinkronizirani su među callbackovima, a greške pri dovršetku deferrala ostaju unutar kontroliranog recording failure puta.
+
 ## Regresijski gateovi
 
-CI za 0.1.2 provjerava x64 build i unit testove, x86 i ARM64 buildove, renderirane WinUI površine, visual baseline usporedbu, universal Setup/Portable, package-size budget, x64/x86 lifecycle, browser runtime/permission/parity provjere, reproducibilno pakiranje, Product Contract CI i CodeQL.
+Aktualni CI provjerava x64 build i unit testove, x86 i ARM64 buildove, renderirane WinUI površine, visual baseline usporedbu, universal Setup/Portable, package-size budget, x64/x86 lifecycle, browser runtime/permission/parity provjere, reproducibilno pakiranje, Product Contract CI i CodeQL.
 
 Povezano: [QA matrica](QA-MATRIX.md), [Status proizvoda](PRODUCT-STATUS.md), [Engleska arhitektura](../ARCHITECTURE.md) i [Multi-monitor](../MULTI-MONITOR.md).
