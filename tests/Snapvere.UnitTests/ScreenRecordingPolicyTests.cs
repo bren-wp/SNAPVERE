@@ -21,11 +21,36 @@ public sealed class ScreenRecordingPolicyTests
         Assert.Equal(expectedHeight, actual.Height);
     }
 
-    [Fact]
-    public void EncodedSize_RejectsSourceLargerThan8K()
+    [Theory]
+    [InlineData(7681, 1000)]
+    [InlineData(1000, 7681)]
+    [InlineData(5000, 5000)]
+    public void EncodedSize_RejectsSourceOutside8KEnvelope(int width, int height)
     {
         Assert.Throws<NotSupportedException>(
-            () => ScreenRecordingPolicy.GetEncodedSize(new PixelSize(7681, 4320)));
+            () => ScreenRecordingPolicy.GetEncodedSize(new PixelSize(width, height)));
+    }
+
+    [Theory]
+    [InlineData(7680, 4320)]
+    [InlineData(4320, 7680)]
+    public void EncodedSize_Accepts8KInEitherOrientation(int width, int height)
+    {
+        var actual = ScreenRecordingPolicy.GetEncodedSize(new PixelSize(width, height));
+
+        Assert.Equal(width, actual.Width);
+        Assert.Equal(height, actual.Height);
+    }
+
+    [Theory]
+    [InlineData(1, 1080)]
+    [InlineData(1920, 1)]
+    public void EncodedSize_RejectsSourceThatCannotRemainEvenWithoutUpscaling(
+        int width,
+        int height)
+    {
+        Assert.Throws<NotSupportedException>(
+            () => ScreenRecordingPolicy.GetEncodedSize(new PixelSize(width, height)));
     }
 
     [Theory]
