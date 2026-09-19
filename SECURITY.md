@@ -28,7 +28,7 @@ A capture failure on protected content or a browser-reserved page is not by itse
 - Region capture operates on a frozen local frame.
 - Screen capture prefers Windows.Graphics.Capture and uses a compatibility monitor backend only for expected acquisition failures.
 - Caller cancellation is not converted into fallback work.
-- Local PNG output uses staged writes before final atomic publication.
+- Local PNG output uses staged writes before final atomic publication. Expected access-denied, storage-full and local write failures are classified without exposing raw filesystem exception text or private paths in user-facing recovery copy.
 - Embedded payload extraction rejects unsafe paths and reparse-point escapes before payload files are admitted. Setup also rejects existing install-directory chains that traverse symbolic links or reparse points and requires an exact trusted installation-marker header before removal.
 - Setup/Portable payload integrity is checked against architecture-specific trusted metadata.
 - Portable cache corruption or unexpected content causes rejection/rebuild rather than silent execution.
