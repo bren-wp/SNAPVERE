@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using Snapvere.Shared;
 
 namespace Snapvere.Setup;
 
@@ -34,7 +35,9 @@ internal sealed class SetupForm : Form
     private readonly Button _cancelButton;
     private readonly CheckBox _launchAfterInstall;
     private readonly Label _licenseLabel;
+    private readonly Label _licenseHint;
     private readonly Label _installLocationLabel;
+    private readonly RoundedPanel _contentCard;
     private readonly Panel _sidebar;
     private readonly Panel _mainPanel;
     private bool _completed;
@@ -51,7 +54,7 @@ internal sealed class SetupForm : Form
         MinimizeBox = true;
         ShowIcon = false;
         ClientSize = new Size(980, 650);
-        MinimumSize = new Size(760, 560);
+        MinimumSize = new Size(520, 480);
         AutoScaleMode = AutoScaleMode.Dpi;
         KeyPreview = true;
         BackColor = Canvas;
@@ -105,33 +108,37 @@ internal sealed class SetupForm : Form
         };
         main.Controls.Add(_subtitleLabel);
 
-        var card = new RoundedPanel(Surface, Border, 18)
+        _contentCard = new RoundedPanel(Surface, Border, 18)
         {
             Location = new Point(32, 139),
             Size = new Size(636, 374),
             Padding = new Padding(22)
         };
-        main.Controls.Add(card);
+        main.Controls.Add(_contentCard);
 
         _licenseLabel = new Label
         {
-            AutoSize = true,
+            AutoSize = false,
             Text = "SNAPVERE Commercial Software License",
             ForeColor = Color.FromArgb(247, 245, 255),
             Font = new Font("Segoe UI Semibold", 11F, FontStyle.Bold),
-            Location = new Point(22, 18)
+            Location = new Point(22, 18),
+            Size = new Size(592, 22),
+            AutoEllipsis = true
         };
-        card.Controls.Add(_licenseLabel);
+        _contentCard.Controls.Add(_licenseLabel);
 
-        var licenseHint = new Label
+        _licenseHint = new Label
         {
-            AutoSize = true,
+            AutoSize = false,
             Text = "Review the commercial license terms before continuing",
             ForeColor = Subtle,
             Font = new Font("Segoe UI", 9F),
-            Location = new Point(22, 42)
+            Location = new Point(22, 42),
+            Size = new Size(592, 22),
+            AutoEllipsis = true
         };
-        card.Controls.Add(licenseHint);
+        _contentCard.Controls.Add(_licenseHint);
 
         _licenseBox = new RichTextBox
         {
@@ -147,19 +154,20 @@ internal sealed class SetupForm : Form
             AccessibleDescription = "Read-only license terms. Review them before accepting the license.",
             Font = new Font("Segoe UI", 9F)
         };
-        card.Controls.Add(_licenseBox);
+        _contentCard.Controls.Add(_licenseBox);
 
         _acceptLicense = new CheckBox
         {
-            AutoSize = true,
+            AutoSize = false,
             Text = "I have read and accept the commercial license terms",
             ForeColor = Color.FromArgb(240, 238, 247),
             Location = new Point(22, 232),
+            Size = new Size(592, 28),
             Cursor = Cursors.Hand,
             AccessibleName = "Accept commercial license terms"
         };
         _acceptLicense.CheckedChanged += (_, _) => UpdatePrimaryButtonState();
-        card.Controls.Add(_acceptLicense);
+        _contentCard.Controls.Add(_acceptLicense);
 
         _installLocationLabel = new Label
         {
@@ -169,7 +177,7 @@ internal sealed class SetupForm : Form
             Font = new Font("Segoe UI Semibold", 9F),
             Location = new Point(22, 267)
         };
-        card.Controls.Add(_installLocationLabel);
+        _contentCard.Controls.Add(_installLocationLabel);
 
         _installPath = new TextBox
         {
@@ -181,12 +189,12 @@ internal sealed class SetupForm : Form
             BorderStyle = BorderStyle.FixedSingle,
             AccessibleName = "Install location"
         };
-        card.Controls.Add(_installPath);
+        _contentCard.Controls.Add(_installPath);
 
         _browseButton = CreateSecondaryButton("Browse", new Point(496, 289), new Size(118, 34));
         _browseButton.AccessibleName = "Browse for install location";
         _browseButton.Click += BrowseButton_Click;
-        card.Controls.Add(_browseButton);
+        _contentCard.Controls.Add(_browseButton);
 
         _startMenuShortcut = new CheckBox
         {
@@ -198,7 +206,7 @@ internal sealed class SetupForm : Form
             Cursor = Cursors.Hand,
             AccessibleName = "Create Start menu shortcut"
         };
-        card.Controls.Add(_startMenuShortcut);
+        _contentCard.Controls.Add(_startMenuShortcut);
 
         _desktopShortcut = new CheckBox
         {
@@ -210,7 +218,7 @@ internal sealed class SetupForm : Form
             Cursor = Cursors.Hand,
             AccessibleName = "Create Desktop shortcut"
         };
-        card.Controls.Add(_desktopShortcut);
+        _contentCard.Controls.Add(_desktopShortcut);
 
         _startupWithWindows = new CheckBox
         {
@@ -222,7 +230,7 @@ internal sealed class SetupForm : Form
             Cursor = Cursors.Hand,
             AccessibleName = "Start SNAPVERE with Windows"
         };
-        card.Controls.Add(_startupWithWindows);
+        _contentCard.Controls.Add(_startupWithWindows);
 
         _progressBar = new PremiumProgressBar(SurfaceRaised, Accent)
         {
@@ -279,7 +287,7 @@ internal sealed class SetupForm : Form
 
         if (uninstallMode)
         {
-            ConfigureUninstallMode(card, licenseHint);
+            ConfigureUninstallMode(_contentCard, _licenseHint);
         }
         else
         {
@@ -299,10 +307,21 @@ internal sealed class SetupForm : Form
     private void PositionWithinActiveMonitor()
     {
         var workingArea = Screen.FromPoint(Cursor.Position).WorkingArea;
-        var width = Math.Min(Width, Math.Max(MinimumSize.Width, workingArea.Width - 24));
-        var height = Math.Min(Height, Math.Max(MinimumSize.Height, workingArea.Height - 24));
+        var fitted = ResponsiveWindowSizePolicy.FitWithinWorkArea(
+            Width,
+            Height,
+            workingArea.Width,
+            workingArea.Height,
+            margin: 12);
 
-        Size = new Size(width, height);
+        // Temporarily release the design-time minimum so small work areas or
+        // aggressive DPI scaling cannot force Setup outside the visible monitor.
+        MinimumSize = Size.Empty;
+        Size = new Size(fitted.Width, fitted.Height);
+        MinimumSize = new Size(
+            Math.Min(520, fitted.Width),
+            Math.Min(480, fitted.Height));
+
         Location = new Point(
             workingArea.Left + Math.Max(0, (workingArea.Width - Width) / 2),
             workingArea.Top + Math.Max(0, (workingArea.Height - Height) / 2));
@@ -311,7 +330,82 @@ internal sealed class SetupForm : Form
 
     private void UpdateResponsiveLayout()
     {
-        _sidebar.Visible = ClientSize.Width >= 900;
+        if (ClientSize.Width <= 0)
+        {
+            return;
+        }
+
+        _sidebar.Visible = SetupResponsiveLayoutPolicy.ShouldShowSidebar(ClientSize.Width);
+        PerformLayout();
+
+        if (_mainPanel.ClientSize.Width <= 0)
+        {
+            return;
+        }
+
+        var layout = SetupResponsiveLayoutPolicy.CalculateContent(_mainPanel.ClientSize.Width);
+        var left = layout.HorizontalMargin;
+        var contentWidth = layout.ContentWidth;
+
+        _subtitleLabel.Location = new Point(left + 2, 91);
+        _subtitleLabel.Size = new Size(contentWidth, layout.Compact ? 54 : 38);
+
+        _contentCard.Location = new Point(left, 139);
+        _contentCard.Size = new Size(contentWidth, layout.CardHeight);
+
+        var innerWidth = Math.Max(1, contentWidth - 44);
+        _licenseLabel.Size = new Size(innerWidth, 22);
+        _licenseHint.Size = new Size(innerWidth, 22);
+        _licenseBox.Size = new Size(innerWidth, 151);
+        _acceptLicense.Size = new Size(innerWidth, layout.Compact ? 42 : 28);
+
+        var browseWidth = layout.Compact ? 96 : 118;
+        var browseX = Math.Max(22, contentWidth - 22 - browseWidth);
+        var pathWidth = Math.Max(96, browseX - 32);
+        _installPath.Size = new Size(pathWidth, 29);
+        _browseButton.Size = new Size(browseWidth, 34);
+        _browseButton.Location = new Point(browseX, 289);
+
+        if (layout.Compact)
+        {
+            _startMenuShortcut.Location = new Point(22, 337);
+            _desktopShortcut.Location = new Point(Math.Min(150, Math.Max(22, contentWidth / 2)), 337);
+            _startupWithWindows.Location = new Point(22, 367);
+        }
+        else
+        {
+            _startMenuShortcut.Location = new Point(22, 337);
+            _desktopShortcut.Location = new Point(150, 337);
+            _startupWithWindows.Location = new Point(296, 337);
+        }
+
+        var progressTop = _contentCard.Bottom + 17;
+        _progressBar.Location = new Point(left, progressTop);
+        _progressBar.Size = new Size(contentWidth, 7);
+
+        var statusTop = progressTop + 20;
+        _statusLabel.Location = new Point(left, statusTop);
+        _statusLabel.Size = new Size(contentWidth, layout.StatusHeight);
+
+        var actionTop = statusTop + layout.StatusHeight + 2;
+        var primaryX = left + Math.Max(0, contentWidth - _primaryButton.Width);
+        var cancelX = Math.Max(left, primaryX - _cancelButton.Width - 10);
+
+        if (_completed && !_uninstallMode && layout.Compact && contentWidth < 420)
+        {
+            _launchAfterInstall.Location = new Point(left, actionTop);
+            actionTop += 36;
+        }
+        else
+        {
+            _launchAfterInstall.Location = new Point(left, actionTop + 8);
+        }
+
+        _primaryButton.Location = new Point(primaryX, actionTop);
+        _cancelButton.Location = new Point(cancelX, actionTop);
+
+        var contentBottom = actionTop + Math.Max(_primaryButton.Height, 40) + 18;
+        _mainPanel.AutoScrollMinSize = new Size(0, contentBottom);
     }
 
     private void SetupForm_FormClosing(object? sender, FormClosingEventArgs e)
@@ -464,7 +558,7 @@ internal sealed class SetupForm : Form
             Font = new Font("Segoe UI Semibold", 16F, FontStyle.Bold),
             Location = new Point(24, 28)
         };
-        card.Controls.Add(removalTitle);
+        _contentCard.Controls.Add(removalTitle);
 
         var message = new Label
         {
@@ -475,7 +569,7 @@ internal sealed class SetupForm : Form
             Location = new Point(25, 82),
             Size = new Size(570, 182)
         };
-        card.Controls.Add(message);
+        _contentCard.Controls.Add(message);
 
         var privacy = new RoundedPanel(Color.FromArgb(17, 38, 34), Color.FromArgb(51, 109, 91), 12)
         {
@@ -491,7 +585,7 @@ internal sealed class SetupForm : Form
             Location = new Point(14, 17),
             Size = new Size(530, 24)
         });
-        card.Controls.Add(privacy);
+        _contentCard.Controls.Add(privacy);
     }
 
     private void LoadLicense()
@@ -578,6 +672,7 @@ internal sealed class SetupForm : Form
         _primaryButton.Enabled = true;
         _cancelButton.Visible = false;
         _launchAfterInstall.Visible = !_uninstallMode;
+        UpdateResponsiveLayout();
     }
 
     private void BrowseButton_Click(object? sender, EventArgs e)
