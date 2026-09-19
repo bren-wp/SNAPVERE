@@ -24,6 +24,10 @@ public sealed class TrayMenuWindow : Window
     private readonly Action _languageHandler;
     private readonly string _languageCode;
     private readonly bool _screenRecordingActive;
+    private readonly List<TextBlock> _shortcutHints = new();
+    private FrameworkElement? _brandMark;
+    private TextBlock? _productText;
+    private Grid? _header;
     private bool _hasActivated;
     private bool _closingForCommand;
 
@@ -67,6 +71,7 @@ public sealed class TrayMenuWindow : Window
             Padding = new Thickness(18, 18, 18, 14)
         };
         root.KeyDown += Root_KeyDown;
+        root.SizeChanged += (_, args) => ApplyResponsiveLayout(root, args.NewSize.Width);
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -130,10 +135,12 @@ public sealed class TrayMenuWindow : Window
     private FrameworkElement BuildHeader()
     {
         var header = new Grid { Height = 58 };
+        _header = header;
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        header.Children.Add(BuildBrandMark());
+        _brandMark = BuildBrandMark();
+        header.Children.Add(_brandMark);
 
         var identity = new StackPanel
         {
@@ -149,6 +156,7 @@ public sealed class TrayMenuWindow : Window
         };
         product.Inlines.Add(new Run { Text = "SNAP", Foreground = Strong });
         product.Inlines.Add(new Run { Text = "VERE", Foreground = Accent });
+        _productText = product;
         identity.Children.Add(product);
         identity.Children.Add(Text(Tagline(), 10.5, Muted));
         Grid.SetColumn(identity, 1);
@@ -236,7 +244,7 @@ public sealed class TrayMenuWindow : Window
     private Button CreateActionButton(string glyph, string title, string shortcut, Action action)
         => CreateButton(glyph, title, shortcut, () => InvokeAction(action), primary: false, danger: false);
 
-    private static Button CreateButton(
+    private Button CreateButton(
         string glyph,
         string title,
         string shortcut,
@@ -266,12 +274,18 @@ public sealed class TrayMenuWindow : Window
         });
         var label = Text(title, 11.5, danger ? Brush(0xFF, 0xFF, 0xB6, 0xBF) : Strong, Microsoft.UI.Text.FontWeights.SemiBold);
         label.VerticalAlignment = VerticalAlignment.Center;
+        label.TextWrapping = TextWrapping.Wrap;
+        label.TextTrimming = TextTrimming.CharacterEllipsis;
+        label.MaxLines = 2;
         Grid.SetColumn(label, 1);
         content.Children.Add(label);
         if (!string.IsNullOrWhiteSpace(shortcut))
         {
             var hint = Text(shortcut, 9, primary ? Brush(0xFF, 0xDA, 0xD2, 0xFF) : Subtle);
             hint.VerticalAlignment = VerticalAlignment.Center;
+            hint.TextTrimming = TextTrimming.CharacterEllipsis;
+            hint.MaxWidth = 108;
+            _shortcutHints.Add(hint);
             Grid.SetColumn(hint, 2);
             content.Children.Add(hint);
         }
@@ -299,6 +313,36 @@ public sealed class TrayMenuWindow : Window
             Margin = new Thickness(8, 2, 8, 2),
             Background = Brush(0xFF, 0x2B, 0x36, 0x4B)
         };
+
+    private void ApplyResponsiveLayout(Grid root, double width)
+    {
+        var compact = width < 350;
+        var veryCompact = width < 300;
+
+        root.Padding = compact
+            ? new Thickness(12, 14, 12, 12)
+            : new Thickness(18, 18, 18, 14);
+
+        foreach (var hint in _shortcutHints)
+        {
+            hint.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        if (_brandMark is not null)
+        {
+            _brandMark.Visibility = veryCompact ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        if (_productText is not null)
+        {
+            _productText.FontSize = veryCompact ? 20 : compact ? 22 : 25;
+        }
+
+        if (_header is not null)
+        {
+            _header.Height = compact ? 52 : 58;
+        }
+    }
 
     private void InvokeCommand(TrayCommand command)
     {
