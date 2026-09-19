@@ -1,3 +1,4 @@
+using Snapvere.Domain.Capture;
 using Windows.Graphics.Capture;
 using Windows.Graphics.DirectX;
 using Windows.Graphics.DirectX.Direct3D11;
