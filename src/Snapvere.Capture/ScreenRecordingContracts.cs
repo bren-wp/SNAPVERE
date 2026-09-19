@@ -56,4 +56,7 @@ public static class ScreenRecordingPolicy
         var estimated = checked((long)encodedSize.Width * encodedSize.Height * FrameRate * 8L / 100L);
         return (uint)Math.Clamp(estimated, MinimumBitrate, MaximumBitrate);
     }
+
+    public static bool HasPublishableOutput(int deliveredFrames, ulong outputBytes)
+        => deliveredFrames > 0 && outputBytes > 0;
 }
