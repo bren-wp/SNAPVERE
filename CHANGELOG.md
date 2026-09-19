@@ -4,6 +4,8 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-09-19
+
 ### Responsive UI hardening
 
 - Clamp DPI-scaled Windows tray, Settings, Language, About and capture-feedback windows to the active monitor work area instead of allowing high-DPI sizes to exceed the usable screen.
