@@ -287,7 +287,7 @@ internal sealed class SetupForm : Form
 
         if (uninstallMode)
         {
-            ConfigureUninstallMode(_contentCard, _licenseHint);
+            ConfigureUninstallMode();
         }
         else
         {
@@ -537,10 +537,10 @@ internal sealed class SetupForm : Form
         sidebar.Controls.Add(descriptionLabel);
     }
 
-    private void ConfigureUninstallMode(Panel card, Label licenseHint)
+    private void ConfigureUninstallMode()
     {
         _licenseLabel.Visible = false;
-        licenseHint.Visible = false;
+        _licenseHint.Visible = false;
         _licenseBox.Visible = false;
         _acceptLicense.Visible = false;
         _installLocationLabel.Visible = false;
@@ -552,11 +552,14 @@ internal sealed class SetupForm : Form
 
         var removalTitle = new Label
         {
-            AutoSize = true,
+            AutoSize = false,
             Text = "What will be removed",
             ForeColor = Color.FromArgb(247, 245, 255),
             Font = new Font("Segoe UI Semibold", 16F, FontStyle.Bold),
-            Location = new Point(24, 28)
+            Location = new Point(24, 28),
+            Size = new Size(570, 34),
+            AutoEllipsis = true,
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
         _contentCard.Controls.Add(removalTitle);
 
@@ -567,14 +570,16 @@ internal sealed class SetupForm : Form
             ForeColor = Color.FromArgb(224, 222, 232),
             Font = new Font("Segoe UI", 11F),
             Location = new Point(25, 82),
-            Size = new Size(570, 182)
+            Size = new Size(570, 182),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
         _contentCard.Controls.Add(message);
 
         var privacy = new RoundedPanel(Color.FromArgb(17, 38, 34), Color.FromArgb(51, 109, 91), 12)
         {
             Location = new Point(24, 283),
-            Size = new Size(570, 56)
+            Size = new Size(570, 56),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
         privacy.Controls.Add(new Label
         {
@@ -582,8 +587,9 @@ internal sealed class SetupForm : Form
             Text = "●   Capture files are not part of uninstall cleanup.",
             ForeColor = Success,
             Font = new Font("Segoe UI Semibold", 9.5F, FontStyle.Bold),
-            Location = new Point(14, 17),
-            Size = new Size(530, 24)
+            Location = new Point(14, 12),
+            Size = new Size(530, 34),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         });
         _contentCard.Controls.Add(privacy);
     }
