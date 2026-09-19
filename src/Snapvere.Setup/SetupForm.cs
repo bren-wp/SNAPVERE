@@ -118,21 +118,25 @@ internal sealed class SetupForm : Form
 
         _licenseLabel = new Label
         {
-            AutoSize = true,
+            AutoSize = false,
             Text = "SNAPVERE Commercial Software License",
             ForeColor = Color.FromArgb(247, 245, 255),
             Font = new Font("Segoe UI Semibold", 11F, FontStyle.Bold),
-            Location = new Point(22, 18)
+            Location = new Point(22, 18),
+            Size = new Size(592, 22),
+            AutoEllipsis = true
         };
         _contentCard.Controls.Add(_licenseLabel);
 
         _licenseHint = new Label
         {
-            AutoSize = true,
+            AutoSize = false,
             Text = "Review the commercial license terms before continuing",
             ForeColor = Subtle,
             Font = new Font("Segoe UI", 9F),
-            Location = new Point(22, 42)
+            Location = new Point(22, 42),
+            Size = new Size(592, 22),
+            AutoEllipsis = true
         };
         _contentCard.Controls.Add(_licenseHint);
 
@@ -154,10 +158,11 @@ internal sealed class SetupForm : Form
 
         _acceptLicense = new CheckBox
         {
-            AutoSize = true,
+            AutoSize = false,
             Text = "I have read and accept the commercial license terms",
             ForeColor = Color.FromArgb(240, 238, 247),
             Location = new Point(22, 232),
+            Size = new Size(592, 28),
             Cursor = Cursors.Hand,
             AccessibleName = "Accept commercial license terms"
         };
@@ -546,11 +551,14 @@ internal sealed class SetupForm : Form
 
         var removalTitle = new Label
         {
-            AutoSize = true,
+            AutoSize = false,
             Text = "What will be removed",
             ForeColor = Color.FromArgb(247, 245, 255),
             Font = new Font("Segoe UI Semibold", 16F, FontStyle.Bold),
-            Location = new Point(24, 28)
+            Location = new Point(24, 28),
+            Size = new Size(570, 34),
+            AutoEllipsis = true,
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
         _contentCard.Controls.Add(removalTitle);
 
