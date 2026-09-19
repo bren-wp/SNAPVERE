@@ -4,6 +4,17 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-09-20
+
+### Responsive completion
+
+- Make Setup release its normal minimum size when the active work area is smaller, then reflow license, path, shortcut, status and action controls without forcing horizontal overflow.
+- Prevent the post-install Launch option from overlapping Finish on compact Setup layouts and keep uninstall messaging/cards width-responsive.
+- Add tray compact reflow that collapses shortcut hints and reduces branding/padding when the work area forces a narrow flyout.
+- Add extra 280 px popup and 420/320 px Options breakpoints with stacked navigation/actions and long-copy wrapping across Chrome, Edge, Opera and Firefox.
+- Make Setup text widths follow the compact-layout policy so long localized copy cannot keep desktop widths after the rest of the installer has reflowed.
+- Extend Windows and browser responsive regression contracts so these narrow-layout behaviors are enforced by CI.
+
 ## [0.1.11] - 2026-09-19
 
 ### Responsive UI hardening
@@ -15,10 +26,6 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 - Make About shortcut copy wrap and capture-feedback messages scroll on constrained heights.
 - Improve Setup narrow-window behavior by shrinking the content card/path controls and reducing the minimum window footprint while retaining AutoScroll and lifecycle behavior.
 - Remove the browser popup's fixed 340 px desktop minimum, add a 280 px safe floor plus a 320 px compact breakpoint, and enforce responsive popup/options contracts across Chrome, Edge, Opera and Firefox.
-- Make Setup release its normal minimum size when the active work area is smaller, then reflow license, path, shortcut, status and action controls without forcing horizontal overflow.
-- Prevent the post-install Launch option from overlapping Finish on compact Setup layouts and keep uninstall messaging/cards width-responsive.
-- Add tray compact reflow that collapses shortcut hints and reduces branding/padding when the work area forces a narrow flyout.
-- Add extra 280 px popup and 420/320 px Options breakpoints with stacked navigation/actions and long-copy wrapping across all four browser variants.
 
 
 ## [0.1.10] - 2026-09-19
