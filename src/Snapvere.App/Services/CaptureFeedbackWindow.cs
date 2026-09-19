@@ -208,7 +208,7 @@ public sealed class CaptureFeedbackWindow : Window
         }
 
         _sizeApplied = true;
-        AppWindow.Resize(DpiAwareWindowSizing.ScaleSize(this, 500, 300));
+        AppWindow.Resize(DpiAwareWindowSizing.ScaleSizeToWorkArea(this, 500, 300));
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
             presenter.IsResizable = false;
