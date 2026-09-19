@@ -122,6 +122,24 @@ button { font: inherit; }
   }
 }
 
+@media (max-width: 280px) {
+  .shell { padding: 10px; }
+  .brand { align-items: flex-start; }
+  .brand img { width: 28px; height: 28px; }
+  .wordmark { font-size: 13px; letter-spacing: .09em; }
+  .tagline { font-size: 10px; }
+  .capture-button {
+    grid-template-columns: 26px minmax(0, 1fr);
+    gap: 7px;
+    padding: 9px;
+    border-radius: 12px;
+  }
+  .capture-button svg { width: 18px; height: 18px; }
+  .copy strong { font-size: 12px; }
+  .copy small { font-size: 10px; }
+  .settings-button { min-height: 36px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .capture-button,
   .settings-button {
