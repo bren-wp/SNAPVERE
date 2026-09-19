@@ -219,7 +219,7 @@ public sealed class LanguagePickerWindow : Window
         }
 
         _sizeApplied = true;
-        AppWindow.Resize(DpiAwareWindowSizing.ScaleSize(this, WindowWidth, WindowHeight));
+        AppWindow.Resize(DpiAwareWindowSizing.ScaleSizeToWorkArea(this, WindowWidth, WindowHeight));
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
             presenter.IsMaximizable = false;
