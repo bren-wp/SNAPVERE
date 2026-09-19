@@ -1,22 +1,22 @@
-# SNAPVERE 0.1.9 Product Status
+# SNAPVERE 0.1.10 Product Status
 
 Active maintained product surfaces are **Windows** and **browser extensions**.
 
 ## Windows
 
-Production implementation includes tray-first startup, Region/Window/Screen capture, frozen-frame selection, local annotation, clipboard and PNG save workflows, local settings, recent captures, diagnostics and x86/x64/ARM64 application payloads inside universal Setup and Portable packages.
+Production implementation includes tray-first startup, Region/Window/Screen capture, local primary-display screen recording, frozen-frame selection, local annotation, clipboard, PNG and MP4 persistence workflows, local settings, recent captures, diagnostics and x86/x64/ARM64 application payloads inside universal Setup and Portable packages.
 
-Recent capture-path hardening removes redundant full-frame staging allocations from Region and Window overlay rendering and releases raw frozen monitor buffers after the corresponding UI bitmap is ready. SNAPVERE 0.1.9 also serializes capture and application shutdown so tray Exit cannot dispose capture dependencies while Region, Window or Screen capture is active, and accepted shutdown blocks later capture starts. SNAPVERE 0.1.9 publishes PNG files with collision-safe commit-time naming, contains expected Settings/Recent shell and local-security failures, keeps failed language saves visually consistent with persisted state, and clamps the tray fallback inside the Windows virtual desktop. These changes target reliability without changing capture semantics. SNAPVERE 0.1.9 additionally hardens Setup against reparse-point path chains and marker-prefix spoofing, sanitizes deferred installer failures, and improves installer keyboard, DPI and narrow-screen behavior.
+SNAPVERE 0.1.10 adds local-first primary-display screen recording through Windows.Graphics.Capture with H.264 MP4 encoding, tray Start/Stop controls, cursor-preference integration, bounded pending/in-flight frame ownership, 30 FPS and 4–32 Mbps policy bounds, an 8K source envelope, zero-frame/zero-byte rejection and atomic publication of completed MP4 files. The initial mode is video-only; system audio and microphone capture are not claimed as supported. Existing capture-safe shutdown, collision-safe PNG publication, shell-error containment, language persistence, tray recovery and Setup hardening remain in place.
 
 ## Browsers
 
-Production source is maintained for Chrome, Edge, Opera and Firefox. Implemented capture modes are visible area, selected region and bounded full page. Brand identity is locked to SNAPVERE. The validated permission contract is `activeTab`, `scripting`, `downloads`, `downloads.open` and `storage`; `downloads.open` is used only by the explicit Recent > Open action. Broad host access is not part of the maintained design. SNAPVERE 0.1.9 also hardens capture-lock ownership, Recent async ordering, duplicate action handling, browser API compatibility and reduced-motion/responsive UI behavior, and moves the macOS Full Page default away from the system-reserved Command+Shift+3 shortcut.
+Production source is maintained for Chrome, Edge, Opera and Firefox. Implemented capture modes are visible area, selected region and bounded full page. Brand identity is locked to SNAPVERE. The validated permission contract is `activeTab`, `scripting`, `downloads`, `downloads.open` and `storage`; `downloads.open` is used only by the explicit Recent > Open action. Broad host access is not part of the maintained design. SNAPVERE 0.1.10 also hardens capture-lock ownership, Recent async ordering, duplicate action handling, browser API compatibility and reduced-motion/responsive UI behavior, and moves the macOS Full Page default away from the system-reserved Command+Shift+3 shortcut.
 
-GitHub release ZIPs are not represented as externally approved store listings unless that publication has actually happened. SNAPVERE 0.1.9 also tightens browser message sender and active-tab ownership checks before privileged capture/download work.
+GitHub release ZIPs are not represented as externally approved store listings unless that publication has actually happened. SNAPVERE 0.1.10 also tightens browser message sender and active-tab ownership checks before privileged capture/download work.
 
 ## Packaging
 
-The active 0.1.9 package contract contains:
+The active 0.1.10 package contract contains:
 
 - `SNAPVERE-Setup.exe`
 - `SNAPVERE-Portable.exe`
@@ -31,6 +31,6 @@ CI covers Windows builds/tests, rendered WinUI visual QA, package construction, 
 
 These gates provide strong regression evidence; they are not a guarantee that every operating-system, driver or browser environment can never produce a platform-specific defect.
 
-The public release is **v0.1.9**. Later `main` hardening remains source state only until a future version is explicitly packaged and published.
+The public release is **v0.1.10**. Later `main` hardening remains source state only until a future version is explicitly packaged and published.
 
-See [Performance & Stability](PERFORMANCE.md), [QA Matrix](QA-MATRIX.md) and the [current release](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.9).
+See [Performance & Stability](PERFORMANCE.md), [QA Matrix](QA-MATRIX.md) and the [current release](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.10).
