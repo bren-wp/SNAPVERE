@@ -41,7 +41,7 @@ The current Windows gates exercise the same Region and Window overlay surfaces a
 
 ## Repository and security gates
 
-- Product Contract CI, including a source contract that rejects direct Portable `exception.Message` exposure and requires the centralized sanitized diagnostics path.
+- Product Contract CI, including source contracts that reject direct Portable `exception.Message` exposure and prevent the Windows fatal-startup UI from rendering the local diagnostics-log path.
 - CodeQL for C#, JavaScript/TypeScript, Python and GitHub Actions.
 - pinned workflow actions.
 - dependency monitoring.
