@@ -4,6 +4,8 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-09-19
+
 ### Capture persistence failure recovery
 
 - Classify expected local PNG persistence failures as access denied, storage full or generic write failure instead of letting save errors look like capture-engine failures.
@@ -13,6 +15,7 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ### Browser active-tab side-effect ownership
 
+- Bind capture ownership to the last-focused browser window as well as the initiating tab/window IDs, aborting before page mutation when focus moves to another browser window.
 - Revalidate the initiating tab before Region/Full Page content-script injection and again before page-mutating Region start, Full Page preparation, scroll, floating-element hiding and final assembly actions.
 - Add token-scoped `REGION_CLEANUP` so a tab switch detected immediately after Region overlay creation removes only the overlay owned by that capture session before releasing its lock.
 - Expand shared behavioral smoke tests to prove early tab switches prevent injection/side effects, Region races clean up the old overlay, Full Page races do not scroll the stale tab, and all four browser variants retain source parity.
