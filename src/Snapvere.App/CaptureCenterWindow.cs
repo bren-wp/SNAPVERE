@@ -352,7 +352,16 @@ public sealed class CaptureCenterWindow : Window
             return true;
         }
 
-        StartupDiagnostics.WriteLine("Shutdown request deferred because a capture is still active.");
+        var activeRecording = _recordingStopSource;
+        if (activeRecording is not null && !activeRecording.IsCancellationRequested)
+        {
+            StartupDiagnostics.WriteLine(
+                "Shutdown requested during screen recording; requesting a graceful recording stop.");
+            activeRecording.Cancel();
+        }
+
+        StartupDiagnostics.WriteLine(
+            "Shutdown request deferred until the active capture finishes cleanup.");
         ShowCaptureFeedback(CaptureFeedbackKind.ShutdownBlocked);
         return false;
     }
@@ -410,7 +419,17 @@ public sealed class CaptureCenterWindow : Window
     }
 
     private void EndCapture()
-        => _activityGate.EndCapture();
+    {
+        _activityGate.EndCapture();
+        if (!_activityGate.IsShutdownRequested)
+        {
+            return;
+        }
+
+        StartupDiagnostics.WriteLine(
+            "Active capture cleanup completed; continuing deferred shutdown.");
+        Close();
+    }
 
     private static bool IsStartupProbeRequested()
     {

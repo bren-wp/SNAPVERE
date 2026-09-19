@@ -1,6 +1,6 @@
 # SNAPVERE Tray i lifecycle
 
-Aktualno javno izdanje: **v0.1.6**. Grana `main` može sadržavati kasniji neobjavljeni lifecycle hardening.
+Aktualno javno izdanje: **v0.1.12**. Grana `main` može sadržavati kasniji neobjavljeni lifecycle hardening.
 
 Windows aplikacija radi kao **tray-first** proces. Normalan launch drži SNAPVERE spremnim za capture bez stalno otvorenog dashboarda, dok globalni prečaci i notification-area host služe kao glavni ulazi u capture workflow.
 
@@ -29,6 +29,10 @@ Tray host registrira `TaskbarCreated`. Nakon ponovnog pokretanja Explorera SNAPV
 Kada korisnik promijeni SNAPVERE jezik, native loop prima privatnu refresh poruku i osvježava lokalizirani tray tooltip bez restartanja aplikacije.
 
 ## Shutdown i cleanup nativnih resursa
+
+Zahtjev za izlaz ostaje zapamćen čim shutdown započne. Ako je capture aktivan, lifecycle gate odmah bilježi pending shutdown i odbija svaki kasniji pokušaj pokretanja novog capturea, pa nakon završetka aktivne operacije više nema race prozora za novi capture. Skriveni capture koordinator automatski se zatvara nakon dovršetka cleanupa te operacije.
+
+Ako je pri zahtjevu za izlaz aktivno snimanje zaslona, SNAPVERE koristi postojeći recording stop token umjesto rušenja recording servisa dok encoder još radi. Snimka koja već ima valjan output može završiti normalnu MP4 objavu, dok nepotpuna snimka prolazi postojeći cancellation/failure cleanup. Proces automatski izlazi nakon dovršetka recording cleanupa.
 
 `Dispose()` uklanja language event subscription, šalje `WM_CLOSE` message-only prozoru i po potrebi ograničeno čeka završetak tray threada. Uništenje prozora šalje quit message native loopu.
 

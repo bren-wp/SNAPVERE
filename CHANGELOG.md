@@ -4,6 +4,13 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Deferred shutdown integrity
+
+- Make an Exit request sticky while any capture is active so no new capture can start after shutdown has already been requested.
+- When Exit is requested during screen recording, request the existing graceful recording stop instead of leaving the user to stop recording manually.
+- Continue the deferred shutdown automatically after active capture cleanup completes, without disposing capture services underneath an in-flight workflow.
+- Refresh EN/HR shutdown feedback and tray-lifecycle documentation, with regression coverage for the sticky lifecycle gate.
+
 ## [0.1.12] - 2026-09-20
 
 ### Responsive completion
