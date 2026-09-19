@@ -19,6 +19,8 @@ Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani 
 - tray-first launch provjera unutar lifecycle probea, uključujući dokaz da drugi Installed ili Portable launch aktivira postojeći proces bez stvaranja duplikata te unit-testirani bounded Explorer tray-recovery backoff.
 - capture/shutdown lifecycle serializacija dokazuje da aktivno snimanje blokira Exit-driven dispose servisa do završetka te da prihvaćeni shutdown blokira nova snimanja.
 - testovi screen-recording policyja provjeravaju parne H.264 dimenzije, 8K granicu izvora, bitrate granice i odbijanje zero-frame/zero-byte izlaza; MP4 writer testovi pokrivaju atomic publish, collision-safe nazive, cleanup privremenih datoteka i zabranu objave nakon greške.
+- testovi responsive-window sizing policyja dokazuju da DPI-scalirane sekundarne površine ostaju unutar work area monitora s ograničenim marginama, uključujući vrlo mali work area i nevaljanu geometriju.
+- browser validacija odbija desktop-only minimalnu širinu popup prozora i zahtijeva narrow responsive breakpointove za popup/options na Chromeu, Edgeu, Operi i Firefoxu.
 - installer safety regresijski testovi za exact marker matching, normalizaciju instalacijske mape, validaciju normalnog directory chaina i ownership install targeta (missing/empty/owned/unowned/invalid-marker/marker-only).
 
 ## Browser gateovi

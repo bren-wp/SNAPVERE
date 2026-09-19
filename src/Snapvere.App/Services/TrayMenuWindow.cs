@@ -89,8 +89,19 @@ public sealed class TrayMenuWindow : Window
         actions.Children.Add(CreateMenuButton("\uE946", L("About"), string.Empty, TrayCommand.About));
         actions.Children.Add(CreateSeparator());
         actions.Children.Add(CreateMenuButton("\uE7E8", L("Exit"), string.Empty, TrayCommand.Exit, danger: true));
-        Grid.SetRow(actions, 1);
-        root.Children.Add(actions);
+        var actionScroller = new ScrollViewer
+        {
+            Margin = new Thickness(0, 12, 0, 0),
+            VerticalScrollMode = ScrollMode.Auto,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollMode = ScrollMode.Disabled,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            Content = actions,
+            IsTabStop = false
+        };
+        actions.Margin = new Thickness(0);
+        Grid.SetRow(actionScroller, 1);
+        root.Children.Add(actionScroller);
 
         var footer = new Grid { Margin = new Thickness(5, 8, 5, 0) };
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -332,7 +343,7 @@ public sealed class TrayMenuWindow : Window
         }
         if (!_hasActivated)
         {
-            AppWindow.Resize(DpiAwareWindowSizing.ScaleSize(this, FlyoutWidth, FlyoutHeight));
+            AppWindow.Resize(DpiAwareWindowSizing.ScaleSizeToWorkArea(this, FlyoutWidth, FlyoutHeight));
             PositionNearCursor();
         }
         _hasActivated = true;
@@ -348,7 +359,7 @@ public sealed class TrayMenuWindow : Window
             presenter.IsMinimizable = false;
             presenter.IsAlwaysOnTop = true;
         }
-        AppWindow.Resize(DpiAwareWindowSizing.ScaleSize(this, FlyoutWidth, FlyoutHeight));
+        AppWindow.Resize(DpiAwareWindowSizing.ScaleSizeToWorkArea(this, FlyoutWidth, FlyoutHeight));
     }
 
     private void PositionNearCursor()

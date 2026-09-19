@@ -255,6 +255,22 @@ function validateSource(browser, browserDir) {
       if (pattern.test(text)) fail(`${browser}/${relative} contains forbidden ${label}.`);
     }
 
+    if (relative === "popup.css") {
+      if (/min-width:\s*(?:3[4-9]\d|[4-9]\d{2,})px/i.test(text)) {
+        fail(`${browser}/popup.css must not force a desktop-width popup on narrow viewports.`);
+      }
+      if (!/@media\s*\(max-width:\s*320px\)/i.test(text)) {
+        fail(`${browser}/popup.css must keep the narrow-popup responsive breakpoint.`);
+      }
+      if (!/overflow-wrap:\s*anywhere/i.test(text)) {
+        fail(`${browser}/popup.css must allow long localized/status copy to wrap on narrow viewports.`);
+      }
+    }
+
+    if (relative === "options.css" && !/@media\s*\(max-width:\s*540px\)/i.test(text)) {
+      fail(`${browser}/options.css must keep the narrow options-page responsive breakpoint.`);
+    }
+
     if (relative === "capture.js") {
       const postEncodeSessionGuard = /const\s+blob\s*=\s*await\s+canvasToBlob\(canvas\);\s*ensureFullToken\(token\);/;
       if (!postEncodeSessionGuard.test(text)) {

@@ -35,6 +35,8 @@ internal sealed class SetupForm : Form
     private readonly CheckBox _launchAfterInstall;
     private readonly Label _licenseLabel;
     private readonly Label _installLocationLabel;
+    private readonly Label _licenseHint;
+    private readonly RoundedPanel _contentCard;
     private readonly Panel _sidebar;
     private readonly Panel _mainPanel;
     private bool _completed;
@@ -51,7 +53,7 @@ internal sealed class SetupForm : Form
         MinimizeBox = true;
         ShowIcon = false;
         ClientSize = new Size(980, 650);
-        MinimumSize = new Size(760, 560);
+        MinimumSize = new Size(680, 520);
         AutoScaleMode = AutoScaleMode.Dpi;
         KeyPreview = true;
         BackColor = Canvas;
@@ -105,13 +107,13 @@ internal sealed class SetupForm : Form
         };
         main.Controls.Add(_subtitleLabel);
 
-        var card = new RoundedPanel(Surface, Border, 18)
+        _contentCard = new RoundedPanel(Surface, Border, 18)
         {
             Location = new Point(32, 139),
             Size = new Size(636, 374),
             Padding = new Padding(22)
         };
-        main.Controls.Add(card);
+        main.Controls.Add(_contentCard);
 
         _licenseLabel = new Label
         {
@@ -121,9 +123,9 @@ internal sealed class SetupForm : Form
             Font = new Font("Segoe UI Semibold", 11F, FontStyle.Bold),
             Location = new Point(22, 18)
         };
-        card.Controls.Add(_licenseLabel);
+        _contentCard.Controls.Add(_licenseLabel);
 
-        var licenseHint = new Label
+        _licenseHint = new Label
         {
             AutoSize = true,
             Text = "Review the commercial license terms before continuing",
@@ -131,7 +133,7 @@ internal sealed class SetupForm : Form
             Font = new Font("Segoe UI", 9F),
             Location = new Point(22, 42)
         };
-        card.Controls.Add(licenseHint);
+        _contentCard.Controls.Add(_licenseHint);
 
         _licenseBox = new RichTextBox
         {
@@ -147,7 +149,7 @@ internal sealed class SetupForm : Form
             AccessibleDescription = "Read-only license terms. Review them before accepting the license.",
             Font = new Font("Segoe UI", 9F)
         };
-        card.Controls.Add(_licenseBox);
+        _contentCard.Controls.Add(_licenseBox);
 
         _acceptLicense = new CheckBox
         {
@@ -159,7 +161,7 @@ internal sealed class SetupForm : Form
             AccessibleName = "Accept commercial license terms"
         };
         _acceptLicense.CheckedChanged += (_, _) => UpdatePrimaryButtonState();
-        card.Controls.Add(_acceptLicense);
+        _contentCard.Controls.Add(_acceptLicense);
 
         _installLocationLabel = new Label
         {
@@ -169,7 +171,7 @@ internal sealed class SetupForm : Form
             Font = new Font("Segoe UI Semibold", 9F),
             Location = new Point(22, 267)
         };
-        card.Controls.Add(_installLocationLabel);
+        _contentCard.Controls.Add(_installLocationLabel);
 
         _installPath = new TextBox
         {
@@ -181,12 +183,12 @@ internal sealed class SetupForm : Form
             BorderStyle = BorderStyle.FixedSingle,
             AccessibleName = "Install location"
         };
-        card.Controls.Add(_installPath);
+        _contentCard.Controls.Add(_installPath);
 
         _browseButton = CreateSecondaryButton("Browse", new Point(496, 289), new Size(118, 34));
         _browseButton.AccessibleName = "Browse for install location";
         _browseButton.Click += BrowseButton_Click;
-        card.Controls.Add(_browseButton);
+        _contentCard.Controls.Add(_browseButton);
 
         _startMenuShortcut = new CheckBox
         {
@@ -198,7 +200,7 @@ internal sealed class SetupForm : Form
             Cursor = Cursors.Hand,
             AccessibleName = "Create Start menu shortcut"
         };
-        card.Controls.Add(_startMenuShortcut);
+        _contentCard.Controls.Add(_startMenuShortcut);
 
         _desktopShortcut = new CheckBox
         {
@@ -210,7 +212,7 @@ internal sealed class SetupForm : Form
             Cursor = Cursors.Hand,
             AccessibleName = "Create Desktop shortcut"
         };
-        card.Controls.Add(_desktopShortcut);
+        _contentCard.Controls.Add(_desktopShortcut);
 
         _startupWithWindows = new CheckBox
         {
@@ -222,7 +224,7 @@ internal sealed class SetupForm : Form
             Cursor = Cursors.Hand,
             AccessibleName = "Start SNAPVERE with Windows"
         };
-        card.Controls.Add(_startupWithWindows);
+        _contentCard.Controls.Add(_startupWithWindows);
 
         _progressBar = new PremiumProgressBar(SurfaceRaised, Accent)
         {
@@ -279,7 +281,7 @@ internal sealed class SetupForm : Form
 
         if (uninstallMode)
         {
-            ConfigureUninstallMode(card, licenseHint);
+            ConfigureUninstallMode(_contentCard, _licenseHint);
         }
         else
         {
@@ -312,6 +314,27 @@ internal sealed class SetupForm : Form
     private void UpdateResponsiveLayout()
     {
         _sidebar.Visible = ClientSize.Width >= 900;
+        PerformLayout();
+
+        var availableWidth = Math.Max(1, _mainPanel.ClientSize.Width);
+        var contentWidth = Math.Clamp(availableWidth - 64, 520, 636);
+        var compact = contentWidth < 600;
+
+        _subtitleLabel.Size = new Size(contentWidth, compact ? 54 : 38);
+        _contentCard.Size = new Size(contentWidth, 374);
+        _licenseBox.Size = new Size(Math.Max(260, contentWidth - 44), 151);
+
+        var browseX = contentWidth - 140;
+        _installPath.Size = new Size(Math.Max(260, contentWidth - 173), 29);
+        _browseButton.Location = new Point(browseX, 289);
+
+        _progressBar.Size = new Size(contentWidth, 7);
+        _statusLabel.Size = new Size(contentWidth, compact ? 48 : 42);
+
+        var primaryX = 32 + contentWidth - _primaryButton.Width;
+        _primaryButton.Location = new Point(primaryX, 592);
+        _cancelButton.Location = new Point(primaryX - _cancelButton.Width - 10, 592);
+
     }
 
     private void SetupForm_FormClosing(object? sender, FormClosingEventArgs e)
@@ -464,7 +487,7 @@ internal sealed class SetupForm : Form
             Font = new Font("Segoe UI Semibold", 16F, FontStyle.Bold),
             Location = new Point(24, 28)
         };
-        card.Controls.Add(removalTitle);
+        _contentCard.Controls.Add(removalTitle);
 
         var message = new Label
         {
@@ -475,7 +498,7 @@ internal sealed class SetupForm : Form
             Location = new Point(25, 82),
             Size = new Size(570, 182)
         };
-        card.Controls.Add(message);
+        _contentCard.Controls.Add(message);
 
         var privacy = new RoundedPanel(Color.FromArgb(17, 38, 34), Color.FromArgb(51, 109, 91), 12)
         {
@@ -491,7 +514,7 @@ internal sealed class SetupForm : Form
             Location = new Point(14, 17),
             Size = new Size(530, 24)
         });
-        card.Controls.Add(privacy);
+        _contentCard.Controls.Add(privacy);
     }
 
     private void LoadLicense()

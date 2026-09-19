@@ -284,6 +284,7 @@ public sealed class AboutWindow : Window
         grid.Children.Add(shortcutBadge);
 
         var actionText = Text(action, 10.5, Muted);
+        actionText.TextWrapping = TextWrapping.Wrap;
         actionText.VerticalAlignment = VerticalAlignment.Center;
         Grid.SetColumn(actionText, 1);
         grid.Children.Add(actionText);
@@ -298,7 +299,7 @@ public sealed class AboutWindow : Window
         }
 
         _sizeApplied = true;
-        AppWindow.Resize(DpiAwareWindowSizing.ScaleSize(this, 560, 560));
+        AppWindow.Resize(DpiAwareWindowSizing.ScaleSizeToWorkArea(this, 560, 560));
     }
 
     private static FrameworkElement BuildBrandMark()
