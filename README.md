@@ -16,7 +16,7 @@ No account. No screenshot telemetry. No automatic cloud upload.
 [![Product Contract](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Website](https://snapvere.com) · [Download v0.1.11](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.11) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
+[Website](https://snapvere.com) · [Download v0.1.12](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.12) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
 
 </div>
 
@@ -24,7 +24,7 @@ No account. No screenshot telemetry. No automatic cloud upload.
 
 ## Why SNAPVERE
 
-SNAPVERE 0.1.11 is built for people who want screenshot tools that stay focused on the job: capture the right pixels, annotate quickly, copy or save locally, and get out of the way.
+SNAPVERE 0.1.12 is built for people who want screenshot tools that stay focused on the job: capture the right pixels, annotate quickly, copy or save locally, and get out of the way.
 
 | | What you get |
 | --- | --- |
@@ -36,7 +36,7 @@ SNAPVERE 0.1.11 is built for people who want screenshot tools that stay focused 
 | 📦 **Portable or installed** | Universal Windows Setup and Portable packages carry x86, x64 and ARM64 application payloads. |
 | 🌐 **Browser coverage** | Chrome, Edge, Opera and Firefox share the same locked SNAPVERE brand and bounded capture behavior. |
 
-SNAPVERE 0.1.11 focuses on responsive high-DPI quality across Windows, Setup/Portable and browser extension surfaces. DPI-scaled secondary windows stay inside the active monitor work area, constrained Tray/Settings/Language/About/feedback content can scroll or wrap, Setup adapts to narrower windows, and browser popups keep a compact narrow-layout contract. Local Windows screen recording from v0.1.10 remains available as H.264 MP4 and stays video-only; microphone and system audio are not claimed as supported.
+SNAPVERE 0.1.12 focuses on responsive high-DPI quality across Windows, Setup/Portable and browser extension surfaces. DPI-scaled secondary windows stay inside the active monitor work area, constrained Tray/Settings/Language/About/feedback content can scroll or wrap, Setup adapts to narrower windows, and browser popups keep a compact narrow-layout contract. Local Windows screen recording from v0.1.10 remains available as H.264 MP4 and stays video-only; microphone and system audio are not claimed as supported.
 
 The browser runtime now separates extension-page capture commands from tab-owned capture-session callbacks. Injected tab scripts and foreign extension identities cannot initiate top-level SNAPVERE capture commands; region callbacks retain token/tab/window ownership checks, and background responses expose bounded error keys rather than raw internal exception messages. The existing v0.1.5 concurrency, memory, responsive UI and shortcut hardening remains in place.
 
@@ -93,8 +93,8 @@ These are **real rendered Windows surfaces captured by SNAPVERE's visual-QA pipe
 
 ## Downloads
 
-Current release: **SNAPVERE 0.1.11**<br>
-Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.11
+Current release: **SNAPVERE 0.1.12**<br>
+Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.12
 
 | Platform | Package |
 | --- | --- |
