@@ -167,7 +167,7 @@
   }
 
   async function getActiveTab() {
-    const tabs = await invoke(chrome.tabs, "query", { active: true, currentWindow: true });
+    const tabs = await invoke(chrome.tabs, "query", { active: true, lastFocusedWindow: true });
     const tab = Array.isArray(tabs) ? tabs[0] : null;
     if (!tab || !Number.isInteger(tab.id) || !Number.isInteger(tab.windowId)) {
       throw new SnapvereError("captureFailed", "No active browser tab is available.");
@@ -176,7 +176,7 @@
   }
 
   async function ensureCaptureTabActive(tabId, windowId) {
-    const tabs = await invoke(chrome.tabs, "query", { active: true, windowId });
+    const tabs = await invoke(chrome.tabs, "query", { active: true, lastFocusedWindow: true });
     const activeTab = Array.isArray(tabs) ? tabs[0] : null;
     if (!activeTab || activeTab.id !== tabId || activeTab.windowId !== windowId) {
       throw new SnapvereError("captureTabChanged", "The active tab changed while SNAPVERE was capturing.");
