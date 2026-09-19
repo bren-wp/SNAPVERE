@@ -30,7 +30,7 @@ The current Windows gates exercise the same Region and Window overlay surfaces a
 - Chrome/Edge/Opera parity plus documented Firefox differences.
 - EN/HR locale-key parity.
 - runtime background smoke tests, including owner-safe stale-lock cleanup interleavings and extension-message sender/active-tab ownership validation.
-- active-tab ownership checks before and after capture.
+- active-tab ownership checks before and after pixel capture plus behavioral coverage proving Region/Full Page page-mutating side effects are rejected or token-cleaned when the active tab changes.
 - bounded full-page memory behavior.
 - region failure feedback after popup closure.
 - Settings/Recent behavioral tests for stale async result suppression and duplicate Open/folder actions.

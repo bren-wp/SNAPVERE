@@ -4,6 +4,12 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Browser active-tab side-effect ownership
+
+- Revalidate the initiating tab before Region/Full Page content-script injection and again before page-mutating Region start, Full Page preparation, scroll, floating-element hiding and final assembly actions.
+- Add token-scoped `REGION_CLEANUP` so a tab switch detected immediately after Region overlay creation removes only the overlay owned by that capture session before releasing its lock.
+- Expand shared behavioral smoke tests to prove early tab switches prevent injection/side effects, Region races clean up the old overlay, Full Page races do not scroll the stale tab, and all four browser variants retain source parity.
+
 ### Explorer tray recovery
 
 - Replace the one-shot `TaskbarCreated` tray-icon restore attempt with a bounded non-blocking retry schedule so short Explorer notification-area races do not leave a healthy SNAPVERE process without its icon.

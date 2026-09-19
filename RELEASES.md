@@ -28,6 +28,13 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
+### Browser active-tab side-effect ownership
+
+- Region and Full Page capture now revalidate active-tab ownership before content-script/page side effects instead of waiting until the next pixel capture.
+- If the active tab changes immediately after Region overlay creation, the background runtime sends a token-scoped cleanup request to the owning tab and releases the capture lock.
+- Full Page capture checks ownership before preparation, every scroll-side-effect boundary, floating-element hiding and final assembly while still running unconditional token-scoped cleanup on failure.
+- Cross-browser smoke tests cover these races for Chrome, Edge, Opera and Firefox without adding permissions or host access.
+
 ### Explorer tray recovery
 
 - When Explorer recreates the notification area, SNAPVERE now retries tray-icon registration on a bounded backoff instead of giving up after the first transient `Shell_NotifyIcon` failure.
