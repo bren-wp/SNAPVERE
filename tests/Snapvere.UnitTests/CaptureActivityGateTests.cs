@@ -28,4 +28,41 @@ public sealed class CaptureActivityGateTests
         Assert.False(gate.TryBeginCapture());
         Assert.False(gate.IsCaptureInProgress);
     }
+
+    [Fact]
+    public async Task CaptureAndShutdownStartingTogether_HaveExactlyOneWinner()
+    {
+        for (var iteration = 0; iteration < 256; iteration++)
+        {
+            var gate = new CaptureActivityGate();
+            using var start = new Barrier(3);
+
+            var capture = Task.Run(() =>
+            {
+                start.SignalAndWait();
+                return gate.TryBeginCapture();
+            });
+            var shutdown = Task.Run(() =>
+            {
+                start.SignalAndWait();
+                return gate.TryBeginShutdown();
+            });
+
+            start.SignalAndWait();
+            var captureWon = await capture;
+            var shutdownWon = await shutdown;
+
+            Assert.NotEqual(captureWon, shutdownWon);
+
+            if (captureWon)
+            {
+                gate.EndCapture();
+                Assert.True(gate.TryBeginShutdown());
+            }
+            else
+            {
+                Assert.False(gate.TryBeginCapture());
+            }
+        }
+    }
 }
