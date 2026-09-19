@@ -5,7 +5,14 @@
   color: #f7f4ff;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; min-width: 340px; background: #0d1120; }
+html, body {
+  margin: 0;
+  width: min(360px, 100vw);
+  min-width: 280px;
+  max-width: 100vw;
+  overflow-x: hidden;
+  background: #0d1120;
+}
 body {
   background:
     radial-gradient(circle at 80% -10%, rgba(140, 92, 255, .2), transparent 38%),
@@ -95,6 +102,24 @@ button { font: inherit; }
   color: #777f9c;
   font-size: 10px;
   line-height: 1.45;
+}
+
+@media (max-width: 320px) {
+  .shell { padding: 14px; }
+  .brand { gap: 9px; margin-bottom: 13px; }
+  .capture-button {
+    min-height: 60px;
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 9px;
+    padding: 10px 11px;
+  }
+  .capture-button svg { width: 20px; height: 20px; }
+  .copy strong,
+  .copy small,
+  .footer p,
+  .status {
+    overflow-wrap: anywhere;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
