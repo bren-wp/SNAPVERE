@@ -35,7 +35,7 @@ SNAPVERE 0.1.9 namijenjen je korisnicima koji žele brz i čist screenshot workf
 | 📦 **Setup ili Portable** | Universal Windows paketi s x86, x64 i ARM64 aplikacijskim payloadima. |
 | 🌐 **Četiri preglednika** | Chrome, Edge, Opera i Firefox dijele isti zaključani SNAPVERE brand i ograničeno capture ponašanje. |
 
-SNAPVERE 0.1.9 ovaj maintenance ciklus usmjerava na sigurniji Setup lifecycle i ownership browser poruka. Setup sada točno validira installation marker, odbija postojeće reparse-point/symlink lance prije izmjene datoteka, sanitizira silent/deferred greške, ne dopušta zatvaranje čarobnjaka tijekom aktivne file operacije, normalizira odabranu install mapu te poboljšava active-monitor i accessibility ponašanje.
+SNAPVERE 0.1.9 dodaje capture-safe gašenje aplikacije: tray Exit više ne može ugasiti runtime service graph dok je Region, Window ili Screen capture aktivan, a nakon prihvaćenog shutdowna nova snimanja se ne mogu pokrenuti. Postojeći Setup lifecycle i browser ownership hardening ostaju dio održavane linije.
 
 Browser runtime sada odvaja capture naredbe iz SNAPVERE extension stranica od callbackova capture sesije u vlasničkoj kartici. Injektirani tab script i strani extension identitet ne mogu pokrenuti top-level SNAPVERE capture naredbe; region callbackovi i dalje moraju odgovarati tokenu, kartici i prozoru, a background odgovor prema UI-ju više ne vraća raw interne exception poruke. Postojeći v0.1.5 concurrency, memory, responsive UI i shortcut hardening ostaje zadržan.
 
