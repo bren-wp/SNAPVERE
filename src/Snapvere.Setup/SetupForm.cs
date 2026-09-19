@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using Snapvere.Shared;
 
 namespace Snapvere.Setup;
 
@@ -53,7 +54,7 @@ internal sealed class SetupForm : Form
         MinimizeBox = true;
         ShowIcon = false;
         ClientSize = new Size(980, 650);
-        MinimumSize = new Size(680, 520);
+        MinimumSize = new Size(520, 480);
         AutoScaleMode = AutoScaleMode.Dpi;
         KeyPreview = true;
         BackColor = Canvas;
@@ -301,10 +302,19 @@ internal sealed class SetupForm : Form
     private void PositionWithinActiveMonitor()
     {
         var workingArea = Screen.FromPoint(Cursor.Position).WorkingArea;
-        var width = Math.Min(Width, Math.Max(MinimumSize.Width, workingArea.Width - 24));
-        var height = Math.Min(Height, Math.Max(MinimumSize.Height, workingArea.Height - 24));
+        var fitted = ResponsiveWindowSizePolicy.FitWithinWorkArea(
+            Width,
+            Height,
+            workingArea.Width,
+            workingArea.Height,
+            margin: 12);
 
-        Size = new Size(width, height);
+        MinimumSize = Size.Empty;
+        Size = new Size(fitted.Width, fitted.Height);
+        MinimumSize = new Size(
+            Math.Min(520, fitted.Width),
+            Math.Min(480, fitted.Height));
+
         Location = new Point(
             workingArea.Left + Math.Max(0, (workingArea.Width - Width) / 2),
             workingArea.Top + Math.Max(0, (workingArea.Height - Height) / 2));
@@ -313,28 +323,83 @@ internal sealed class SetupForm : Form
 
     private void UpdateResponsiveLayout()
     {
-        _sidebar.Visible = ClientSize.Width >= 900;
+        if (ClientSize.Width <= 0)
+        {
+            return;
+        }
+
+        _sidebar.Visible = SetupResponsiveLayoutPolicy.ShouldShowSidebar(ClientSize.Width);
         PerformLayout();
 
-        var availableWidth = Math.Max(1, _mainPanel.ClientSize.Width);
-        var contentWidth = Math.Clamp(availableWidth - 64, 520, 636);
-        var compact = contentWidth < 600;
+        if (_mainPanel.ClientSize.Width <= 0)
+        {
+            return;
+        }
 
-        _subtitleLabel.Size = new Size(contentWidth, compact ? 54 : 38);
-        _contentCard.Size = new Size(contentWidth, 374);
-        _licenseBox.Size = new Size(Math.Max(260, contentWidth - 44), 151);
+        var layout = SetupResponsiveLayoutPolicy.CalculateContent(_mainPanel.ClientSize.Width);
+        var left = layout.HorizontalMargin;
+        var contentWidth = layout.ContentWidth;
+        var innerWidth = Math.Max(1, contentWidth - 44);
 
-        var browseX = contentWidth - 140;
-        _installPath.Size = new Size(Math.Max(260, contentWidth - 173), 29);
+        _subtitleLabel.Location = new Point(left + 2, 91);
+        _subtitleLabel.Size = new Size(contentWidth, layout.Compact ? 54 : 38);
+
+        _contentCard.Location = new Point(left, 139);
+        _contentCard.Size = new Size(contentWidth, layout.CardHeight);
+        _licenseLabel.Size = new Size(innerWidth, 22);
+        _licenseHint.Size = new Size(innerWidth, 22);
+        _licenseBox.Size = new Size(innerWidth, 151);
+
+        _acceptLicense.AutoSize = false;
+        _acceptLicense.Size = new Size(innerWidth, layout.Compact ? 42 : 28);
+
+        var browseWidth = layout.Compact ? 96 : 118;
+        var browseX = Math.Max(22, contentWidth - 22 - browseWidth);
+        _installPath.Size = new Size(Math.Max(96, browseX - 32), 29);
+        _browseButton.Size = new Size(browseWidth, 34);
         _browseButton.Location = new Point(browseX, 289);
 
+        if (layout.Compact)
+        {
+            _startMenuShortcut.Location = new Point(22, 337);
+            _desktopShortcut.Location = new Point(Math.Min(150, Math.Max(22, contentWidth / 2)), 337);
+            _startupWithWindows.Location = new Point(22, 367);
+        }
+        else
+        {
+            _startMenuShortcut.Location = new Point(22, 337);
+            _desktopShortcut.Location = new Point(150, 337);
+            _startupWithWindows.Location = new Point(296, 337);
+        }
+
+        var progressTop = _contentCard.Bottom + 17;
+        _progressBar.Location = new Point(left, progressTop);
         _progressBar.Size = new Size(contentWidth, 7);
-        _statusLabel.Size = new Size(contentWidth, compact ? 48 : 42);
 
-        var primaryX = 32 + contentWidth - _primaryButton.Width;
-        _primaryButton.Location = new Point(primaryX, 592);
-        _cancelButton.Location = new Point(primaryX - _cancelButton.Width - 10, 592);
+        var statusTop = progressTop + 20;
+        _statusLabel.Location = new Point(left, statusTop);
+        _statusLabel.Size = new Size(contentWidth, layout.StatusHeight);
 
+        var actionTop = statusTop + layout.StatusHeight + 2;
+        var primaryX = left + Math.Max(0, contentWidth - _primaryButton.Width);
+        var cancelX = Math.Max(left, primaryX - _cancelButton.Width - 10);
+
+        if (_completed && !_uninstallMode && layout.Compact && contentWidth < 420)
+        {
+            _launchAfterInstall.Location = new Point(left, actionTop);
+            actionTop += 36;
+        }
+        else
+        {
+            _launchAfterInstall.Location = new Point(left, actionTop + 8);
+        }
+
+        _primaryButton.Location = new Point(primaryX, actionTop);
+        _cancelButton.Location = new Point(cancelX, actionTop);
+
+        _mainPanel.AutoScrollMinSize = new Size(
+            0,
+            actionTop + Math.Max(_primaryButton.Height, 40) + 18);
     }
 
     private void SetupForm_FormClosing(object? sender, FormClosingEventArgs e)
@@ -496,14 +561,16 @@ internal sealed class SetupForm : Form
             ForeColor = Color.FromArgb(224, 222, 232),
             Font = new Font("Segoe UI", 11F),
             Location = new Point(25, 82),
-            Size = new Size(570, 182)
+            Size = new Size(570, 182),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
         _contentCard.Controls.Add(message);
 
         var privacy = new RoundedPanel(Color.FromArgb(17, 38, 34), Color.FromArgb(51, 109, 91), 12)
         {
             Location = new Point(24, 283),
-            Size = new Size(570, 56)
+            Size = new Size(570, 56),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
         privacy.Controls.Add(new Label
         {
@@ -511,8 +578,9 @@ internal sealed class SetupForm : Form
             Text = "●   Capture files are not part of uninstall cleanup.",
             ForeColor = Success,
             Font = new Font("Segoe UI Semibold", 9.5F, FontStyle.Bold),
-            Location = new Point(14, 17),
-            Size = new Size(530, 24)
+            Location = new Point(14, 12),
+            Size = new Size(530, 34),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         });
         _contentCard.Controls.Add(privacy);
     }
@@ -601,6 +669,7 @@ internal sealed class SetupForm : Form
         _primaryButton.Enabled = true;
         _cancelButton.Visible = false;
         _launchAfterInstall.Visible = !_uninstallMode;
+        UpdateResponsiveLayout();
     }
 
     private void BrowseButton_Click(object? sender, EventArgs e)
