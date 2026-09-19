@@ -16,7 +16,7 @@ No account. No screenshot telemetry. No automatic cloud upload.
 [![Product Contract](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Website](https://snapvere.com) · [Download v0.1.10](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.10) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
+[Website](https://snapvere.com) · [Download v0.1.11](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.11) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
 
 </div>
 
@@ -24,18 +24,19 @@ No account. No screenshot telemetry. No automatic cloud upload.
 
 ## Why SNAPVERE
 
-SNAPVERE 0.1.10 is built for people who want screenshot tools that stay focused on the job: capture the right pixels, annotate quickly, copy or save locally, and get out of the way.
+SNAPVERE 0.1.11 is built for people who want screenshot tools that stay focused on the job: capture the right pixels, annotate quickly, copy or save locally, and get out of the way.
 
 | | What you get |
 | --- | --- |
-| ⚡ **Fast capture** | Region, window and screen capture on Windows, plus visible-area, region and bounded full-page capture in browsers. |\n| 🎥 **Local screen recording** | Start/Stop primary-display recording from the Windows tray and save a local H.264 MP4 without cloud upload. |
+| ⚡ **Fast capture** | Region, window and screen capture on Windows, plus visible-area, region and bounded full-page capture in browsers. |
+| 🎥 **Local screen recording** | Start/Stop primary-display recording from the Windows tray and save a local H.264 MP4 without cloud upload. |
 | ✏️ **Built-in annotation** | Pen, Line, Arrow, Box and Highlight tools directly in the Windows region workflow. |
 | 🖥️ **Native Windows workflow** | Tray-first operation, global shortcuts, recent captures, local settings and DPI-aware multi-monitor handling. |
 | 🔒 **Local-first by design** | Core capture processing stays local; no account is required for capture and no first-party screenshot telemetry is built into the capture runtime. |
 | 📦 **Portable or installed** | Universal Windows Setup and Portable packages carry x86, x64 and ARM64 application payloads. |
 | 🌐 **Browser coverage** | Chrome, Edge, Opera and Firefox share the same locked SNAPVERE brand and bounded capture behavior. |
 
-SNAPVERE 0.1.10 adds local-first Windows screen recording. Start and stop recording from the tray, encode the primary display locally as H.264 MP4, keep frame ownership bounded, and publish only completed recordings atomically. The initial recording mode is video-only: microphone and system audio are not claimed as supported. Existing capture-safe shutdown, Setup lifecycle safety and browser message-ownership hardening remain part of the maintained product line.
+SNAPVERE 0.1.11 focuses on responsive high-DPI quality across Windows, Setup/Portable and browser extension surfaces. DPI-scaled secondary windows stay inside the active monitor work area, constrained Tray/Settings/Language/About/feedback content can scroll or wrap, Setup adapts to narrower windows, and browser popups keep a compact narrow-layout contract. Local Windows screen recording from v0.1.10 remains available as H.264 MP4 and stays video-only; microphone and system audio are not claimed as supported.
 
 The browser runtime now separates extension-page capture commands from tab-owned capture-session callbacks. Injected tab scripts and foreign extension identities cannot initiate top-level SNAPVERE capture commands; region callbacks retain token/tab/window ownership checks, and background responses expose bounded error keys rather than raw internal exception messages. The existing v0.1.5 concurrency, memory, responsive UI and shortcut hardening remains in place.
 
@@ -47,7 +48,8 @@ SNAPVERE runs tray-first instead of keeping a permanent dashboard open.
 | --- | --- | --- |
 | **Region Capture** | `Print Screen` or `Ctrl+Shift+1` | Freeze the desktop, select a region, resize it, annotate, copy or save. |
 | **Window Capture** | `Ctrl+Shift+2` | Pick a visible window from the frozen desktop and capture it cleanly. |
-| **Screen Capture** | `Ctrl+Shift+3` | Capture the active display workflow immediately. |\n| **Screen Recording** | Tray Start/Stop | Record the primary Windows display locally as H.264 MP4. |
+| **Screen Capture** | `Ctrl+Shift+3` | Capture the active display workflow immediately. |
+| **Screen Recording** | Tray Start/Stop | Record the primary Windows display locally as H.264 MP4. |
 
 Windows captures are stored by default in `Pictures\SNAPVERE`. PNG saving uses staging before the final move so an interrupted encode is not intentionally exposed as a completed capture.
 
@@ -91,8 +93,8 @@ These are **real rendered Windows surfaces captured by SNAPVERE's visual-QA pipe
 
 ## Downloads
 
-Current release: **SNAPVERE 0.1.10**<br>
-Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.10
+Current release: **SNAPVERE 0.1.11**<br>
+Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.11
 
 | Platform | Package |
 | --- | --- |
