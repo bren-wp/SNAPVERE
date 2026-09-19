@@ -95,16 +95,26 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
                 };
                 frameSource.Attach(mediaSource);
 
-                var outputProfile = new MediaEncodingProfile();
-                outputProfile.Container.Subtype = "MPEG4";
-                outputProfile.Video.Subtype = MediaEncodingSubtypes.H264;
-                outputProfile.Video.Width = (uint)encodedSize.Width;
-                outputProfile.Video.Height = (uint)encodedSize.Height;
-                outputProfile.Video.Bitrate = ScreenRecordingPolicy.GetBitrate(encodedSize);
-                outputProfile.Video.FrameRate.Numerator = ScreenRecordingPolicy.FrameRate;
-                outputProfile.Video.FrameRate.Denominator = 1;
-                outputProfile.Video.PixelAspectRatio.Numerator = 1;
-                outputProfile.Video.PixelAspectRatio.Denominator = 1;
+                var outputVideo = new VideoEncodingProperties
+                {
+                    Subtype = MediaEncodingSubtypes.H264,
+                    Width = (uint)encodedSize.Width,
+                    Height = (uint)encodedSize.Height,
+                    Bitrate = ScreenRecordingPolicy.GetBitrate(encodedSize)
+                };
+                outputVideo.FrameRate.Numerator = ScreenRecordingPolicy.FrameRate;
+                outputVideo.FrameRate.Denominator = 1;
+                outputVideo.PixelAspectRatio.Numerator = 1;
+                outputVideo.PixelAspectRatio.Denominator = 1;
+
+                var outputProfile = new MediaEncodingProfile
+                {
+                    Container = new ContainerEncodingProperties
+                    {
+                        Subtype = MediaEncodingSubtypes.Mpeg4
+                    },
+                    Video = outputVideo
+                };
 
                 var transcoder = new MediaTranscoder
                 {
