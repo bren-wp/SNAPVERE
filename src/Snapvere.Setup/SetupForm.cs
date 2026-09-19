@@ -335,15 +335,6 @@ internal sealed class SetupForm : Form
         _primaryButton.Location = new Point(primaryX, 592);
         _cancelButton.Location = new Point(primaryX - _cancelButton.Width - 10, 592);
 
-        if (compact)
-        {
-            _startupWithWindows.Location = new Point(296, 337);
-            _titleLabel.Font = new Font("Segoe UI Semibold", 21F, FontStyle.Bold);
-        }
-        else
-        {
-            _titleLabel.Font = new Font("Segoe UI Semibold", 24F, FontStyle.Bold);
-        }
     }
 
     private void SetupForm_FormClosing(object? sender, FormClosingEventArgs e)
