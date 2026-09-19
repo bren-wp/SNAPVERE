@@ -25,7 +25,9 @@ public static class ScreenRecordingPolicy
     public const uint FrameRate = 30;
     public const uint MinimumBitrate = 4_000_000;
     public const uint MaximumBitrate = 32_000_000;
-    public const long MaximumSourcePixels = 7680L * 4320L;
+    public const int MaximumLongEdge = 7680;
+    public const int MaximumShortEdge = 4320;
+    public const long MaximumSourcePixels = (long)MaximumLongEdge * MaximumShortEdge;
 
     public static PixelSize GetEncodedSize(PixelSize sourceSize)
     {
@@ -34,16 +36,26 @@ public static class ScreenRecordingPolicy
             throw new ArgumentOutOfRangeException(nameof(sourceSize));
         }
 
-        var pixels = checked((long)sourceSize.Width * sourceSize.Height);
-        if (pixels > MaximumSourcePixels)
+        if (sourceSize.Width < 2 || sourceSize.Height < 2)
         {
             throw new NotSupportedException(
-                "Screen recording is limited to source displays up to 7680x4320 pixels.");
+                "Screen recording requires a source display of at least 2x2 pixels.");
+        }
+
+        var longEdge = Math.Max(sourceSize.Width, sourceSize.Height);
+        var shortEdge = Math.Min(sourceSize.Width, sourceSize.Height);
+        var pixels = checked((long)sourceSize.Width * sourceSize.Height);
+        if (longEdge > MaximumLongEdge ||
+            shortEdge > MaximumShortEdge ||
+            pixels > MaximumSourcePixels)
+        {
+            throw new NotSupportedException(
+                "Screen recording is limited to source displays up to 7680x4320 pixels in either orientation.");
         }
 
         return new PixelSize(
-            Math.Max(2, sourceSize.Width & ~1),
-            Math.Max(2, sourceSize.Height & ~1));
+            sourceSize.Width & ~1,
+            sourceSize.Height & ~1);
     }
 
     public static uint GetBitrate(PixelSize encodedSize)
