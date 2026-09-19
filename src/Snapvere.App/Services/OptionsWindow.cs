@@ -660,7 +660,7 @@ public sealed class OptionsWindow : Window
             return;
         }
         _sizeApplied = true;
-        AppWindow.Resize(DpiAwareWindowSizing.ScaleSize(this, 760, 700));
+        AppWindow.Resize(DpiAwareWindowSizing.ScaleSizeToWorkArea(this, 760, 700));
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
             presenter.IsMaximizable = false;
