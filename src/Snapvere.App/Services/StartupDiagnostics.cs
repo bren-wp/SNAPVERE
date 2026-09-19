@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text;
+using Snapvere.Shared;
 
 namespace Snapvere.App.Services;
 
@@ -68,14 +69,9 @@ internal static class StartupDiagnostics
     {
         Record(stage, exception);
 
-        var message =
-            "SNAPVERE could not start correctly.\r\n\r\n" +
-            "Close SNAPVERE and try again. If the problem continues, a local diagnostic log is available at:\r\n" +
-            LogFilePath;
-
         _ = NativeMethods.MessageBoxW(
             nint.Zero,
-            message,
+            UserFacingDiagnosticsText.StartupFailureMessage,
             "SNAPVERE startup error",
             NativeMethods.MbOk | NativeMethods.MbIconError | NativeMethods.MbSetForeground);
     }
