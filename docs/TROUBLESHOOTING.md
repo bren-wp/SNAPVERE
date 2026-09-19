@@ -10,9 +10,9 @@ Try the capture again after closing protected/full-screen content. SNAPVERE pref
 
 Another application may own the same global shortcut. Use the tray menu and review the Windows startup/shortcut state.
 
-## Region save or copy fails
+## Capture save or Region copy fails
 
-Confirm the capture folder is writable and that the Windows clipboard is available. SNAPVERE uses staged file writes so an interrupted PNG encode is not presented as a completed capture.
+If saving fails, SNAPVERE distinguishes a blocked capture folder, a full storage device and another local PNG write failure. Check Pictures/SNAPVERE permissions, confirm free disk space and retry. Region clipboard failures remain separate from file persistence. SNAPVERE uses staged file writes and an atomic final move so an interrupted PNG encode is not presented as a completed capture. Technical filesystem exception text remains in local diagnostics instead of being shown as recovery copy.
 
 ## Portable does not start
 

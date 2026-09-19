@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Snapvere.Shared;
 using Windows.System;
 
 namespace Snapvere.App.Services;
@@ -14,7 +15,10 @@ public enum CaptureFeedbackKind
     WindowUnsupported,
     RegionFailed,
     WindowFailed,
-    ScreenFailed
+    ScreenFailed,
+    SaveAccessDenied,
+    StorageFull,
+    SaveFailed
 }
 
 /// <summary>
@@ -47,6 +51,8 @@ public sealed class CaptureFeedbackWindow : Window
             (CaptureFeedbackKind.Busy, false) => "Capture already active",
             (CaptureFeedbackKind.WindowUnsupported, true) => "Snimanje prozora nije dostupno",
             (CaptureFeedbackKind.WindowUnsupported, false) => "Window capture is unavailable",
+            (CaptureFeedbackKind.SaveAccessDenied or CaptureFeedbackKind.StorageFull or CaptureFeedbackKind.SaveFailed, _) =>
+                L("CaptureSaveFailedTitle"),
             (_, true) => "Snimanje nije dovršeno",
             _ => "Capture could not be completed"
         };
@@ -71,10 +77,18 @@ public sealed class CaptureFeedbackWindow : Window
             (CaptureFeedbackKind.WindowFailed, false) =>
                 "SNAPVERE could not complete the selected window capture. Make sure the window is still open and try again.",
             (CaptureFeedbackKind.ScreenFailed, true) =>
-                "SNAPVERE nije uspio spremiti snimku zaslona. Provjeri dozvole za mapu Slike i pokušaj ponovno.",
+                "SNAPVERE nije uspio dovršiti snimanje zaslona. Pokušaj ponovno; ako se problem ponovi, zatvori zaštićeni ili full-screen sadržaj.",
+            (CaptureFeedbackKind.ScreenFailed, false) =>
+                "SNAPVERE could not complete the screen capture. Try again; if it keeps failing, close protected or full-screen content.",
+            (CaptureFeedbackKind.SaveAccessDenied, _) => L("CaptureSaveAccessDenied"),
+            (CaptureFeedbackKind.StorageFull, _) => L("CaptureStorageFull"),
+            (CaptureFeedbackKind.SaveFailed, _) => L("CaptureSaveFailed"),
             _ =>
-                "SNAPVERE could not save the screen capture. Check access to Pictures and try again."
+                "SNAPVERE could not complete the capture. Try again."
         };
+
+    private string L(string key)
+        => SnapvereLocalization.T(key, _languageCode);
 
     private string CloseText() => IsCroatian ? "Zatvori" : "Close";
 

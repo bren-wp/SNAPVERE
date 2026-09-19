@@ -4,6 +4,13 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Capture persistence failure recovery
+
+- Classify expected local PNG persistence failures as access denied, storage full or generic write failure instead of letting save errors look like capture-engine failures.
+- Preserve the original technical exception only as an inner diagnostic detail while Region, Window and Screen surfaces show stable localized recovery copy.
+- Keep cancellation, capture-engine/programming failures, staged temp writes, atomic publication, filename-collision retry and stale-temp cleanup behavior unchanged.
+- Add regression coverage for Win32 disk-full codes, access/security failures, generic I/O failures, sanitized wrapper messages, invalid save targets and EN/HR fallback copy.
+
 ### Browser active-tab side-effect ownership
 
 - Revalidate the initiating tab before Region/Full Page content-script injection and again before page-mutating Region start, Full Page preparation, scroll, floating-element hiding and final assembly actions.

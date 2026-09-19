@@ -5,7 +5,7 @@ This matrix documents automated regression evidence for the actively maintained 
 ## Windows build and runtime gates
 
 - .NET restore with vulnerability auditing.
-- x64 build and unit-test suite, including concurrent same-timestamp PNG publication coverage, stale/recent/foreign/locked capture-temp cleanup boundaries, Portable startup-message sanitization against injected private-path exception text and bounded local-shell failure taxonomy coverage.
+- x64 build and unit-test suite, including concurrent same-timestamp PNG publication coverage, stale/recent/foreign/locked capture-temp cleanup boundaries, typed access-denied/storage-full/write-failure persistence classification with an invalid-target integration case, Portable startup-message sanitization against injected private-path exception text and bounded local-shell failure taxonomy coverage.
 - x86 build and ARM64 cross-build.
 - native payload-structure validation.
 - real rendered WinUI snapshot capture for Region, Window, Tray, Options, Language and About surfaces.

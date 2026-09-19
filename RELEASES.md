@@ -28,6 +28,12 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
+### Capture persistence failure recovery
+
+- Windows capture saving now distinguishes access-denied, storage-full and other local write failures from acquisition/capture failures.
+- Region, Window and Screen capture surfaces provide stable recovery guidance without rendering raw filesystem exception details or private local paths.
+- The existing staged temporary write plus atomic final move remains the publication boundary; cancellation and non-persistence failures are not reclassified.
+
 ### Browser active-tab side-effect ownership
 
 - Region and Full Page capture now revalidate active-tab ownership before content-script/page side effects instead of waiting until the next pixel capture.
