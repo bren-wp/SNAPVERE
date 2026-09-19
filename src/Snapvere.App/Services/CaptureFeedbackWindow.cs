@@ -77,12 +77,14 @@ public sealed class CaptureFeedbackWindow : Window
             (CaptureFeedbackKind.WindowFailed, false) =>
                 "SNAPVERE could not complete the selected window capture. Make sure the window is still open and try again.",
             (CaptureFeedbackKind.ScreenFailed, true) =>
-                "SNAPVERE nije uspio spremiti snimku zaslona. Provjeri dozvole za mapu Slike i pokušaj ponovno.",
+                "SNAPVERE nije uspio dovršiti snimanje zaslona. Pokušaj ponovno; ako se problem ponovi, zatvori zaštićeni ili full-screen sadržaj.",
+            (CaptureFeedbackKind.ScreenFailed, false) =>
+                "SNAPVERE could not complete the screen capture. Try again; if it keeps failing, close protected or full-screen content.",
             (CaptureFeedbackKind.SaveAccessDenied, _) => L("CaptureSaveAccessDenied"),
             (CaptureFeedbackKind.StorageFull, _) => L("CaptureStorageFull"),
             (CaptureFeedbackKind.SaveFailed, _) => L("CaptureSaveFailed"),
             _ =>
-                "SNAPVERE could not save the screen capture. Check access to Pictures and try again."
+                "SNAPVERE could not complete the capture. Try again."
         };
 
     private string L(string key)
