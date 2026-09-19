@@ -1,6 +1,6 @@
 # SNAPVERE korisnički vodič
 
-SNAPVERE je lokalno usmjeren alat za snimanje sadržaja na Windowsu i u modernim preglednicima. Aktualno javno izdanje je v0.1.10.
+SNAPVERE je lokalno usmjeren alat za snimanje sadržaja na Windowsu i u modernim preglednicima. Aktualno javno izdanje je v0.1.11.
 
 ## Windows
 
