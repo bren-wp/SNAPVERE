@@ -12,6 +12,7 @@ namespace Snapvere.App.Services;
 public enum CaptureFeedbackKind
 {
     Busy,
+    ShutdownBlocked,
     WindowUnsupported,
     RegionFailed,
     WindowFailed,
@@ -49,6 +50,8 @@ public sealed class CaptureFeedbackWindow : Window
         {
             (CaptureFeedbackKind.Busy, true) => "Snimanje je već aktivno",
             (CaptureFeedbackKind.Busy, false) => "Capture already active",
+            (CaptureFeedbackKind.ShutdownBlocked, true) => "Snimanje je još aktivno",
+            (CaptureFeedbackKind.ShutdownBlocked, false) => "Capture is still active",
             (CaptureFeedbackKind.WindowUnsupported, true) => "Snimanje prozora nije dostupno",
             (CaptureFeedbackKind.WindowUnsupported, false) => "Window capture is unavailable",
             (CaptureFeedbackKind.SaveAccessDenied or CaptureFeedbackKind.StorageFull or CaptureFeedbackKind.SaveFailed, _) =>
@@ -64,6 +67,10 @@ public sealed class CaptureFeedbackWindow : Window
                 "Završi ili odustani od trenutačnog snimanja prije pokretanja novog.",
             (CaptureFeedbackKind.Busy, false) =>
                 "Finish or cancel the current capture before starting another one.",
+            (CaptureFeedbackKind.ShutdownBlocked, true) =>
+                "Završi ili odustani od trenutačnog snimanja prije izlaska iz SNAPVERE-a.",
+            (CaptureFeedbackKind.ShutdownBlocked, false) =>
+                "Finish or cancel the current capture before exiting SNAPVERE.",
             (CaptureFeedbackKind.WindowUnsupported, true) =>
                 "Ova verzija sustava Windows ne podržava SNAPVERE snimanje pojedinačnog prozora. Snimanje područja i zaslona i dalje je dostupno.",
             (CaptureFeedbackKind.WindowUnsupported, false) =>

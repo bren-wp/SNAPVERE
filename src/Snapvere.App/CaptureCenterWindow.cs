@@ -7,6 +7,7 @@ using Snapvere.Capture.Hotkeys;
 using Snapvere.Capture.Windows;
 using Snapvere.Domain.Capture;
 using Snapvere.Imaging;
+using Snapvere.Shared;
 
 namespace Snapvere.App;
 
@@ -27,7 +28,7 @@ public sealed class CaptureCenterWindow : Window
 
     private RegionCaptureWindow? _regionCaptureWindow;
     private CaptureFeedbackWindow? _feedbackWindow;
-    private bool _captureInProgress;
+    private readonly CaptureActivityGate _activityGate = new();
 
     public CaptureCenterWindow(
         IServiceProvider services,
@@ -246,17 +247,31 @@ public sealed class CaptureCenterWindow : Window
             _ => CaptureFeedbackKind.SaveFailed
         };
 
-    private bool TryBeginCapture()
+    public bool TryBeginShutdown()
     {
-        if (_captureInProgress)
+        if (_activityGate.TryBeginShutdown())
         {
-            StartupDiagnostics.WriteLine("Capture request ignored because another capture is already active.");
-            ShowCaptureFeedback(CaptureFeedbackKind.Busy);
-            return false;
+            return true;
         }
 
-        _captureInProgress = true;
-        return true;
+        StartupDiagnostics.WriteLine("Shutdown request deferred because a capture is still active.");
+        ShowCaptureFeedback(CaptureFeedbackKind.ShutdownBlocked);
+        return false;
+    }
+
+    private bool TryBeginCapture()
+    {
+        if (_activityGate.TryBeginCapture())
+        {
+            return true;
+        }
+
+        StartupDiagnostics.WriteLine(
+            _activityGate.IsCaptureInProgress
+                ? "Capture request ignored because another capture is already active."
+                : "Capture request ignored because application shutdown has started.");
+        ShowCaptureFeedback(CaptureFeedbackKind.Busy);
+        return false;
     }
 
     private void ShowCaptureFeedback(CaptureFeedbackKind kind)
@@ -297,7 +312,7 @@ public sealed class CaptureCenterWindow : Window
     }
 
     private void EndCapture()
-        => _captureInProgress = false;
+        => _activityGate.EndCapture();
 
     private static bool IsStartupProbeRequested()
     {

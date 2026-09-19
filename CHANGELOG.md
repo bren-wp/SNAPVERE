@@ -4,6 +4,16 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-09-19
+
+### Capture-safe shutdown lifecycle
+
+- Prevent tray Exit from disposing the application service graph while a Region, Window or Screen capture is still active.
+- Serialize capture start and shutdown start through a thread-safe lifecycle gate so a shutdown request cannot race with a new capture.
+- Show a clear EN/HR status message when Exit is requested during an active capture instead of silently tearing down capture dependencies.
+- Add regression coverage proving active capture blocks shutdown until completion and that shutdown blocks later capture starts.
+
+
 ## [0.1.8] - 2026-09-19
 
 ### Startup diagnostics UI privacy
