@@ -399,6 +399,7 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
         {
             while (true)
             {
+                Task waitTask;
                 lock (_gate)
                 {
                     if (_stopping || _disposed)
@@ -412,9 +413,14 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
                         _latestFrame = null;
                         return frame;
                     }
+
+                    // Observe the current pulse generation while holding the
+                    // same lock used by frame publication. This closes the
+                    // condition-check / async-wait lost-wakeup window.
+                    waitTask = _frameAvailable.WaitAsync();
                 }
 
-                await _frameAvailable.WaitAsync().ConfigureAwait(false);
+                await waitTask.ConfigureAwait(false);
             }
         }
 
