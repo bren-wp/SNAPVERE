@@ -4,7 +4,7 @@ Podržani su Chrome, Edge, Opera i Firefox. Dostupne su radnje za vidljivo podru
 
 Ekstenzije traže samo `activeTab`, `scripting`, `downloads`, `downloads.open` i `storage`, bez širokog host pristupa. `downloads.open` koristi se isključivo nakon korisničkog klika na **Otvori** za dovršenu SNAPVERE snimku u Nedavnim snimkama. Brand je zaključan na SNAPVERE.
 
-Kod cijele stranice svaki dekodirani tile odmah se crta u jedan ograničeni canvas i zatim oslobađa, čime se smanjuje vršno korištenje memorije. Promjena aktivne kartice prekida snimanje kako se ne bi spremio sadržaj pogrešne kartice.
+Kod cijele stranice svaki dekodirani tile odmah se crta u jedan ograničeni canvas i zatim oslobađa, čime se smanjuje vršno korištenje memorije. Promjena aktivne kartice prekida snimanje kako se ne bi spremio sadržaj pogrešne kartice. Ownership aktivne kartice ponovno se provjerava prije Region/Full Page script injectiona te prije page-mutating pripreme, scrollanja, skrivanja floating elemenata i assembly granica; Region overlay nastao neposredno prije promjene kartice uklanja se token-scoped cleanup porukom.
 
 ## Ownership poruka
 
