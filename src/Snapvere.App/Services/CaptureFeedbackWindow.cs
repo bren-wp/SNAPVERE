@@ -165,7 +165,15 @@ public sealed class CaptureFeedbackWindow : Window
         };
         var message = Text(MessageText(), 11, Muted);
         message.TextWrapping = TextWrapping.Wrap;
-        card.Child = message;
+        card.Child = new ScrollViewer
+        {
+            Content = message,
+            VerticalScrollMode = ScrollMode.Auto,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollMode = ScrollMode.Disabled,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            IsTabStop = false
+        };
         Grid.SetRow(card, 1);
         root.Children.Add(card);
 
