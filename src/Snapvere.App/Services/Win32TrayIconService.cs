@@ -12,6 +12,7 @@ public enum TrayCommand
     RegionCapture,
     WindowCapture,
     ScreenCapture,
+    ToggleScreenRecording,
     OpenCaptureFolder,
     About,
     Exit
@@ -27,6 +28,7 @@ public interface ITrayIconService : IDisposable
     event EventHandler<TrayCommandEventArgs>? CommandInvoked;
 
     void Start();
+    void SetScreenRecordingState(bool active);
 }
 
 /// <summary>
@@ -76,6 +78,7 @@ public sealed class Win32TrayIconService : ITrayIconService
     private int _trayRecoveryAttempt;
     private int _trayRecoveryToken;
     private long _lastRegionClickTicks;
+    private int _screenRecordingActive;
 
     public Win32TrayIconService()
     {
@@ -84,6 +87,31 @@ public sealed class Win32TrayIconService : ITrayIconService
     }
 
     public event EventHandler<TrayCommandEventArgs>? CommandInvoked;
+
+    public void SetScreenRecordingState(bool active)
+    {
+        _ = Interlocked.Exchange(ref _screenRecordingActive, active ? 1 : 0);
+
+        nint windowHandle;
+        lock (_gate)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            windowHandle = _windowHandle;
+        }
+
+        if (windowHandle != nint.Zero)
+        {
+            _ = NativeMethods.PostMessage(
+                windowHandle,
+                WindowMessageRefreshTooltip,
+                nuint.Zero,
+                nint.Zero);
+        }
+    }
 
     public void Start()
     {
@@ -384,7 +412,9 @@ public sealed class Win32TrayIconService : ITrayIconService
             Flags = NotifyIconMessage | NotifyIconIcon | NotifyIconTip | NotifyIconShowTip,
             CallbackMessage = CallbackMessage,
             Icon = _iconHandle,
-            Tip = $"SNAPVERE — {SnapvereLocalization.T("CaptureRegion", SnapvereLanguageState.CurrentLanguageCode)}",
+            Tip = Volatile.Read(ref _screenRecordingActive) != 0
+                ? $"SNAPVERE — {SnapvereLocalization.T("ScreenRecordingActive", SnapvereLanguageState.CurrentLanguageCode)}"
+                : $"SNAPVERE — {SnapvereLocalization.T("CaptureRegion", SnapvereLanguageState.CurrentLanguageCode)}",
             Info = string.Empty,
             InfoTitle = string.Empty
         };
