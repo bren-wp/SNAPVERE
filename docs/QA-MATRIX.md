@@ -1,6 +1,6 @@
 # SNAPVERE QA Matrix
 
-This matrix documents automated regression evidence for the actively maintained Windows/browser product. The current public release is v0.1.6; `main` may contain unreleased hardening. A green gate means the tested contract passed on that commit; it does not convert platform behavior into an absolute guarantee.
+This matrix documents automated regression evidence for the actively maintained Windows/browser product. The current public release is v0.1.7; `main` may contain later unreleased hardening. A green gate means the tested contract passed on that commit; it does not convert platform behavior into an absolute guarantee.
 
 ## Windows build and runtime gates
 
@@ -30,7 +30,7 @@ The current Windows gates exercise the same Region and Window overlay surfaces a
 - Chrome/Edge/Opera parity plus documented Firefox differences.
 - EN/HR locale-key parity.
 - runtime background smoke tests, including owner-safe stale-lock cleanup interleavings and extension-message sender/active-tab ownership validation.
-- active-tab ownership checks before and after pixel capture plus behavioral coverage proving Region/Full Page page-mutating side effects are rejected or token-cleaned when the active tab changes.
+- active-tab and last-focused-window ownership checks before and after pixel capture plus behavioral coverage proving Region/Full Page page-mutating side effects are rejected or token-cleaned when the active tab or focused browser window changes.
 - bounded full-page memory behavior.
 - region failure feedback after popup closure.
 - Settings/Recent behavioral tests for stale async result suppression and duplicate Open/folder actions.
