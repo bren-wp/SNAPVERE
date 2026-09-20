@@ -183,7 +183,7 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
         private readonly GraphicsCaptureItem _item;
         private readonly PixelSize _sourceSize;
         private readonly bool _includeCursor;
-        private readonly SemaphoreSlim _frameAvailable = new(0, 1);
+        private readonly AsyncPulseSignal _frameAvailable = new();
         private readonly HashSet<Direct3D11CaptureFrame> _inFlight = [];
 
         private Direct3D11CaptureFramePool? _framePool;
@@ -191,6 +191,7 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
         private Direct3D11CaptureFrame? _latestFrame;
         private MediaStreamSource? _mediaSource;
         private TimeSpan? _firstTimestamp;
+        private Exception? _failure;
         private bool _stopping;
         private bool _disposed;
         private int _deliveredFrames;
@@ -208,7 +209,16 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
             _item.Closed += Item_Closed;
         }
 
-        internal Exception? Failure { get; private set; }
+        internal Exception? Failure
+        {
+            get
+            {
+                lock (_gate)
+                {
+                    return _failure;
+                }
+            }
+        }
 
         internal int DeliveredFrames => Volatile.Read(ref _deliveredFrames);
 
@@ -334,7 +344,13 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
                     return;
                 }
 
-                var origin = _firstTimestamp ??= frame.SystemRelativeTime;
+                TimeSpan origin;
+                lock (_gate)
+                {
+                    _firstTimestamp ??= frame.SystemRelativeTime;
+                    origin = _firstTimestamp.Value;
+                }
+
                 var timestamp = frame.SystemRelativeTime - origin;
                 if (timestamp < TimeSpan.Zero)
                 {
@@ -368,7 +384,14 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
             }
             finally
             {
-                deferral.Complete();
+                try
+                {
+                    deferral.Complete();
+                }
+                catch (Exception exception)
+                {
+                    SetFailure(exception);
+                }
             }
         }
 
@@ -376,6 +399,7 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
         {
             while (true)
             {
+                Task waitTask;
                 lock (_gate)
                 {
                     if (_stopping || _disposed)
@@ -389,9 +413,14 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
                         _latestFrame = null;
                         return frame;
                     }
+
+                    // Observe the current pulse generation while holding the
+                    // same lock used by frame publication. This closes the
+                    // condition-check / async-wait lost-wakeup window.
+                    waitTask = _frameAvailable.WaitAsync();
                 }
 
-                await _frameAvailable.WaitAsync().ConfigureAwait(false);
+                await waitTask.ConfigureAwait(false);
             }
         }
 
@@ -413,9 +442,9 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
         {
             lock (_gate)
             {
-                if (Failure is null)
+                if (_failure is null)
                 {
-                    Failure = exception;
+                    _failure = exception;
                 }
             }
 
@@ -423,18 +452,7 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
         }
 
         private void SignalFrameAvailable()
-        {
-            if (_frameAvailable.CurrentCount == 0)
-            {
-                try
-                {
-                    _frameAvailable.Release();
-                }
-                catch (SemaphoreFullException)
-                {
-                }
-            }
-        }
+            => _frameAvailable.Pulse();
 
         public void Dispose()
         {
@@ -479,8 +497,10 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
                 frame.Dispose();
             }
 
+            // Wake any SampleRequested callback that observed the previous
+            // generation. AsyncPulseSignal is intentionally non-disposable,
+            // so teardown cannot race a pending asynchronous wait.
             SignalFrameAvailable();
-            _frameAvailable.Dispose();
         }
     }
 }

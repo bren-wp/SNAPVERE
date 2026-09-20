@@ -4,6 +4,14 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Recording callback teardown hardening
+
+- Replace the disposable recording-frame semaphore with a generation-based async pulse signal so Stop/failure/dispose cannot race `SemaphoreSlim.Dispose()` against a pending `WaitAsync()`.
+- Wake every waiter from the current recording generation during teardown while keeping later frame waits on a fresh unsignaled generation.
+- Synchronize the first recording timestamp and failure publication across MediaStreamSource callbacks.
+- Contain deferral-completion failures inside the recording failure path instead of allowing an `async void` callback exception to escape process-level handling.
+- Add focused concurrency regression tests for multi-waiter wakeup, fresh generations and repeated pulse/wait cycles.
+
 ### Deferred shutdown integrity
 
 - Make an Exit request sticky while any capture is active so no new capture can start after shutdown has already been requested.

@@ -27,11 +27,13 @@ The Windows product is tray-first. Recent-capture enumeration is performed when 
 
 SNAPVERE contains controlled failure paths for capture, filesystem, tray, hotkey, package and UI-host operations. Native and managed resources are released through explicit lifecycle ownership. A failure is recorded or surfaced rather than being treated as successful output.
 
+Windows screen recording coordinates MediaStreamSource sample demand with a generation-based asynchronous pulse rather than disposing a semaphore while an async sample callback may still be waiting. Stop, display-loss and teardown wake the current generation, callback timestamps and failure state are synchronized, and deferral-completion failures remain contained in the recording failure path.
+
 No software can guarantee that every Windows driver, graphics stack or browser will never fail. The engineering goal is bounded work, explicit cleanup and strong regression evidence.
 
 ## Regression gates
 
-CI for 0.1.2 validates:
+Current CI validates:
 
 - x64 build and unit tests;
 - x86 and ARM64 builds;
