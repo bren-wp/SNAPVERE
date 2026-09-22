@@ -689,11 +689,27 @@ internal sealed class SetupForm : Form
             ShowNewFolderButton = true
         };
 
-        if (dialog.ShowDialog(this) == DialogResult.OK)
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+        {
+            return;
+        }
+
+        try
         {
             _installPath.Text = Snapvere.Packaging.InstallSafetyPolicy.NormalizeProductDirectory(
                 dialog.SelectedPath,
                 "SNAPVERE");
+            _statusLabel.Text = "Installation folder updated.";
+        }
+        catch (Exception exception) when (
+            exception is ArgumentException or
+            IOException or
+            NotSupportedException or
+            UnauthorizedAccessException or
+            System.Security.SecurityException)
+        {
+            _statusLabel.Text =
+                "The selected folder could not be used. Choose another local folder and try again.";
         }
     }
 

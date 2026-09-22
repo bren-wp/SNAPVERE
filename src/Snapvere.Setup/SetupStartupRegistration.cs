@@ -27,7 +27,8 @@ internal static class SetupStartupRegistration
         catch (Exception exception) when (
             exception is UnauthorizedAccessException or
             System.Security.SecurityException or
-            IOException)
+            IOException or
+            InvalidOperationException)
         {
             warning = "Windows did not allow SNAPVERE to update the current-user startup preference. You can retry from SNAPVERE Options.";
             return false;
