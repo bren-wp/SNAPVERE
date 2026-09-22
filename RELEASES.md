@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.12**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.12
+- Current public release: **v0.1.13**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.13
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,38 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No unreleased changes are documented after v0.1.12 yet.
+No unreleased changes are documented after v0.1.13 yet.
+
+---
+
+## v0.1.13 — 2026-09-22
+
+SNAPVERE 0.1.13 makes screen-recording control explicit and recoverable while preserving the local-first H.264 MP4 pipeline and the existing six-asset Windows/browser release contract.
+
+### Screen recording Start/Stop lifecycle
+
+- Tray recording actions are now explicit **Start screen recording** and **Stop screen recording** commands instead of a state-ambiguous toggle command.
+- A stale Stop action is idempotent: if the previous recording has already completed, it does not start another recording.
+- A thread-safe recording session gate owns cancellation and completion, rejects duplicate starts, tolerates repeated/concurrent Stop requests and prevents a stale session completion from clearing a newer session.
+- Settings exposes the same synchronized Start/Stop action so recording control is available from the main options surface as well as the tray.
+- While recording is active, SNAPVERE shows a compact always-on-top recording controller with a red recording indicator, elapsed time and a dedicated Stop button.
+- Closing the recording controller is treated as an explicit Stop request so recording cannot silently continue after its visible control surface disappears.
+- The existing MP4 writer/transcoder path still publishes a recording only after encoding/finalization succeeds; capture activity ownership remains held through cleanup.
+
+### Reliability carried from post-v0.1.12 hardening
+
+- Recent-capture shell actions use checked Windows shell execution and surface missing-handler failures instead of silently succeeding.
+- Recent captures include responsive **Copy path** handling with contained clipboard failures.
+- Settings/startup-registration failures and Language live-update behavior are contained and synchronized.
+- Recording callback teardown uses a generation-based async pulse signal to avoid semaphore-disposal races with pending MediaStreamSource callbacks.
+- Exit during an active capture is sticky; recording receives a graceful Stop request and shutdown continues only after capture cleanup completes.
+
+### Validation contract
+
+- Product Contract CI, Browser Extensions CI, CodeQL Advanced and Windows CI must pass on the release head before merge.
+- x64 build/unit tests, x86 build and ARM64 build remain required.
+- Rendered WinUI QA, universal Setup/Portable construction, package-size budgets and real x64/x86 Setup/Portable lifecycle remain mandatory.
+- The release must publish exactly six immutable public assets: Setup, Portable and Chrome/Edge/Opera/Firefox ZIPs.
 
 ---
 
