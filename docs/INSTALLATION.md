@@ -1,6 +1,6 @@
 # Installing SNAPVERE
 
-Current public release: **v0.1.12**. Published tags and assets are immutable; later `main` hardening is not retroactively part of that release.
+Current public release: **v0.1.13**. Published tags and assets are immutable; later `main` hardening is not retroactively part of that release.
 
 ## Windows Setup
 
