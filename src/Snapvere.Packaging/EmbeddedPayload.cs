@@ -217,15 +217,23 @@ public static class EmbeddedPayload
 
         try
         {
-            if (Directory.Exists(path))
+            if (!Directory.Exists(path))
             {
-                Directory.Delete(path, recursive: true);
+                return;
             }
+
+            var attributes = File.GetAttributes(path);
+            Directory.Delete(
+                path,
+                recursive: (attributes & FileAttributes.ReparsePoint) == 0);
         }
         catch (IOException)
         {
         }
         catch (UnauthorizedAccessException)
+        {
+        }
+        catch (System.Security.SecurityException)
         {
         }
     }
