@@ -20,6 +20,7 @@ public sealed class RecordingControllerWindow : Window
     private readonly string _languageCode;
     private readonly Stopwatch _elapsed = Stopwatch.StartNew();
     private readonly DispatcherTimer _timer;
+    private readonly TextBlock _statusText;
     private readonly TextBlock _elapsedText;
     private readonly Button _stopButton;
     private bool _stopRequested;
@@ -33,7 +34,7 @@ public sealed class RecordingControllerWindow : Window
             languageCode ?? SnapvereLanguageState.CurrentLanguageCode);
 
         Title = $"SNAPVERE — {L("ScreenRecordingActive")}";
-        (_elapsedText, _stopButton, Content) = BuildContent();
+        (_statusText, _elapsedText, _stopButton, Content) = BuildContent();
 
         _timer = new DispatcherTimer
         {
@@ -68,7 +69,7 @@ public sealed class RecordingControllerWindow : Window
     private string L(string key)
         => SnapvereLocalization.T(key, _languageCode);
 
-    private (TextBlock Elapsed, Button Stop, FrameworkElement Root) BuildContent()
+    private (TextBlock Status, TextBlock Elapsed, Button Stop, FrameworkElement Root) BuildContent()
     {
         var root = new Grid
         {
@@ -108,13 +109,14 @@ public sealed class RecordingControllerWindow : Window
             Margin = new Thickness(12, 0, 18, 0),
             VerticalAlignment = VerticalAlignment.Center
         };
-        status.Children.Add(new TextBlock
+        var statusText = new TextBlock
         {
             Text = L("ScreenRecordingActive"),
             FontSize = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Strong
-        });
+        };
+        status.Children.Add(statusText);
         var elapsed = new TextBlock
         {
             Text = "00:00",
@@ -122,7 +124,9 @@ public sealed class RecordingControllerWindow : Window
             FontFamily = new FontFamily("Consolas"),
             Foreground = Muted
         };
-        AutomationProperties.SetName(elapsed, "Recording elapsed time");
+        AutomationProperties.SetName(
+            elapsed,
+            UserText("Recording elapsed time", "Proteklo vrijeme snimanja"));
         status.Children.Add(elapsed);
         Grid.SetColumn(status, 1);
         root.Children.Add(status);
@@ -145,7 +149,7 @@ public sealed class RecordingControllerWindow : Window
         Grid.SetColumn(stop, 2);
         root.Children.Add(stop);
 
-        return (elapsed, stop, root);
+        return (statusText, elapsed, stop, root);
     }
 
     private void RequestStop()
@@ -156,10 +160,20 @@ public sealed class RecordingControllerWindow : Window
         }
 
         _stopRequested = true;
+        _statusText.Text = UserText("Finishing recording…", "Dovršavanje snimanja…");
+        _stopButton.Content = UserText("Stopping…", "Zaustavljanje…");
+        AutomationProperties.SetName(
+            _stopButton,
+            UserText("Stopping screen recording", "Zaustavljanje snimanja zaslona"));
         _stopButton.IsEnabled = false;
         StopTimer();
         _stopAction();
     }
+
+    private string UserText(string english, string croatian)
+        => string.Equals(_languageCode, "hr", StringComparison.OrdinalIgnoreCase)
+            ? croatian
+            : english;
 
     private void Timer_Tick(object? sender, object e)
         => _elapsedText.Text = FormatElapsed(_elapsed.Elapsed);
