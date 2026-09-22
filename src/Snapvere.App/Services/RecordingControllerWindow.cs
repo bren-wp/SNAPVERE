@@ -75,48 +75,47 @@ public sealed class RecordingControllerWindow : Window
 
     private (TextBlock Status, TextBlock Elapsed, Button Stop, FrameworkElement Root) BuildContent()
     {
-        var root = new Grid
+        var grid = new Grid
         {
             RequestedTheme = ElementTheme.Dark,
-            Background = Surface,
-            Padding = new Thickness(18)
+            Padding = new Thickness(12, 10, 10, 10)
         };
-        root.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        root.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var indicator = new Border
         {
-            Width = 36,
-            Height = 36,
-            CornerRadius = new CornerRadius(18),
+            Width = 24,
+            Height = 24,
+            CornerRadius = new CornerRadius(12),
             Background = Brush(0x26, 0xEC, 0x5F, 0x74),
             BorderBrush = Brush(0x90, 0xEC, 0x5F, 0x74),
             BorderThickness = new Thickness(1),
             VerticalAlignment = VerticalAlignment.Center,
             Child = new Border
             {
-                Width = 10,
-                Height = 10,
-                CornerRadius = new CornerRadius(5),
+                Width = 8,
+                Height = 8,
+                CornerRadius = new CornerRadius(4),
                 Background = RecordingRed,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             }
         };
         AutomationProperties.SetName(indicator, L("ScreenRecordingActive"));
-        root.Children.Add(indicator);
+        grid.Children.Add(indicator);
 
         var status = new StackPanel
         {
-            Spacing = 3,
-            Margin = new Thickness(12, 0, 18, 0),
+            Spacing = 0,
+            Margin = new Thickness(10, 0, 12, 0),
             VerticalAlignment = VerticalAlignment.Center
         };
         var statusText = new TextBlock
         {
             Text = L("ScreenRecordingActive"),
-            FontSize = 13,
+            FontSize = 11,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Strong
         };
@@ -124,7 +123,7 @@ public sealed class RecordingControllerWindow : Window
         var elapsed = new TextBlock
         {
             Text = "00:00",
-            FontSize = 20,
+            FontSize = 16,
             FontFamily = new FontFamily("Consolas"),
             Foreground = Muted
         };
@@ -133,25 +132,44 @@ public sealed class RecordingControllerWindow : Window
             UserText("Recording elapsed time", "Proteklo vrijeme snimanja"));
         status.Children.Add(elapsed);
         Grid.SetColumn(status, 1);
-        root.Children.Add(status);
+        grid.Children.Add(status);
 
         var stop = new Button
         {
-            Content = L("StopScreenRecording"),
-            MinWidth = 150,
-            MinHeight = 42,
-            Padding = new Thickness(16, 8, 16, 8),
-            CornerRadius = new CornerRadius(10),
-            Background = Brush(0xFF, 0x9D, 0x2F, 0x48),
+            Width = 42,
+            Height = 42,
+            Padding = new Thickness(0),
+            CornerRadius = new CornerRadius(21),
+            Background = Brush(0xFF, 0x73, 0x24, 0x3A),
             BorderBrush = Brush(0xFF, 0xEC, 0x5F, 0x74),
             BorderThickness = new Thickness(1),
             Foreground = Strong,
-            VerticalAlignment = VerticalAlignment.Center
+            VerticalAlignment = VerticalAlignment.Center,
+            Content = new TextBlock
+            {
+                Text = "■",
+                FontFamily = new FontFamily("Segoe UI Symbol"),
+                FontSize = 13,
+                Foreground = Strong,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            }
         };
         AutomationProperties.SetName(stop, L("StopScreenRecording"));
+        ToolTipService.SetToolTip(stop, L("StopScreenRecording"));
         stop.Click += (_, _) => RequestStop();
         Grid.SetColumn(stop, 2);
-        root.Children.Add(stop);
+        grid.Children.Add(stop);
+
+        var root = new Border
+        {
+            RequestedTheme = ElementTheme.Dark,
+            Background = Surface,
+            BorderBrush = Outline,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(16),
+            Child = grid
+        };
 
         return (statusText, elapsed, stop, root);
     }
@@ -165,7 +183,13 @@ public sealed class RecordingControllerWindow : Window
 
         _stopRequested = true;
         _statusText.Text = UserText("Finishing recording…", "Dovršavanje snimanja…");
-        _stopButton.Content = UserText("Stopping…", "Zaustavljanje…");
+        _stopButton.Content = new TextBlock
+        {
+            Text = "■",
+            FontFamily = new FontFamily("Segoe UI Symbol"),
+            FontSize = 13,
+            Foreground = Strong
+        };
         AutomationProperties.SetName(
             _stopButton,
             UserText("Stopping screen recording", "Zaustavljanje snimanja zaslona"));
@@ -200,14 +224,21 @@ public sealed class RecordingControllerWindow : Window
         }
 
         _sizeApplied = true;
-        AppWindow.Resize(DpiAwareWindowSizing.ScaleSizeToWorkArea(this, 520, 112));
+        AppWindow.Resize(DpiAwareWindowSizing.ScaleSizeToWorkArea(this, 340, 72));
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
+            presenter.SetBorderAndTitleBar(false, false);
             presenter.IsResizable = false;
             presenter.IsMaximizable = false;
             presenter.IsMinimizable = false;
             presenter.IsAlwaysOnTop = true;
         }
+
+        var displayArea = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary);
+        var workArea = displayArea.WorkArea;
+        AppWindow.Move(new Windows.Graphics.PointInt32(
+            workArea.X + Math.Max(0, workArea.Width - AppWindow.Size.Width - 16),
+            workArea.Y + 16));
     }
 
     private void RecordingControllerWindow_Closed(object sender, WindowEventArgs args)
@@ -235,5 +266,6 @@ public sealed class RecordingControllerWindow : Window
     private static SolidColorBrush Surface => Brush(0xFF, 0x0D, 0x13, 0x21);
     private static SolidColorBrush Strong => Brush(0xFF, 0xF7, 0xF5, 0xFF);
     private static SolidColorBrush Muted => Brush(0xFF, 0xAF, 0xB6, 0xC8);
+    private static SolidColorBrush Outline => Brush(0xFF, 0x34, 0x40, 0x57);
     private static SolidColorBrush RecordingRed => Brush(0xFF, 0xEC, 0x5F, 0x74);
 }
