@@ -4,6 +4,12 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Active documentation consolidation
+
+- Fold Region Capture and Settings guidance into the EN/HR User Guides instead of maintaining small version-stamped fragments.
+- Fold Capture Engine and Multi-monitor internals into a version-neutral Architecture guide while preserving Window Capture, Image Pipeline, Tray/Lifecycle, QA and troubleshooting as focused references.
+- Remove five superseded short documentation files and update root/docs navigation plus Product Contract link validation in the same change so stale references cannot survive CI.
+
 ### Recent-capture action polish
 
 - Centralize Windows shell-open actions so a missing file/folder/URI handler is treated as a visible failure instead of a silent successful click.

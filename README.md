@@ -57,7 +57,7 @@ Windows captures are stored by default in `Pictures\SNAPVERE`. PNG saving uses s
 
 SNAPVERE uses native display geometry and DPI conversion instead of assuming every monitor has the same scale. Current memory hardening removes redundant full-frame staging allocations from Region and Window Capture paths and releases frozen monitor buffers as soon as their UI bitmap is ready.
 
-Read the implementation-focused notes in [Performance & Stability](docs/PERFORMANCE.md), [Window Capture](docs/WINDOW-CAPTURE.md) and [Multi-monitor](docs/MULTI-MONITOR.md).
+Read the implementation-focused notes in [Performance & Stability](docs/PERFORMANCE.md), [Window Capture](docs/WINDOW-CAPTURE.md) and [Architecture](docs/ARCHITECTURE.md).
 
 ## Browser extensions
 
@@ -141,8 +141,7 @@ For the exact boundaries and security model, read [Privacy](docs/PRIVACY.md), [S
 | [Image Pipeline](docs/IMAGE-PIPELINE.md) | Frame validation, crop/annotation, PNG encode and atomic publication. |
 | [Tray & Lifecycle](docs/TRAY-LIFECYCLE.md) | Singleton, native tray, Explorer recovery and package lifecycle. |
 | [Browser Extensions](docs/BROWSER-EXTENSIONS.md) | Browser architecture, permissions and behavior. |
-| [Region Capture](docs/REGION-CAPTURE.md) | Selection and annotation workflow. |
-| [Multi-monitor](docs/MULTI-MONITOR.md) | DPI and desktop-layout behavior. |
+| [Architecture](docs/ARCHITECTURE.md) | Capture engine, persistence, multi-monitor/DPI and system boundaries. |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | Recovery guidance and diagnostics. |
 | [Product Status](docs/PRODUCT-STATUS.md) | Maintained product surfaces and evidence boundaries. |
 | [Branding](docs/BRANDING.md) | Product identity and asset usage. |
