@@ -28,12 +28,12 @@ public sealed class CaptureCenterWindow : Window
 
     private RegionCaptureWindow? _regionCaptureWindow;
     private CaptureFeedbackWindow? _feedbackWindow;
-    private CancellationTokenSource? _recordingStopSource;
+    private readonly ScreenRecordingSessionGate _recordingSessionGate = new();
     private readonly CaptureActivityGate _activityGate = new();
 
     public event Action<bool>? ScreenRecordingStateChanged;
 
-    public bool IsScreenRecordingActive => _recordingStopSource is not null;
+    public bool IsScreenRecordingActive => _recordingSessionGate.IsActive;
 
     public CaptureCenterWindow(
         IServiceProvider services,
@@ -43,7 +43,11 @@ public sealed class CaptureCenterWindow : Window
         _capturePreferencesService = capturePreferencesService ?? throw new ArgumentNullException(nameof(capturePreferencesService));
 
         Title = "SNAPVERE Runtime Host";
-        Closed += (_, _) => CloseCaptureFeedback();
+        Closed += (_, _) =>
+        {
+            CloseCaptureFeedback();
+            _recordingSessionGate.Dispose();
+        };
         if (IsStartupProbeRequested())
         {
             Content = BuildRuntimeHostContent();
@@ -67,17 +71,12 @@ public sealed class CaptureCenterWindow : Window
         }
     }
 
-    public void ToggleScreenRecording()
+    public void StartScreenRecording()
     {
-        var activeRecording = _recordingStopSource;
-        if (activeRecording is not null)
+        if (_recordingSessionGate.IsActive)
         {
-            if (!activeRecording.IsCancellationRequested)
-            {
-                StartupDiagnostics.WriteLine("Screen recording stop requested by the user.");
-                activeRecording.Cancel();
-            }
-
+            StartupDiagnostics.WriteLine(
+                "Screen recording start request ignored because recording is already active.");
             return;
         }
 
@@ -95,27 +94,58 @@ public sealed class CaptureCenterWindow : Window
         }
 
         CloseCaptureFeedback();
-        var stopSource = new CancellationTokenSource();
-        _recordingStopSource = stopSource;
+        var session = _recordingSessionGate.TryBegin();
+        if (session is null)
+        {
+            StartupDiagnostics.WriteLine(
+                "Screen recording start request lost ownership to another active recording.");
+            EndCapture();
+            return;
+        }
+
         NotifyScreenRecordingStateChanged(active: true);
-        _ = ExecuteScreenRecordingAsync(stopSource);
+        _ = ExecuteScreenRecordingAsync(session);
     }
 
-    private async Task ExecuteScreenRecordingAsync(CancellationTokenSource stopSource)
+    public void StopScreenRecording()
+    {
+        if (_recordingSessionGate.RequestStop())
+        {
+            StartupDiagnostics.WriteLine("Screen recording stop requested by the user.");
+            return;
+        }
+
+        StartupDiagnostics.WriteLine(
+            "Screen recording stop request ignored because no stoppable recording is active.");
+    }
+
+    public void ToggleScreenRecording()
+    {
+        if (_recordingSessionGate.IsActive)
+        {
+            StopScreenRecording();
+        }
+        else
+        {
+            StartScreenRecording();
+        }
+    }
+
+    private async Task ExecuteScreenRecordingAsync(ScreenRecordingSession session)
     {
         try
         {
             var workflow = _services.GetRequiredService<ScreenRecordingWorkflow>();
             var includeCursor = _capturePreferencesService.Current.IncludeCursorOnCapture;
             var result = await workflow
-                .RecordPrimaryDisplayAsync(includeCursor, stopSource.Token)
+                .RecordPrimaryDisplayAsync(includeCursor, session.StopToken)
                 .ConfigureAwait(true);
 
             StartupDiagnostics.WriteLine(
                 $"Screen recording saved {result.EncodedSize.Width}x{result.EncodedSize.Height} MP4 locally; duration {result.Duration.TotalSeconds:F1}s.");
             ShowCaptureFeedback(CaptureFeedbackKind.RecordingSaved);
         }
-        catch (OperationCanceledException) when (stopSource.IsCancellationRequested)
+        catch (OperationCanceledException) when (session.IsStopRequested)
         {
             StartupDiagnostics.WriteLine(
                 "Screen recording stopped before a complete MP4 could be produced.");
@@ -137,13 +167,11 @@ public sealed class CaptureCenterWindow : Window
         }
         finally
         {
-            if (ReferenceEquals(_recordingStopSource, stopSource))
+            if (_recordingSessionGate.Complete(session))
             {
-                _recordingStopSource = null;
                 NotifyScreenRecordingStateChanged(active: false);
             }
 
-            stopSource.Dispose();
             EndCapture();
         }
     }
@@ -352,12 +380,11 @@ public sealed class CaptureCenterWindow : Window
             return true;
         }
 
-        var activeRecording = _recordingStopSource;
-        if (activeRecording is not null && !activeRecording.IsCancellationRequested)
+        if (_recordingSessionGate.IsActive)
         {
             StartupDiagnostics.WriteLine(
                 "Shutdown requested during screen recording; requesting a graceful recording stop.");
-            activeRecording.Cancel();
+            _ = _recordingSessionGate.RequestStop();
         }
 
         StartupDiagnostics.WriteLine(
