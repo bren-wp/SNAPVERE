@@ -107,13 +107,16 @@ public sealed class ScreenRecordingSessionGate : IDisposable
 
 public sealed class ScreenRecordingSession
 {
+    private readonly CancellationToken _stopToken;
+
     internal ScreenRecordingSession()
     {
+        _stopToken = StopSource.Token;
     }
 
     internal CancellationTokenSource StopSource { get; } = new();
 
-    public CancellationToken StopToken => StopSource.Token;
+    public CancellationToken StopToken => _stopToken;
 
-    public bool IsStopRequested => StopSource.IsCancellationRequested;
+    public bool IsStopRequested => _stopToken.IsCancellationRequested;
 }
