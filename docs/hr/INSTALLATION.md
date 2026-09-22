@@ -1,6 +1,6 @@
 # Instalacija SNAPVERE-a
 
-Aktualno javno izdanje: **v0.1.14**. Objavljeni tagovi i asseti su immutable; kasniji hardening na `main` grani nije retroaktivni dio tog izdanja.
+Aktualno javno izdanje: **v0.1.15**. Objavljeni tagovi i asseti su immutable; kasniji hardening na `main` grani nije retroaktivni dio tog izdanja.
 
 ## Windows Setup
 
@@ -51,4 +51,4 @@ Aktualno izdanje sadrži:
 
 ZIP paketi služe za ručnu instalaciju. Objavu u službenim trgovinama ne treba smatrati završenom dok stvarni vanjski listing nije objavljen.
 
-Aktualno izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.14
+Aktualno izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.15
