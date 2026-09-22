@@ -52,8 +52,9 @@ public sealed class LanguagePickerWindow : Window
         }
         _languageCombo.SelectionChanged += LanguageCombo_SelectionChanged;
 
-        _status = Text(L("LanguageSaved"), 10.5, Muted);
+        _status = Text(string.Empty, 10.5, Muted);
         _status.TextWrapping = TextWrapping.Wrap;
+        _status.Visibility = Visibility.Collapsed;
         AutomationProperties.SetLiveSetting(_status, AutomationLiveSetting.Polite);
 
         Content = BuildContent();
@@ -221,6 +222,7 @@ public sealed class LanguagePickerWindow : Window
             RefreshLocalizedText();
             _status.Text = L("LanguageSaved");
             _status.Foreground = Success;
+            _status.Visibility = Visibility.Visible;
         }
         catch (Exception exception) when (
             exception is IOException or
@@ -242,6 +244,7 @@ public sealed class LanguagePickerWindow : Window
 
             _status.Text = LanguageSaveFailureText();
             _status.Foreground = Error;
+            _status.Visibility = Visibility.Visible;
         }
     }
 
