@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.13**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.13
+- Current public release: **v0.1.14**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.14
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,42 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No unreleased changes are documented after v0.1.13 yet.
+No unreleased changes are documented after v0.1.14 yet.
+
+---
+
+## v0.1.14 — 2026-09-23
+
+SNAPVERE 0.1.14 focuses on recording-control clarity and a safer, more deliberate Windows Setup experience while preserving the local-first capture architecture and six-asset Windows/browser release contract.
+
+### Recording controls
+
+- Options now exposes separate compact Start and Stop recording controls instead of one large button whose action changes with state.
+- Only the valid action is enabled: Start while idle, Stop while recording.
+- The active recording controller is reduced from a large utility window to a compact borderless always-on-top panel with a visible recording indicator, elapsed time and one dedicated Stop control.
+- The controller is placed inside the active display work area and changes to a finishing state after Stop so repeated clicks cannot compete with MP4 finalization.
+- Tray Start/Stop commands and the existing thread-safe recording session gate remain synchronized with the same recording state.
+
+### Guided Setup
+
+- Interactive installation is now an explicit two-step flow: **License** followed by **Installation options**.
+- Setup requires license acceptance before Continue, then presents install location, Start menu/Desktop shortcuts and Windows startup choices on a separate step.
+- Back, Cancel, Continue, Install and Finish now reflect the actual setup phase instead of presenting every control at once.
+- Step-two controls reflow upward into a smaller card on compact displays rather than leaving the hidden license area as empty space.
+- User-facing Setup copy removes implementation terminology such as payload architecture/self-contained packaging from the normal installation surface.
+- The persistent Setup sidebar no longer repeats the product website; website guidance remains only in recovery copy where obtaining a fresh installer is relevant.
+
+### Setup completion reliability
+
+- Successful install and uninstall operations now leave the busy state before presenting Finish.
+- Finish can close Setup normally after file operations complete instead of being blocked by the in-progress close guard.
+- Installation controls remain non-editable after completion while the optional launch-after-install choice and Finish action remain available.
+
+### Validation contract
+
+- Windows x64 build/unit tests, x86 build, ARM64 build, rendered UI validation, universal package checks, package-size budgets and real x64/x86 Setup/Portable lifecycle validation remain required.
+- Product Contract CI, Browser Extensions CI and CodeQL remain required.
+- Public release assets remain exactly: Setup, Portable, Chrome, Edge, Opera and Firefox.
 
 ---
 
