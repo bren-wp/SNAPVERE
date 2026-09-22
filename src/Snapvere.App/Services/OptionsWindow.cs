@@ -331,7 +331,7 @@ public sealed class OptionsWindow : Window
             $"Odabrani jezik: {selected.NativeName}.");
     }
 
-    private void AddPreferenceCard(int row, string eyebrow, string title, string description, string glyph, Control trailing)
+    private void AddPreferenceCard(int row, string eyebrow, string title, string description, string glyph, FrameworkElement trailing)
     {
         var card = BuildSettingCard(eyebrow, title, description, glyph, trailing);
         card.Margin = new Thickness(0, row == 1 ? 16 : 10, 0, 0);
@@ -379,7 +379,7 @@ public sealed class OptionsWindow : Window
         string title,
         string description,
         string glyph,
-        Control trailing)
+        FrameworkElement trailing)
     {
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(46) });
