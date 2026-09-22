@@ -43,14 +43,15 @@ public sealed class OptionsWindow : Window
     private readonly TextBlock _statusText;
     private readonly ToggleSwitch _startupToggle;
     private readonly ToggleSwitch _cursorToggle;
-    private readonly Button _recordingButton;
+    private readonly StackPanel _recordingActions;
+    private readonly Button _recordingStartButton;
+    private readonly Button _recordingStopButton;
     private readonly Button _preferencesTab;
     private readonly Button _recentTab;
     private bool _sizeApplied;
     private bool _updatingControls;
     private Action? _startScreenRecording;
     private Action? _stopScreenRecording;
-    private bool _recordingButtonRequestsStop;
 
     public OptionsWindow(
         CaptureHistoryService history,
@@ -69,7 +70,10 @@ public sealed class OptionsWindow : Window
 
         _startupToggle = CreateToggle(L("StartWithWindows"));
         _cursorToggle = CreateToggle(L("IncludeCursor"));
-        _recordingButton = CreateRecordingActionButton();
+        var recordingActions = CreateRecordingActions();
+        _recordingActions = recordingActions.Root;
+        _recordingStartButton = recordingActions.Start;
+        _recordingStopButton = recordingActions.Stop;
         _startupToggle.Toggled += StartupToggle_Toggled;
         _cursorToggle.Toggled += CursorToggle_Toggled;
 
@@ -91,22 +95,27 @@ public sealed class OptionsWindow : Window
         _startScreenRecording = startScreenRecording ?? throw new ArgumentNullException(nameof(startScreenRecording));
         _stopScreenRecording = stopScreenRecording ?? throw new ArgumentNullException(nameof(stopScreenRecording));
         SetScreenRecordingState(active);
-        _recordingButton.IsEnabled = true;
     }
 
     public void SetScreenRecordingState(bool active)
     {
-        _recordingButtonRequestsStop = active;
-        _recordingButton.Content = L(active ? "StopScreenRecording" : "StartScreenRecording");
-        AutomationProperties.SetName(
-            _recordingButton,
-            L(active ? "StopScreenRecording" : "StartScreenRecording"));
-        _recordingButton.Background = active
+        var configured = _startScreenRecording is not null && _stopScreenRecording is not null;
+        _recordingStartButton.IsEnabled = configured && !active;
+        _recordingStopButton.IsEnabled = configured && active;
+
+        _recordingStartButton.Background = active
+            ? Brush(0x28, 0x5E, 0x48, 0xBD)
+            : Brush(0xFF, 0x39, 0x28, 0x78);
+        _recordingStartButton.BorderBrush = active
+            ? Brush(0x38, 0x9D, 0x86, 0xFF)
+            : Brush(0xFF, 0x86, 0x67, 0xF4);
+
+        _recordingStopButton.Background = active
             ? Brush(0xFF, 0x73, 0x24, 0x3A)
-            : Brush(0x55, 0x5E, 0x48, 0xBD);
-        _recordingButton.BorderBrush = active
+            : Brush(0x24, 0x73, 0x24, 0x3A);
+        _recordingStopButton.BorderBrush = active
             ? Brush(0xFF, 0xEC, 0x5F, 0x74)
-            : Brush(0x78, 0x9D, 0x86, 0xFF);
+            : Brush(0x35, 0xEC, 0x5F, 0x74);
     }
 
     public void ShowSection(OptionsSection section)
@@ -271,7 +280,7 @@ public sealed class OptionsWindow : Window
                 "Start or stop local primary-display recording without returning to the tray menu.",
                 "Pokrenite ili zaustavite lokalno snimanje primarnog zaslona bez povratka u tray izbornik."),
             glyph: "\uE714",
-            trailing: _recordingButton);
+            trailing: _recordingActions);
 
         var languageButton = CreateSecondaryAction(
             L("ChooseLanguage"),
@@ -791,33 +800,67 @@ public sealed class OptionsWindow : Window
         }
     }
 
-    private Button CreateRecordingActionButton()
+    private (StackPanel Root, Button Start, Button Stop) CreateRecordingActions()
+    {
+        var root = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+
+        var start = CreateRecordingCircleButton(
+            "▶",
+            L("StartScreenRecording"),
+            Brush(0xFF, 0x39, 0x28, 0x78),
+            Brush(0xFF, 0x86, 0x67, 0xF4),
+            () => _startScreenRecording?.Invoke());
+
+        var stop = CreateRecordingCircleButton(
+            "■",
+            L("StopScreenRecording"),
+            Brush(0x24, 0x73, 0x24, 0x3A),
+            Brush(0x35, 0xEC, 0x5F, 0x74),
+            () => _stopScreenRecording?.Invoke());
+
+        root.Children.Add(start);
+        root.Children.Add(stop);
+        return (root, start, stop);
+    }
+
+    private static Button CreateRecordingCircleButton(
+        string glyph,
+        string accessibleName,
+        SolidColorBrush background,
+        SolidColorBrush border,
+        Action action)
     {
         var button = new Button
         {
-            Content = L("StartScreenRecording"),
-            MinWidth = 178,
-            Padding = new Thickness(13, 8, 13, 8),
-            CornerRadius = new CornerRadius(10),
-            Background = Brush(0x55, 0x5E, 0x48, 0xBD),
-            BorderBrush = Brush(0x78, 0x9D, 0x86, 0xFF),
+            Width = 42,
+            Height = 42,
+            Padding = new Thickness(0),
+            CornerRadius = new CornerRadius(21),
+            Background = background,
+            BorderBrush = border,
             BorderThickness = new Thickness(1),
             Foreground = Strong,
             IsEnabled = false,
-            HorizontalAlignment = HorizontalAlignment.Right
-        };
-        AutomationProperties.SetName(button, L("StartScreenRecording"));
-        button.Click += (_, _) =>
-        {
-            if (_recordingButtonRequestsStop)
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Content = new TextBlock
             {
-                _stopScreenRecording?.Invoke();
-            }
-            else
-            {
-                _startScreenRecording?.Invoke();
+                Text = glyph,
+                FontFamily = new FontFamily("Segoe UI Symbol"),
+                FontSize = glyph == "■" ? 12 : 14,
+                Foreground = Strong,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
             }
         };
+        AutomationProperties.SetName(button, accessibleName);
+        ToolTipService.SetToolTip(button, accessibleName);
+        button.Click += (_, _) => action();
         return button;
     }
 
