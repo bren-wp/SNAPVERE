@@ -148,7 +148,14 @@ public static class EmbeddedAppLauncher
         string launcherRoot,
         string cacheRoot)
     {
+        // The Portable cache is below a user-writable temp root. Validate the
+        // existing ancestor chain before creating any new directory, then
+        // validate the resulting launcher root again to fail closed if a
+        // junction/symlink appears between those operations.
+        InstallSafetyPolicy.EnsureExistingDirectoryChainHasNoReparsePoints(launcherRoot);
         Directory.CreateDirectory(launcherRoot);
+        InstallSafetyPolicy.EnsureExistingDirectoryChainHasNoReparsePoints(launcherRoot);
+
         var stagingRoot = Path.Combine(
             launcherRoot,
             $".stage-{version}-{architectureToken}-{Guid.NewGuid():N}");
@@ -172,7 +179,19 @@ public static class EmbeddedAppLauncher
 
             if (Directory.Exists(cacheRoot))
             {
-                Directory.Delete(cacheRoot, recursive: true);
+                var attributes = File.GetAttributes(cacheRoot);
+                if ((attributes & FileAttributes.ReparsePoint) != 0)
+                {
+                    // Delete the link itself, never recursively traverse its
+                    // target. The launcher root/ancestor chain was validated
+                    // above before any cache mutation.
+                    Directory.Delete(cacheRoot, recursive: false);
+                }
+                else
+                {
+                    InstallSafetyPolicy.EnsureExistingDirectoryChainHasNoReparsePoints(cacheRoot);
+                    Directory.Delete(cacheRoot, recursive: true);
+                }
             }
 
             Directory.Move(stagingRoot, cacheRoot);
