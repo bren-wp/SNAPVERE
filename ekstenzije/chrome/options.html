@@ -22,18 +22,18 @@
     </nav>
 
     <section id="settings-panel" class="surface" role="tabpanel" aria-labelledby="settings-tab">
-      <form id="settings-form" novalidate>
+      <form id="settings-form" novalidate aria-busy="true">
         <p class="privacy" data-i18n="fileNamingNote"></p>
 
         <label class="check">
-          <input id="save-as" name="saveAs" type="checkbox">
+          <input id="save-as" name="saveAs" type="checkbox" disabled>
           <span data-i18n="askWhereToSave"></span>
         </label>
 
         <p class="privacy" data-i18n="privacyNote"></p>
 
         <div class="actions">
-          <button class="primary" type="submit" data-i18n="saveSettings"></button>
+          <button class="primary" type="submit" data-i18n="saveSettings" disabled></button>
           <span id="settings-status" class="status" role="status" aria-live="polite"></span>
         </div>
       </form>

@@ -271,6 +271,20 @@ function validateSource(browser, browserDir) {
       }
     }
 
+    if (relative === "options.html") {
+      if (!/<form\s+id=["']settings-form["'][^>]*aria-busy=["']true["']/i.test(text) ||
+          !/<input\s+id=["']save-as["'][^>]*\bdisabled\b/i.test(text) ||
+          !/<button\s+class=["']primary["'][^>]*type=["']submit["'][^>]*\bdisabled\b/i.test(text)) {
+        fail(browser + "/options.html must start Settings controls disabled while persisted state loads.");
+      }
+    }
+
+    if (relative === "options.js") {
+      for (const required of ["setSettingsInteractive(false)", "await loadSettings()", "setSettingsInteractive(true)", 't("loadingSettings")']) {
+        if (!text.includes(required)) fail(browser + "/options.js must preserve initial Settings load gating: " + required);
+      }
+    }
+
     if (relative === "options.css") {
       for (const breakpoint of [540, 420, 320]) {
         if (!new RegExp(`@media\\s*\\(max-width:\\s*${breakpoint}px\\)`, "i").test(text)) {

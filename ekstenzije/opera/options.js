@@ -5,6 +5,7 @@
   const RECENT_LIMIT = 10;
   const form = document.getElementById("settings-form");
   const saveAsInput = document.getElementById("save-as");
+  const settingsSubmit = form.querySelector('button[type="submit"]');
   const settingsStatus = document.getElementById("settings-status");
   const recentStatus = document.getElementById("recent-status");
   const recentList = document.getElementById("recent-list");
@@ -94,6 +95,25 @@
     const values = await getLocal(SETTINGS_KEY);
     const settings = values[SETTINGS_KEY] || {};
     saveAsInput.checked = settings.saveAs === true;
+  }
+
+  function setSettingsInteractive(interactive) {
+    saveAsInput.disabled = !interactive;
+    if (settingsSubmit) settingsSubmit.disabled = !interactive;
+    form.setAttribute("aria-busy", interactive ? "false" : "true");
+  }
+
+  async function initializeSettings() {
+    setSettingsInteractive(false);
+    setStatus(settingsStatus, t("loadingSettings"));
+    try {
+      await loadSettings();
+      setStatus(settingsStatus, "");
+    } catch {
+      setStatus(settingsStatus, t("settingsLoadFailed"), true);
+    } finally {
+      setSettingsInteractive(true);
+    }
   }
 
   function isSnapvereCapture(item) {
@@ -271,9 +291,8 @@
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const submit = form.querySelector('button[type="submit"]');
-    if (submit && submit.disabled) return;
-    if (submit) submit.disabled = true;
+    if (!settingsSubmit || settingsSubmit.disabled) return;
+    settingsSubmit.disabled = true;
     setStatus(settingsStatus, "");
     try {
       await setLocal({ [SETTINGS_KEY]: { saveAs: saveAsInput.checked === true } });
@@ -281,7 +300,7 @@
     } catch {
       setStatus(settingsStatus, t("settingsSaveFailed"), true);
     } finally {
-      if (submit) submit.disabled = false;
+      settingsSubmit.disabled = false;
     }
   });
 
@@ -293,6 +312,6 @@
   openDownloadsFolder.addEventListener("click", () => void openDefaultDownloadsFolder());
 
   localize();
-  loadSettings().catch(() => setStatus(settingsStatus, t("settingsLoadFailed"), true));
+  void initializeSettings();
   showPanel(location.hash === "#recent" ? "recent-panel" : "settings-panel", false);
 })();
