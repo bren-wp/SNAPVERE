@@ -306,8 +306,10 @@ public static class EmbeddedAppLauncher
         foreach (var directory in Directory.EnumerateDirectories(launcherRoot))
         {
             var fullPath = Path.GetFullPath(directory);
+            var directoryName = Path.GetFileName(directory);
             if (string.Equals(fullPath, currentFullPath, StringComparison.OrdinalIgnoreCase) ||
-                Path.GetFileName(directory).StartsWith(".stage-", StringComparison.OrdinalIgnoreCase))
+                directoryName.StartsWith(".stage-", StringComparison.OrdinalIgnoreCase) ||
+                !PortableCachePolicy.IsOwnedVersionCacheDirectoryName(directoryName))
             {
                 continue;
             }
