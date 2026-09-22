@@ -4,6 +4,14 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Recording startup and Setup recovery hardening
+
+- Re-check screen-recording cancellation immediately before and after native capture startup so a Stop request during encoder/session initialization cannot continue into transcoder preparation as an active recording.
+- Make RecordingFrameSource refuse startup when Stop already owns the session before native capture begins.
+- Keep early recording Stop on the existing cancellation/cleanup path so partial MP4 output is not published.
+- Restrict Setup license-load recovery to expected I/O/missing-resource failures instead of hiding arbitrary programming exceptions.
+- Remove the unnecessary website reference from the license-load recovery message and keep Setup blocked until valid license terms are available.
+
 ## [0.1.15] - 2026-09-23
 
 ### Compact screen-recording controls

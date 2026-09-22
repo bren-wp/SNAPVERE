@@ -123,7 +123,14 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
                 };
 
                 using var randomAccess = destination.AsRandomAccessStream();
+
+                // Stop can be requested while the encoder/profile is still being prepared.
+                // Do not enter native capture after cancellation already won, and re-check
+                // immediately after Start so a concurrent Stop never falls through into
+                // transcoder preparation as though recording were still active.
+                stopToken.ThrowIfCancellationRequested();
                 frameSource.Start();
+                stopToken.ThrowIfCancellationRequested();
 
                 var prepared = await transcoder
                     .PrepareMediaStreamSourceTranscodeAsync(mediaSource, randomAccess, outputProfile);
@@ -232,29 +239,42 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
 
         internal void Start()
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-            if (_mediaSource is null)
+            // Serialize native startup with Stop/Dispose so exactly one side owns
+            // the transition. If Stop wins first, no native capture resources are
+            // created and the Windows capture indicator never starts. If Start
+            // wins first, RequestStop waits for startup to finish and then owns
+            // the normal teardown path.
+            lock (_gate)
             {
-                throw new InvalidOperationException(
-                    "The recording media source must be attached before capture starts.");
+                ObjectDisposedException.ThrowIf(_disposed, this);
+                if (_stopping)
+                {
+                    return;
+                }
+
+                if (_mediaSource is null)
+                {
+                    throw new InvalidOperationException(
+                        "The recording media source must be attached before capture starts.");
+                }
+
+                _framePool = Direct3D11CaptureFramePool.CreateFreeThreaded(
+                    _device,
+                    DirectXPixelFormat.B8G8R8A8UIntNormalized,
+                    numberOfBuffers: 2,
+                    _item.Size);
+                _framePool.FrameArrived += FramePool_FrameArrived;
+
+                _session = _framePool.CreateCaptureSession(_item);
+                if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041))
+                {
+                    throw new PlatformNotSupportedException(
+                        "Screen recording cursor capture requires Windows 10 version 2004 (build 19041) or later.");
+                }
+
+                _session.IsCursorCaptureEnabled = _includeCursor;
+                _session.StartCapture();
             }
-
-            _framePool = Direct3D11CaptureFramePool.CreateFreeThreaded(
-                _device,
-                DirectXPixelFormat.B8G8R8A8UIntNormalized,
-                numberOfBuffers: 2,
-                _item.Size);
-            _framePool.FrameArrived += FramePool_FrameArrived;
-
-            _session = _framePool.CreateCaptureSession(_item);
-            if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041))
-            {
-                throw new PlatformNotSupportedException(
-                    "Screen recording cursor capture requires Windows 10 version 2004 (build 19041) or later.");
-            }
-
-            _session.IsCursorCaptureEnabled = _includeCursor;
-            _session.StartCapture();
         }
 
         internal void RequestStop()

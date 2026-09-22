@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.15**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.15
+- Current public release: **v0.1.16**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.16
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,33 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No unreleased changes are documented after v0.1.15 yet.
+No unreleased changes are documented after v0.1.16 yet.
+
+---
+
+## v0.1.16 — 2026-09-23
+
+SNAPVERE 0.1.16 is a focused recording-startup and Setup recovery hardening release. It keeps the compact Start/Stop experience from v0.1.15 while tightening the races around Stop during recording initialization and removing an overly broad Setup license failure catch.
+
+### Screen recording startup/Stop lifecycle
+
+- Recording cancellation is checked immediately before native capture startup and again immediately afterward.
+- If Stop already owns the session before capture startup begins, the recording frame source does not enter capture startup.
+- A Stop racing native startup is observed before transcoder preparation continues, keeping the request on the normal cancellation/finalization cleanup path.
+- Existing idempotent Stop, bounded frame ownership and atomic MP4 publication rules remain unchanged.
+
+### Setup recovery hardening
+
+- License loading no longer catches every exception; only expected missing-resource/I/O failures are converted into controlled Setup recovery UI.
+- A license-load failure clears acceptance, disables acceptance and keeps Continue unavailable.
+- The recovery message no longer sends the user to a website unnecessarily; it asks for a fresh Setup package and keeps the flow local.
+- The guided License -> Installation -> Finish workflow from v0.1.15 remains unchanged.
+
+### Validation contract
+
+- Product Contract CI, Browser Extensions CI, CodeQL Advanced and Windows CI must pass before merge.
+- x64 tests, x86/ARM64 builds, rendered Windows UI QA, universal Setup/Portable validation, package-size budgets and real x64/x86 lifecycle checks remain required.
+- The release publishes exactly six public assets: Setup, Portable and Chrome/Edge/Opera/Firefox ZIPs.
 
 ---
 
