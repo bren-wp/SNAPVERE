@@ -4,7 +4,6 @@ using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Snapvere.Shared;
-using System.Diagnostics;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
 
@@ -206,12 +205,7 @@ public sealed class AboutWindow : Window
         {
             try
             {
-                var process = Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-                if (process is null)
-                {
-                    throw new InvalidOperationException("Windows did not start a handler for the requested link.");
-                }
-
+                LocalShellAction.Open(url);
                 _supportStatus.Visibility = Visibility.Collapsed;
             }
             catch (Exception exception) when (
