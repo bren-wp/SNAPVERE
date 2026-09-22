@@ -124,6 +124,19 @@ public static class EmbeddedPayload
             return false;
         }
 
+        try
+        {
+            if ((File.GetAttributes(root) & FileAttributes.ReparsePoint) != 0)
+            {
+                return false;
+            }
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or DirectoryNotFoundException)
+        {
+            return false;
+        }
+
         var expectedFiles = ReadIntegrityManifest(integrityManifestStream, root);
         var allowedExtras = BuildAllowedExtraSet(root, allowedExtraRelativePaths);
 
