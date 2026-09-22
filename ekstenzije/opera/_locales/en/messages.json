@@ -33,6 +33,7 @@
   "askWhereToSave": { "message": "Ask where to save visible and region captures" },
   "saveSettings": { "message": "Save settings" },
   "settingsSaved": { "message": "Settings saved." },
+  "loadingSettings": { "message": "Loading settings…" },
   "settingsLoadFailed": { "message": "Settings could not be loaded. Safe defaults remain active." },
   "settingsSaveFailed": { "message": "Settings could not be saved. Try again." },
   "privacyNote": { "message": "Screenshots are processed locally. SNAPVERE does not upload captures, run analytics or use telemetry." },

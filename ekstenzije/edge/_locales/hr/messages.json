@@ -33,6 +33,7 @@
   "askWhereToSave": { "message": "Pitaj gdje spremiti snimke vidljivog i odabranog područja" },
   "saveSettings": { "message": "Spremi postavke" },
   "settingsSaved": { "message": "Postavke su spremljene." },
+  "loadingSettings": { "message": "Učitavam postavke…" },
   "settingsLoadFailed": { "message": "Postavke nije moguće učitati. Sigurne zadane postavke ostaju aktivne." },
   "settingsSaveFailed": { "message": "Postavke nije moguće spremiti. Pokušaj ponovno." },
   "privacyNote": { "message": "Snimke se obrađuju lokalno. SNAPVERE ne šalje snimke u oblak, ne koristi analitiku ni telemetriju." },
