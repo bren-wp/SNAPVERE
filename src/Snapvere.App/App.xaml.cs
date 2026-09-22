@@ -53,6 +53,7 @@ public partial class App : Microsoft.UI.Xaml.Application
 
             var services = new ServiceCollection();
             services.AddSingleton<IDisplayDiscovery, Win32DisplayDiscovery>();
+            services.AddSingleton<ICaptureDisplaySelector, Win32CursorCaptureDisplaySelector>();
             services.AddSingleton<IWindowDiscovery, Win32WindowDiscovery>();
             services.AddSingleton(TimeProvider.System);
             services.AddSingleton<GdiScreenCaptureService>();
