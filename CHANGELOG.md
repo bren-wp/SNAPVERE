@@ -4,6 +4,13 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Settings and language UX hardening
+
+- Apply a newly selected language immediately to the open Language window title, explanatory copy, button text and accessibility names instead of leaving a mixed-language surface until reopen.
+- Route production Language actions from Tray and Settings through one singleton window so repeated entry points cannot create duplicate language surfaces, while keeping the dedicated CI probe instance isolated.
+- Contain the explicit `InvalidOperationException` failure path from Windows startup registration inside the Settings toggle handler so a registry failure cannot escape the UI event.
+- Refresh the EN/HR language-saved copy to match the immediate in-window update behavior.
+
 ### Recording callback teardown hardening
 
 - Replace the disposable recording-frame semaphore with a generation-based async pulse signal so Stop/failure/dispose cannot race `SemaphoreSlim.Dispose()` against a pending `WaitAsync()`.

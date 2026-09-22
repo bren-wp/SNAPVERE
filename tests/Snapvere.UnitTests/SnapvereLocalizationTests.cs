@@ -97,6 +97,11 @@ public sealed class SnapvereLocalizationTests
     }
 
     [Theory]
+    [InlineData("LanguageSaved", "Jezik je spremljen. SNAPVERE sada koristi ovaj jezik.")]
+    public void Croatian_LanguageSaved_ReflectsImmediateApplication(string key, string expected)
+        => Assert.Equal(expected, SnapvereLocalization.T(key, "hr"));
+
+    [Theory]
     [InlineData("OpenCaptureNamed", "sample.png", "Otvori sample.png")]
     [InlineData("LocalCaptureCount", 7, "Lokalne snimke: 7")]
     public void CroatianFormattedSecondaryUiCopy_PreservesFormatArguments(
