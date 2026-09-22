@@ -4,6 +4,24 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.15] - 2026-09-23
+
+### Compact screen-recording controls
+
+- Replace the large state-changing recording action in Settings with separate compact Start and Stop controls so each action keeps one meaning.
+- Enable only the valid recording action for the current state and keep the existing thread-safe recording session gate behind both controls.
+- Reduce the active recording controller to a compact borderless always-on-top panel with recording status, elapsed time and one dedicated Stop control.
+- Position the controller inside the active display work area and disable repeated Stop interaction while MP4 finalization completes.
+
+### Guided Setup and completion reliability
+
+- Split interactive installation into two explicit steps: license acceptance, then installation location and Windows integration options.
+- Add phase-aware Back, Continue, Install and Finish controls while preserving the commercial-license gate.
+- Reflow the installation-options step instead of leaving the hidden license area as empty space.
+- Fix successful install/uninstall completion leaving Setup marked busy, which could block Finish/close after file operations were already complete.
+- Keep installation controls read-only after completion and simplify normal Setup copy by removing implementation-oriented payload/self-contained wording.
+- Remove the persistent website address from the Setup sidebar while retaining recovery guidance where obtaining a fresh installer is actually relevant.
+
 ## [0.1.14] - 2026-09-23
 
 ### Browser Recent capture revalidation
