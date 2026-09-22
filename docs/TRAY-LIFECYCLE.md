@@ -54,4 +54,4 @@ Normal tray-first operation is intentionally different from an application that 
 
 CI evidence proves the repository's declared startup/lifecycle scenarios on its Windows runners. It is not a guarantee that Explorer, third-party shell software, security products or every Windows configuration can never interfere with notification-area behavior.
 
-Related documents: [Installation](INSTALLATION.md), [Settings](SETTINGS.md), [Performance & Stability](PERFORMANCE.md), [Architecture](ARCHITECTURE.md), [QA Matrix](QA-MATRIX.md).
+Related documents: [Installation](INSTALLATION.md), [User Guide](USER-GUIDE.md), [Performance & Stability](PERFORMANCE.md), [Architecture](ARCHITECTURE.md), [QA Matrix](QA-MATRIX.md).

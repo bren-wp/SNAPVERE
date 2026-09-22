@@ -6,13 +6,25 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [0.1.13] - 2026-09-22
 
-### Screen recording control and lifecycle
+### Screen recording Start/Stop lifecycle
 
-- Replace the tray recording toggle command with explicit Start and Stop commands so a stale Stop click can never start a new recording after the previous session finishes.
-- Add a thread-safe screen-recording session gate with idempotent cancellation, stale-session protection and concurrent Stop regression coverage.
-- Add a visible always-on-top recording controller with recording status, elapsed time and a dedicated Stop action; closing the controller also requests a safe Stop.
-- Add a synchronized Screen recording Start/Stop action to the main Settings surface so recording is not controllable only from the tray menu.
-- Keep completed MP4 publication behind the existing recording finalization path and retain capture activity ownership until encoding/cleanup completes.
+- Replace the state-ambiguous recording toggle with explicit Start and Stop commands across Tray and Settings so a stale Stop action can never begin a new recording.
+- Add a thread-safe recording session gate with duplicate-Start rejection, idempotent/concurrent Stop ownership and stale-session completion protection.
+- Add a compact always-visible recording controller with a red recording indicator, elapsed time and a dedicated Stop action; closing the controller also requests a safe Stop.
+- Keep the existing atomic MP4 publication and capture activity gate held until encoding/finalization and cleanup complete.
+
+### Multi-monitor, native ownership and Portable hardening
+
+- Region and Screen Capture now select the display under the current pointer with primary-display fallback, including negative-coordinate and half-open-boundary regression coverage.
+- WGC screenshot cancellation now gives late frames a deterministic owner and disposes frames that arrive after timeout/cancellation loses the result race.
+- Windows startup diagnostics contain security-policy logging failures without replacing the original startup failure.
+- Portable cache preparation validates the existing ancestor reparse chain, avoids recursively traversing reparse-root cleanup targets and only removes SNAPVERE-owned version-cache names.
+
+### Active documentation consolidation
+
+- Fold Region Capture and Settings guidance into the EN/HR User Guides instead of maintaining small version-stamped fragments.
+- Fold Capture Engine and Multi-monitor internals into a version-neutral Architecture guide while preserving Window Capture, Image Pipeline, Tray/Lifecycle, QA and troubleshooting as focused references.
+- Remove five superseded short documentation files and update root/docs navigation plus Product Contract link validation in the same change so stale references cannot survive CI.
 
 ### Recent-capture action polish
 

@@ -46,4 +46,4 @@ Windows CI dodatno renderira Window Capture overlay i uspoređuje ga s posljednj
 
 Ti gateovi smanjuju rizik regresije; nisu obećanje da se svaki third-party prozor, driver ili protected-content scenarij može snimiti.
 
-Povezano: [Capture Engine](../CAPTURE-ENGINE.md), [Multi-monitor](../MULTI-MONITOR.md), [Image Pipeline](IMAGE-PIPELINE.md), [Performanse i stabilnost](PERFORMANCE.md), [QA matrica](QA-MATRIX.md).
+Povezano: [Architecture](../ARCHITECTURE.md), [Image Pipeline](IMAGE-PIPELINE.md), [Performanse i stabilnost](PERFORMANCE.md), [QA matrica](QA-MATRIX.md).

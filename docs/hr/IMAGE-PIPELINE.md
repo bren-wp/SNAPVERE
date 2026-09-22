@@ -50,4 +50,4 @@ Unit suite provjerava crop granice i kopiranje redova, annotation rendering, PNG
 
 Windows CI te testove izvršava na x64 test putu, uz odvojene x86 i ARM64 buildove. Package CI dodatno provjerava size budgete javnih executablea.
 
-Povezano: [Capture Engine](../CAPTURE-ENGINE.md), [Region Capture](../REGION-CAPTURE.md), [Window Capture](WINDOW-CAPTURE.md), [Performanse i stabilnost](PERFORMANCE.md), [QA matrica](QA-MATRIX.md).
+Povezano: [Architecture](../ARCHITECTURE.md), [Korisnički vodič](USER-GUIDE.md), [Window Capture](WINDOW-CAPTURE.md), [Performanse i stabilnost](PERFORMANCE.md), [QA matrica](QA-MATRIX.md).

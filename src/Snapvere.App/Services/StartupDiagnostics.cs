@@ -139,6 +139,9 @@ internal static class StartupDiagnostics
         catch (UnauthorizedAccessException)
         {
         }
+        catch (System.Security.SecurityException)
+        {
+        }
     }
 
     private static class NativeMethods

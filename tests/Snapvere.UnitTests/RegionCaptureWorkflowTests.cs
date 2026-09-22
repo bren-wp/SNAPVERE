@@ -61,6 +61,43 @@ public sealed class RegionCaptureWorkflowTests
     }
 
     [Fact]
+    public async Task PrepareInteractiveDisplayAsync_UsesSelectedDisplay()
+    {
+        var primary = new DisplayDescriptor(
+            "primary",
+            new PixelRect(0, 0, 2, 1),
+            new PixelRect(0, 0, 2, 1),
+            96,
+            96,
+            true,
+            "Primary");
+        var secondary = new DisplayDescriptor(
+            "secondary",
+            new PixelRect(-2, 0, 2, 1),
+            new PixelRect(-2, 0, 2, 1),
+            120,
+            120,
+            false,
+            "Secondary");
+        var frame = CreatePatternFrame(2, 1, DateTimeOffset.UtcNow, secondary.Id);
+        var captureService = new FakeScreenCaptureService(frame);
+        var workflow = new RegionCaptureWorkflow(
+            new FakeDisplayDiscovery(primary, secondary),
+            captureService,
+            new CaptureFileWriter(
+                new PngCaptureEncoder(),
+                new CapturePathProvider(Path.GetTempPath()),
+                TimeProvider.System),
+            preferences: null,
+            displaySelector: new FakeDisplaySelector(secondary));
+
+        var session = await workflow.PrepareInteractiveDisplayAsync();
+
+        Assert.Same(secondary, session.Display);
+        Assert.Same(secondary, captureService.LastDisplay);
+    }
+
+    [Fact]
     public async Task PreparePrimaryDisplayAsync_RejectsFrameWhenDisplayChangedDuringCapture()
     {
         var display = new DisplayDescriptor(
@@ -123,20 +160,28 @@ public sealed class RegionCaptureWorkflowTests
             sourceId);
     }
 
-    private sealed class FakeDisplayDiscovery(DisplayDescriptor display) : IDisplayDiscovery
+    private sealed class FakeDisplayDiscovery(params DisplayDescriptor[] displays) : IDisplayDiscovery
     {
-        public IReadOnlyList<DisplayDescriptor> GetDisplays() => [display];
+        public IReadOnlyList<DisplayDescriptor> GetDisplays() => displays;
+    }
+
+    private sealed class FakeDisplaySelector(DisplayDescriptor selected) : ICaptureDisplaySelector
+    {
+        public DisplayDescriptor SelectDisplay(IReadOnlyList<DisplayDescriptor> displays)
+            => selected;
     }
 
     private sealed class FakeScreenCaptureService(CaptureFrame frame) : IScreenCaptureService
     {
         public bool LastIncludeCursor { get; private set; }
+        public DisplayDescriptor? LastDisplay { get; private set; }
 
         public ValueTask<CaptureFrame> CaptureDisplayAsync(
             DisplayDescriptor display,
             bool includeCursor,
             CancellationToken cancellationToken = default)
         {
+            LastDisplay = display;
             LastIncludeCursor = includeCursor;
             return ValueTask.FromResult(frame);
         }

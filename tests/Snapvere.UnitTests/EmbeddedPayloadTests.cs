@@ -168,6 +168,31 @@ public sealed class EmbeddedPayloadTests
     }
 
     [Fact]
+    public void DeleteDirectoryBestEffort_RemovesReparseRootWithoutDeletingTarget()
+    {
+        var link = Path.Combine(Path.GetTempPath(), $"snapvere-delete-link-{Guid.NewGuid():N}");
+        var target = Path.Combine(Path.GetTempPath(), $"snapvere-delete-target-{Guid.NewGuid():N}");
+        var sentinel = Path.Combine(target, "keep.txt");
+
+        try
+        {
+            Directory.CreateDirectory(target);
+            File.WriteAllText(sentinel, "keep");
+            CreateDirectoryReparsePoint(link, target);
+
+            EmbeddedPayload.DeleteDirectoryBestEffort(link);
+
+            Assert.True(File.Exists(sentinel));
+            Assert.False(Directory.Exists(link));
+        }
+        finally
+        {
+            DeleteDirectoryLinkBestEffort(link);
+            EmbeddedPayload.DeleteDirectoryBestEffort(target);
+        }
+    }
+
+    [Fact]
     public void IsExtractedPayloadIntact_RejectsTamperedCachedFileWithSameLength()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"snapvere-payload-{Guid.NewGuid():N}");

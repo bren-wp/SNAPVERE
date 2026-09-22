@@ -62,6 +62,60 @@ public sealed class ScreenCaptureWorkflowTests
     }
 
     [Fact]
+    public async Task CaptureInteractiveDisplayToDefaultFolderAsync_UsesSelectedDisplay()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"snapvere-screen-display-{Guid.NewGuid():N}");
+        var timestamp = new DateTimeOffset(2026, 9, 22, 10, 0, 0, TimeSpan.Zero);
+
+        try
+        {
+            var primary = new DisplayDescriptor(
+                "primary",
+                new PixelRect(0, 0, 1, 1),
+                new PixelRect(0, 0, 1, 1),
+                96,
+                96,
+                true,
+                "Primary");
+            var secondary = new DisplayDescriptor(
+                "secondary",
+                new PixelRect(-1, 0, 1, 1),
+                new PixelRect(-1, 0, 1, 1),
+                120,
+                120,
+                false,
+                "Secondary");
+            var frame = new CaptureFrame(
+                new PixelSize(1, 1),
+                4,
+                new byte[] { 30, 20, 10, 255 },
+                timestamp,
+                secondary.Id);
+            var captureService = new FakeScreenCaptureService(frame);
+            var workflow = new ScreenCaptureWorkflow(
+                new FakeDisplayDiscovery(primary, secondary),
+                captureService,
+                new CaptureFileWriter(
+                    new PngCaptureEncoder(),
+                    new CapturePathProvider(directory),
+                    new FixedTimeProvider(timestamp)),
+                preferences: null,
+                displaySelector: new FakeDisplaySelector(secondary));
+
+            await workflow.CaptureInteractiveDisplayToDefaultFolderAsync(includeCursor: false);
+
+            Assert.Same(secondary, captureService.LastDisplay);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public void BuildFileName_AddsCounterOnlyWhenNeeded()
     {
         var timestamp = new DateTimeOffset(2026, 9, 9, 20, 45, 12, TimeSpan.FromHours(2));
@@ -70,18 +124,29 @@ public sealed class ScreenCaptureWorkflowTests
         Assert.Equal("SNAPVERE_2026-09-09_204512_007.png", CapturePathProvider.BuildFileName(timestamp, 7));
     }
 
-    private sealed class FakeDisplayDiscovery(DisplayDescriptor display) : IDisplayDiscovery
+    private sealed class FakeDisplayDiscovery(params DisplayDescriptor[] displays) : IDisplayDiscovery
     {
-        public IReadOnlyList<DisplayDescriptor> GetDisplays() => [display];
+        public IReadOnlyList<DisplayDescriptor> GetDisplays() => displays;
+    }
+
+    private sealed class FakeDisplaySelector(DisplayDescriptor selected) : ICaptureDisplaySelector
+    {
+        public DisplayDescriptor SelectDisplay(IReadOnlyList<DisplayDescriptor> displays)
+            => selected;
     }
 
     private sealed class FakeScreenCaptureService(CaptureFrame frame) : IScreenCaptureService
     {
+        public DisplayDescriptor? LastDisplay { get; private set; }
+
         public ValueTask<CaptureFrame> CaptureDisplayAsync(
             DisplayDescriptor display,
             bool includeCursor,
             CancellationToken cancellationToken = default)
-            => ValueTask.FromResult(frame);
+        {
+            LastDisplay = display;
+            return ValueTask.FromResult(frame);
+        }
     }
 
     private sealed class FixedTimeProvider(DateTimeOffset timestamp) : TimeProvider

@@ -29,14 +29,14 @@ SNAPVERE 0.1.13 is built for people who want screenshot tools that stay focused 
 | | What you get |
 | --- | --- |
 | ⚡ **Fast capture** | Region, window and screen capture on Windows, plus visible-area, region and bounded full-page capture in browsers. |
-| 🎥 **Local screen recording** | Start/Stop primary-display recording from the Windows tray and save a local H.264 MP4 without cloud upload. |
+| 🎥 **Local screen recording** | Start/Stop primary-display recording from Tray or Settings, with a visible elapsed-time Stop controller and local H.264 MP4 output. |
 | ✏️ **Built-in annotation** | Pen, Line, Arrow, Box and Highlight tools directly in the Windows region workflow. |
 | 🖥️ **Native Windows workflow** | Tray-first operation, global shortcuts, recent captures, local settings and DPI-aware multi-monitor handling. |
 | 🔒 **Local-first by design** | Core capture processing stays local; no account is required for capture and no first-party screenshot telemetry is built into the capture runtime. |
 | 📦 **Portable or installed** | Universal Windows Setup and Portable packages carry x86, x64 and ARM64 application payloads. |
 | 🌐 **Browser coverage** | Chrome, Edge, Opera and Firefox share the same locked SNAPVERE brand and bounded capture behavior. |
 
-SNAPVERE 0.1.13 keeps the responsive high-DPI Windows/browser surface and makes local screen recording easier to control: Start/Stop is explicit in Tray and Settings, active recording has a visible elapsed-time Stop controller, and repeated or stale Stop requests are lifecycle-safe. Recording remains local H.264 MP4 and video-only; microphone and system audio are not claimed as supported.
+SNAPVERE 0.1.13 keeps the responsive high-DPI Windows/browser surface and hardens local screen recording control: Start and Stop are explicit in Tray and Settings, active recording has a visible elapsed-time Stop controller, and repeated or stale Stop requests are lifecycle-safe. Region and Screen Capture now follow the display under the pointer, while recording remains primary-display H.264 MP4 and video-only; microphone and system audio are not claimed as supported.
 
 The browser runtime now separates extension-page capture commands from tab-owned capture-session callbacks. Injected tab scripts and foreign extension identities cannot initiate top-level SNAPVERE capture commands; region callbacks retain token/tab/window ownership checks, and background responses expose bounded error keys rather than raw internal exception messages. The existing v0.1.5 concurrency, memory, responsive UI and shortcut hardening remains in place.
 
@@ -57,7 +57,7 @@ Windows captures are stored by default in `Pictures\SNAPVERE`. PNG saving uses s
 
 SNAPVERE uses native display geometry and DPI conversion instead of assuming every monitor has the same scale. Current memory hardening removes redundant full-frame staging allocations from Region and Window Capture paths and releases frozen monitor buffers as soon as their UI bitmap is ready.
 
-Read the implementation-focused notes in [Performance & Stability](docs/PERFORMANCE.md), [Window Capture](docs/WINDOW-CAPTURE.md) and [Multi-monitor](docs/MULTI-MONITOR.md).
+Read the implementation-focused notes in [Performance & Stability](docs/PERFORMANCE.md), [Window Capture](docs/WINDOW-CAPTURE.md) and [Architecture](docs/ARCHITECTURE.md).
 
 ## Browser extensions
 
@@ -141,8 +141,7 @@ For the exact boundaries and security model, read [Privacy](docs/PRIVACY.md), [S
 | [Image Pipeline](docs/IMAGE-PIPELINE.md) | Frame validation, crop/annotation, PNG encode and atomic publication. |
 | [Tray & Lifecycle](docs/TRAY-LIFECYCLE.md) | Singleton, native tray, Explorer recovery and package lifecycle. |
 | [Browser Extensions](docs/BROWSER-EXTENSIONS.md) | Browser architecture, permissions and behavior. |
-| [Region Capture](docs/REGION-CAPTURE.md) | Selection and annotation workflow. |
-| [Multi-monitor](docs/MULTI-MONITOR.md) | DPI and desktop-layout behavior. |
+| [Architecture](docs/ARCHITECTURE.md) | Capture engine, persistence, multi-monitor/DPI and system boundaries. |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | Recovery guidance and diagnostics. |
 | [Product Status](docs/PRODUCT-STATUS.md) | Maintained product surfaces and evidence boundaries. |
 | [Branding](docs/BRANDING.md) | Product identity and asset usage. |

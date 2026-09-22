@@ -46,4 +46,4 @@ Windows CI also renders the Window Capture overlay as part of visual QA and comp
 
 These automated checks reduce regression risk; they do not prove that every third-party window, graphics driver or protected-content policy is capturable.
 
-Related documents: [Capture Engine](CAPTURE-ENGINE.md), [Multi-monitor](MULTI-MONITOR.md), [Image Pipeline](IMAGE-PIPELINE.md), [Performance & Stability](PERFORMANCE.md), [QA Matrix](QA-MATRIX.md).
+Related documents: [Architecture](ARCHITECTURE.md), [Image Pipeline](IMAGE-PIPELINE.md), [Performance & Stability](PERFORMANCE.md), [QA Matrix](QA-MATRIX.md).

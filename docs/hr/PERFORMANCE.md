@@ -33,4 +33,4 @@ Windows screen recording usklađuje MediaStreamSource zahtjeve za sampleovima pr
 
 Aktualni CI provjerava x64 build i unit testove, x86 i ARM64 buildove, renderirane WinUI površine, visual baseline usporedbu, universal Setup/Portable, package-size budget, x64/x86 lifecycle, browser runtime/permission/parity provjere, reproducibilno pakiranje, Product Contract CI i CodeQL.
 
-Povezano: [QA matrica](QA-MATRIX.md), [Status proizvoda](PRODUCT-STATUS.md), [Engleska arhitektura](../ARCHITECTURE.md) i [Multi-monitor](../MULTI-MONITOR.md).
+Povezano: [QA matrica](QA-MATRIX.md), [Status proizvoda](PRODUCT-STATUS.md) i [Engleska arhitektura](../ARCHITECTURE.md).

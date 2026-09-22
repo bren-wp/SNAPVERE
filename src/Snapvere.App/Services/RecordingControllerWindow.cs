@@ -187,7 +187,7 @@ public sealed class RecordingControllerWindow : Window
         {
             presenter.IsResizable = false;
             presenter.IsMaximizable = false;
-            presenter.IsMinimizable = true;
+            presenter.IsMinimizable = false;
             presenter.IsAlwaysOnTop = true;
         }
     }

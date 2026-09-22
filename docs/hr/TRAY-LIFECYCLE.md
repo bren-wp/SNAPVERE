@@ -54,4 +54,4 @@ Tray-first rad namjerno se razlikuje od aplikacije koja pri svakom launchu otvar
 
 CI dokazuje deklarirane startup/lifecycle scenarije na svojim Windows runnerima. To nije jamstvo da Explorer, third-party shell software, security alat ili svaka Windows konfiguracija nikad ne može utjecati na notification-area ponašanje.
 
-Povezano: [Instalacija](INSTALLATION.md), [Postavke](SETTINGS.md), [Performanse i stabilnost](PERFORMANCE.md), [Architecture](../ARCHITECTURE.md), [QA matrica](QA-MATRIX.md).
+Povezano: [Instalacija](INSTALLATION.md), [Korisnički vodič](USER-GUIDE.md), [Performanse i stabilnost](PERFORMANCE.md), [Architecture](../ARCHITECTURE.md), [QA matrica](QA-MATRIX.md).

@@ -50,4 +50,4 @@ The unit suite covers crop bounds and row copying, annotation rendering, PNG dim
 
 Windows CI executes those tests on the x64 test path and separately builds x86 and ARM64 application payloads. Package CI also validates public executable size budgets so image/runtime changes cannot silently cause unbounded package growth.
 
-Related documents: [Capture Engine](CAPTURE-ENGINE.md), [Region Capture](REGION-CAPTURE.md), [Window Capture](WINDOW-CAPTURE.md), [Performance & Stability](PERFORMANCE.md), [QA Matrix](QA-MATRIX.md).
+Related documents: [Architecture](ARCHITECTURE.md), [User Guide](USER-GUIDE.md), [Window Capture](WINDOW-CAPTURE.md), [Performance & Stability](PERFORMANCE.md), [QA Matrix](QA-MATRIX.md).

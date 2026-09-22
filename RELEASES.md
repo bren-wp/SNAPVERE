@@ -53,6 +53,11 @@ SNAPVERE 0.1.13 makes screen-recording control explicit and recoverable while pr
 - Settings/startup-registration failures and Language live-update behavior are contained and synchronized.
 - Recording callback teardown uses a generation-based async pulse signal to avoid semaphore-disposal races with pending MediaStreamSource callbacks.
 - Exit during an active capture is sticky; recording receives a graceful Stop request and shutdown continues only after capture cleanup completes.
+- Region and Screen Capture select the monitor under the pointer with primary-display fallback and regression coverage for negative coordinates and monitor-boundary behavior.
+- WGC screenshot cancellation closes late-frame ownership races so frames arriving after cancellation/timeout are deterministically disposed when they lose the result race.
+- Windows startup diagnostics contain security-policy logging failures without replacing the original primary startup error.
+- Portable cache hardening validates existing ancestor reparse chains, avoids recursively traversing reparse-root cleanup targets and limits old-cache cleanup to SNAPVERE-owned version-cache names.
+- Active documentation consolidates Region/Settings guidance into the user guides and Capture Engine/Multi-monitor internals into Architecture while keeping focused Window/Image/Tray/QA references.
 
 ### Validation contract
 

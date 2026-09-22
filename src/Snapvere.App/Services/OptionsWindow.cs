@@ -266,7 +266,7 @@ public sealed class OptionsWindow : Window
         AddPreferenceCard(
             row: 3,
             eyebrow: L("Capture").ToUpperInvariant(),
-            title: L("ScreenRecordingActive"),
+            title: UserText("Screen recording", "Snimanje zaslona"),
             description: UserText(
                 "Start or stop local primary-display recording without returning to the tray menu.",
                 "Pokrenite ili zaustavite lokalno snimanje primarnog zaslona bez povratka u tray izbornik."),
