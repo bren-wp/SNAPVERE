@@ -6,6 +6,14 @@ namespace Snapvere.Setup;
 
 internal sealed class SetupForm : Form
 {
+    private enum SetupStep
+    {
+        License,
+        Installation,
+        Working,
+        Complete
+    }
+
     private static readonly Color Canvas = Color.FromArgb(7, 8, 13);
     private static readonly Color Sidebar = Color.FromArgb(10, 11, 17);
     private static readonly Color Surface = Color.FromArgb(15, 17, 25);
@@ -20,6 +28,7 @@ internal sealed class SetupForm : Form
     private static readonly Color Success = Color.FromArgb(114, 216, 180);
 
     private readonly bool _uninstallMode;
+    private readonly Label _stepLabel;
     private readonly Label _titleLabel;
     private readonly Label _subtitleLabel;
     private readonly RichTextBox _licenseBox;
@@ -33,6 +42,7 @@ internal sealed class SetupForm : Form
     private readonly Label _statusLabel;
     private readonly Button _primaryButton;
     private readonly Button _cancelButton;
+    private readonly Button _backButton;
     private readonly CheckBox _launchAfterInstall;
     private readonly Label _licenseLabel;
     private readonly Label _installLocationLabel;
@@ -40,12 +50,14 @@ internal sealed class SetupForm : Form
     private readonly RoundedPanel _contentCard;
     private readonly Panel _sidebar;
     private readonly Panel _mainPanel;
+    private SetupStep _setupStep;
     private bool _completed;
     private bool _busy;
 
     public SetupForm(bool uninstallMode)
     {
         _uninstallMode = uninstallMode;
+        _setupStep = uninstallMode ? SetupStep.Installation : SetupStep.License;
 
         Text = uninstallMode ? "Remove SNAPVERE" : "SNAPVERE Setup";
         StartPosition = FormStartPosition.Manual;
@@ -76,15 +88,15 @@ internal sealed class SetupForm : Form
 
         var main = _mainPanel;
 
-        var eyebrow = new Label
+        _stepLabel = new Label
         {
             AutoSize = true,
-            Text = uninstallMode ? "MAINTENANCE" : "INSTALLATION",
+            Text = uninstallMode ? "REMOVAL" : "STEP 1 OF 2  •  LICENSE",
             ForeColor = Accent,
             Font = new Font("Segoe UI Semibold", 8.5F, FontStyle.Bold),
             Location = new Point(34, 30)
         };
-        main.Controls.Add(eyebrow);
+        main.Controls.Add(_stepLabel);
 
         _titleLabel = new Label
         {
@@ -101,7 +113,7 @@ internal sealed class SetupForm : Form
             AutoSize = false,
             Text = uninstallMode
                 ? "Remove the application and Windows registration while preserving your local captures."
-                : "Fast, private Windows capture by Brendigo. Universal, self-contained and ready for tray-first use.",
+                : "Private screen capture and recording, installed locally on this Windows PC.",
             ForeColor = Muted,
             Location = new Point(34, 91),
             Size = new Size(620, 38)
@@ -266,6 +278,12 @@ internal sealed class SetupForm : Form
         };
         main.Controls.Add(_launchAfterInstall);
 
+        _backButton = CreateSecondaryButton("Back", new Point(350, 592), new Size(88, 40));
+        _backButton.Visible = false;
+        _backButton.Click += (_, _) => ShowLicenseStep();
+        _backButton.AccessibleName = "Back to license";
+        main.Controls.Add(_backButton);
+
         _cancelButton = CreateSecondaryButton("Cancel", new Point(448, 592), new Size(102, 40));
         _cancelButton.Click += (_, _) => Close();
         main.Controls.Add(_cancelButton);
@@ -294,6 +312,7 @@ internal sealed class SetupForm : Form
             LoadLicense();
         }
 
+        ApplySetupStep();
         UpdatePrimaryButtonState();
         UpdateResponsiveLayout();
     }
@@ -349,8 +368,13 @@ internal sealed class SetupForm : Form
         _subtitleLabel.Location = new Point(left + 2, 91);
         _subtitleLabel.Size = new Size(contentWidth, layout.Compact ? 54 : 38);
 
+        var installationStep = !_uninstallMode && _setupStep != SetupStep.License;
+        var cardHeight = installationStep
+            ? (layout.Compact ? 286 : 238)
+            : layout.CardHeight;
+
         _contentCard.Location = new Point(left, 139);
-        _contentCard.Size = new Size(contentWidth, layout.CardHeight);
+        _contentCard.Size = new Size(contentWidth, cardHeight);
         _licenseLabel.Size = new Size(innerWidth, 22);
         _licenseHint.Size = new Size(innerWidth, 22);
         _licenseBox.Size = new Size(innerWidth, 151);
@@ -362,19 +386,44 @@ internal sealed class SetupForm : Form
         var browseX = Math.Max(22, contentWidth - 22 - browseWidth);
         _installPath.Size = new Size(Math.Max(96, browseX - 32), 29);
         _browseButton.Size = new Size(browseWidth, 34);
-        _browseButton.Location = new Point(browseX, 289);
 
-        if (layout.Compact)
+        if (installationStep)
         {
-            _startMenuShortcut.Location = new Point(22, 337);
-            _desktopShortcut.Location = new Point(Math.Min(150, Math.Max(22, contentWidth / 2)), 337);
-            _startupWithWindows.Location = new Point(22, 367);
+            _installLocationLabel.Location = new Point(22, 34);
+            _installPath.Location = new Point(22, 61);
+            _browseButton.Location = new Point(browseX, 59);
+
+            if (layout.Compact)
+            {
+                _startMenuShortcut.Location = new Point(22, 118);
+                _desktopShortcut.Location = new Point(Math.Min(150, Math.Max(22, contentWidth / 2)), 118);
+                _startupWithWindows.Location = new Point(22, 153);
+            }
+            else
+            {
+                _startMenuShortcut.Location = new Point(22, 120);
+                _desktopShortcut.Location = new Point(150, 120);
+                _startupWithWindows.Location = new Point(296, 120);
+            }
         }
         else
         {
-            _startMenuShortcut.Location = new Point(22, 337);
-            _desktopShortcut.Location = new Point(150, 337);
-            _startupWithWindows.Location = new Point(296, 337);
+            _installLocationLabel.Location = new Point(22, 267);
+            _installPath.Location = new Point(22, 291);
+            _browseButton.Location = new Point(browseX, 289);
+
+            if (layout.Compact)
+            {
+                _startMenuShortcut.Location = new Point(22, 337);
+                _desktopShortcut.Location = new Point(Math.Min(150, Math.Max(22, contentWidth / 2)), 337);
+                _startupWithWindows.Location = new Point(22, 367);
+            }
+            else
+            {
+                _startMenuShortcut.Location = new Point(22, 337);
+                _desktopShortcut.Location = new Point(150, 337);
+                _startupWithWindows.Location = new Point(296, 337);
+            }
         }
 
         var progressTop = _contentCard.Bottom + 17;
@@ -388,6 +437,7 @@ internal sealed class SetupForm : Form
         var actionTop = statusTop + layout.StatusHeight + 2;
         var primaryX = left + Math.Max(0, contentWidth - _primaryButton.Width);
         var cancelX = Math.Max(left, primaryX - _cancelButton.Width - 10);
+        var backX = Math.Max(left, cancelX - _backButton.Width - 10);
 
         if (_completed && !_uninstallMode && layout.Compact && contentWidth < 420)
         {
@@ -401,6 +451,7 @@ internal sealed class SetupForm : Form
 
         _primaryButton.Location = new Point(primaryX, actionTop);
         _cancelButton.Location = new Point(cancelX, actionTop);
+        _backButton.Location = new Point(backX, actionTop);
 
         _mainPanel.AutoScrollMinSize = new Size(
             0,
@@ -477,9 +528,9 @@ internal sealed class SetupForm : Form
         };
         sidebar.Controls.Add(statement);
 
-        AddSidebarFeature(sidebar, 323, "TRAY-FIRST", "Starts quietly. Print Screen opens Region Capture.", Accent);
-        AddSidebarFeature(sidebar, 403, "LOCAL-FIRST", "No account, telemetry or cloud upload required.", Cyan);
-        AddSidebarFeature(sidebar, 483, "UNIVERSAL", "One Setup chooses the compatible x86, x64 or ARM64 app payload.", Accent);
+        AddSidebarFeature(sidebar, 323, "QUICK ACCESS", "Starts quietly and stays available from the notification area.", Accent);
+        AddSidebarFeature(sidebar, 403, "PRIVATE", "No account, telemetry or cloud upload is required.", Cyan);
+        AddSidebarFeature(sidebar, 483, "COMPATIBLE", "Setup automatically installs the right build for this Windows PC.", Accent);
 
         var footerDot = new Label
         {
@@ -494,7 +545,7 @@ internal sealed class SetupForm : Form
         var footer = new Label
         {
             AutoSize = true,
-            Text = "Brendigo  •  snapvere.com",
+            Text = "Brendigo  •  SNAPVERE",
             ForeColor = Muted,
             Font = new Font("Segoe UI", 8.5F),
             Location = new Point(47, 608)
@@ -610,6 +661,22 @@ internal sealed class SetupForm : Form
 
     private async void PrimaryButton_Click(object? sender, EventArgs e)
     {
+        if (!_uninstallMode && !_completed && _setupStep == SetupStep.License)
+        {
+            if (!_acceptLicense.Checked)
+            {
+                System.Media.SystemSounds.Beep.Play();
+                _statusLabel.Text = "Accept the license terms before continuing.";
+                return;
+            }
+
+            _setupStep = SetupStep.Installation;
+            ApplySetupStep();
+            UpdatePrimaryButtonState();
+            UpdateResponsiveLayout();
+            return;
+        }
+
         if (_completed)
         {
             if (!_uninstallMode && _launchAfterInstall.Checked)
@@ -630,9 +697,15 @@ internal sealed class SetupForm : Form
             return;
         }
 
+        if (!_uninstallMode)
+        {
+            _setupStep = SetupStep.Working;
+            ApplySetupStep();
+        }
+
         SetBusy(true);
         _progressBar.SetValue(0);
-        _statusLabel.Text = _uninstallMode ? "Removing SNAPVERE…" : "Preparing secure local installation…";
+        _statusLabel.Text = _uninstallMode ? "Removing SNAPVERE…" : "Installing SNAPVERE locally…";
 
         InstallerResult result;
         if (_uninstallMode)
@@ -661,6 +734,12 @@ internal sealed class SetupForm : Form
         _statusLabel.Text = result.Message;
         if (!result.Succeeded)
         {
+            if (!_uninstallMode)
+            {
+                _setupStep = SetupStep.Installation;
+                ApplySetupStep();
+            }
+
             _progressBar.SetValue(0);
             SetBusy(false);
             MessageBox.Show(this, result.Message, "SNAPVERE Setup", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -669,6 +748,11 @@ internal sealed class SetupForm : Form
 
         _progressBar.SetValue(100);
         _completed = true;
+        if (!_uninstallMode)
+        {
+            _setupStep = SetupStep.Complete;
+        }
+        SetBusy(false);
         _titleLabel.Text = _uninstallMode ? "SNAPVERE removed" : "SNAPVERE is ready";
         _subtitleLabel.Text = _uninstallMode
             ? "The application has been removed from this Windows account. Your screenshots remain untouched."
@@ -677,6 +761,7 @@ internal sealed class SetupForm : Form
         _primaryButton.Enabled = true;
         _cancelButton.Visible = false;
         _launchAfterInstall.Visible = !_uninstallMode;
+        ApplySetupStep();
         UpdateResponsiveLayout();
     }
 
@@ -738,20 +823,105 @@ internal sealed class SetupForm : Form
     private void SetBusy(bool busy)
     {
         _busy = busy;
-        _primaryButton.Enabled = !busy && (_uninstallMode || _acceptLicense.Checked || _completed);
+        UpdatePrimaryButtonState();
+        var allowEditing = !busy && !_completed;
         _cancelButton.Enabled = !busy;
-        _acceptLicense.Enabled = !busy;
-        _installPath.Enabled = !busy;
-        _browseButton.Enabled = !busy;
-        _startMenuShortcut.Enabled = !busy;
-        _desktopShortcut.Enabled = !busy;
-        _startupWithWindows.Enabled = !busy;
+        _backButton.Enabled = allowEditing;
+        _acceptLicense.Enabled = allowEditing;
+        _installPath.Enabled = allowEditing;
+        _browseButton.Enabled = allowEditing;
+        _startMenuShortcut.Enabled = allowEditing;
+        _desktopShortcut.Enabled = allowEditing;
+        _startupWithWindows.Enabled = allowEditing;
         UseWaitCursor = busy;
     }
 
     private void UpdatePrimaryButtonState()
     {
-        _primaryButton.Enabled = _uninstallMode || _acceptLicense.Checked || _completed;
+        if (_busy)
+        {
+            _primaryButton.Enabled = false;
+            return;
+        }
+
+        _primaryButton.Enabled = _uninstallMode ||
+            _completed ||
+            _setupStep == SetupStep.Installation ||
+            (_setupStep == SetupStep.License && _acceptLicense.Checked);
+    }
+
+    private void ShowLicenseStep()
+    {
+        if (_uninstallMode || _busy || _completed)
+        {
+            return;
+        }
+
+        _setupStep = SetupStep.License;
+        ApplySetupStep();
+        UpdatePrimaryButtonState();
+        UpdateResponsiveLayout();
+    }
+
+    private void ApplySetupStep()
+    {
+        if (_uninstallMode)
+        {
+            _stepLabel.Text = "REMOVAL";
+            _backButton.Visible = false;
+            return;
+        }
+
+        var showLicense = _setupStep == SetupStep.License;
+        var showInstallation = _setupStep != SetupStep.License;
+
+        _licenseLabel.Visible = showLicense;
+        _licenseHint.Visible = showLicense;
+        _licenseBox.Visible = showLicense;
+        _acceptLicense.Visible = showLicense;
+
+        _installLocationLabel.Visible = showInstallation;
+        _installPath.Visible = showInstallation;
+        _browseButton.Visible = showInstallation;
+        _startMenuShortcut.Visible = showInstallation;
+        _desktopShortcut.Visible = showInstallation;
+        _startupWithWindows.Visible = showInstallation;
+
+        switch (_setupStep)
+        {
+            case SetupStep.License:
+                _stepLabel.Text = "STEP 1 OF 2  •  LICENSE";
+                _titleLabel.Text = $"Install SNAPVERE {InstallerEngine.VersionText}";
+                _subtitleLabel.Text = "Review and accept the license terms before choosing installation options.";
+                _primaryButton.Text = "Continue";
+                _primaryButton.AccessibleName = "Continue to installation options";
+                _backButton.Visible = false;
+                _statusLabel.Text = "Step 1 of 2 — review the license terms, then accept them to continue.";
+                break;
+
+            case SetupStep.Installation:
+                _stepLabel.Text = "STEP 2 OF 2  •  INSTALLATION";
+                _titleLabel.Text = $"Install SNAPVERE {InstallerEngine.VersionText}";
+                _subtitleLabel.Text = "Choose the install location and Windows shortcuts, then install.";
+                _primaryButton.Text = "Install";
+                _primaryButton.AccessibleName = "Install SNAPVERE";
+                _backButton.Visible = true;
+                _statusLabel.Text = "Step 2 of 2 — review the installation options, then select Install.";
+                break;
+
+            case SetupStep.Working:
+                _stepLabel.Text = "INSTALLING";
+                _backButton.Visible = false;
+                _primaryButton.Text = "Install";
+                break;
+
+            case SetupStep.Complete:
+                _stepLabel.Text = "COMPLETE";
+                _backButton.Visible = false;
+                _primaryButton.Text = "Finish";
+                _primaryButton.AccessibleName = "Finish SNAPVERE Setup";
+                break;
+        }
     }
 
     private static Button CreatePrimaryButton(string text, Point location, Size size)
