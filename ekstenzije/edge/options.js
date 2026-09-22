@@ -154,7 +154,15 @@
     button.disabled = true;
     setStatus(recentStatus, "");
     try {
-      await invoke(chrome.downloads, "open", item.id);
+      const matches = await searchDownloads({ id: item.id });
+      const current = matches.find((candidate) => candidate.id === item.id);
+      if (!isSnapvereCapture(current)) {
+        await loadRecent();
+        setStatus(recentStatus, t("openCaptureFailed"), true);
+        return;
+      }
+
+      await invoke(chrome.downloads, "open", current.id);
     } catch {
       setStatus(recentStatus, t("openCaptureFailed"), true);
     } finally {
