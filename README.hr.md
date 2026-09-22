@@ -16,7 +16,7 @@ Bez računa. Bez telemetrije snimki. Bez automatskog cloud uploada.
 [![Product Contract](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Web stranica](https://snapvere.com) · [Preuzmi v0.1.13](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.13) · [Dokumentacija](docs/hr/README.md) · [English](README.md)
+[Web stranica](https://snapvere.com) · [Preuzmi v0.1.14](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.14) · [Dokumentacija](docs/hr/README.md) · [English](README.md)
 
 </div>
 
@@ -24,7 +24,7 @@ Bez računa. Bez telemetrije snimki. Bez automatskog cloud uploada.
 
 ## Zašto SNAPVERE
 
-SNAPVERE 0.1.13 namijenjen je korisnicima koji žele brz i čist screenshot workflow: snimiti točne piksele, označiti ih, kopirati ili spremiti lokalno i nastaviti raditi.
+SNAPVERE 0.1.14 namijenjen je korisnicima koji žele brz i čist screenshot workflow: snimiti točne piksele, označiti ih, kopirati ili spremiti lokalno i nastaviti raditi.
 
 | | Što dobivate |
 | --- | --- |
@@ -36,7 +36,7 @@ SNAPVERE 0.1.13 namijenjen je korisnicima koji žele brz i čist screenshot work
 | 📦 **Setup ili Portable** | Universal Windows paketi s x86, x64 i ARM64 aplikacijskim payloadima. |
 | 🌐 **Četiri preglednika** | Chrome, Edge, Opera i Firefox dijele isti zaključani SNAPVERE brand i ograničeno capture ponašanje. |
 
-SNAPVERE 0.1.13 zadržava responsive high-DPI Windows/browser sučelje i učvršćuje upravljanje lokalnim snimanjem zaslona: Start i Stop su izričiti u Trayu i Postavkama, aktivno snimanje ima vidljivu kontrolu proteklog vremena i Stop gumb, a ponovljeni ili zakašnjeli Stop zahtjevi sigurni su za lifecycle. Region i Screen Capture sada prate zaslon ispod pokazivača, dok recording ostaje primary-display H.264 MP4 samo s videom; mikrofon i sistemski zvuk nisu navedeni kao podržani.
+SNAPVERE 0.1.14 zadržava responsive high-DPI Windows/browser sučelje i učvršćuje upravljanje lokalnim snimanjem zaslona: Start i Stop su izričiti u Trayu i Postavkama, aktivno snimanje ima vidljivu kontrolu proteklog vremena i Stop gumb, a ponovljeni ili zakašnjeli Stop zahtjevi sigurni su za lifecycle. Region i Screen Capture sada prate zaslon ispod pokazivača, dok recording ostaje primary-display H.264 MP4 samo s videom; mikrofon i sistemski zvuk nisu navedeni kao podržani.
 
 Browser runtime sada odvaja capture naredbe iz SNAPVERE extension stranica od callbackova capture sesije u vlasničkoj kartici. Injektirani tab script i strani extension identitet ne mogu pokrenuti top-level SNAPVERE capture naredbe; region callbackovi i dalje moraju odgovarati tokenu, kartici i prozoru, a background odgovor prema UI-ju više ne vraća raw interne exception poruke. Postojeći v0.1.5 concurrency, memory, responsive UI i shortcut hardening ostaje zadržan.
 
@@ -65,7 +65,7 @@ Detalji su u [Performanse i stabilnost](docs/hr/PERFORMANCE.md), [Window Capture
 
 Chrome, Edge, Opera i Firefox nude visible-area, selected-region i bounded full-page capture, lokalno PNG spremanje te EN/HR sučelje. Naziv proizvoda, wordmark i prefiks spremljene datoteke ostaju fiksno **SNAPVERE**.
 
-Dozvole su točno `activeTab`, `scripting`, `downloads`, `downloads.open` i `storage`, bez širokog host pristupa. `downloads.open` koristi se samo nakon izričitog korisničkog klika na **Otvori** za dovršenu SNAPVERE snimku u Nedavnim snimkama. Full-page capture koristi ograničeni destination canvas i oslobađa dekodirane tile resurse odmah nakon crtanja.
+Dozvole su točno `activeTab`, `scripting`, `downloads`, `downloads.open` i `storage`, bez širokog host pristupa. `downloads.open` koristi se samo nakon izričitog korisničkog klika na **Otvori** za dovršenu SNAPVERE snimku u Nedavnim snimkama, a odabrani download zapis ponovno se provjerava po ID-u neposredno prije otvaranja kako bi se premještena ili obrisana datoteka odbila i osvježila umjesto tihog no-op ponašanja. Full-page capture koristi ograničeni destination canvas i oslobađa dekodirane tile resurse odmah nakon crtanja.
 
 Browser ZIP paketi namijenjeni su ručnoj instalaciji. Vanjsko store odobrenje ne tvrdi se dok stvarni listing nije objavljen.
 
@@ -86,8 +86,8 @@ Ovo su **stvarne renderirane Windows površine koje je snimio SNAPVERE visual-QA
 
 ## Preuzimanja
 
-Aktualno izdanje: **SNAPVERE 0.1.13**<br>
-Izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.13
+Aktualno izdanje: **SNAPVERE 0.1.14**<br>
+Izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.14
 
 | Platforma | Paket |
 | --- | --- |

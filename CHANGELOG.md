@@ -4,6 +4,16 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.14] - 2026-09-23
+
+### Browser Recent capture revalidation
+
+- Revalidate the selected browser download record immediately before **Recent > Open** instead of trusting the state captured when the row was rendered.
+- Refuse to call `downloads.open` when the selected capture has been moved, deleted, become incomplete or no longer matches the SNAPVERE capture contract.
+- Refresh Recent after a stale Open attempt and surface the existing localized `openCaptureFailed` feedback instead of allowing a silent no-op.
+- Preserve the existing browser permission allow-list and exact Chrome/Edge/Opera/Firefox source parity.
+- Extend the Options runtime regression test to cover valid click-time revalidation, stale-file refresh and duplicate-activation suppression.
+
 ## [0.1.13] - 2026-09-22
 
 ### Screen recording Start/Stop lifecycle

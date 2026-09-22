@@ -16,7 +16,7 @@ No account. No screenshot telemetry. No automatic cloud upload.
 [![Product Contract](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Website](https://snapvere.com) · [Download v0.1.13](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.13) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
+[Website](https://snapvere.com) · [Download v0.1.14](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.14) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
 
 </div>
 
@@ -24,7 +24,7 @@ No account. No screenshot telemetry. No automatic cloud upload.
 
 ## Why SNAPVERE
 
-SNAPVERE 0.1.13 is built for people who want screenshot tools that stay focused on the job: capture the right pixels, annotate quickly, copy or save locally, and get out of the way.
+SNAPVERE 0.1.14 is built for people who want screenshot tools that stay focused on the job: capture the right pixels, annotate quickly, copy or save locally, and get out of the way.
 
 | | What you get |
 | --- | --- |
@@ -36,7 +36,7 @@ SNAPVERE 0.1.13 is built for people who want screenshot tools that stay focused 
 | 📦 **Portable or installed** | Universal Windows Setup and Portable packages carry x86, x64 and ARM64 application payloads. |
 | 🌐 **Browser coverage** | Chrome, Edge, Opera and Firefox share the same locked SNAPVERE brand and bounded capture behavior. |
 
-SNAPVERE 0.1.13 keeps the responsive high-DPI Windows/browser surface and hardens local screen recording control: Start and Stop are explicit in Tray and Settings, active recording has a visible elapsed-time Stop controller, and repeated or stale Stop requests are lifecycle-safe. Region and Screen Capture now follow the display under the pointer, while recording remains primary-display H.264 MP4 and video-only; microphone and system audio are not claimed as supported.
+SNAPVERE 0.1.14 keeps the responsive high-DPI Windows/browser surface and hardens local screen recording control: Start and Stop are explicit in Tray and Settings, active recording has a visible elapsed-time Stop controller, and repeated or stale Stop requests are lifecycle-safe. Region and Screen Capture now follow the display under the pointer, while recording remains primary-display H.264 MP4 and video-only; microphone and system audio are not claimed as supported.
 
 The browser runtime now separates extension-page capture commands from tab-owned capture-session callbacks. Injected tab scripts and foreign extension identities cannot initiate top-level SNAPVERE capture commands; region callbacks retain token/tab/window ownership checks, and background responses expose bounded error keys rather than raw internal exception messages. The existing v0.1.5 concurrency, memory, responsive UI and shortcut hardening remains in place.
 
@@ -72,7 +72,7 @@ The Chrome, Edge, Opera and Firefox variants provide:
 - English and Croatian UI;
 - fixed SNAPVERE product name, wordmark and saved-file prefix.
 
-The permission contract is exactly `activeTab`, `scripting`, `downloads`, `downloads.open` and `storage`, without broad host access. `downloads.open` is used only after the user explicitly chooses **Open** for a completed SNAPVERE item in Recent captures. Full-page capture decodes and draws tiles into one bounded destination canvas and releases tile resources immediately instead of retaining an unbounded image set.
+The permission contract is exactly `activeTab`, `scripting`, `downloads`, `downloads.open` and `storage`, without broad host access. `downloads.open` is used only after the user explicitly chooses **Open** for a completed SNAPVERE item in Recent captures, and the selected download record is revalidated by ID immediately before the open call so a moved or deleted file is rejected and refreshed instead of silently doing nothing. Full-page capture decodes and draws tiles into one bounded destination canvas and releases tile resources immediately instead of retaining an unbounded image set.
 
 Browser ZIP packages are release packages for manual installation. External store approval is not claimed unless an actual store listing exists.
 
@@ -93,8 +93,8 @@ These are **real rendered Windows surfaces captured by SNAPVERE's visual-QA pipe
 
 ## Downloads
 
-Current release: **SNAPVERE 0.1.13**<br>
-Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.13
+Current release: **SNAPVERE 0.1.14**<br>
+Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.14
 
 | Platform | Package |
 | --- | --- |
