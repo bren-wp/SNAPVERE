@@ -72,7 +72,7 @@ The Chrome, Edge, Opera and Firefox variants provide:
 - English and Croatian UI;
 - fixed SNAPVERE product name, wordmark and saved-file prefix.
 
-The permission contract is exactly `activeTab`, `scripting`, `downloads`, `downloads.open` and `storage`, without broad host access. `downloads.open` is used only after the user explicitly chooses **Open** for a completed SNAPVERE item in Recent captures. Full-page capture decodes and draws tiles into one bounded destination canvas and releases tile resources immediately instead of retaining an unbounded image set.
+The permission contract is exactly `activeTab`, `scripting`, `downloads`, `downloads.open` and `storage`, without broad host access. `downloads.open` is used only after the user explicitly chooses **Open** for a completed SNAPVERE item in Recent captures, and the selected download record is revalidated by ID immediately before the open call so a moved or deleted file is rejected and refreshed instead of silently doing nothing. Full-page capture decodes and draws tiles into one bounded destination canvas and releases tile resources immediately instead of retaining an unbounded image set.
 
 Browser ZIP packages are release packages for manual installation. External store approval is not claimed unless an actual store listing exists.
 
