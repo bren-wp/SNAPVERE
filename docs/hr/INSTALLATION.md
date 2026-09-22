@@ -8,7 +8,8 @@ Preuzmi `SNAPVERE-Setup.exe` iz aktualnog izdanja i pokreni ga normalno. Univers
 
 Interaktivni installer:
 
-- traži da ugrađena komercijalna licenca bude čitljiva prije prihvaćanja,
+- prikazuje ugrađenu komercijalnu licencu kao 1. korak i traži prihvat prije nastavka,
+- prikazuje lokaciju instalacije, prečace i Windows startup opciju odvojeno kao 2. korak,
 - zadano instalira po korisniku u `%LOCALAPPDATA%\Programs\SNAPVERE`,
 - omogućuje odabir druge mape bez slučajnog `SNAPVERE\SNAPVERE` dupliranja,
 - izdvaja payload u staging prije objave,
@@ -51,4 +52,4 @@ Aktualno izdanje sadrži:
 
 ZIP paketi služe za ručnu instalaciju. Objavu u službenim trgovinama ne treba smatrati završenom dok stvarni vanjski listing nije objavljen.
 
-Aktualno izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.6
+Aktualno izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.14
