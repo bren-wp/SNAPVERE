@@ -239,6 +239,11 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
 
         internal void Start()
         {
+            // Serialize native startup with Stop/Dispose so exactly one side owns
+            // the transition. If Stop wins first, no native capture resources are
+            // created and the Windows capture indicator never starts. If Start
+            // wins first, RequestStop waits for startup to finish and then owns
+            // the normal teardown path.
             lock (_gate)
             {
                 ObjectDisposedException.ThrowIf(_disposed, this);
@@ -252,24 +257,24 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
                     throw new InvalidOperationException(
                         "The recording media source must be attached before capture starts.");
                 }
+
+                _framePool = Direct3D11CaptureFramePool.CreateFreeThreaded(
+                    _device,
+                    DirectXPixelFormat.B8G8R8A8UIntNormalized,
+                    numberOfBuffers: 2,
+                    _item.Size);
+                _framePool.FrameArrived += FramePool_FrameArrived;
+
+                _session = _framePool.CreateCaptureSession(_item);
+                if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041))
+                {
+                    throw new PlatformNotSupportedException(
+                        "Screen recording cursor capture requires Windows 10 version 2004 (build 19041) or later.");
+                }
+
+                _session.IsCursorCaptureEnabled = _includeCursor;
+                _session.StartCapture();
             }
-
-            _framePool = Direct3D11CaptureFramePool.CreateFreeThreaded(
-                _device,
-                DirectXPixelFormat.B8G8R8A8UIntNormalized,
-                numberOfBuffers: 2,
-                _item.Size);
-            _framePool.FrameArrived += FramePool_FrameArrived;
-
-            _session = _framePool.CreateCaptureSession(_item);
-            if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 19041))
-            {
-                throw new PlatformNotSupportedException(
-                    "Screen recording cursor capture requires Windows 10 version 2004 (build 19041) or later.");
-            }
-
-            _session.IsCursorCaptureEnabled = _includeCursor;
-            _session.StartCapture();
         }
 
         internal void RequestStop()
