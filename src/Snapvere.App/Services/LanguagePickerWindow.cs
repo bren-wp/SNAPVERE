@@ -84,6 +84,25 @@ public sealed class LanguagePickerWindow : Window
         window.Activate();
     }
 
+    public static void CloseStandalone()
+    {
+        var window = _standaloneWindow;
+        _standaloneWindow = null;
+        if (window is null)
+        {
+            return;
+        }
+
+        try
+        {
+            window.Close();
+        }
+        catch (InvalidOperationException)
+        {
+            // Window chrome may already be closing the singleton.
+        }
+    }
+
     private string L(string key) => SnapvereLocalization.T(key, _preferences.Current.LanguageCode);
 
     private string LanguageSaveFailureText()
