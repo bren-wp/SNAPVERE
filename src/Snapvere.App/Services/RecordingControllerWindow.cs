@@ -34,7 +34,11 @@ public sealed class RecordingControllerWindow : Window
             languageCode ?? SnapvereLanguageState.CurrentLanguageCode);
 
         Title = $"SNAPVERE — {L("ScreenRecordingActive")}";
-        (_statusText, _elapsedText, _stopButton, Content) = BuildContent();
+        var content = BuildContent();
+        _statusText = content.Status;
+        _elapsedText = content.Elapsed;
+        _stopButton = content.Stop;
+        Content = content.Root;
 
         _timer = new DispatcherTimer
         {
