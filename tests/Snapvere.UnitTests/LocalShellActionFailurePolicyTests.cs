@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Security;
 using Snapvere.Shared;
 
@@ -34,5 +35,39 @@ public sealed class LocalShellActionFailurePolicyTests
     {
         Assert.Throws<ArgumentNullException>(
             () => LocalShellActionFailurePolicy.IsExpected(null!));
+    }
+
+    [Fact]
+    public void Open_UsesShellExecutionForRequestedTarget()
+    {
+        ProcessStartInfo? observed = null;
+
+        LocalShellAction.Open(
+            @"C:\captures\sample.png",
+            startInfo =>
+            {
+                observed = startInfo;
+                return new Process();
+            });
+
+        Assert.NotNull(observed);
+        Assert.Equal(@"C:\captures\sample.png", observed.FileName);
+        Assert.True(observed.UseShellExecute);
+    }
+
+    [Fact]
+    public void Open_RejectsMissingShellHandler()
+    {
+        Assert.Throws<InvalidOperationException>(
+            () => LocalShellAction.Open(
+                @"C:\captures\sample.png",
+                _ => null));
+    }
+
+    [Fact]
+    public void Open_RejectsBlankTarget()
+    {
+        Assert.Throws<ArgumentException>(
+            () => LocalShellAction.Open(" "));
     }
 }

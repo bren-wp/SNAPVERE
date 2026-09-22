@@ -5,7 +5,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Snapvere.Application.Capture;
 using Snapvere.Shared;
-using System.Diagnostics;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
 
 namespace Snapvere.App.Services;
@@ -525,7 +525,7 @@ public sealed class OptionsWindow : Window
 
             foreach (var capture in captures)
             {
-                _recentItems.Children.Add(CreateRecentCaptureButton(capture));
+                _recentItems.Children.Add(CreateRecentCaptureRow(capture));
             }
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
@@ -578,8 +578,14 @@ public sealed class OptionsWindow : Window
         };
     }
 
-    private Button CreateRecentCaptureButton(CaptureHistoryItem capture)
+    private FrameworkElement CreateRecentCaptureRow(CaptureHistoryItem capture)
     {
+        var row = new Grid();
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        row.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
         var content = new Grid();
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(48) });
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -626,7 +632,7 @@ public sealed class OptionsWindow : Window
         Grid.SetColumn(arrow, 2);
         content.Children.Add(arrow);
 
-        var button = new Button
+        var openButton = new Button
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
@@ -637,9 +643,34 @@ public sealed class OptionsWindow : Window
             BorderThickness = new Thickness(1),
             Content = content
         };
-        AutomationProperties.SetName(button, LF("OpenCaptureNamed", capture.FileName));
-        button.Click += (_, _) => OpenCapture(capture);
-        return button;
+        AutomationProperties.SetName(openButton, LF("OpenCaptureNamed", capture.FileName));
+        openButton.Click += (_, _) => OpenCapture(capture);
+        row.Children.Add(openButton);
+
+        var copyPath = CreateSecondaryAction(
+            L("CopyPath"),
+            "\uE8C8",
+            () => CopyCapturePath(capture));
+        copyPath.Margin = new Thickness(8, 0, 0, 0);
+        copyPath.VerticalAlignment = VerticalAlignment.Stretch;
+        Grid.SetColumn(copyPath, 1);
+        row.Children.Add(copyPath);
+
+        row.SizeChanged += (_, args) =>
+        {
+            var compact = args.NewSize.Width < 520;
+            Grid.SetRow(copyPath, compact ? 1 : 0);
+            Grid.SetColumn(copyPath, compact ? 0 : 1);
+            Grid.SetColumnSpan(copyPath, compact ? 2 : 1);
+            copyPath.HorizontalAlignment = compact
+                ? HorizontalAlignment.Left
+                : HorizontalAlignment.Stretch;
+            copyPath.Margin = compact
+                ? new Thickness(0, 7, 0, 0)
+                : new Thickness(8, 0, 0, 0);
+        };
+
+        return row;
     }
 
     private void OpenCapture(CaptureHistoryItem capture)
@@ -652,16 +683,40 @@ public sealed class OptionsWindow : Window
                 SetStatus(L("CaptureUnavailable"), Warning);
                 return;
             }
-            _ = Process.Start(new ProcessStartInfo(capture.FilePath) { UseShellExecute = true });
+            LocalShellAction.Open(capture.FilePath);
         }
         catch (Exception exception) when (LocalShellActionFailurePolicy.IsExpected(exception))
         {
             StartupDiagnostics.Record("Open recent capture", exception);
-            SetStatus(
-                UserText(
-                    "Windows could not open this capture. Check the file and try again.",
-                    "Windows ne može otvoriti ovu snimku. Provjerite datoteku i pokušajte ponovno."),
-                Error);
+            SetStatus(L("OpenCaptureFailed"), Error);
+        }
+    }
+
+    private void CopyCapturePath(CaptureHistoryItem capture)
+    {
+        if (!File.Exists(capture.FilePath))
+        {
+            RefreshRecentCaptures();
+            SetStatus(L("CaptureUnavailable"), Warning);
+            return;
+        }
+
+        try
+        {
+            var package = new DataPackage();
+            package.SetText(capture.FilePath);
+            Clipboard.SetContent(package);
+            Clipboard.Flush();
+            SetStatus(L("CapturePathCopied"), Success);
+        }
+        catch (Exception exception) when (
+            exception is System.Runtime.InteropServices.COMException or
+            InvalidOperationException or
+            UnauthorizedAccessException or
+            System.Security.SecurityException)
+        {
+            StartupDiagnostics.Record("Copy recent capture path", exception);
+            SetStatus(L("CapturePathCopyFailed"), Error);
         }
     }
 
@@ -671,16 +726,12 @@ public sealed class OptionsWindow : Window
         {
             var directory = _history.GetCaptureDirectory();
             Directory.CreateDirectory(directory);
-            _ = Process.Start(new ProcessStartInfo(directory) { UseShellExecute = true });
+            LocalShellAction.Open(directory);
         }
         catch (Exception exception) when (LocalShellActionFailurePolicy.IsExpected(exception))
         {
             StartupDiagnostics.Record("Open capture folder", exception);
-            SetStatus(
-                UserText(
-                    "Windows could not open the capture folder. Check folder permissions and try again.",
-                    "Windows ne može otvoriti mapu snimki. Provjerite dozvole mape i pokušajte ponovno."),
-                Error);
+            SetStatus(L("OpenCaptureFolderFailed"), Error);
         }
     }
 
