@@ -792,6 +792,7 @@ public partial class App : Microsoft.UI.Xaml.Application
     private void OnScreenRecordingStateChanged(bool active)
     {
         _trayIconService?.SetScreenRecordingState(active);
+        _optionsWindow?.SetScreenRecordingState(active);
         if (active)
         {
             ShowRecordingController();
@@ -948,6 +949,7 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         if (_optionsWindow is not null)
         {
+            _optionsWindow.SetScreenRecordingState(_window?.IsScreenRecordingActive ?? false);
             _optionsWindow.ShowSection(section);
             _optionsWindow.Activate();
             return;
@@ -955,6 +957,13 @@ public partial class App : Microsoft.UI.Xaml.Application
 
         var options = _services.GetRequiredService<OptionsWindow>();
         _optionsWindow = options;
+        if (_window is not null)
+        {
+            options.ConfigureScreenRecording(
+                _window.StartScreenRecording,
+                _window.StopScreenRecording,
+                _window.IsScreenRecordingActive);
+        }
         options.ShowSection(section);
         options.Closed += (_, _) =>
         {
