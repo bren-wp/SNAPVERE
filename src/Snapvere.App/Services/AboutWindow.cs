@@ -1,3 +1,4 @@
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Automation.Peers;
@@ -18,21 +19,66 @@ public sealed class AboutWindow : Window
     private const string TermsUrl = "https://snapvere.com/terms";
     private const string DeveloperWebsiteUrl = "https://brendigo.com";
 
-    private readonly string _languageCode;
-    private readonly TextBlock _supportStatus;
+    private readonly DispatcherQueue _dispatcherQueue;
+    private string _languageCode;
+    private TextBlock _supportStatus;
     private bool _sizeApplied;
 
     public AboutWindow()
     {
-        _languageCode = SnapvereLanguageState.CurrentLanguageCode;
-        _supportStatus = Text(string.Empty, 9.5, Success);
-        _supportStatus.TextWrapping = TextWrapping.Wrap;
-        _supportStatus.Visibility = Visibility.Collapsed;
-        AutomationProperties.SetLiveSetting(_supportStatus, AutomationLiveSetting.Assertive);
+        _dispatcherQueue = DispatcherQueue.GetForCurrentThread()
+            ?? throw new InvalidOperationException("SNAPVERE could not acquire the About window dispatcher.");
+        _languageCode = SnapvereLocalization.NormalizeLanguageCode(
+            SnapvereLanguageState.CurrentLanguageCode);
+        _supportStatus = CreateSupportStatus();
 
         Title = SnapvereLocalization.T("About", _languageCode);
         Content = BuildContent();
+        SnapvereLanguageState.CurrentLanguageChanged += OnCurrentLanguageChanged;
         Activated += AboutWindow_Activated;
+        Closed += AboutWindow_Closed;
+    }
+
+    private TextBlock CreateSupportStatus()
+    {
+        var status = Text(string.Empty, 9.5, Success);
+        status.TextWrapping = TextWrapping.Wrap;
+        status.Visibility = Visibility.Collapsed;
+        AutomationProperties.SetLiveSetting(status, AutomationLiveSetting.Assertive);
+        return status;
+    }
+
+    private void OnCurrentLanguageChanged(object? sender, EventArgs e)
+    {
+        if (_dispatcherQueue.HasThreadAccess)
+        {
+            RefreshLanguage();
+            return;
+        }
+
+        _ = _dispatcherQueue.TryEnqueue(RefreshLanguage);
+    }
+
+    private void RefreshLanguage()
+    {
+        var languageCode = SnapvereLocalization.NormalizeLanguageCode(
+            SnapvereLanguageState.CurrentLanguageCode);
+        if (string.Equals(_languageCode, languageCode, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _languageCode = languageCode;
+        _supportStatus = CreateSupportStatus();
+        Title = SnapvereLocalization.T("About", _languageCode);
+        Content = BuildContent();
+    }
+
+    private void AboutWindow_Closed(object sender, WindowEventArgs args)
+    {
+        SnapvereLanguageState.CurrentLanguageChanged -= OnCurrentLanguageChanged;
+        Activated -= AboutWindow_Activated;
+        Closed -= AboutWindow_Closed;
     }
 
     private string L(string key) => SnapvereLocalization.T(key, _languageCode);
