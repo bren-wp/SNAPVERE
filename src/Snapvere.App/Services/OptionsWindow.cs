@@ -444,7 +444,10 @@ public sealed class OptionsWindow : Window
             SetStatus(requestedState ? L("StartupEnabled") : L("StartupDisabled"), Success);
         }
         catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+            exception is IOException or
+            UnauthorizedAccessException or
+            System.Security.SecurityException or
+            InvalidOperationException)
         {
             _updatingControls = true;
             try

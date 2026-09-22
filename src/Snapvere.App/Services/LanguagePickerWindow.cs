@@ -24,6 +24,10 @@ public sealed class LanguagePickerWindow : Window
     private readonly CapturePreferencesService _preferences;
     private readonly ComboBox _languageCombo;
     private readonly TextBlock _status;
+    private TextBlock? _titleText;
+    private TextBlock? _introText;
+    private TextBlock? _languageEyebrow;
+    private Button? _closeButton;
     private bool _sizeApplied;
     private bool _initializing = true;
 
@@ -80,6 +84,25 @@ public sealed class LanguagePickerWindow : Window
         window.Activate();
     }
 
+    public static void CloseStandalone()
+    {
+        var window = _standaloneWindow;
+        _standaloneWindow = null;
+        if (window is null)
+        {
+            return;
+        }
+
+        try
+        {
+            window.Close();
+        }
+        catch (InvalidOperationException)
+        {
+            // Window chrome may already be closing the singleton.
+        }
+    }
+
     private string L(string key) => SnapvereLocalization.T(key, _preferences.Current.LanguageCode);
 
     private string LanguageSaveFailureText()
@@ -115,16 +138,17 @@ public sealed class LanguagePickerWindow : Window
             VerticalAlignment = VerticalAlignment.Center
         };
         identity.Children.Add(Text("SNAPVERE", 12, Accent, Microsoft.UI.Text.FontWeights.Bold));
-        identity.Children.Add(Text(L("ChooseLanguage"), 26, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        _titleText = Text(L("ChooseLanguage"), 26, Strong, Microsoft.UI.Text.FontWeights.SemiBold);
+        identity.Children.Add(_titleText);
         Grid.SetColumn(identity, 1);
         header.Children.Add(identity);
         root.Children.Add(header);
 
-        var intro = Text(L("LanguagePickerIntro"), 11, Muted);
-        intro.TextWrapping = TextWrapping.Wrap;
-        intro.Margin = new Thickness(0, 22, 0, 12);
-        Grid.SetRow(intro, 1);
-        root.Children.Add(intro);
+        _introText = Text(L("LanguagePickerIntro"), 11, Muted);
+        _introText.TextWrapping = TextWrapping.Wrap;
+        _introText.Margin = new Thickness(0, 22, 0, 12);
+        Grid.SetRow(_introText, 1);
+        root.Children.Add(_introText);
 
         var card = new Border
         {
@@ -135,7 +159,8 @@ public sealed class LanguagePickerWindow : Window
             BorderThickness = new Thickness(1)
         };
         var stack = new StackPanel { Spacing = 12 };
-        stack.Children.Add(Text(L("Language").ToUpperInvariant(), 9, Accent, Microsoft.UI.Text.FontWeights.Bold));
+        _languageEyebrow = Text(L("Language").ToUpperInvariant(), 9, Accent, Microsoft.UI.Text.FontWeights.Bold);
+        stack.Children.Add(_languageEyebrow);
         stack.Children.Add(_languageCombo);
         stack.Children.Add(_status);
         card.Child = new ScrollViewer
@@ -150,7 +175,7 @@ public sealed class LanguagePickerWindow : Window
         Grid.SetRow(card, 2);
         root.Children.Add(card);
 
-        var close = new Button
+        _closeButton = new Button
         {
             Content = L("Close"),
             HorizontalAlignment = HorizontalAlignment.Right,
@@ -162,10 +187,10 @@ public sealed class LanguagePickerWindow : Window
             BorderThickness = new Thickness(1),
             Foreground = Strong
         };
-        AutomationProperties.SetName(close, L("Close"));
-        close.Click += (_, _) => Close();
-        Grid.SetRow(close, 3);
-        root.Children.Add(close);
+        AutomationProperties.SetName(_closeButton, L("Close"));
+        _closeButton.Click += (_, _) => Close();
+        Grid.SetRow(_closeButton, 3);
+        root.Children.Add(_closeButton);
         return root;
     }
 
@@ -193,6 +218,7 @@ public sealed class LanguagePickerWindow : Window
         try
         {
             _preferences.SetLanguageCode(code);
+            RefreshLocalizedText();
             _status.Text = L("LanguageSaved");
             _status.Foreground = Success;
         }
@@ -216,6 +242,33 @@ public sealed class LanguagePickerWindow : Window
 
             _status.Text = LanguageSaveFailureText();
             _status.Foreground = Error;
+        }
+    }
+
+    private void RefreshLocalizedText()
+    {
+        Title = $"SNAPVERE — {L("Language")}";
+        AutomationProperties.SetName(_languageCombo, L("ChooseLanguage"));
+
+        if (_titleText is not null)
+        {
+            _titleText.Text = L("ChooseLanguage");
+        }
+
+        if (_introText is not null)
+        {
+            _introText.Text = L("LanguagePickerIntro");
+        }
+
+        if (_languageEyebrow is not null)
+        {
+            _languageEyebrow.Text = L("Language").ToUpperInvariant();
+        }
+
+        if (_closeButton is not null)
+        {
+            _closeButton.Content = L("Close");
+            AutomationProperties.SetName(_closeButton, L("Close"));
         }
     }
 

@@ -36,7 +36,7 @@ public partial class App : Microsoft.UI.Xaml.Application
     private WindowTargetOverlayWindow? _windowProbeWindow;
     private TrayMenuWindow? _trayMenuWindow;
     private OptionsWindow? _optionsWindow;
-    private LanguagePickerWindow? _languageWindow;
+    private LanguagePickerWindow? _probeLanguageWindow;
     private AboutWindow? _aboutWindow;
     private IGlobalHotkeyService? _hotkeyService;
     private ITrayIconService? _trayIconService;
@@ -423,7 +423,7 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         var preferences = _services.GetRequiredService<CapturePreferencesService>();
         var language = new LanguagePickerWindow(preferences);
-        _languageWindow = language;
+        _probeLanguageWindow = language;
         if (language.Content is not FrameworkElement root)
         {
             throw new InvalidOperationException("Language probe could not resolve its root FrameworkElement.");
@@ -450,8 +450,8 @@ public partial class App : Microsoft.UI.Xaml.Application
                 "SECONDARY_LANGUAGE_READY",
                 "secondary-language.captured",
                 "Language");
-            _languageWindow?.Close();
-            _languageWindow = null;
+            _probeLanguageWindow?.Close();
+            _probeLanguageWindow = null;
             StartupDiagnostics.WriteLine("Secondary UI probe captured Language window.");
             StartAboutSurfaceProbe();
         }
@@ -860,7 +860,8 @@ public partial class App : Microsoft.UI.Xaml.Application
                 }
 
                 _optionsWindow?.Close();
-                _languageWindow?.Close();
+                LanguagePickerWindow.CloseStandalone();
+                _probeLanguageWindow?.Close();
                 _aboutWindow?.Close();
                 window.Close();
                 break;
@@ -919,23 +920,8 @@ public partial class App : Microsoft.UI.Xaml.Application
 
     private void ShowLanguage()
     {
-        if (_languageWindow is not null)
-        {
-            _languageWindow.Activate();
-            return;
-        }
-
         var preferences = _services.GetRequiredService<CapturePreferencesService>();
-        var language = new LanguagePickerWindow(preferences);
-        _languageWindow = language;
-        language.Closed += (_, _) =>
-        {
-            if (ReferenceEquals(_languageWindow, language))
-            {
-                _languageWindow = null;
-            }
-        };
-        language.Activate();
+        LanguagePickerWindow.ShowStandalone(preferences);
     }
 
     private void ShowAbout()
@@ -978,8 +964,9 @@ public partial class App : Microsoft.UI.Xaml.Application
         CloseTrayMenu();
         _optionsWindow?.Close();
         _optionsWindow = null;
-        _languageWindow?.Close();
-        _languageWindow = null;
+        LanguagePickerWindow.CloseStandalone();
+        _probeLanguageWindow?.Close();
+        _probeLanguageWindow = null;
         _aboutWindow?.Close();
         _aboutWindow = null;
 

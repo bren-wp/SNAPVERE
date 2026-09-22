@@ -4,11 +4,12 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
-### Window picker failure fidelity
+### Settings and language UX hardening
 
-- Stop treating a Window Capture overlay-render failure as an ordinary user cancellation.
-- Propagate render failures through the picker completion task so all monitor overlays still close in the existing `finally` path and the capture coordinator surfaces the existing localized Window Capture failure feedback.
-- Preserve genuine Escape/window-close cancellation as a null selection rather than conflating it with technical failures.
+- Apply a newly selected language immediately to the open Language window title, explanatory copy, button text and accessibility names instead of leaving a mixed-language surface until reopen.
+- Route production Language actions from Tray and Settings through one singleton window so repeated entry points cannot create duplicate language surfaces, while keeping the dedicated CI probe instance isolated.
+- Contain the explicit `InvalidOperationException` failure path from Windows startup registration inside the Settings toggle handler so a registry failure cannot escape the UI event.
+- Refresh the EN/HR language-saved copy to match the immediate in-window update behavior.
 
 ### Recording callback teardown hardening
 
