@@ -4,6 +4,16 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.13] - 2026-09-22
+
+### Screen recording control and lifecycle
+
+- Replace the tray recording toggle command with explicit Start and Stop commands so a stale Stop click can never start a new recording after the previous session finishes.
+- Add a thread-safe screen-recording session gate with idempotent cancellation, stale-session protection and concurrent Stop regression coverage.
+- Add a visible always-on-top recording controller with recording status, elapsed time and a dedicated Stop action; closing the controller also requests a safe Stop.
+- Add a synchronized Screen recording Start/Stop action to the main Settings surface so recording is not controllable only from the tray menu.
+- Keep completed MP4 publication behind the existing recording finalization path and retain capture activity ownership until encoding/cleanup completes.
+
 ### Recent-capture action polish
 
 - Centralize Windows shell-open actions so a missing file/folder/URI handler is treated as a visible failure instead of a silent successful click.
