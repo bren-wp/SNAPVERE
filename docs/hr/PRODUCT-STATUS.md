@@ -10,7 +10,7 @@ SNAPVERE 0.1.14 zadržava local-first snimanje primarnog Windows zaslona preko W
 
 ## Browseri
 
-Chrome, Edge, Opera i Firefox održavaju visible-area, selected-region i bounded full-page capture. SNAPVERE brand je zaključan. Validirani permission contract je `activeTab`, `scripting`, `downloads`, `downloads.open` i `storage`; `downloads.open` koristi se samo za izričitu Recent > Otvori radnju. Široki host pristup nije dio održavanog dizajna. SNAPVERE 0.1.14 dodatno provjerava sender i active-tab ownership prije privilegiranih capture/download radnji. SNAPVERE 0.1.14 dodatno učvršćuje capture-lock ownership, async redoslijed Recent rezultata, zaštitu od dvostrukih akcija, kompatibilnost browser API poziva i responsive/reduced-motion ponašanje te premješta macOS Full Page prečac sa sistemski rezervirane kombinacije Command+Shift+3.
+Chrome, Edge, Opera i Firefox održavaju visible-area, selected-region i bounded full-page capture. SNAPVERE brand je zaključan. Validirani permission contract je `activeTab`, `scripting`, `downloads`, `downloads.open` i `storage`; `downloads.open` koristi se samo za izričitu Recent > Otvori radnju, nakon što click-time revalidacija potvrdi da odabrani download i dalje postoji, dovršen je i još odgovara SNAPVERE capture ugovoru. Široki host pristup nije dio održavanog dizajna. SNAPVERE 0.1.14 dodatno provjerava sender i active-tab ownership prije privilegiranih capture/download radnji. SNAPVERE 0.1.14 dodatno učvršćuje capture-lock ownership, async redoslijed Recent rezultata, zaštitu od dvostrukih akcija, kompatibilnost browser API poziva i responsive/reduced-motion ponašanje te premješta macOS Full Page prečac sa sistemski rezervirane kombinacije Command+Shift+3.
 
 ## Paketi
 
