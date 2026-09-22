@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.13**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.13
+- Current public release: **v0.1.14**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.14
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,28 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No unreleased changes are documented after v0.1.13 yet.
+No unreleased changes are documented after v0.1.14 yet.
+
+---
+
+## v0.1.14 — 2026-09-23
+
+SNAPVERE 0.1.14 hardens browser Recent Captures against files that are moved or deleted after the list is rendered, while preserving the existing Windows/browser six-asset release contract and browser permission boundary.
+
+### Browser Recent capture open integrity
+
+- **Recent > Open** now re-queries the browser download record by ID immediately before opening it.
+- The record must still be complete, still exist and still match a SNAPVERE visible/region/full-page PNG before `downloads.open` is called.
+- If the file became stale between render and click, SNAPVERE does not call Open, refreshes the Recent list so the stale row can disappear, and shows the existing localized `openCaptureFailed` feedback.
+- Duplicate Open activation remains suppressed while revalidation/open work is pending.
+- Chrome, Edge, Opera and Firefox keep exact Options source parity and no additional browser permission is introduced.
+- Runtime regression coverage now proves both the valid-open path and the render-to-click stale-file race.
+
+### Validation contract
+
+- Product Contract CI, Browser Extensions CI, CodeQL Advanced and Windows CI must pass before merge.
+- x64 tests, x86/ARM64 builds, rendered Windows UI QA, universal Setup/Portable package validation, package-size budgets and real x64/x86 lifecycle checks remain required.
+- The release publishes exactly six public assets: Setup, Portable and Chrome/Edge/Opera/Firefox ZIPs, with SHA-256 verification after publication.
 
 ---
 
