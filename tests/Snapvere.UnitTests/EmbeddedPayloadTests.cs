@@ -141,6 +141,33 @@ public sealed class EmbeddedPayloadTests
     }
 
     [Fact]
+    public void IsExtractedPayloadIntact_RejectsReparsePointCacheRoot()
+    {
+        var cacheRoot = Path.Combine(Path.GetTempPath(), $"snapvere-cache-link-{Guid.NewGuid():N}");
+        var outsideDirectory = Path.Combine(Path.GetTempPath(), $"snapvere-cache-target-{Guid.NewGuid():N}");
+
+        try
+        {
+            Directory.CreateDirectory(outsideDirectory);
+            File.WriteAllText(Path.Combine(outsideDirectory, "Snapvere.exe"), "binary");
+            Directory.CreateDirectory(Path.Combine(outsideDirectory, "data"));
+            File.WriteAllText(Path.Combine(outsideDirectory, "data", "readme.txt"), "hello");
+            CreateDirectoryReparsePoint(cacheRoot, outsideDirectory);
+
+            using var manifest = BuildIntegrityManifest(
+                ("Snapvere.exe", "binary"),
+                ("data/readme.txt", "hello"));
+
+            Assert.False(EmbeddedPayload.IsExtractedPayloadIntact(manifest, cacheRoot));
+        }
+        finally
+        {
+            DeleteDirectoryLinkBestEffort(cacheRoot);
+            EmbeddedPayload.DeleteDirectoryBestEffort(outsideDirectory);
+        }
+    }
+
+    [Fact]
     public void IsExtractedPayloadIntact_RejectsTamperedCachedFileWithSameLength()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"snapvere-payload-{Guid.NewGuid():N}");
