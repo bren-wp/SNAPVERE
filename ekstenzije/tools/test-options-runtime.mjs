@@ -146,11 +146,45 @@ assert.equal(
 const openButton = elements["recent-list"].children[0].children[1];
 openButton.dispatch("click");
 openButton.dispatch("click");
-assert.equal(openCalls, 1, "Open must suppress duplicate activation while the browser request is pending");
+assert.equal(
+  searchCallbacks.length,
+  3,
+  "Open must perform exactly one click-time download revalidation while the button is busy"
+);
+assert.equal(openCalls, 0, "Open must not run before click-time revalidation succeeds");
 assert.equal(openButton.disabled, true);
+
+searchCallbacks[2]([makeItem(2, "SNAPVERE-visible-new.png")]);
+await flush();
+assert.equal(openCalls, 1, "a still-valid capture should open after revalidation");
 openCallbacks.shift()();
 await flush();
 assert.equal(openButton.disabled, false);
+
+elements["refresh-recent"].dispatch("click");
+assert.equal(searchCallbacks.length, 4, "Refresh should request a new Recent snapshot");
+searchCallbacks[3]([makeItem(3, "SNAPVERE-region-stale.png")]);
+await flush();
+
+const staleOpenButton = elements["recent-list"].children[0].children[1];
+staleOpenButton.dispatch("click");
+assert.equal(searchCallbacks.length, 5, "stale Open should revalidate the selected download");
+searchCallbacks[4]([]);
+await flush();
+assert.equal(openCalls, 1, "a missing capture must not reach downloads.open");
+assert.equal(
+  searchCallbacks.length,
+  6,
+  "a stale capture should trigger a fresh Recent load so the stale row can disappear"
+);
+searchCallbacks[5]([]);
+await flush();
+await flush();
+assert.equal(elements["recent-list"].children.length, 1);
+assert.equal(elements["recent-list"].children[0].textContent, "noRecentCaptures");
+assert.equal(elements["recent-status"].textContent, "openCaptureFailed");
+assert.equal(elements["recent-status"].className, "status error");
+assert.equal(staleOpenButton.disabled, false);
 
 elements["open-downloads-folder"].dispatch("click");
 elements["open-downloads-folder"].dispatch("click");
