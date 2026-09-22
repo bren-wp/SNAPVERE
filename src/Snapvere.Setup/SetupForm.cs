@@ -650,12 +650,16 @@ internal sealed class SetupForm : Form
         {
             _licenseBox.Text = InstallerEngine.ReadLicenseText();
         }
-        catch (Exception)
+        catch (Exception exception) when (
+            exception is IOException or
+            InvalidOperationException)
         {
             _licenseBox.Text =
-                "License terms could not be loaded. Close Setup and download a fresh SNAPVERE Setup package from snapvere.com.";
+                "License terms could not be loaded. Close Setup and use a fresh SNAPVERE Setup package.";
+            _acceptLicense.Checked = false;
             _acceptLicense.Enabled = false;
             _statusLabel.Text = "Setup cannot continue until the license terms are available.";
+            UpdatePrimaryButtonState();
         }
     }
 
