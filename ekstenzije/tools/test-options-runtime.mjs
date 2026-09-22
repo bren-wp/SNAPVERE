@@ -68,6 +68,7 @@ elements["settings-tab"].dataset.panel = "settings-panel";
 elements["recent-tab"].dataset.panel = "recent-panel";
 elements["settings-form"].submitButton = new FakeElement("save-settings");
 
+const storageGetCallbacks = [];
 const searchCallbacks = [];
 const openCallbacks = [];
 const timers = [];
@@ -82,7 +83,7 @@ const chrome = {
   },
   storage: {
     local: {
-      get: (_key, callback) => callback({}),
+      get: (_key, callback) => { storageGetCallbacks.push(callback); },
       set: (_value, callback) => callback()
     }
   },
@@ -124,6 +125,16 @@ const source = fs.readFileSync("ekstenzije/chrome/options.js", "utf8");
 vm.runInContext(source, context, { filename: "options.js" });
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
+
+assert.equal(storageGetCallbacks.length, 1, "settings initialization should request local storage once");
+assert.equal(elements["save-as"].disabled, true, "settings input must stay disabled until storage load completes");
+assert.equal(elements["settings-form"].submitButton.disabled, true, "Save must stay disabled until storage load completes");
+
+storageGetCallbacks.shift()({ snapvereSettings: { saveAs: true } });
+await flush();
+assert.equal(elements["save-as"].checked, true);
+assert.equal(elements["save-as"].disabled, false, "settings input must enable after storage load completes");
+assert.equal(elements["settings-form"].submitButton.disabled, false, "Save must enable after storage load completes");
 
 assert.equal(searchCallbacks.length, 1, "opening Recent should start one search");
 elements["settings-tab"].dispatch("click");

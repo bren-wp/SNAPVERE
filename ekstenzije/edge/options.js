@@ -10,7 +10,9 @@
   const recentList = document.getElementById("recent-list");
   const refreshRecent = document.getElementById("refresh-recent");
   const openDownloadsFolder = document.getElementById("open-downloads-folder");
+  const settingsSubmit = form.querySelector('button[type="submit"]');
   const tabs = Array.from(document.querySelectorAll("[data-panel]"));
+  let settingsReady = false;
   let recentLoadGeneration = 0;
   let activePanelId = null;
 
@@ -90,10 +92,23 @@
     node.className = `status${error ? " error" : ""}`;
   }
 
-  async function loadSettings() {
-    const values = await getLocal(SETTINGS_KEY);
-    const settings = values[SETTINGS_KEY] || {};
-    saveAsInput.checked = settings.saveAs === true;
+  function setSettingsReady(ready) {
+    settingsReady = ready;
+    saveAsInput.disabled = !ready;
+    if (settingsSubmit) settingsSubmit.disabled = !ready;
+  }
+
+  async function initializeSettings() {
+    setSettingsReady(false);
+    try {
+      const values = await getLocal(SETTINGS_KEY);
+      const settings = values[SETTINGS_KEY] || {};
+      saveAsInput.checked = settings.saveAs === true;
+    } catch {
+      setStatus(settingsStatus, t("settingsLoadFailed"), true);
+    } finally {
+      setSettingsReady(true);
+    }
   }
 
   function isSnapvereCapture(item) {
@@ -271,9 +286,8 @@
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const submit = form.querySelector('button[type="submit"]');
-    if (submit && submit.disabled) return;
-    if (submit) submit.disabled = true;
+    if (!settingsReady || (settingsSubmit && settingsSubmit.disabled)) return;
+    if (settingsSubmit) settingsSubmit.disabled = true;
     setStatus(settingsStatus, "");
     try {
       await setLocal({ [SETTINGS_KEY]: { saveAs: saveAsInput.checked === true } });
@@ -281,7 +295,7 @@
     } catch {
       setStatus(settingsStatus, t("settingsSaveFailed"), true);
     } finally {
-      if (submit) submit.disabled = false;
+      if (settingsSubmit) settingsSubmit.disabled = false;
     }
   });
 
@@ -293,6 +307,6 @@
   openDownloadsFolder.addEventListener("click", () => void openDefaultDownloadsFolder());
 
   localize();
-  loadSettings().catch(() => setStatus(settingsStatus, t("settingsLoadFailed"), true));
+  void initializeSettings();
   showPanel(location.hash === "#recent" ? "recent-panel" : "settings-panel", false);
 })();

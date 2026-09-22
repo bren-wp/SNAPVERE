@@ -4,6 +4,13 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Browser settings initialization integrity
+
+- Keep browser Options controls disabled until the local settings read has completed so a fast user edit cannot be overwritten by a late `storage.local.get` callback.
+- Re-enable the form after both successful and failed initialization, preserving the existing localized load-error recovery path.
+- Extend the browser Options runtime regression test with a delayed-storage scenario that proves controls remain unavailable until initialization is complete.
+- Keep Chrome, Edge, Opera and Firefox Options source identical through the existing parity contract.
+
 ### Settings and language UX hardening
 
 - Apply a newly selected language immediately to the open Language window title, explanatory copy, button text and accessibility names instead of leaving a mixed-language surface until reopen.
