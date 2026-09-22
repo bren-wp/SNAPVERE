@@ -906,9 +906,11 @@ public partial class App : Microsoft.UI.Xaml.Application
 
         var options = _services.GetRequiredService<OptionsWindow>();
         _optionsWindow = options;
+        options.LanguageRequested += ShowLanguage;
         options.ShowSection(section);
         options.Closed += (_, _) =>
         {
+            options.LanguageRequested -= ShowLanguage;
             if (ReferenceEquals(_optionsWindow, options))
             {
                 _optionsWindow = null;
@@ -965,7 +967,9 @@ public partial class App : Microsoft.UI.Xaml.Application
             var history = _services.GetRequiredService<CaptureHistoryService>();
             var directory = history.GetCaptureDirectory();
             Directory.CreateDirectory(directory);
-            _ = Process.Start(new ProcessStartInfo(directory) { UseShellExecute = true });
+            LocalShellActionFailurePolicy.EnsureStarted(
+                Process.Start(new ProcessStartInfo(directory) { UseShellExecute = true }) is not null,
+                "open capture folder from tray");
         }
         catch (Exception exception) when (LocalShellActionFailurePolicy.IsExpected(exception))
         {

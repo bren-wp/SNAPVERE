@@ -35,4 +35,28 @@ public sealed class LocalShellActionFailurePolicyTests
         Assert.Throws<ArgumentNullException>(
             () => LocalShellActionFailurePolicy.IsExpected(null!));
     }
+
+    [Fact]
+    public void EnsureStarted_AllowsSuccessfulShellLaunch()
+    {
+        LocalShellActionFailurePolicy.EnsureStarted(true, "test action");
+    }
+
+    [Fact]
+    public void EnsureStarted_RejectsSilentNullShellLaunch()
+    {
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => LocalShellActionFailurePolicy.EnsureStarted(false, "capture folder"));
+
+        Assert.Contains("capture folder", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void EnsureStarted_RejectsMissingOperationName(string operation)
+    {
+        Assert.Throws<ArgumentException>(
+            () => LocalShellActionFailurePolicy.EnsureStarted(true, operation));
+    }
 }

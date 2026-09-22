@@ -1,5 +1,6 @@
 using Microsoft.Win32;
 using Snapvere.Packaging;
+using Snapvere.Shared;
 using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
@@ -273,11 +274,13 @@ internal static class InstallerEngine
                 return false;
             }
 
-            _ = Process.Start(new ProcessStartInfo(executable)
-            {
-                WorkingDirectory = Path.GetDirectoryName(executable)!,
-                UseShellExecute = true
-            });
+            LocalShellActionFailurePolicy.EnsureStarted(
+                Process.Start(new ProcessStartInfo(executable)
+                {
+                    WorkingDirectory = Path.GetDirectoryName(executable)!,
+                    UseShellExecute = true
+                }) is not null,
+                "launch installed SNAPVERE");
             return true;
         }
         catch

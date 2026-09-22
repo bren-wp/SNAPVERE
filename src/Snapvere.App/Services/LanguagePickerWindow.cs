@@ -3,10 +3,12 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Snapvere.Application.Capture;
 using Snapvere.Shared;
 using Windows.Graphics;
+using Windows.System;
 
 namespace Snapvere.App.Services;
 
@@ -18,8 +20,6 @@ public sealed class LanguagePickerWindow : Window
 {
     private const int WindowWidth = 560;
     private const int WindowHeight = 520;
-
-    private static LanguagePickerWindow? _standaloneWindow;
 
     private readonly CapturePreferencesService _preferences;
     private readonly ComboBox _languageCombo;
@@ -58,28 +58,6 @@ public sealed class LanguagePickerWindow : Window
         Activated += LanguagePickerWindow_Activated;
     }
 
-    public static void ShowStandalone(CapturePreferencesService preferences)
-    {
-        ArgumentNullException.ThrowIfNull(preferences);
-
-        if (_standaloneWindow is not null)
-        {
-            _standaloneWindow.Activate();
-            return;
-        }
-
-        var window = new LanguagePickerWindow(preferences);
-        _standaloneWindow = window;
-        window.Closed += (_, _) =>
-        {
-            if (ReferenceEquals(_standaloneWindow, window))
-            {
-                _standaloneWindow = null;
-            }
-        };
-        window.Activate();
-    }
-
     private string L(string key) => SnapvereLocalization.T(key, _preferences.Current.LanguageCode);
 
     private string LanguageSaveFailureText()
@@ -98,6 +76,7 @@ public sealed class LanguagePickerWindow : Window
             Background = Surface,
             Padding = new Thickness(26)
         };
+        root.KeyDown += Root_KeyDown;
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
@@ -217,6 +196,17 @@ public sealed class LanguagePickerWindow : Window
             _status.Text = LanguageSaveFailureText();
             _status.Foreground = Error;
         }
+    }
+
+    private void Root_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != VirtualKey.Escape)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        Close();
     }
 
     private void LanguagePickerWindow_Activated(object sender, WindowActivatedEventArgs args)

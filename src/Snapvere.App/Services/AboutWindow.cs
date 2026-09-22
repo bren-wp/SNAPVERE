@@ -2,11 +2,13 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Snapvere.Shared;
 using System.Diagnostics;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
+using Windows.System;
 
 namespace Snapvere.App.Services;
 
@@ -61,6 +63,7 @@ public sealed class AboutWindow : Window
             Background = Brush(0xFF, 0x07, 0x08, 0x0D),
             Padding = new Thickness(24)
         };
+        root.KeyDown += Root_KeyDown;
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -206,11 +209,9 @@ public sealed class AboutWindow : Window
         {
             try
             {
-                var process = Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-                if (process is null)
-                {
-                    throw new InvalidOperationException("Windows did not start a handler for the requested link.");
-                }
+                LocalShellActionFailurePolicy.EnsureStarted(
+                    Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }) is not null,
+                    "open external link");
 
                 _supportStatus.Visibility = Visibility.Collapsed;
             }
@@ -289,6 +290,17 @@ public sealed class AboutWindow : Window
         Grid.SetColumn(actionText, 1);
         grid.Children.Add(actionText);
         return new Border { Child = grid };
+    }
+
+    private void Root_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != VirtualKey.Escape)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        Close();
     }
 
     private void AboutWindow_Activated(object sender, WindowActivatedEventArgs args)

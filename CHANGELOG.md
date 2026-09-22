@@ -4,6 +4,15 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Settings and click-integrity polish
+
+- Route the Settings language action through the application's existing single-instance language window instead of maintaining a second standalone ownership path.
+- Add a Storage card to Settings with direct access to the local capture folder and Recent captures.
+- Treat a null Windows shell launch as an explicit failure in recent-capture, capture-folder, About-link and post-install launch paths instead of reporting silent success.
+- Contain startup-registration `InvalidOperationException` failures and restore the toggle state instead of allowing an expected Windows registry failure to escape the UI callback.
+- Add consistent Escape-to-close behavior to Settings, Language and About, and expose Settings status changes through a polite accessibility live region.
+- Add unit coverage for the shared shell-start result guard.
+
 ### Recording callback teardown hardening
 
 - Replace the disposable recording-frame semaphore with a generation-based async pulse signal so Stop/failure/dispose cannot race `SemaphoreSlim.Dispose()` against a pending `WaitAsync()`.

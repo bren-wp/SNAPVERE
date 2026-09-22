@@ -2,11 +2,13 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Snapvere.Application.Capture;
 using Snapvere.Shared;
 using System.Diagnostics;
 using Windows.Graphics;
+using Windows.System;
 
 namespace Snapvere.App.Services;
 
@@ -48,6 +50,8 @@ public sealed class OptionsWindow : Window
     private bool _sizeApplied;
     private bool _updatingControls;
 
+    public event Action? LanguageRequested;
+
     public OptionsWindow(
         CaptureHistoryService history,
         CapturePreferencesService preferences,
@@ -62,6 +66,7 @@ public sealed class OptionsWindow : Window
         _recentSummary = Text("Pictures\\SNAPVERE", 10, Subtle);
         _statusText = Text(LocalStatusText(), 10, Success);
         _statusText.TextWrapping = TextWrapping.Wrap;
+        AutomationProperties.SetLiveSetting(_statusText, AutomationLiveSetting.Polite);
 
         _startupToggle = CreateToggle(L("StartWithWindows"));
         _cursorToggle = CreateToggle(L("IncludeCursor"));
@@ -115,6 +120,7 @@ public sealed class OptionsWindow : Window
             Background = Canvas,
             Padding = new Thickness(24)
         };
+        root.KeyDown += Root_KeyDown;
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
@@ -202,7 +208,7 @@ public sealed class OptionsWindow : Window
 
     private void BuildPreferencesPanel()
     {
-        for (var index = 0; index < 5; index++)
+        for (var index = 0; index < 6; index++)
         {
             _preferencesPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         }
@@ -235,11 +241,7 @@ public sealed class OptionsWindow : Window
         var languageButton = CreateSecondaryAction(
             L("ChooseLanguage"),
             "\uE774",
-            () =>
-            {
-                Close();
-                LanguagePickerWindow.ShowStandalone(_preferences);
-            });
+            RequestLanguagePicker);
         AddPreferenceCard(
             row: 3,
             eyebrow: L("Language").ToUpperInvariant(),
@@ -247,6 +249,27 @@ public sealed class OptionsWindow : Window
             description: CurrentLanguageDescription(),
             glyph: "\uE774",
             trailing: languageButton);
+
+        var storageActions = new StackPanel
+        {
+            Spacing = 6,
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+        storageActions.Children.Add(CreateSecondaryAction(
+            L("OpenCaptureFolder"),
+            "\uE838",
+            OpenCaptureFolder));
+        storageActions.Children.Add(CreateSecondaryAction(
+            L("RecentCaptures"),
+            "\uE81C",
+            () => ShowSection(OptionsSection.RecentCaptures)));
+        AddPreferenceCard(
+            row: 4,
+            eyebrow: L("Storage").ToUpperInvariant(),
+            title: L("CaptureFolder"),
+            description: L("CaptureFolderDescription"),
+            glyph: "\uE838",
+            trailing: storageActions);
 
         var local = new Border
         {
@@ -268,7 +291,7 @@ public sealed class OptionsWindow : Window
         localDetail.TextWrapping = TextWrapping.Wrap;
         localCopy.Children.Add(localDetail);
         local.Child = localCopy;
-        Grid.SetRow(local, 4);
+        Grid.SetRow(local, 5);
         _preferencesPanel.Children.Add(local);
     }
 
@@ -281,7 +304,7 @@ public sealed class OptionsWindow : Window
             $"Odabrani jezik: {selected.NativeName}.");
     }
 
-    private void AddPreferenceCard(int row, string eyebrow, string title, string description, string glyph, Control trailing)
+    private void AddPreferenceCard(int row, string eyebrow, string title, string description, string glyph, FrameworkElement trailing)
     {
         var card = BuildSettingCard(eyebrow, title, description, glyph, trailing);
         card.Margin = new Thickness(0, row == 1 ? 16 : 10, 0, 0);
@@ -329,7 +352,7 @@ public sealed class OptionsWindow : Window
         string title,
         string description,
         string glyph,
-        Control trailing)
+        FrameworkElement trailing)
     {
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(46) });
@@ -444,7 +467,10 @@ public sealed class OptionsWindow : Window
             SetStatus(requestedState ? L("StartupEnabled") : L("StartupDisabled"), Success);
         }
         catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+            exception is IOException or
+            UnauthorizedAccessException or
+            System.Security.SecurityException or
+            InvalidOperationException)
         {
             _updatingControls = true;
             try
@@ -525,7 +551,11 @@ public sealed class OptionsWindow : Window
                 _recentItems.Children.Add(CreateRecentCaptureButton(capture));
             }
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        catch (Exception exception) when (
+            exception is IOException or
+            UnauthorizedAccessException or
+            System.Security.SecurityException or
+            InvalidOperationException)
         {
             StartupDiagnostics.Record("Read recent captures", exception);
             _recentSummary.Text = L("LocalHistoryUnavailable");
@@ -649,7 +679,9 @@ public sealed class OptionsWindow : Window
                 SetStatus(L("CaptureUnavailable"), Warning);
                 return;
             }
-            _ = Process.Start(new ProcessStartInfo(capture.FilePath) { UseShellExecute = true });
+            LocalShellActionFailurePolicy.EnsureStarted(
+                Process.Start(new ProcessStartInfo(capture.FilePath) { UseShellExecute = true }) is not null,
+                "open recent capture");
         }
         catch (Exception exception) when (LocalShellActionFailurePolicy.IsExpected(exception))
         {
@@ -668,7 +700,9 @@ public sealed class OptionsWindow : Window
         {
             var directory = _history.GetCaptureDirectory();
             Directory.CreateDirectory(directory);
-            _ = Process.Start(new ProcessStartInfo(directory) { UseShellExecute = true });
+            LocalShellActionFailurePolicy.EnsureStarted(
+                Process.Start(new ProcessStartInfo(directory) { UseShellExecute = true }) is not null,
+                "open capture folder");
         }
         catch (Exception exception) when (LocalShellActionFailurePolicy.IsExpected(exception))
         {
@@ -679,6 +713,34 @@ public sealed class OptionsWindow : Window
                     "Windows ne može otvoriti mapu snimki. Provjerite dozvole mape i pokušajte ponovno."),
                 Error);
         }
+    }
+
+    private void RequestLanguagePicker()
+    {
+        try
+        {
+            LanguageRequested?.Invoke();
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Record("Open language picker from Settings", exception);
+            SetStatus(
+                UserText(
+                    "Language settings could not be opened. Try again.",
+                    "Postavke jezika nije moguće otvoriti. Pokušajte ponovno."),
+                Error);
+        }
+    }
+
+    private void Root_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != VirtualKey.Escape)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        Close();
     }
 
     private void OptionsWindow_Activated(object sender, WindowActivatedEventArgs args)

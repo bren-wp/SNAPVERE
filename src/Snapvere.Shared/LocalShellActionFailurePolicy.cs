@@ -19,4 +19,14 @@ public static class LocalShellActionFailurePolicy
             InvalidOperationException or
             Win32Exception;
     }
+
+    public static void EnsureStarted(bool started, string operation)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(operation);
+        if (!started)
+        {
+            throw new InvalidOperationException(
+                $"Windows did not start the requested local shell action: {operation}.");
+        }
+    }
 }
