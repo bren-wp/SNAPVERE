@@ -273,12 +273,12 @@ internal static class InstallerEngine
                 return false;
             }
 
-            _ = Process.Start(new ProcessStartInfo(executable)
+            using var process = Process.Start(new ProcessStartInfo(executable)
             {
                 WorkingDirectory = Path.GetDirectoryName(executable)!,
                 UseShellExecute = true
             });
-            return true;
+            return process is not null;
         }
         catch
         {
