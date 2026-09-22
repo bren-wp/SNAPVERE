@@ -44,4 +44,4 @@ Current CI validates:
 - browser runtime, permission, parity and deterministic-package checks;
 - Product Contract CI and CodeQL.
 
-See [QA Matrix](QA-MATRIX.md), [Architecture](ARCHITECTURE.md), [Multi-monitor](MULTI-MONITOR.md) and [Product Status](PRODUCT-STATUS.md).
+See [QA Matrix](QA-MATRIX.md), [Architecture](ARCHITECTURE.md) and [Product Status](PRODUCT-STATUS.md).
