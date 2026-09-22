@@ -8,24 +8,43 @@ public sealed class ScreenCaptureWorkflow
     private readonly IScreenCaptureService _screenCaptureService;
     private readonly CaptureFileWriter _fileWriter;
     private readonly CapturePreferencesService? _preferences;
+    private readonly ICaptureDisplaySelector? _displaySelector;
 
     public ScreenCaptureWorkflow(
         IDisplayDiscovery displayDiscovery,
         IScreenCaptureService screenCaptureService,
         CaptureFileWriter fileWriter,
-        CapturePreferencesService? preferences = null)
+        CapturePreferencesService? preferences = null,
+        ICaptureDisplaySelector? displaySelector = null)
     {
         _displayDiscovery = displayDiscovery ?? throw new ArgumentNullException(nameof(displayDiscovery));
         _screenCaptureService = screenCaptureService ?? throw new ArgumentNullException(nameof(screenCaptureService));
         _fileWriter = fileWriter ?? throw new ArgumentNullException(nameof(fileWriter));
         _preferences = preferences;
+        _displaySelector = displaySelector;
     }
 
-    public async Task<CaptureSaveResult> CapturePrimaryDisplayToDefaultFolderAsync(
+    public Task<CaptureSaveResult> CaptureInteractiveDisplayToDefaultFolderAsync(
         bool includeCursor,
         CancellationToken cancellationToken = default)
+        => CaptureDisplayToDefaultFolderAsync(
+            GetInteractiveDisplay(),
+            includeCursor,
+            cancellationToken);
+
+    public Task<CaptureSaveResult> CapturePrimaryDisplayToDefaultFolderAsync(
+        bool includeCursor,
+        CancellationToken cancellationToken = default)
+        => CaptureDisplayToDefaultFolderAsync(
+            GetPrimaryDisplay(),
+            includeCursor,
+            cancellationToken);
+
+    private async Task<CaptureSaveResult> CaptureDisplayToDefaultFolderAsync(
+        Snapvere.Domain.Capture.DisplayDescriptor display,
+        bool includeCursor,
+        CancellationToken cancellationToken)
     {
-        var display = GetPrimaryDisplay();
         var effectiveIncludeCursor = includeCursor || (_preferences?.Current.IncludeCursorOnCapture ?? false);
         var frame = await _screenCaptureService
             .CaptureDisplayAsync(display, effectiveIncludeCursor, cancellationToken)
@@ -35,14 +54,13 @@ public sealed class ScreenCaptureWorkflow
         return await _fileWriter.SavePngAsync(frame, cancellationToken).ConfigureAwait(false);
     }
 
-    private Snapvere.Domain.Capture.DisplayDescriptor GetPrimaryDisplay()
+    private Snapvere.Domain.Capture.DisplayDescriptor GetInteractiveDisplay()
     {
         var displays = _displayDiscovery.GetDisplays();
-        if (displays.Count == 0)
-        {
-            throw new InvalidOperationException("SNAPVERE could not find an active display.");
-        }
-
-        return displays.FirstOrDefault(candidate => candidate.IsPrimary) ?? displays[0];
+        return _displaySelector?.SelectDisplay(displays)
+            ?? CaptureDisplaySelectionPolicy.SelectPrimary(displays);
     }
+
+    private Snapvere.Domain.Capture.DisplayDescriptor GetPrimaryDisplay()
+        => CaptureDisplaySelectionPolicy.SelectPrimary(_displayDiscovery.GetDisplays());
 }

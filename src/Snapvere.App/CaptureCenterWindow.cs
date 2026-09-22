@@ -225,7 +225,7 @@ public sealed class CaptureCenterWindow : Window
             var workflow = _services.GetRequiredService<RegionCaptureWorkflow>();
             var pngEncoder = _services.GetRequiredService<PngCaptureEncoder>();
             var includeCursor = _capturePreferencesService.Current.IncludeCursorOnCapture;
-            var session = await workflow.PreparePrimaryDisplayAsync(includeCursor);
+            var session = await workflow.PrepareInteractiveDisplayAsync(includeCursor);
             var overlay = new RegionCaptureWindow(workflow, pngEncoder, session);
             _regionCaptureWindow = overlay;
 
@@ -316,7 +316,7 @@ public sealed class CaptureCenterWindow : Window
         {
             var screenCaptureWorkflow = _services.GetRequiredService<ScreenCaptureWorkflow>();
             var includeCursor = _capturePreferencesService.Current.IncludeCursorOnCapture;
-            var result = await screenCaptureWorkflow.CapturePrimaryDisplayToDefaultFolderAsync(includeCursor);
+            var result = await screenCaptureWorkflow.CaptureInteractiveDisplayToDefaultFolderAsync(includeCursor);
             StartupDiagnostics.WriteLine(
                 $"Screen capture saved {result.Width}x{result.Height} PNG locally.");
         }
