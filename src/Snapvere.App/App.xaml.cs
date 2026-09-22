@@ -35,6 +35,7 @@ public partial class App : Microsoft.UI.Xaml.Application
     private RegionCaptureWindow? _regionProbeWindow;
     private WindowTargetOverlayWindow? _windowProbeWindow;
     private TrayMenuWindow? _trayMenuWindow;
+    private RecordingControllerWindow? _recordingControllerWindow;
     private OptionsWindow? _optionsWindow;
     private LanguagePickerWindow? _probeLanguageWindow;
     private AboutWindow? _aboutWindow;
@@ -792,6 +793,45 @@ public partial class App : Microsoft.UI.Xaml.Application
     private void OnScreenRecordingStateChanged(bool active)
     {
         _trayIconService?.SetScreenRecordingState(active);
+        _optionsWindow?.SetScreenRecordingState(active);
+        if (active)
+        {
+            ShowRecordingController();
+        }
+        else
+        {
+            CloseRecordingController();
+        }
+    }
+
+    private void ShowRecordingController()
+    {
+        if (_recordingControllerWindow is not null)
+        {
+            _recordingControllerWindow.Activate();
+            return;
+        }
+
+        var preferences = _services.GetRequiredService<CapturePreferencesService>();
+        var controller = new RecordingControllerWindow(
+            () => _window?.StopScreenRecording(),
+            preferences.Current.LanguageCode);
+        _recordingControllerWindow = controller;
+        controller.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_recordingControllerWindow, controller))
+            {
+                _recordingControllerWindow = null;
+            }
+        };
+        controller.Activate();
+    }
+
+    private void CloseRecordingController()
+    {
+        var controller = _recordingControllerWindow;
+        _recordingControllerWindow = null;
+        controller?.CloseFromOwner();
     }
 
     private void OnGlobalHotkeyPressed(object? sender, CaptureHotkeyPressedEventArgs e)
@@ -846,9 +886,13 @@ public partial class App : Microsoft.UI.Xaml.Application
                 CloseTrayMenu();
                 window.StartCaptureFromHotkey(CaptureMode.FullScreen);
                 break;
-            case TrayCommand.ToggleScreenRecording:
+            case TrayCommand.StartScreenRecording:
                 CloseTrayMenu();
-                window.ToggleScreenRecording();
+                window.StartScreenRecording();
+                break;
+            case TrayCommand.StopScreenRecording:
+                CloseTrayMenu();
+                window.StopScreenRecording();
                 break;
             case TrayCommand.OpenCaptureFolder:
                 CloseTrayMenu();
@@ -906,6 +950,7 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         if (_optionsWindow is not null)
         {
+            _optionsWindow.SetScreenRecordingState(_window?.IsScreenRecordingActive ?? false);
             _optionsWindow.ShowSection(section);
             _optionsWindow.Activate();
             return;
@@ -913,6 +958,13 @@ public partial class App : Microsoft.UI.Xaml.Application
 
         var options = _services.GetRequiredService<OptionsWindow>();
         _optionsWindow = options;
+        if (_window is not null)
+        {
+            options.ConfigureScreenRecording(
+                _window.StartScreenRecording,
+                _window.StopScreenRecording,
+                _window.IsScreenRecordingActive);
+        }
         options.ShowSection(section);
         options.Closed += (_, _) =>
         {
@@ -967,6 +1019,7 @@ public partial class App : Microsoft.UI.Xaml.Application
 
     private void OnMainWindowClosed(object sender, WindowEventArgs args)
     {
+        CloseRecordingController();
         CloseTrayMenu();
         _optionsWindow?.Close();
         _optionsWindow = null;

@@ -1,6 +1,6 @@
 # SNAPVERE korisnički vodič
 
-SNAPVERE je lokalno usmjeren alat za snimanje sadržaja na Windowsu i u modernim preglednicima. Aktualno javno izdanje je v0.1.12.
+SNAPVERE je lokalno usmjeren alat za snimanje sadržaja na Windowsu i u modernim preglednicima. Aktualno javno izdanje je v0.1.13.
 
 ## Windows
 
@@ -11,7 +11,7 @@ Aplikacija radi prvenstveno iz područja obavijesti.
 | Snimanje područja | Print Screen ili Ctrl+Shift+1 |
 | Snimanje prozora | Ctrl+Shift+2 |
 | Snimanje zaslona | Ctrl+Shift+3 |
-| Snimanje zaslona kao video | Start/Stop u tray izborniku |
+| Snimanje zaslona kao video | Start/Stop u Trayu ili Postavkama |
 
 ### Snimanje područja
 
@@ -21,13 +21,13 @@ Snimanje područja zamrzava odabrani zaslon prije prikaza editora, pa se sadrža
 
 ### Snimanje zaslona kao video
 
-Snimanje zaslona snima primarni Windows zaslon lokalno u H.264 MP4 preko Windows.Graphics.Capture. Pokretanje i zaustavljanje obavlja se iz tray izbornika, koristi postojeću postavku uključivanja pokazivača miša i prikazuje aktivno stanje snimanja. Početna implementacija je samo video: mikrofon i sistemski zvuk još nisu navedeni kao podržani.
+Snimanje zaslona snima primarni Windows zaslon lokalno u H.264 MP4 preko Windows.Graphics.Capture. Pokretanje i zaustavljanje dostupno je kroz izričite akcije u Trayu ili Postavkama. Tijekom aktivnog snimanja kompaktna always-on-top kontrola prikazuje crveni indikator, proteklo vrijeme i zaseban Stop gumb; zatvaranje te kontrole također traži Stop. Snimanje koristi postojeću postavku uključivanja pokazivača miša. Početna implementacija je samo video: mikrofon i sistemski zvuk još nisu navedeni kao podržani.
 
 Snimke zaslona i dovršene videosnimke zadano se spremaju u `Pictures\SNAPVERE`. Dovršeni MP4 objavljuje se tek nakon završetka enkodiranja; privremene datoteke ne predstavljaju dovršene snimke.
 
 ### Windows postavke
 
-Postavke prikazuju samo stvarno implementirane lokalne opcije: pokretanje SNAPVERE-a s Windowsima, uključivanje pokazivača u podržane načine snimanja i odabir jezika sučelja. Preference se spremaju samo za trenutačni Windows račun u `%LOCALAPPDATA%\SNAPVERE`. Nedavne snimke čitaju se iz lokalne mape bez baze podataka ili cloud povijesti.
+Postavke prikazuju implementirane lokalne opcije za pokretanje s Windowsima, uključivanje pokazivača i jezik sučelja te sinkroniziranu Start/Stop akciju za snimanje zaslona. Preference se spremaju samo za trenutačni Windows račun u `%LOCALAPPDATA%\SNAPVERE`. Nedavne snimke čitaju se iz lokalne mape bez baze podataka ili cloud povijesti.
 
 ## Browser ekstenzije
 

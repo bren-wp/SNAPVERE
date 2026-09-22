@@ -12,7 +12,8 @@ public enum TrayCommand
     RegionCapture,
     WindowCapture,
     ScreenCapture,
-    ToggleScreenRecording,
+    StartScreenRecording,
+    StopScreenRecording,
     OpenCaptureFolder,
     About,
     Exit

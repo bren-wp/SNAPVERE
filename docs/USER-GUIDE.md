@@ -1,6 +1,6 @@
 # SNAPVERE User Guide
 
-SNAPVERE is a local-first capture tool for Windows and modern browsers. The current public release is v0.1.12.
+SNAPVERE is a local-first capture tool for Windows and modern browsers. The current public release is v0.1.13.
 
 ## Windows
 
@@ -11,7 +11,7 @@ SNAPVERE starts quietly in the notification area. Use the tray icon or shortcuts
 | Region capture | Print Screen or Ctrl+Shift+1 |
 | Window capture | Ctrl+Shift+2 |
 | Screen capture | Ctrl+Shift+3 |
-| Screen recording | Tray menu Start/Stop action |
+| Screen recording | Tray or Settings Start/Stop action |
 
 ### Region capture
 
@@ -21,13 +21,13 @@ Region capture freezes the selected display before the editor appears, so the un
 
 ### Screen recording
 
-Screen recording records the primary Windows display to a local H.264 MP4 through Windows.Graphics.Capture. Recording starts and stops from the tray menu, follows the existing include-cursor preference, and shows active state in the tray surface. The initial mode is video-only: microphone and system audio are not claimed as supported.
+Screen recording records the primary Windows display to a local H.264 MP4 through Windows.Graphics.Capture. Recording starts and stops through explicit actions in the tray menu or Settings. While active, a compact always-on-top controller shows a red recording indicator, elapsed time and a dedicated Stop button; closing that controller also requests Stop. Recording follows the existing include-cursor preference. The initial mode is video-only: microphone and system audio are not claimed as supported.
 
 Screenshots and completed recordings are stored by default in `Pictures\SNAPVERE`. A completed recording is published only after encoding finishes; temporary recording files are not intentionally exposed as completed captures.
 
 ### Windows settings
 
-Settings expose only implemented local preferences: start SNAPVERE with Windows, include the cursor in supported capture modes and choose the UI language. Preferences are stored for the current Windows account under `%LOCALAPPDATA%\SNAPVERE`. Recent captures remain filesystem-backed rather than using a database or cloud history.
+Settings expose implemented local preferences for startup, cursor inclusion and UI language, plus the synchronized Screen recording Start/Stop action. Preferences are stored for the current Windows account under `%LOCALAPPDATA%\SNAPVERE`. Recent captures remain filesystem-backed rather than using a database or cloud history.
 
 ## Browser extensions
 

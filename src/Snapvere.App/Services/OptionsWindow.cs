@@ -43,10 +43,14 @@ public sealed class OptionsWindow : Window
     private readonly TextBlock _statusText;
     private readonly ToggleSwitch _startupToggle;
     private readonly ToggleSwitch _cursorToggle;
+    private readonly Button _recordingButton;
     private readonly Button _preferencesTab;
     private readonly Button _recentTab;
     private bool _sizeApplied;
     private bool _updatingControls;
+    private Action? _startScreenRecording;
+    private Action? _stopScreenRecording;
+    private bool _recordingButtonRequestsStop;
 
     public OptionsWindow(
         CaptureHistoryService history,
@@ -65,6 +69,7 @@ public sealed class OptionsWindow : Window
 
         _startupToggle = CreateToggle(L("StartWithWindows"));
         _cursorToggle = CreateToggle(L("IncludeCursor"));
+        _recordingButton = CreateRecordingActionButton();
         _startupToggle.Toggled += StartupToggle_Toggled;
         _cursorToggle.Toggled += CursorToggle_Toggled;
 
@@ -76,6 +81,32 @@ public sealed class OptionsWindow : Window
         Content = BuildContent();
         ShowSection(OptionsSection.Preferences);
         Activated += OptionsWindow_Activated;
+    }
+
+    public void ConfigureScreenRecording(
+        Action startScreenRecording,
+        Action stopScreenRecording,
+        bool active)
+    {
+        _startScreenRecording = startScreenRecording ?? throw new ArgumentNullException(nameof(startScreenRecording));
+        _stopScreenRecording = stopScreenRecording ?? throw new ArgumentNullException(nameof(stopScreenRecording));
+        SetScreenRecordingState(active);
+        _recordingButton.IsEnabled = true;
+    }
+
+    public void SetScreenRecordingState(bool active)
+    {
+        _recordingButtonRequestsStop = active;
+        _recordingButton.Content = L(active ? "StopScreenRecording" : "StartScreenRecording");
+        AutomationProperties.SetName(
+            _recordingButton,
+            L(active ? "StopScreenRecording" : "StartScreenRecording"));
+        _recordingButton.Background = active
+            ? Brush(0xFF, 0x73, 0x24, 0x3A)
+            : Brush(0x55, 0x5E, 0x48, 0xBD);
+        _recordingButton.BorderBrush = active
+            ? Brush(0xFF, 0xEC, 0x5F, 0x74)
+            : Brush(0x78, 0x9D, 0x86, 0xFF);
     }
 
     public void ShowSection(OptionsSection section)
@@ -202,7 +233,7 @@ public sealed class OptionsWindow : Window
 
     private void BuildPreferencesPanel()
     {
-        for (var index = 0; index < 5; index++)
+        for (var index = 0; index < 6; index++)
         {
             _preferencesPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         }
@@ -232,6 +263,16 @@ public sealed class OptionsWindow : Window
             glyph: "\uE7C9",
             trailing: _cursorToggle);
 
+        AddPreferenceCard(
+            row: 3,
+            eyebrow: L("Capture").ToUpperInvariant(),
+            title: UserText("Screen recording", "Snimanje zaslona"),
+            description: UserText(
+                "Start or stop local primary-display recording without returning to the tray menu.",
+                "Pokrenite ili zaustavite lokalno snimanje primarnog zaslona bez povratka u tray izbornik."),
+            glyph: "\uE714",
+            trailing: _recordingButton);
+
         var languageButton = CreateSecondaryAction(
             L("ChooseLanguage"),
             "\uE774",
@@ -241,7 +282,7 @@ public sealed class OptionsWindow : Window
                 LanguagePickerWindow.ShowStandalone(_preferences);
             });
         AddPreferenceCard(
-            row: 3,
+            row: 4,
             eyebrow: L("Language").ToUpperInvariant(),
             title: L("Language"),
             description: CurrentLanguageDescription(),
@@ -268,7 +309,7 @@ public sealed class OptionsWindow : Window
         localDetail.TextWrapping = TextWrapping.Wrap;
         localCopy.Children.Add(localDetail);
         local.Child = localCopy;
-        Grid.SetRow(local, 4);
+        Grid.SetRow(local, 5);
         _preferencesPanel.Children.Add(local);
     }
 
@@ -748,6 +789,36 @@ public sealed class OptionsWindow : Window
             presenter.IsMaximizable = false;
             presenter.IsMinimizable = true;
         }
+    }
+
+    private Button CreateRecordingActionButton()
+    {
+        var button = new Button
+        {
+            Content = L("StartScreenRecording"),
+            MinWidth = 178,
+            Padding = new Thickness(13, 8, 13, 8),
+            CornerRadius = new CornerRadius(10),
+            Background = Brush(0x55, 0x5E, 0x48, 0xBD),
+            BorderBrush = Brush(0x78, 0x9D, 0x86, 0xFF),
+            BorderThickness = new Thickness(1),
+            Foreground = Strong,
+            IsEnabled = false,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+        AutomationProperties.SetName(button, L("StartScreenRecording"));
+        button.Click += (_, _) =>
+        {
+            if (_recordingButtonRequestsStop)
+            {
+                _stopScreenRecording?.Invoke();
+            }
+            else
+            {
+                _startScreenRecording?.Invoke();
+            }
+        };
+        return button;
     }
 
     private ToggleSwitch CreateToggle(string accessibleName)
