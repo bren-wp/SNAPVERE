@@ -85,7 +85,9 @@ public sealed class TrayMenuWindow : Window
             "\uE714",
             L(_screenRecordingActive ? "StopScreenRecording" : "StartScreenRecording"),
             string.Empty,
-            TrayCommand.ToggleScreenRecording,
+            _screenRecordingActive
+                ? TrayCommand.StopScreenRecording
+                : TrayCommand.StartScreenRecording,
             danger: _screenRecordingActive));
         actions.Children.Add(CreateSeparator());
         actions.Children.Add(CreateMenuButton("\uE713", L("Settings"), string.Empty, TrayCommand.Show));
