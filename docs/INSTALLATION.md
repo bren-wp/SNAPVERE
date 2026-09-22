@@ -1,6 +1,6 @@
 # Installing SNAPVERE
 
-Current public release: **v0.1.14**. Published tags and assets are immutable; later `main` hardening is not retroactively part of that release.
+Current public release: **v0.1.15**. Published tags and assets are immutable; later `main` hardening is not retroactively part of that release.
 
 ## Windows Setup
 
@@ -8,7 +8,8 @@ Download `SNAPVERE-Setup.exe` from the current release and run it normally. The 
 
 The interactive installer:
 
-- requires the embedded commercial license to be readable before acceptance,
+- presents the embedded commercial license as step 1 and requires acceptance before Continue,
+- presents install location, shortcuts and Windows startup choices separately as step 2,
 - installs per-user by default under `%LOCALAPPDATA%\Programs\SNAPVERE`,
 - lets you choose a different folder without accidentally duplicating a trailing `SNAPVERE\SNAPVERE` segment,
 - stages payload extraction before publication,
@@ -51,4 +52,4 @@ The current release provides:
 
 The ZIP files are source-ready release packages for manual installation. Store publication is a separate external process and is not claimed unless an actual store listing exists.
 
-Current release: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.14
+Current release: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.15
