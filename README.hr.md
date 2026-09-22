@@ -65,7 +65,7 @@ Detalji su u [Performanse i stabilnost](docs/hr/PERFORMANCE.md), [Window Capture
 
 Chrome, Edge, Opera i Firefox nude visible-area, selected-region i bounded full-page capture, lokalno PNG spremanje te EN/HR sučelje. Naziv proizvoda, wordmark i prefiks spremljene datoteke ostaju fiksno **SNAPVERE**.
 
-Dozvole su točno `activeTab`, `scripting`, `downloads`, `downloads.open` i `storage`, bez širokog host pristupa. `downloads.open` koristi se samo nakon izričitog korisničkog klika na **Otvori** za dovršenu SNAPVERE snimku u Nedavnim snimkama. Full-page capture koristi ograničeni destination canvas i oslobađa dekodirane tile resurse odmah nakon crtanja.
+Dozvole su točno `activeTab`, `scripting`, `downloads`, `downloads.open` i `storage`, bez širokog host pristupa. `downloads.open` koristi se samo nakon izričitog korisničkog klika na **Otvori** za dovršenu SNAPVERE snimku u Nedavnim snimkama, a odabrani download zapis ponovno se provjerava po ID-u neposredno prije otvaranja kako bi se premještena ili obrisana datoteka odbila i osvježila umjesto tihog no-op ponašanja. Full-page capture koristi ograničeni destination canvas i oslobađa dekodirane tile resurse odmah nakon crtanja.
 
 Browser ZIP paketi namijenjeni su ručnoj instalaciji. Vanjsko store odobrenje ne tvrdi se dok stvarni listing nije objavljen.
 
