@@ -113,6 +113,8 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenCaptureServic
 
                 var frameSource = new TaskCompletionSource<Direct3D11CaptureFrame>(
                     TaskCreationOptions.RunContinuationsAsynchronously);
+                using var frameCancellation = linked.Token.Register(
+                    () => _ = frameSource.TrySetCanceled(linked.Token));
 
                 void OnFrameArrived(Direct3D11CaptureFramePool sender, object args)
                 {
@@ -141,9 +143,7 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenCaptureServic
                 try
                 {
                     session.StartCapture();
-                    using var frame = await frameSource.Task
-                        .WaitAsync(linked.Token)
-                        .ConfigureAwait(false);
+                    using var frame = await frameSource.Task.ConfigureAwait(false);
 
                     var copied = CopyFrame(device, context, frame);
                     if (IsBlankCapture(copied.Pixels))
