@@ -308,7 +308,12 @@ public partial class App : Microsoft.UI.Xaml.Application
             [target],
             _ => { },
             _ => { },
-            () => { });
+            () => { },
+            exception =>
+            {
+                StartupDiagnostics.Record("Window overlay probe render", exception);
+                Environment.Exit(1);
+            });
         _windowProbeWindow.SetTarget(target);
 
         if (_windowProbeWindow.Content is FrameworkElement root)

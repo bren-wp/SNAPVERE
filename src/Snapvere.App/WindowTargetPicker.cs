@@ -71,6 +71,9 @@ public sealed class WindowTargetPicker
         void Cancel()
             => completion.TrySetResult(null);
 
+        void Fail(Exception exception)
+            => completion.TrySetException(exception);
+
         try
         {
             foreach (var display in displays)
@@ -81,7 +84,8 @@ public sealed class WindowTargetPicker
                     windows,
                     UpdateTarget,
                     SelectTarget,
-                    Cancel);
+                    Cancel,
+                    Fail);
                 overlays.Add(overlay);
             }
 

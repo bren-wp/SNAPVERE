@@ -30,6 +30,7 @@ public sealed class WindowTargetOverlayWindow : Window
     private readonly Action<WindowDescriptor?> _targetChanged;
     private readonly Action<WindowDescriptor> _targetSelected;
     private readonly Action _cancelled;
+    private readonly Action<Exception> _failed;
 
     private readonly Grid _root;
     private readonly Image _frozenImage;
@@ -54,7 +55,8 @@ public sealed class WindowTargetOverlayWindow : Window
         IReadOnlyList<WindowDescriptor> windows,
         Action<WindowDescriptor?> targetChanged,
         Action<WindowDescriptor> targetSelected,
-        Action cancelled)
+        Action cancelled,
+        Action<Exception> failed)
     {
         _display = display ?? throw new ArgumentNullException(nameof(display));
         _frozenFrame = frozenFrame ?? throw new ArgumentNullException(nameof(frozenFrame));
@@ -62,6 +64,7 @@ public sealed class WindowTargetOverlayWindow : Window
         _targetChanged = targetChanged ?? throw new ArgumentNullException(nameof(targetChanged));
         _targetSelected = targetSelected ?? throw new ArgumentNullException(nameof(targetSelected));
         _cancelled = cancelled ?? throw new ArgumentNullException(nameof(cancelled));
+        _failed = failed ?? throw new ArgumentNullException(nameof(failed));
 
         Title = L("WindowCaptureTitle");
 
@@ -250,10 +253,10 @@ public sealed class WindowTargetOverlayWindow : Window
             UpdateTargetVisual();
             _ = _focusTarget.Focus(FocusState.Programmatic);
         }
-        catch
+        catch (Exception exception)
         {
             _frozenFrame = null;
-            _cancelled();
+            _failed(exception);
         }
     }
 
