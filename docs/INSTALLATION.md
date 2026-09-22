@@ -8,7 +8,8 @@ Download `SNAPVERE-Setup.exe` from the current release and run it normally. The 
 
 The interactive installer:
 
-- requires the embedded commercial license to be readable before acceptance,
+- presents the embedded commercial license as step 1 and requires acceptance before Continue,
+- presents install location, shortcuts and Windows startup choices separately as step 2,
 - installs per-user by default under `%LOCALAPPDATA%\Programs\SNAPVERE`,
 - lets you choose a different folder without accidentally duplicating a trailing `SNAPVERE\SNAPVERE` segment,
 - stages payload extraction before publication,
