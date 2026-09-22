@@ -829,6 +829,7 @@ public sealed class RegionCaptureWindow : Window
         }
 
         _saving = true;
+        SetEditorBusy(true);
         ShowStatus(L("SavingRegion"), isBusy: true);
 
         try
@@ -840,6 +841,7 @@ public sealed class RegionCaptureWindow : Window
         catch (Exception exception)
         {
             _saving = false;
+            SetEditorBusy(false);
             Snapvere.App.Services.StartupDiagnostics.Record("Save region capture", exception);
             ShowStatus(GetUserFacingError(exception), isBusy: false);
             _ = _keyboardFocusTarget.Focus(FocusState.Programmatic);
@@ -854,6 +856,7 @@ public sealed class RegionCaptureWindow : Window
         }
 
         _saving = true;
+        SetEditorBusy(true);
         ShowStatus(L("CopyingSelection"), isBusy: true);
 
         try
@@ -883,10 +886,20 @@ public sealed class RegionCaptureWindow : Window
         catch (Exception exception)
         {
             _saving = false;
+            SetEditorBusy(false);
             Snapvere.App.Services.StartupDiagnostics.Record("Copy region capture", exception);
             ShowStatus(GetUserFacingError(exception), isBusy: false);
             _ = _keyboardFocusTarget.Focus(FocusState.Programmatic);
         }
+    }
+
+    private void SetEditorBusy(bool busy)
+    {
+        var enabled = !busy;
+        _toolPalette.IsHitTestVisible = enabled;
+        _actionPalette.IsHitTestVisible = enabled;
+        _toolPalette.Opacity = busy ? 0.55 : 1d;
+        _actionPalette.Opacity = busy ? 0.55 : 1d;
     }
 
     private void CancelCapture()
