@@ -368,8 +368,13 @@ internal sealed class SetupForm : Form
         _subtitleLabel.Location = new Point(left + 2, 91);
         _subtitleLabel.Size = new Size(contentWidth, layout.Compact ? 54 : 38);
 
+        var installationStep = !_uninstallMode && _setupStep != SetupStep.License;
+        var cardHeight = installationStep
+            ? (layout.Compact ? 286 : 238)
+            : layout.CardHeight;
+
         _contentCard.Location = new Point(left, 139);
-        _contentCard.Size = new Size(contentWidth, layout.CardHeight);
+        _contentCard.Size = new Size(contentWidth, cardHeight);
         _licenseLabel.Size = new Size(innerWidth, 22);
         _licenseHint.Size = new Size(innerWidth, 22);
         _licenseBox.Size = new Size(innerWidth, 151);
@@ -381,19 +386,44 @@ internal sealed class SetupForm : Form
         var browseX = Math.Max(22, contentWidth - 22 - browseWidth);
         _installPath.Size = new Size(Math.Max(96, browseX - 32), 29);
         _browseButton.Size = new Size(browseWidth, 34);
-        _browseButton.Location = new Point(browseX, 289);
 
-        if (layout.Compact)
+        if (installationStep)
         {
-            _startMenuShortcut.Location = new Point(22, 337);
-            _desktopShortcut.Location = new Point(Math.Min(150, Math.Max(22, contentWidth / 2)), 337);
-            _startupWithWindows.Location = new Point(22, 367);
+            _installLocationLabel.Location = new Point(22, 34);
+            _installPath.Location = new Point(22, 61);
+            _browseButton.Location = new Point(browseX, 59);
+
+            if (layout.Compact)
+            {
+                _startMenuShortcut.Location = new Point(22, 118);
+                _desktopShortcut.Location = new Point(Math.Min(150, Math.Max(22, contentWidth / 2)), 118);
+                _startupWithWindows.Location = new Point(22, 153);
+            }
+            else
+            {
+                _startMenuShortcut.Location = new Point(22, 120);
+                _desktopShortcut.Location = new Point(150, 120);
+                _startupWithWindows.Location = new Point(296, 120);
+            }
         }
         else
         {
-            _startMenuShortcut.Location = new Point(22, 337);
-            _desktopShortcut.Location = new Point(150, 337);
-            _startupWithWindows.Location = new Point(296, 337);
+            _installLocationLabel.Location = new Point(22, 267);
+            _installPath.Location = new Point(22, 291);
+            _browseButton.Location = new Point(browseX, 289);
+
+            if (layout.Compact)
+            {
+                _startMenuShortcut.Location = new Point(22, 337);
+                _desktopShortcut.Location = new Point(Math.Min(150, Math.Max(22, contentWidth / 2)), 337);
+                _startupWithWindows.Location = new Point(22, 367);
+            }
+            else
+            {
+                _startMenuShortcut.Location = new Point(22, 337);
+                _desktopShortcut.Location = new Point(150, 337);
+                _startupWithWindows.Location = new Point(296, 337);
+            }
         }
 
         var progressTop = _contentCard.Bottom + 17;
@@ -407,6 +437,7 @@ internal sealed class SetupForm : Form
         var actionTop = statusTop + layout.StatusHeight + 2;
         var primaryX = left + Math.Max(0, contentWidth - _primaryButton.Width);
         var cancelX = Math.Max(left, primaryX - _cancelButton.Width - 10);
+        var backX = Math.Max(left, cancelX - _backButton.Width - 10);
 
         if (_completed && !_uninstallMode && layout.Compact && contentWidth < 420)
         {
@@ -420,6 +451,7 @@ internal sealed class SetupForm : Form
 
         _primaryButton.Location = new Point(primaryX, actionTop);
         _cancelButton.Location = new Point(cancelX, actionTop);
+        _backButton.Location = new Point(backX, actionTop);
 
         _mainPanel.AutoScrollMinSize = new Size(
             0,
@@ -720,6 +752,7 @@ internal sealed class SetupForm : Form
         {
             _setupStep = SetupStep.Complete;
         }
+        SetBusy(false);
         _titleLabel.Text = _uninstallMode ? "SNAPVERE removed" : "SNAPVERE is ready";
         _subtitleLabel.Text = _uninstallMode
             ? "The application has been removed from this Windows account. Your screenshots remain untouched."
@@ -791,14 +824,15 @@ internal sealed class SetupForm : Form
     {
         _busy = busy;
         UpdatePrimaryButtonState();
+        var allowEditing = !busy && !_completed;
         _cancelButton.Enabled = !busy;
-        _backButton.Enabled = !busy;
-        _acceptLicense.Enabled = !busy;
-        _installPath.Enabled = !busy;
-        _browseButton.Enabled = !busy;
-        _startMenuShortcut.Enabled = !busy;
-        _desktopShortcut.Enabled = !busy;
-        _startupWithWindows.Enabled = !busy;
+        _backButton.Enabled = allowEditing;
+        _acceptLicense.Enabled = allowEditing;
+        _installPath.Enabled = allowEditing;
+        _browseButton.Enabled = allowEditing;
+        _startMenuShortcut.Enabled = allowEditing;
+        _desktopShortcut.Enabled = allowEditing;
+        _startupWithWindows.Enabled = allowEditing;
         UseWaitCursor = busy;
     }
 
