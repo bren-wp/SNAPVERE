@@ -951,7 +951,7 @@ public partial class App : Microsoft.UI.Xaml.Application
             var history = _services.GetRequiredService<CaptureHistoryService>();
             var directory = history.GetCaptureDirectory();
             Directory.CreateDirectory(directory);
-            _ = Process.Start(new ProcessStartInfo(directory) { UseShellExecute = true });
+            LocalShellAction.Open(directory);
         }
         catch (Exception exception) when (LocalShellActionFailurePolicy.IsExpected(exception))
         {

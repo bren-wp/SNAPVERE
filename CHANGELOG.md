@@ -4,6 +4,14 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Recent-capture action polish
+
+- Centralize Windows shell-open actions so a missing file/folder/URI handler is treated as a visible failure instead of a silent successful click.
+- Apply the same checked shell-open path to Recent captures, Open capture folder, tray folder access and About links.
+- Add a responsive **Copy path** action to each Recent capture with localized success/failure feedback and contained clipboard errors.
+- Reflow the new per-capture secondary action below the capture row on constrained Settings widths instead of squeezing filenames or metadata.
+- Add regression coverage for shell execution flags, blank targets and the missing-handler failure path.
+
 ### Settings and language UX hardening
 
 - Apply a newly selected language immediately to the open Language window title, explanatory copy, button text and accessibility names instead of leaving a mixed-language surface until reopen.
