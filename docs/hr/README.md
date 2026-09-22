@@ -17,9 +17,9 @@ Ova dokumentacija opisuje produkcijske funkcije, tehničke granice i provjere ko
 - [Window Capture](WINDOW-CAPTURE.md) — native discovery, zamrznuti multi-monitor picker i WGC acquisition.
 - [Image Pipeline](IMAGE-PIPELINE.md) — frame validation, crop/anotacije, PNG encode i atomsko spremanje.
 - [Tray i lifecycle](TRAY-LIFECYCLE.md) — single-instance, native tray host, Explorer recovery i Setup/Portable lifecycle dokaz.
-- [Postavke](SETTINGS.md) — lokalne Windows preference.
+- [Korisnički vodič](USER-GUIDE.md) — Region Capture i lokalne Windows/browser postavke u jednom praktičnom vodiču.
 - [QA matrica](QA-MATRIX.md) — automatizirani dokazi i njihove granice.
-- [Engleska tehnička dokumentacija](../README.md) — Architecture, Capture Engine, Region Capture i Multi-monitor detalji.
+- [Engleska arhitektura](../ARCHITECTURE.md) — capture engine, multi-monitor/DPI, persistence i browser tehničke granice.
 
 ## Browser i privatnost
 

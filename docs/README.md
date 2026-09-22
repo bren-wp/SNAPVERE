@@ -14,14 +14,11 @@ This documentation describes the production product surface, its implementation 
 
 ## Windows capture internals
 
-- [Architecture](ARCHITECTURE.md) — project boundaries and dependency direction.
-- [Capture Engine](CAPTURE-ENGINE.md) — Windows capture acquisition and fallback boundaries.
-- [Region Capture](REGION-CAPTURE.md) — frozen-frame selection and annotation workflow.
+- [Architecture](ARCHITECTURE.md) — project boundaries, capture engine, persistence, multi-monitor/DPI and browser architecture.
 - [Window Capture](WINDOW-CAPTURE.md) — native window discovery, frozen multi-monitor picker and WGC acquisition.
 - [Image Pipeline](IMAGE-PIPELINE.md) — frame validation, crop/annotation, PNG encoding and atomic publication.
-- [Multi-monitor](MULTI-MONITOR.md) — virtual desktop, pixel geometry and DPI handling.
 - [Tray & Lifecycle](TRAY-LIFECYCLE.md) — single-instance ownership, native tray host, Explorer recovery and Setup/Portable lifecycle evidence.
-- [Settings](SETTINGS.md) — persisted local Windows preferences.
+- [User Guide](USER-GUIDE.md) — Region Capture behavior and persisted local settings in the everyday workflow.
 - [QA Matrix](QA-MATRIX.md) — automated evidence and its limits.
 
 ## Browser extensions
