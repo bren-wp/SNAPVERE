@@ -4,6 +4,12 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Window picker failure fidelity
+
+- Stop treating a Window Capture overlay-render failure as an ordinary user cancellation.
+- Propagate render failures through the picker completion task so all monitor overlays still close in the existing `finally` path and the capture coordinator surfaces the existing localized Window Capture failure feedback.
+- Preserve genuine Escape/window-close cancellation as a null selection rather than conflating it with technical failures.
+
 ### Recording callback teardown hardening
 
 - Replace the disposable recording-frame semaphore with a generation-based async pulse signal so Stop/failure/dispose cannot race `SemaphoreSlim.Dispose()` against a pending `WaitAsync()`.
