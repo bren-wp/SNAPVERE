@@ -123,7 +123,14 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
                 };
 
                 using var randomAccess = destination.AsRandomAccessStream();
+
+                // Stop can be requested while the encoder/profile is still being prepared.
+                // Do not enter native capture after cancellation already won, and re-check
+                // immediately after Start so a concurrent Stop never falls through into
+                // transcoder preparation as though recording were still active.
+                stopToken.ThrowIfCancellationRequested();
                 frameSource.Start();
+                stopToken.ThrowIfCancellationRequested();
 
                 var prepared = await transcoder
                     .PrepareMediaStreamSourceTranscodeAsync(mediaSource, randomAccess, outputProfile);
@@ -232,11 +239,19 @@ public sealed partial class WindowsGraphicsCaptureService : IScreenRecordingServ
 
         internal void Start()
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-            if (_mediaSource is null)
+            lock (_gate)
             {
-                throw new InvalidOperationException(
-                    "The recording media source must be attached before capture starts.");
+                ObjectDisposedException.ThrowIf(_disposed, this);
+                if (_stopping)
+                {
+                    return;
+                }
+
+                if (_mediaSource is null)
+                {
+                    throw new InvalidOperationException(
+                        "The recording media source must be attached before capture starts.");
+                }
             }
 
             _framePool = Direct3D11CaptureFramePool.CreateFreeThreaded(
