@@ -416,7 +416,7 @@ async function runVariant(browser) {
         { id: 7, windowId: 99 },
         { id: 7, windowId: 99 },
         { id: 7, windowId: 99 },
-        { id: 7, windowId: 99 }
+        { id: 9, windowId: 99 }
       ],
       expectedCaptureWindowId: 99
     });
@@ -437,7 +437,7 @@ async function runVariant(browser) {
     assert.equal(
       runtime.storage.snapvereActiveCapture,
       undefined,
-      'region selection must complete after the owning tab moves to another window'
+      'region selection must finish once its frame is validated even if the active tab changes during local crop'
     );
   }
 
