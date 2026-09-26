@@ -5,6 +5,7 @@
   globalThis.__snapvereCaptureInjected = true;
 
   const MIN_REGION_SIZE = 8;
+  const REGION_WATCHDOG_MS = 4 * 60 * 1000;
   const FULL_WATCHDOG_MS = 90_000;
   const MAX_CANVAS_DIMENSION = 32767;
   const MAX_TOTAL_PIXELS = 60_000_000;
@@ -173,7 +174,8 @@
       return;
     }
 
-    const { root, onPointerDown, onPointerMove, onPointerUp, onKeyDown } = regionState;
+    const { root, onPointerDown, onPointerMove, onPointerUp, onKeyDown, watchdog } = regionState;
+    if (watchdog) clearTimeout(watchdog);
     root.removeEventListener("pointerdown", onPointerDown, true);
     root.removeEventListener("pointermove", onPointerMove, true);
     root.removeEventListener("pointerup", onPointerUp, true);
@@ -305,11 +307,16 @@
       void notifyRegionCancelled(token);
     };
 
-    regionState = { token, root, onPointerDown, onPointerMove, onPointerUp, onKeyDown };
+    regionState = { token, root, onPointerDown, onPointerMove, onPointerUp, onKeyDown, watchdog: null };
     root.addEventListener("pointerdown", onPointerDown, true);
     root.addEventListener("pointermove", onPointerMove, true);
     root.addEventListener("pointerup", onPointerUp, true);
     window.addEventListener("keydown", onKeyDown, true);
+    regionState.watchdog = setTimeout(() => {
+      if (!regionState || regionState.token !== token) return;
+      cleanupRegion();
+      void notifyRegionCancelled(token);
+    }, REGION_WATCHDOG_MS);
   }
 
   async function cropRegion(token, rect, dataUrl, viewportWidth, viewportHeight) {
