@@ -800,6 +800,28 @@ public sealed class OptionsWindow : Window
         }
     }
 
+    private void ExecuteRecordingAction(string operation, Action? action)
+    {
+        if (action is null)
+        {
+            return;
+        }
+
+        try
+        {
+            action();
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Record(operation, exception);
+            SetStatus(
+                UserText(
+                    "Screen recording could not complete this action. Try again.",
+                    "Snimanje zaslona nije uspjelo izvršiti ovu radnju. Pokušajte ponovno."),
+                Error);
+        }
+    }
+
     private (StackPanel Root, Button Start, Button Stop) CreateRecordingActions()
     {
         var root = new StackPanel
@@ -814,14 +836,14 @@ public sealed class OptionsWindow : Window
             L("StartScreenRecording"),
             Brush(0xFF, 0x39, 0x28, 0x78),
             Brush(0xFF, 0x86, 0x67, 0xF4),
-            () => _startScreenRecording?.Invoke());
+            () => ExecuteRecordingAction("Start screen recording from Settings", _startScreenRecording));
 
         var stop = CreateRecordingCircleButton(
             "■",
             L("StopScreenRecording"),
             Brush(0x24, 0x73, 0x24, 0x3A),
             Brush(0x35, 0xEC, 0x5F, 0x74),
-            () => _stopScreenRecording?.Invoke());
+            () => ExecuteRecordingAction("Stop screen recording from Settings", _stopScreenRecording));
 
         root.Children.Add(start);
         root.Children.Add(stop);
