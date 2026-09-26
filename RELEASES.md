@@ -45,9 +45,9 @@ SNAPVERE 0.1.17 is a Windows and browser reliability release focused on preventi
 
 ### Browser region-session ownership
 
-- Chrome, Edge, Opera and Firefox now require region cancellation callbacks to match the active capture token, tab ID and window ID before the background lock can be released.
-- A callback from the same tab ID but a different browser window no longer clears another region session.
-- Cross-browser smoke coverage verifies the mismatched-window cancellation path and the valid owning-window cancellation path for all four maintained variants.
+- Chrome, Edge, Opera and Firefox keep region cancellation bound to the active capture token and owning tab ID, which remains stable when a tab is moved between browser windows.
+- Moving the tab to another window while the Region overlay is open no longer risks leaving the capture lock busy after Escape/cancel.
+- Cross-browser smoke coverage verifies that a cancellation callback from the moved owning tab releases the pending region lock for all four maintained variants.
 - No additional browser permission, host access or remote dependency is introduced.
 
 ### Validation contract
