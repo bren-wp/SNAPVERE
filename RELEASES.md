@@ -46,8 +46,8 @@ SNAPVERE 0.1.18 is a focused Windows recording-control and browser Region reliab
 ### Browser Region selection after tab moves
 
 - Chrome, Edge, Opera and Firefox keep Region selection ownership bound to the active capture token and owning tab ID when the same tab is moved to another browser window.
-- Before capturing a moved tab, SNAPVERE revalidates that the owning tab is active in the callback's current window; it revalidates again after cropping before allowing the download.
-- A tab/window change during the capture still fails closed with the existing captureTabChanged path rather than producing a screenshot from the wrong page or window.
+- Before capturing a moved tab, SNAPVERE revalidates that the owning tab is active in the callback's current window. Once that browser frame is captured and validated, local crop/PNG encoding may finish even if the user switches tabs because no further browser capture API is invoked.
+- A tab/window change while acquiring the browser frame still fails closed with the existing captureTabChanged path rather than producing a screenshot from the wrong page or window.
 - Cross-browser smoke coverage starts Region capture in one window, moves the owning tab, completes selection in the new window and verifies one capture, one download and immediate lock release.
 - No additional browser permissions, host access or remote dependencies are introduced.
 
