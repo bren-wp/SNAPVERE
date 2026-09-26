@@ -6,6 +6,7 @@ import vm from "node:vm";
 const browsers = ["chrome", "edge", "opera", "firefox"];
 const PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB";
 const TOKEN = "0123456789abcdef";
+const EXTENSION_ID = "snapvere-test-extension";
 
 function createRuntime() {
   let listener = null;
@@ -82,6 +83,7 @@ function createRuntime() {
   const chrome = {
     i18n: { getMessage: () => "" },
     runtime: {
+      id: EXTENSION_ID,
       lastError: null,
       sendMessage(_message, callback) { callback({ ok: true }); },
       onMessage: {
@@ -123,10 +125,17 @@ function createRuntime() {
   };
 }
 
-function send(listener, message) {
+function send(listener, message, sender = { id: EXTENSION_ID }) {
   return new Promise((resolve) => {
-    const keepAlive = listener(message, {}, resolve);
+    const keepAlive = listener(message, sender, resolve);
     assert.equal(keepAlive, true);
+  });
+}
+
+function sendRejected(listener, message, sender) {
+  return new Promise((resolve) => {
+    const keepAlive = listener(message, sender, resolve);
+    assert.equal(keepAlive, false);
   });
 }
 
@@ -149,6 +158,23 @@ for (const browser of browsers) {
   assert.equal(valid.ok, true);
   assert.equal(valid.dataUrl, PNG);
   assert.equal(runtime.drawCalls.length, 1);
+
+  const rejected = await sendRejected(
+    runtime.listener,
+    {
+      type: "REGION_CROP",
+      token: TOKEN,
+      rect: { x: 10, y: 5, width: 20, height: 10 },
+      dataUrl: PNG,
+      viewportWidth: 100,
+      viewportHeight: 50
+    },
+    { id: "other-extension" }
+  );
+  assert.equal(rejected.ok, false);
+  assert.equal(rejected.errorKey, "captureFailed");
+  assert.match(rejected.message, /sender is not this SNAPVERE extension/i);
+  assert.equal(runtime.pendingImages.length, 0, `${browser}: rejected sender must not enter capture processing`);
 
   runtime.window.innerWidth = 100;
   runtime.window.innerHeight = 50;
