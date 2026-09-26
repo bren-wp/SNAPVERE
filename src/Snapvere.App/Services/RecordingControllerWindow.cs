@@ -174,7 +174,7 @@ public sealed class RecordingControllerWindow : Window
         return (statusText, elapsed, stop, root);
     }
 
-    private void RequestStop()
+    private void RequestStop(bool recoverUiOnFailure = true)
     {
         if (_stopRequested)
         {
@@ -195,7 +195,28 @@ public sealed class RecordingControllerWindow : Window
             UserText("Stopping screen recording", "Zaustavljanje snimanja zaslona"));
         _stopButton.IsEnabled = false;
         StopTimer();
-        _stopAction();
+
+        try
+        {
+            _stopAction();
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Record("Stop screen recording from controller", exception);
+            if (!recoverUiOnFailure)
+            {
+                return;
+            }
+
+            _stopRequested = false;
+            _statusText.Text = UserText(
+                "Recording is still active. Try Stop again.",
+                "Snimanje je još aktivno. Pokušajte ponovno zaustaviti.");
+            AutomationProperties.SetName(_stopButton, L("StopScreenRecording"));
+            _stopButton.IsEnabled = true;
+            _elapsed.Start();
+            _timer.Start();
+        }
     }
 
     private string UserText(string english, string croatian)
@@ -246,7 +267,7 @@ public sealed class RecordingControllerWindow : Window
         StopTimer();
         if (!_closingFromOwner)
         {
-            RequestStop();
+            RequestStop(recoverUiOnFailure: false);
         }
     }
 
