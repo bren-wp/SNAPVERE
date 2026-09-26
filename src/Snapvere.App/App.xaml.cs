@@ -223,27 +223,29 @@ public partial class App : Microsoft.UI.Xaml.Application
             return;
         }
 
-        _ = queue.TryEnqueue(() =>
-        {
-            if (_window is null)
+        _ = queue.TryEnqueue(() => ExecuteUiBoundary(
+            "Second-launch activation",
+            () =>
             {
-                return;
-            }
+                if (_window is null)
+                {
+                    return;
+                }
 
-            CloseTrayMenu();
-            ShowOptions(OptionsSection.Preferences);
-            StartupDiagnostics.WriteLine(
-                "Existing SNAPVERE instance activated after a duplicate launch request.");
+                CloseTrayMenu();
+                ShowOptions(OptionsSection.Preferences);
+                StartupDiagnostics.WriteLine(
+                    "Existing SNAPVERE instance activated after a duplicate launch request.");
 
-            if (IsSecondLaunchProbeRequested())
-            {
-                WriteProbeMarker(
-                    SecondLaunchProbeMarkerFileName,
-                    "SECOND_LAUNCH_ACTIVATED",
-                    "Second-launch probe activated the existing SNAPVERE Options surface.",
-                    exitProcess: false);
-            }
-        });
+                if (IsSecondLaunchProbeRequested())
+                {
+                    WriteProbeMarker(
+                        SecondLaunchProbeMarkerFileName,
+                        "SECOND_LAUNCH_ACTIVATED",
+                        "Second-launch probe activated the existing SNAPVERE Options surface.",
+                        exitProcess: false);
+                }
+            }));
     }
 
     private static void CompleteStartupProbe()
