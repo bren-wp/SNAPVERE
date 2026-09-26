@@ -820,7 +820,11 @@ public partial class App : Microsoft.UI.Xaml.Application
                     _recordingControllerWindow = null;
                 }
 
-                CloseRecordingControllerBestEffort(existing, "Recover stale screen-recording controller");
+                RequestRecordingStopBestEffort(
+                    "Stop recording after stale controller activation failure");
+                CloseRecordingControllerBestEffort(
+                    existing,
+                    "Recover stale screen-recording controller");
                 throw;
             }
         }
@@ -849,7 +853,11 @@ public partial class App : Microsoft.UI.Xaml.Application
                 _recordingControllerWindow = null;
             }
 
-            CloseRecordingControllerBestEffort(controller, "Rollback failed screen-recording controller activation");
+            RequestRecordingStopBestEffort(
+                "Stop recording after controller activation failure");
+            CloseRecordingControllerBestEffort(
+                controller,
+                "Rollback failed screen-recording controller activation");
             throw;
         }
     }
@@ -877,6 +885,19 @@ public partial class App : Microsoft.UI.Xaml.Application
             StartupDiagnostics.Record(operation, exception);
         }
     }
+
+    private void RequestRecordingStopBestEffort(string operation)
+    {
+        try
+        {
+            _window?.StopScreenRecording();
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Record(operation, exception);
+        }
+    }
+
 
     private void OnGlobalHotkeyPressed(object? sender, CaptureHotkeyPressedEventArgs e)
     {
