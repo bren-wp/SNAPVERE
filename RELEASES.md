@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.17**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.17
+- Current public release: **v0.1.18**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.18
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,34 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No unreleased changes are documented after v0.1.17 yet.
+No unreleased changes are documented after v0.1.18 yet.
+
+---
+
+## v0.1.18 — 2026-09-26
+
+SNAPVERE 0.1.18 is a focused Windows recording-control and browser Region reliability release. It keeps the existing permissions, local-first capture model and six-asset package contract while closing two user-triggered failure paths found during the post-v0.1.17 audit.
+
+### Windows recording-control recovery
+
+- Settings Start/Stop recording actions now execute behind a local UI safety boundary so an unexpected synchronous callback failure is diagnosed and surfaced in the Settings status area instead of escaping the WinUI button event.
+- The compact recording controller now contains an unexpected Stop callback failure instead of remaining permanently disabled in the **Finishing recording…** state.
+- When Stop fails synchronously while the controller is still open, the controller restores its Stop action and elapsed timer so the user can retry without restarting SNAPVERE.
+- Closing the controller still requests Stop, but close-time failure handling records the error without trying to rebuild a window that is already closing.
+
+### Browser Region selection after tab moves
+
+- Chrome, Edge, Opera and Firefox keep Region selection ownership bound to the active capture token and owning tab ID when the same tab is moved to another browser window.
+- Before capturing a moved tab, SNAPVERE revalidates that the owning tab is active in the callback's current window. Once that browser frame is captured and validated, local crop/PNG encoding may finish even if the user switches tabs because no further browser capture API is invoked.
+- A tab/window change while acquiring the browser frame still fails closed with the existing captureTabChanged path rather than producing a screenshot from the wrong page or window.
+- Cross-browser smoke coverage starts Region capture in one window, moves the owning tab, completes selection in the new window and verifies one capture, one download and immediate lock release.
+- No additional browser permissions, host access or remote dependencies are introduced.
+
+### Validation contract
+
+- Product Contract CI, Browser Extensions CI, CodeQL Advanced and full Windows CI must pass before merge.
+- x64 tests, x86/ARM64 builds, rendered Windows UI QA, universal Setup/Portable validation, package-size budgets and real x64/x86 lifecycle checks remain required.
+- The release publishes exactly six public assets: Setup, Portable and Chrome/Edge/Opera/Firefox ZIPs, followed by published-asset SHA-256 verification.
 
 ---
 

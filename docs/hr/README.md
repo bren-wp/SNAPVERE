@@ -1,8 +1,8 @@
 # SNAPVERE dokumentacija
 
-Aktualna održavana linija proizvoda je **SNAPVERE 0.1.17** za Windows te Chrome, Edge, Operu i Firefox.
+Aktualna održavana linija proizvoda je **SNAPVERE 0.1.18** za Windows te Chrome, Edge, Operu i Firefox.
 
-Ova dokumentacija opisuje produkcijske funkcije, tehničke granice i provjere koje stvarno izvodi CI. Aktualne javne binarne datoteke su v0.1.17, dok kasnije promjene na `main` mogu sadržavati izričito dokumentiran neobjavljeni reliability/security/UX hardening. Povijesne činjenice o starijim izdanjima ostaju u release dokumentaciji.
+Ova dokumentacija opisuje produkcijske funkcije, tehničke granice i provjere koje stvarno izvodi CI. Aktualne javne binarne datoteke su v0.1.18, dok kasnije promjene na `main` mogu sadržavati izričito dokumentiran neobjavljeni reliability/security/UX hardening. Povijesne činjenice o starijim izdanjima ostaju u release dokumentaciji.
 
 ## Počnite ovdje
 
@@ -34,4 +34,4 @@ Ova dokumentacija opisuje produkcijske funkcije, tehničke granice i provjere ko
 
 Službena stranica: https://snapvere.com  
 Podrška: info@snapvere.com  
-Aktualno izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.17
+Aktualno izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.18

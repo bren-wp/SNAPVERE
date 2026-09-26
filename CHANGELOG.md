@@ -4,7 +4,20 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
-No unreleased changes are documented after v0.1.17 yet.
+No unreleased changes are documented after v0.1.18 yet.
+
+## [0.1.18] - 2026-09-26
+
+### Windows recording-control recovery
+
+- Contain synchronous Settings Start/Stop recording callback failures at the button boundary and surface a recoverable status instead of letting the UI event fail outward.
+- Recover the compact recording controller from an unexpected Stop callback failure by restoring the Stop action and elapsed timer for retry while keeping close-time handling diagnostic-only.
+
+### Browser Region moved-tab completion
+
+- Keep REGION_SELECTED ownership bound to the active token and owning tab ID so the same tab can complete Region capture after being moved to another browser window.
+- Revalidate the owning tab against the callback's current window before browser capture; after a frame is safely captured, allow local crop/PNG encoding to finish even if the active tab changes.
+- Keep Chrome, Edge, Opera and Firefox background sources in parity and add cross-browser smoke coverage for moved-tab selection, capture, download and lock release.
 
 ## [0.1.17] - 2026-09-26
 
