@@ -82,7 +82,31 @@ public sealed class LanguagePickerWindow : Window
                 _standaloneWindow = null;
             }
         };
-        window.Activate();
+
+        try
+        {
+            window.Activate();
+        }
+        catch
+        {
+            if (ReferenceEquals(_standaloneWindow, window))
+            {
+                _standaloneWindow = null;
+            }
+
+            try
+            {
+                window.Close();
+            }
+            catch (Exception closeException)
+            {
+                StartupDiagnostics.Record(
+                    "Rollback failed Language window activation",
+                    closeException);
+            }
+
+            throw;
+        }
     }
 
     public static void CloseStandalone()
@@ -98,9 +122,11 @@ public sealed class LanguagePickerWindow : Window
         {
             window.Close();
         }
-        catch (InvalidOperationException)
+        catch (Exception exception)
         {
-            // Window chrome may already be closing the singleton.
+            // Shutdown/recovery must not retain a stale singleton if WinUI has
+            // already invalidated the underlying window.
+            StartupDiagnostics.Record("Close standalone Language window", exception);
         }
     }
 
