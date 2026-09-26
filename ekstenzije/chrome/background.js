@@ -465,7 +465,10 @@
     }
 
     const lock = await getLock();
-    if (!lock || lock.kind !== "region" || lock.token !== message.token || lock.tabId !== tabId || lock.windowId !== windowId) {
+    // The owning tab may move between browser windows while the overlay is open.
+    // Keep ownership bound to the session token + tab ID, then revalidate that
+    // same tab is active in the sender's current window before using capture APIs.
+    if (!lock || lock.kind !== "region" || lock.token !== message.token || lock.tabId !== tabId) {
       throw new SnapvereError("captureFailed", "Region capture session is stale.");
     }
 
@@ -475,13 +478,15 @@
         throw new SnapvereError("regionTooSmall", "Selected region is too small.");
       }
 
-      const dataUrl = await captureExpectedVisible(lock.tabId, lock.windowId);
+      await ensureCaptureTabActive(tabId, windowId);
+      const dataUrl = await captureExpectedVisible(tabId, windowId);
       const cropped = await sendTab(tabId, {
         type: "REGION_CROP",
         token: lock.token,
         rect,
         dataUrl
       });
+      await ensureCaptureTabActive(tabId, windowId);
       if (typeof cropped.dataUrl !== "string" || cropped.dataUrl.length > MAX_REGION_DATA_URL || !cropped.dataUrl.startsWith("data:image/png;base64,")) {
         throw new SnapvereError("captureFailed", "Region crop result is invalid or too large.");
       }
