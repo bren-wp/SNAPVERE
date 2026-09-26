@@ -18,7 +18,7 @@ Capture regions, windows, full screens and web pages, annotate quickly, record t
 [![Product Contract](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Website](https://snapvere.com) · [Download v0.1.21](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.21) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
+[Website](https://snapvere.com) · [Download v0.1.22](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.22) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
 
 </div>
 
@@ -40,7 +40,7 @@ SNAPVERE is built for fast everyday capture without turning screenshots into a c
 | 📦 **Portable or installed** | Universal Windows Setup and Portable packages carry x86, x64 and ARM64 application payloads. |
 | 🌐 **Browser coverage** | Chrome, Edge, Opera and Firefox share the same locked SNAPVERE brand and bounded capture behavior. |
 
-SNAPVERE 0.1.21 continues the reliability work across the full Windows and browser surface. Windows capture-feedback UI is now contained as a recovery boundary so a secondary WinUI failure cannot replace the original capture error. The injected browser capture runtime also validates the SNAPVERE extension sender before accepting Region or Full Page work in Chrome, Edge, Opera and Firefox.
+SNAPVERE 0.1.22 continues the reliability work across the full Windows and browser surface. Windows capture-feedback UI is now contained as a recovery boundary so a secondary WinUI failure cannot replace the original capture error. The injected browser capture runtime also validates the SNAPVERE extension sender before accepting Region or Full Page work in Chrome, Edge, Opera and Firefox.
 
 Recording keeps separate compact Start and Stop controls in Settings and a small always-on-top elapsed-time controller while active. Setup remains a guided License → Installation → Finish flow. Recording is primary-display H.264 MP4 and video-only; microphone and system audio are not claimed as supported.
 
@@ -97,8 +97,8 @@ The images below are **real rendered Windows surfaces captured by SNAPVERE's vis
 
 ## Downloads
 
-Current release: **SNAPVERE 0.1.21**<br>
-Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.21
+Current release: **SNAPVERE 0.1.22**<br>
+Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.22
 
 | Platform | Package |
 | --- | --- |
