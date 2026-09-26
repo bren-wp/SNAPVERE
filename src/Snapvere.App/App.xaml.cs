@@ -957,6 +957,18 @@ public partial class App : Microsoft.UI.Xaml.Application
         }
     }
 
+    private static void CloseStandaloneLanguageBestEffort()
+    {
+        try
+        {
+            LanguagePickerWindow.CloseStandalone();
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Record("Close Language during requested shutdown", exception);
+        }
+    }
+
     private void ExecuteTrayCommand(TrayCommand command)
     {
         var window = _window;
@@ -1009,11 +1021,18 @@ public partial class App : Microsoft.UI.Xaml.Application
                     break;
                 }
 
-                _optionsWindow?.Close();
-                LanguagePickerWindow.CloseStandalone();
-                _probeLanguageWindow?.Close();
-                _aboutWindow?.Close();
-                window.Close();
+                // Shutdown is already committed in the capture activity gate.
+                // A stale/broken secondary WinUI surface must not abort the rest
+                // of the close sequence and leave SNAPVERE alive but unable to
+                // start another capture.
+                CloseWindowBestEffort(_optionsWindow, "Close Options during requested shutdown");
+                _optionsWindow = null;
+                CloseStandaloneLanguageBestEffort();
+                CloseWindowBestEffort(_probeLanguageWindow, "Close language probe during requested shutdown");
+                _probeLanguageWindow = null;
+                CloseWindowBestEffort(_aboutWindow, "Close About during requested shutdown");
+                _aboutWindow = null;
+                CloseWindowBestEffort(window, "Close Capture Center during requested shutdown");
                 break;
         }
     }
