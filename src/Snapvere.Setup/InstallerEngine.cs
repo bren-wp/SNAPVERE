@@ -293,7 +293,7 @@ internal static class InstallerEngine
             UnauthorizedAccessException =>
                 "Windows denied access to the selected installation folder. Choose a folder you can write to and try again.",
             InvalidDataException =>
-                "The SNAPVERE Setup package appears incomplete or corrupted. Download a fresh copy from snapvere.com and try again.",
+                "The SNAPVERE Setup package appears incomplete or corrupted. Use a fresh SNAPVERE Setup package and try again.",
             IOException =>
                 "SNAPVERE Setup could not write the application files. Close running SNAPVERE processes, check available disk space and try again.",
             ArgumentException =>
