@@ -50,6 +50,12 @@ SNAPVERE 0.1.21 is a focused Windows and browser reliability/security release th
 - The cross-browser capture runtime test now proves both the accepted self-extension path and rejection of a foreign sender for all four maintained variants.
 - No new browser permission, host access, remote code or telemetry is introduced.
 
+### Setup and production presentation polish
+
+- The corrupted-package recovery message no longer repeats the product website; it asks the user to use a fresh Setup package while leaving integrity enforcement unchanged.
+- EN/HR README copy is rewritten for a clearer production-facing product story with supported features and limitations stated directly.
+- Real visual-QA screenshots of the Tray, Settings and Window Capture surfaces remain the README visuals and are explicitly identified as rendered application screenshots, not generated mockups.
+
 ### Validation contract
 
 - Product Contract CI, Browser Extensions CI, CodeQL Advanced and full Windows CI must pass before merge.
