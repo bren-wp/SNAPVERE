@@ -390,25 +390,17 @@ async function runVariant(browser) {
     const token = runtime.storage.snapvereActiveCapture?.token;
     assert.equal(runtime.storage.snapvereActiveCapture?.windowId, 3);
 
-    const wrongWindowCancellation = await send(
+    const movedWindowCancellation = await send(
       runtime.listener,
       { type: 'REGION_CANCELLED', token },
       { id: 'snapvere-test-extension', tab: { id: 7, windowId: 99 } }
     );
-    assert.equal(wrongWindowCancellation.ok, true);
+    assert.equal(movedWindowCancellation.ok, true);
     assert.equal(
-      runtime.storage.snapvereActiveCapture?.token,
-      token,
-      'region cancellation from a different window must not release the active lock'
+      runtime.storage.snapvereActiveCapture,
+      undefined,
+      'region cancellation must release the lock after the owning tab moves to another window'
     );
-
-    const ownerCancellation = await send(
-      runtime.listener,
-      { type: 'REGION_CANCELLED', token },
-      { id: 'snapvere-test-extension', tab: { id: 7, windowId: 3 } }
-    );
-    assert.equal(ownerCancellation.ok, true);
-    assert.equal(runtime.storage.snapvereActiveCapture, undefined);
   }
 
   {
