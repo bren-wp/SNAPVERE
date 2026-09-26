@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.18**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.18
+- Current public release: **v0.1.19**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.19
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,34 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No unreleased changes are documented after v0.1.18 yet.
+No unreleased changes are documented after v0.1.19 yet.
+
+---
+
+## v0.1.19 — 2026-09-26
+
+SNAPVERE 0.1.19 is a Windows and browser state-reliability release focused on recovering cleanly from secondary WinUI activation failures and preserving exact Region geometry across asynchronous browser capture/crop work. It retains the local-first model, existing permission allow-list and exact six-asset release contract.
+
+### Windows secondary-window lifecycle recovery
+
+- Recording Controller, Settings, Tray, About and standalone Language surfaces now clear their owned application reference if WinUI activation/show fails.
+- Recovery performs best-effort close of the failed surface and records cleanup exceptions instead of retaining an invalid singleton/window object that can poison later user actions.
+- Shutdown also closes secondary windows through contained best-effort paths, so one already-invalid window cannot interrupt cleanup of the remaining tray, recording and service state.
+- Recording state propagation remains isolated per secondary surface; the change does not weaken the existing recording session gate or graceful Stop/finalization path.
+
+### Browser Settings persistence and Region viewport ownership
+
+- Chrome, Edge, Opera and Firefox disable **Save As** together with the Save action while browser-local settings persistence is pending and persist the value captured at submit time.
+- Region selection now snapshots the selection-time viewport width and height and carries those dimensions through REGION_SELECTED and REGION_CROP.
+- The crop runtime validates the same viewport both before and after asynchronous image decode. A resize during that interval fails closed with the bounded capture-failure path instead of scaling the selection against different viewport geometry.
+- Background runtime validates the viewport snapshot before browser frame acquisition and all four variants keep source parity.
+- Browser CI now includes a dedicated capture-runtime test in addition to background, hotkey and Options runtime tests. The exact release workflow executes those runtime checks before reproducible browser packaging.
+
+### Validation contract
+
+- Product Contract CI, Browser Extensions CI, CodeQL Advanced and full Windows CI must pass before merge.
+- x64 tests, x86/ARM64 builds, rendered Windows UI QA, universal Setup/Portable validation, package-size budgets and real x64/x86 lifecycle checks remain required.
+- The release publishes exactly six public assets: Setup, Portable and Chrome/Edge/Opera/Firefox ZIPs, followed by published-asset SHA-256 verification.
 
 ---
 
