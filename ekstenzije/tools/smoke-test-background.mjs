@@ -383,6 +383,27 @@ async function runVariant(browser) {
   }
 
   {
+    const runtime = createRuntime();
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    const pending = await send(runtime.listener, { type: 'CAPTURE_REGION' });
+    assert.equal(pending.ok, true);
+    const token = runtime.storage.snapvereActiveCapture?.token;
+    assert.equal(runtime.storage.snapvereActiveCapture?.windowId, 3);
+
+    const movedWindowCancellation = await send(
+      runtime.listener,
+      { type: 'REGION_CANCELLED', token },
+      { id: 'snapvere-test-extension', tab: { id: 7, windowId: 99 } }
+    );
+    assert.equal(movedWindowCancellation.ok, true);
+    assert.equal(
+      runtime.storage.snapvereActiveCapture,
+      undefined,
+      'region cancellation must release the lock after the owning tab moves to another window'
+    );
+  }
+
+  {
     const runtime = createRuntime({
       snapvereActiveCapture: {
         token: 'stale-region-token',

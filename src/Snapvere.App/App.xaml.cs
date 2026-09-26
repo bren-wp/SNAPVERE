@@ -792,16 +792,15 @@ public partial class App : Microsoft.UI.Xaml.Application
 
     private void OnScreenRecordingStateChanged(bool active)
     {
-        _trayIconService?.SetScreenRecordingState(active);
-        _optionsWindow?.SetScreenRecordingState(active);
-        if (active)
-        {
-            ShowRecordingController();
-        }
-        else
-        {
-            CloseRecordingController();
-        }
+        ExecuteUiBoundary(
+            "Update tray screen-recording state",
+            () => _trayIconService?.SetScreenRecordingState(active));
+        ExecuteUiBoundary(
+            "Update Settings screen-recording state",
+            () => _optionsWindow?.SetScreenRecordingState(active));
+        ExecuteUiBoundary(
+            active ? "Show screen-recording controller" : "Close screen-recording controller",
+            active ? ShowRecordingController : CloseRecordingController);
     }
 
     private void ShowRecordingController()
@@ -843,7 +842,9 @@ public partial class App : Microsoft.UI.Xaml.Application
             return;
         }
 
-        _ = queue.TryEnqueue(() => window.StartCaptureFromHotkey(e.Binding.Mode));
+        _ = queue.TryEnqueue(() => ExecuteUiBoundary(
+            $"Global hotkey {e.Binding.Mode}",
+            () => window.StartCaptureFromHotkey(e.Binding.Mode)));
     }
 
     private void OnTrayCommandInvoked(object? sender, TrayCommandEventArgs e)
@@ -854,7 +855,21 @@ public partial class App : Microsoft.UI.Xaml.Application
             return;
         }
 
-        _ = queue.TryEnqueue(() => ExecuteTrayCommand(e.Command));
+        _ = queue.TryEnqueue(() => ExecuteUiBoundary(
+            $"Tray command {e.Command}",
+            () => ExecuteTrayCommand(e.Command)));
+    }
+
+    private static void ExecuteUiBoundary(string operation, Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Record(operation, exception);
+        }
     }
 
     private void ExecuteTrayCommand(TrayCommand command)

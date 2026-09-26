@@ -496,6 +496,9 @@
   async function handleRegionCancelled(message, sender) {
     const tabId = sender && sender.tab && sender.tab.id;
     const lock = await getLock();
+    // A tab keeps its ID when it is moved to another browser window. Cancellation
+    // is intentionally bound to the session token + owning tab, not the original
+    // window ID, so Escape can always release the pending region lock after a move.
     if (lock && lock.kind === "region" && lock.token === message.token && lock.tabId === tabId) {
       await releaseLock(lock.token);
     }

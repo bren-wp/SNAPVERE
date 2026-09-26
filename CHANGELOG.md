@@ -4,6 +4,24 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+No unreleased changes are documented after v0.1.17 yet.
+
+## [0.1.17] - 2026-09-26
+
+### Windows UI-dispatch and secondary-window stability
+
+- Contain tray and global-hotkey UI-dispatch exceptions at the command boundary so a failed window/capture action is logged instead of escaping the WinUI dispatcher and terminating the process.
+- Update Tray, Settings and the compact recording controller independently when recording state changes so one secondary-surface failure does not block the other Stop surfaces.
+- Guard About-window language refresh against close-vs-dispatch races and record refresh failures instead of rebuilding a closed WinUI window.
+
+### Browser region-session ownership
+
+- Keep `REGION_CANCELLED` bound to the active token and owning tab ID so cancellation still succeeds after the tab is moved to another browser window.
+- Keep Chrome, Edge, Opera and Firefox background sources in parity with the same tab-move-safe ownership rule.
+- Add cross-browser runtime regression coverage proving that Escape/cancel from the moved owning tab releases the active region lock.
+
+## [0.1.16] - 2026-09-23
+
 ### Recording startup and Setup recovery hardening
 
 - Re-check screen-recording cancellation immediately before and after native capture startup so a Stop request during encoder/session initialization cannot continue into transcoder preparation as an active recording.

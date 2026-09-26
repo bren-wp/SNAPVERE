@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.16**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.16
+- Current public release: **v0.1.17**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.17
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,33 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No unreleased changes are documented after v0.1.16 yet.
+No unreleased changes are documented after v0.1.17 yet.
+
+---
+
+## v0.1.17 — 2026-09-26
+
+SNAPVERE 0.1.17 is a Windows and browser reliability release focused on preventing UI-dispatch exceptions from terminating the Windows process and tightening browser region-capture session ownership without expanding permissions or changing the six-asset release contract.
+
+### Windows UI-dispatch and secondary-window stability
+
+- Tray and global-hotkey commands now execute behind a WinUI dispatch boundary so a synchronous UI/window/capture-start exception is recorded instead of escaping the dispatcher and terminating the application.
+- Screen-recording state propagation isolates Tray, Settings and the compact recording controller from one another, so a failure in one secondary surface does not prevent the remaining Stop surfaces from updating.
+- About-window language refresh now tracks window closure and contains a queued refresh that races shutdown, preventing a closed WinUI window from being rebuilt by a late language event.
+- Global XAML diagnostics remain available for unexpected failures; the new boundaries are limited to explicit user-command and secondary-surface dispatch points rather than globally suppressing arbitrary application exceptions.
+
+### Browser region-session ownership
+
+- Chrome, Edge, Opera and Firefox keep region cancellation bound to the active capture token and owning tab ID, which remains stable when a tab is moved between browser windows.
+- Moving the tab to another window while the Region overlay is open no longer risks leaving the capture lock busy after Escape/cancel.
+- Cross-browser smoke coverage verifies that a cancellation callback from the moved owning tab releases the pending region lock for all four maintained variants.
+- No additional browser permission, host access or remote dependency is introduced.
+
+### Validation contract
+
+- Product Contract CI, Browser Extensions CI, CodeQL Advanced and Windows CI must pass before merge.
+- x64 tests, x86/ARM64 builds, rendered Windows UI QA, universal Setup/Portable validation, package-size budgets and real x64/x86 lifecycle checks remain required.
+- The release publishes exactly six public assets: Setup, Portable and Chrome/Edge/Opera/Firefox ZIPs, followed by published-asset SHA-256 verification.
 
 ---
 

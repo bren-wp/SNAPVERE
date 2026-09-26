@@ -23,6 +23,7 @@ public sealed class AboutWindow : Window
     private string _languageCode;
     private TextBlock _supportStatus;
     private bool _sizeApplied;
+    private bool _closed;
 
     public AboutWindow()
     {
@@ -50,13 +51,35 @@ public sealed class AboutWindow : Window
 
     private void OnCurrentLanguageChanged(object? sender, EventArgs e)
     {
-        if (_dispatcherQueue.HasThreadAccess)
+        if (_closed)
         {
-            RefreshLanguage();
             return;
         }
 
-        _ = _dispatcherQueue.TryEnqueue(RefreshLanguage);
+        if (_dispatcherQueue.HasThreadAccess)
+        {
+            RefreshLanguageSafely();
+            return;
+        }
+
+        _ = _dispatcherQueue.TryEnqueue(RefreshLanguageSafely);
+    }
+
+    private void RefreshLanguageSafely()
+    {
+        if (_closed)
+        {
+            return;
+        }
+
+        try
+        {
+            RefreshLanguage();
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Record("Refresh About language", exception);
+        }
     }
 
     private void RefreshLanguage()
@@ -76,6 +99,7 @@ public sealed class AboutWindow : Window
 
     private void AboutWindow_Closed(object sender, WindowEventArgs args)
     {
+        _closed = true;
         SnapvereLanguageState.CurrentLanguageChanged -= OnCurrentLanguageChanged;
         Activated -= AboutWindow_Activated;
         Closed -= AboutWindow_Closed;
