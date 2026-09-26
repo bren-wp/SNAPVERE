@@ -4,7 +4,22 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
-No unreleased changes are documented after v0.1.18 yet.
+No unreleased changes are documented after v0.1.19 yet.
+
+## [0.1.19] - 2026-09-26
+
+### Windows secondary-window lifecycle recovery
+
+- Roll back stale Recording Controller, Settings, Tray, About and standalone Language window ownership when WinUI activation/show fails so later actions can create a clean surface instead of reusing an invalid window.
+- Make secondary-window close paths best-effort during recovery and shutdown, recording cleanup failures without blocking the remaining application teardown.
+- Preserve independent recording-state propagation so a failed secondary surface cannot remove the remaining Start/Stop recovery paths.
+
+### Browser Settings and Region geometry reliability
+
+- Lock **Save As** and the Save action together while browser-local settings persistence is pending, preventing the visible checkbox state from racing the value actually written to storage.
+- Snapshot Region viewport dimensions at selection time and carry them through background capture into the local crop operation for Chrome, Edge, Opera and Firefox.
+- Fail closed when the viewport changes before or during PNG decode instead of saving a geometrically incorrect crop.
+- Add cross-browser runtime regression coverage for pending settings writes, Region viewport forwarding and resize-during-decode behavior, and execute that coverage in browser CI and the release workflow.
 
 ## [0.1.18] - 2026-09-26
 
