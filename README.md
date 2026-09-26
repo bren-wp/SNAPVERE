@@ -16,7 +16,7 @@ No account. No screenshot telemetry. No automatic cloud upload.
 [![Product Contract](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Website](https://snapvere.com) · [Download v0.1.18](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.18) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
+[Website](https://snapvere.com) · [Download v0.1.19](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.19) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
 
 </div>
 
@@ -24,7 +24,7 @@ No account. No screenshot telemetry. No automatic cloud upload.
 
 ## Why SNAPVERE
 
-SNAPVERE 0.1.18 is built for people who want screenshot tools that stay focused on the job: capture the right pixels, annotate quickly, copy or save locally, and get out of the way.
+SNAPVERE 0.1.19 is built for people who want screenshot tools that stay focused on the job: capture the right pixels, annotate quickly, copy or save locally, and get out of the way.
 
 | | What you get |
 | --- | --- |
@@ -36,7 +36,7 @@ SNAPVERE 0.1.18 is built for people who want screenshot tools that stay focused 
 | 📦 **Portable or installed** | Universal Windows Setup and Portable packages carry x86, x64 and ARM64 application payloads. |
 | 🌐 **Browser coverage** | Chrome, Edge, Opera and Firefox share the same locked SNAPVERE brand and bounded capture behavior. |
 
-SNAPVERE 0.1.18 makes recording control smaller and clearer: Settings uses separate compact Start and Stop controls, while active recording uses a small borderless always-on-top timer with one dedicated Stop action. Setup now guides installation through license acceptance and installation options as separate steps, and successful install/uninstall completion correctly leaves the busy state before Finish. Browser Recent keeps the click-time revalidation added in v0.1.14. Recording remains primary-display H.264 MP4 and video-only; microphone and system audio are not claimed as supported.
+SNAPVERE 0.1.19 makes recording control smaller and clearer: Settings uses separate compact Start and Stop controls, while active recording uses a small borderless always-on-top timer with one dedicated Stop action. Setup now guides installation through license acceptance and installation options as separate steps, and successful install/uninstall completion correctly leaves the busy state before Finish. Browser Recent keeps the click-time revalidation added in v0.1.14. Recording remains primary-display H.264 MP4 and video-only; microphone and system audio are not claimed as supported.
 
 The browser runtime now separates extension-page capture commands from tab-owned capture-session callbacks. Injected tab scripts and foreign extension identities cannot initiate top-level SNAPVERE capture commands; region callbacks retain token/tab/window ownership checks, and background responses expose bounded error keys rather than raw internal exception messages. The existing v0.1.5 concurrency, memory, responsive UI and shortcut hardening remains in place.
 
@@ -93,8 +93,8 @@ These are **real rendered Windows surfaces captured by SNAPVERE's visual-QA pipe
 
 ## Downloads
 
-Current release: **SNAPVERE 0.1.18**<br>
-Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.18
+Current release: **SNAPVERE 0.1.19**<br>
+Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.19
 
 | Platform | Package |
 | --- | --- |
