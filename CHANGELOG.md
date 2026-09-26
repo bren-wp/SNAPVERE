@@ -21,6 +21,12 @@ No unreleased changes are documented after v0.1.21 yet.
 - Keep Chrome, Edge, Opera and Firefox capture sources in parity and add cross-browser runtime regression coverage for both valid self-extension messages and rejected foreign senders.
 - Preserve the existing permission allow-list and local-only capture model.
 
+### Setup and production presentation polish
+
+- Remove the remaining unnecessary website reference from the corrupted-package Setup recovery copy while keeping package-integrity failure handling unchanged.
+- Rewrite the EN/HR README positioning for a clearer production-facing product story without overstating supported features.
+- Keep the existing real visual-QA screenshots of Tray, Settings and Window Capture prominent and explicitly identify them as rendered application surfaces rather than design mockups.
+
 ## [0.1.20] - 2026-09-26
 
 ### Windows duplicate-launch stability
