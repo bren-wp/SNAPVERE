@@ -16,7 +16,7 @@ No unreleased changes are documented after v0.1.18 yet.
 ### Browser Region moved-tab completion
 
 - Keep REGION_SELECTED ownership bound to the active token and owning tab ID so the same tab can complete Region capture after being moved to another browser window.
-- Revalidate the owning tab against the callback's current window before capture and after crop, failing closed if the active tab changes during the operation.
+- Revalidate the owning tab against the callback's current window before browser capture; after a frame is safely captured, allow local crop/PNG encoding to finish even if the active tab changes.
 - Keep Chrome, Edge, Opera and Firefox background sources in parity and add cross-browser smoke coverage for moved-tab selection, capture, download and lock release.
 
 ## [0.1.17] - 2026-09-26
