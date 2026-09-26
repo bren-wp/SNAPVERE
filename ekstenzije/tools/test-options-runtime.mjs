@@ -70,6 +70,8 @@ elements["settings-form"].submitButton = new FakeElement("save-settings");
 
 const searchCallbacks = [];
 const openCallbacks = [];
+const settingsSetCallbacks = [];
+const settingsSetValues = [];
 const timers = [];
 let openCalls = 0;
 let folderCalls = 0;
@@ -83,7 +85,10 @@ const chrome = {
   storage: {
     local: {
       get: (_key, callback) => callback({}),
-      set: (_value, callback) => callback()
+      set: (value, callback) => {
+        settingsSetValues.push(structuredClone(value));
+        settingsSetCallbacks.push(callback);
+      }
     }
   },
   downloads: {
@@ -124,6 +129,22 @@ const source = fs.readFileSync("ekstenzije/chrome/options.js", "utf8");
 vm.runInContext(source, context, { filename: "options.js" });
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
+
+await flush();
+const settingsSubmit = elements["settings-form"].submitButton;
+elements["save-as"].checked = true;
+elements["settings-form"].dispatch("submit");
+assert.equal(settingsSetCallbacks.length, 1, "Settings save should start exactly one storage write");
+assert.equal(elements["save-as"].disabled, true, "Save As must be locked while persisted state is being written");
+assert.equal(settingsSubmit.disabled, true, "Save must reject duplicate activation while storage is pending");
+assert.equal(elements["settings-form"].getAttribute("aria-busy"), "true");
+assert.equal(settingsSetValues[0].snapvereSettings.saveAs, true);
+settingsSetCallbacks.shift()();
+await flush();
+assert.equal(elements["save-as"].disabled, false);
+assert.equal(settingsSubmit.disabled, false);
+assert.equal(elements["settings-form"].getAttribute("aria-busy"), "false");
+assert.equal(elements["settings-status"].textContent, "settingsSaved");
 
 assert.equal(searchCallbacks.length, 1, "opening Recent should start one search");
 elements["settings-tab"].dispatch("click");
