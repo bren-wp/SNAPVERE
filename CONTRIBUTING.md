@@ -1,6 +1,6 @@
 # Contributing to SNAPVERE
 
-SNAPVERE 0.1.18 is the current public release. The actively maintained product surface is **Windows plus Chrome, Edge, Opera and Firefox**.
+SNAPVERE 0.1.19 is the current public release. The actively maintained product surface is **Windows plus Chrome, Edge, Opera and Firefox**.
 
 Changes should improve correctness, reliability, accessibility, performance, security or maintainability without weakening the local-first model, capture ownership rules, package integrity or evidence gates.
 
@@ -49,6 +49,7 @@ node ekstenzije/tools/validate-extensions.mjs
 node ekstenzije/tools/verify-extension-parity.mjs
 node ekstenzije/tools/smoke-test-background.mjs
 node ekstenzije/tools/test-options-runtime.mjs
+node ekstenzije/tools/test-capture-runtime.mjs
 node ekstenzije/tools/validate-store-readiness.mjs
 bash ekstenzije/tools/package-extensions.sh
 ```
