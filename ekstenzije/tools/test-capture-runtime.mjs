@@ -12,6 +12,8 @@ function createRuntime() {
   let listener = null;
   const pendingImages = [];
   const drawCalls = [];
+  const runtimeMessages = [];
+  const timers = [];
 
   class FakeImage {
     constructor() {
@@ -85,7 +87,10 @@ function createRuntime() {
     runtime: {
       id: EXTENSION_ID,
       lastError: null,
-      sendMessage(_message, callback) { callback({ ok: true }); },
+      sendMessage(message, callback) {
+        runtimeMessages.push(structuredClone(message));
+        callback({ ok: true });
+      },
       onMessage: {
         addListener(value) { listener = value; }
       }
@@ -108,8 +113,15 @@ function createRuntime() {
     Set,
     Error,
     Uint8Array,
-    setTimeout,
-    clearTimeout,
+    structuredClone,
+    setTimeout(callback, delay) {
+      const timer = { callback, delay, cancelled: false };
+      timers.push(timer);
+      return timer;
+    },
+    clearTimeout(timer) {
+      if (timer && typeof timer === "object") timer.cancelled = true;
+    },
     requestAnimationFrame: (callback) => callback()
   });
 
@@ -118,6 +130,8 @@ function createRuntime() {
     window: windowObject,
     pendingImages,
     drawCalls,
+    runtimeMessages,
+    timers,
     get listener() {
       assert.equal(typeof listener, "function");
       return listener;
@@ -175,6 +189,22 @@ for (const browser of browsers) {
   assert.equal(rejected.errorKey, "captureFailed");
   assert.match(rejected.message, /sender is not this SNAPVERE extension/i);
   assert.equal(runtime.pendingImages.length, 0, `${browser}: rejected sender must not enter capture processing`);
+
+  const regionStarted = await send(runtime.listener, {
+    type: "REGION_START",
+    token: TOKEN
+  });
+  assert.equal(regionStarted.ok, true);
+  const regionWatchdog = runtime.timers.find((timer) => timer.delay === 4 * 60 * 1000);
+  assert.ok(regionWatchdog, `${browser}: region overlay must have a watchdog shorter than the background lock TTL`);
+  regionWatchdog.callback();
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(
+    runtime.runtimeMessages.some((message) => message.type === "REGION_CANCELLED" && message.token === TOKEN),
+    true,
+    `${browser}: expired region overlay must notify background cancellation`
+  );
 
   runtime.window.innerWidth = 100;
   runtime.window.innerHeight = 50;
