@@ -113,6 +113,8 @@ function createRuntime(initialStorage = {}, options = {}) {
           return;
         }
         if (message?.type === 'REGION_CROP') {
+          assert.equal(message.viewportWidth, 1280);
+          assert.equal(message.viewportHeight, 720);
           callback({ ok: true, dataUrl: PNG });
           return;
         }
@@ -391,6 +393,30 @@ async function runVariant(browser) {
     const pending = await send(runtime.listener, { type: 'CAPTURE_REGION' });
     assert.equal(pending.ok, true);
     const token = runtime.storage.snapvereActiveCapture?.token;
+    const selected = await send(
+      runtime.listener,
+      {
+        type: 'REGION_SELECTED',
+        token,
+        rect: { x: 10, y: 12, width: 80, height: 60 },
+        viewportWidth: 0,
+        viewportHeight: 720
+      },
+      { id: 'snapvere-test-extension', tab: { id: 7, windowId: 3 } }
+    );
+    assert.equal(selected.ok, false);
+    assert.equal(selected.errorKey, 'captureFailed');
+    assert.equal(runtime.captures.length, 0);
+    assert.equal(runtime.downloads.length, 0);
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined);
+  }
+
+  {
+    const runtime = createRuntime();
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    const pending = await send(runtime.listener, { type: 'CAPTURE_REGION' });
+    assert.equal(pending.ok, true);
+    const token = runtime.storage.snapvereActiveCapture?.token;
     assert.equal(runtime.storage.snapvereActiveCapture?.windowId, 3);
 
     const movedWindowCancellation = await send(
@@ -428,7 +454,7 @@ async function runVariant(browser) {
 
     const movedWindowSelection = await send(
       runtime.listener,
-      { type: 'REGION_SELECTED', token, rect: { x: 10, y: 12, width: 80, height: 60 } },
+      { type: 'REGION_SELECTED', token, rect: { x: 10, y: 12, width: 80, height: 60 }, viewportWidth: 1280, viewportHeight: 720 },
       { id: 'snapvere-test-extension', tab: { id: 7, windowId: 99 } }
     );
     assert.equal(movedWindowSelection.ok, true);
@@ -485,7 +511,7 @@ async function runVariant(browser) {
     const token = runtime.storage.snapvereActiveCapture?.token;
     const selected = await send(
       runtime.listener,
-      { type: 'REGION_SELECTED', token, rect: { x: 10, y: 12, width: 80, height: 60 } },
+      { type: 'REGION_SELECTED', token, rect: { x: 10, y: 12, width: 80, height: 60 }, viewportWidth: 1280, viewportHeight: 720 },
       { id: "snapvere-test-extension", tab: { id: 7, windowId: 3 } }
     );
     assert.equal(selected.ok, false);
