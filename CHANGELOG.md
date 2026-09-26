@@ -4,7 +4,21 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
-No unreleased changes are documented after v0.1.21 yet.
+No unreleased changes are documented after v0.1.22 yet.
+
+## [0.1.22] - 2026-09-26
+
+### Windows shutdown containment
+
+- Isolate Options, Language, About and probe-window close failures during an explicit Exit so one stale WinUI surface cannot abort the remaining shutdown sequence after the capture activity gate has committed to shutdown.
+- Clear secondary-window ownership as each best-effort close is attempted and always continue to the Capture Center close.
+- Preserve deferred shutdown during active capture/recording and the existing graceful recording Stop/finalization path.
+
+### Browser abandoned-region recovery
+
+- Add a Region overlay watchdog shorter than the background capture-lock TTL so an abandoned selector cannot outlive its owning lock and contaminate a later Visible or Full Page capture.
+- Clean up pointer/keyboard handlers and overlay styling when the watchdog expires, then notify background cancellation so the Region lock is released.
+- Keep Chrome, Edge, Opera and Firefox capture sources in parity and add cross-browser runtime regression coverage for the watchdog/cancellation path.
 
 ## [0.1.21] - 2026-09-26
 
