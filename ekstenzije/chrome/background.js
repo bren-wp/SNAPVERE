@@ -495,8 +495,15 @@
 
   async function handleRegionCancelled(message, sender) {
     const tabId = sender && sender.tab && sender.tab.id;
+    const windowId = sender && sender.tab && sender.tab.windowId;
     const lock = await getLock();
-    if (lock && lock.kind === "region" && lock.token === message.token && lock.tabId === tabId) {
+    if (
+      lock &&
+      lock.kind === "region" &&
+      lock.token === message.token &&
+      lock.tabId === tabId &&
+      lock.windowId === windowId
+    ) {
       await releaseLock(lock.token);
     }
     return { ok: true, cancelled: true };
