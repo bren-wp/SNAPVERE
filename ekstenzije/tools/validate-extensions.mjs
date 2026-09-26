@@ -296,13 +296,22 @@ function validateSource(browser, browserDir) {
       }
     }
 
+    if (relative === "background.js") {
+      if (!/REGION_CROP[\s\S]*viewportWidth[\s\S]*viewportHeight/.test(text)) {
+        fail(`${browser}/background.js must forward the Region viewport snapshot to the crop runtime.`);
+      }
+    }
+
     if (relative === "capture.js") {
       const postEncodeSessionGuard = /const\s+blob\s*=\s*await\s+canvasToBlob\(canvas\);\s*ensureFullToken\(token\);/;
       if (!postEncodeSessionGuard.test(text)) {
         fail(`${browser}/capture.js must revalidate the full-page token after async canvas encoding.`);
       }
-      if (!/REGION_SELECTED[\s\S]*?\.then\s*\(\(response\)\s*=>[\s\S]*?showRegionError/.test(text)) {
-        fail(`${browser}/capture.js must surface asynchronous region capture failures after the popup closes.`);
+      if (!/REGION_SELECTED[\s\S]*?viewportWidth[\s\S]*?viewportHeight[\s\S]*?\.then\s*\(\(response\)\s*=>[\s\S]*?showRegionError/.test(text)) {
+        fail(`${browser}/capture.js must snapshot the Region viewport and surface asynchronous capture failures.`);
+      }
+      if (!/window\.innerWidth\s*!==\s*viewportWidth[\s\S]*window\.innerHeight\s*!==\s*viewportHeight/.test(text)) {
+        fail(`${browser}/capture.js must reject a Region crop if the viewport changes after selection.`);
       }
       if (/fullState\.tiles\.push|tiles\s*:\s*\[\]/.test(text)) {
         fail(`${browser}/capture.js must not retain decoded full-page tile images in an unbounded array.`);
