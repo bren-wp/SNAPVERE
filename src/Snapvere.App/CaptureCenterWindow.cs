@@ -398,20 +398,49 @@ public sealed class CaptureCenterWindow : Window
 
     private void ShowCaptureFeedback(CaptureFeedbackKind kind)
     {
-        CloseCaptureFeedback();
-
-        var feedback = new CaptureFeedbackWindow(
-            kind,
-            _capturePreferencesService.Current.LanguageCode);
-        _feedbackWindow = feedback;
-        feedback.Closed += (_, _) =>
+        CaptureFeedbackWindow? feedback = null;
+        try
         {
-            if (ReferenceEquals(_feedbackWindow, feedback))
+            CloseCaptureFeedback();
+
+            feedback = new CaptureFeedbackWindow(
+                kind,
+                _capturePreferencesService.Current.LanguageCode);
+            _feedbackWindow = feedback;
+            feedback.Closed += (_, _) =>
+            {
+                if (ReferenceEquals(_feedbackWindow, feedback))
+                {
+                    _feedbackWindow = null;
+                }
+            };
+            feedback.Activate();
+        }
+        catch (Exception exception)
+        {
+            // Feedback is itself an error-recovery surface. A WinUI failure while
+            // showing it must never replace the original capture failure with an
+            // unhandled secondary exception.
+            StartupDiagnostics.Record("Show capture feedback", exception);
+            if (feedback is not null && ReferenceEquals(_feedbackWindow, feedback))
             {
                 _feedbackWindow = null;
             }
-        };
-        feedback.Activate();
+
+            if (feedback is not null)
+            {
+                try
+                {
+                    feedback.Close();
+                }
+                catch (Exception closeException)
+                {
+                    StartupDiagnostics.Record(
+                        "Rollback failed capture feedback window",
+                        closeException);
+                }
+            }
+        }
     }
 
     private void CloseCaptureFeedback()
@@ -427,9 +456,11 @@ public sealed class CaptureCenterWindow : Window
         {
             feedback.Close();
         }
-        catch (InvalidOperationException)
+        catch (Exception exception)
         {
-            // The feedback window may already be closing through user chrome.
+            // Recovery/shutdown must not retain a stale feedback reference if
+            // WinUI has already invalidated the underlying window.
+            StartupDiagnostics.Record("Close capture feedback", exception);
         }
     }
 
