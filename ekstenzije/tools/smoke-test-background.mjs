@@ -90,7 +90,10 @@ function createRuntime(initialStorage = {}, options = {}) {
         callback(tab ? [structuredClone(tab)] : []);
       },
       captureVisibleTab(windowId, captureOptions, callback) {
-        assert.equal(windowId, 3);
+        const expectedWindowId = Number.isInteger(options.expectedCaptureWindowId)
+          ? options.expectedCaptureWindowId
+          : 3;
+        assert.equal(windowId, expectedWindowId);
         assert.equal(captureOptions?.format, 'png');
         captures.push(windowId);
         if (options.deferCapture === true) {
@@ -400,6 +403,41 @@ async function runVariant(browser) {
       runtime.storage.snapvereActiveCapture,
       undefined,
       'region cancellation must release the lock after the owning tab moves to another window'
+    );
+  }
+
+  {
+    const runtime = createRuntime({}, {
+      activeTabSequence: [
+        { id: 7, windowId: 3 },
+        { id: 7, windowId: 3 },
+        { id: 7, windowId: 3 },
+        { id: 7, windowId: 3 },
+        { id: 7, windowId: 99 },
+        { id: 7, windowId: 99 },
+        { id: 7, windowId: 99 },
+        { id: 7, windowId: 99 }
+      ],
+      expectedCaptureWindowId: 99
+    });
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    const pending = await send(runtime.listener, { type: 'CAPTURE_REGION' });
+    assert.equal(pending.ok, true);
+    const token = runtime.storage.snapvereActiveCapture?.token;
+    assert.equal(runtime.storage.snapvereActiveCapture?.windowId, 3);
+
+    const movedWindowSelection = await send(
+      runtime.listener,
+      { type: 'REGION_SELECTED', token, rect: { x: 10, y: 12, width: 80, height: 60 } },
+      { id: 'snapvere-test-extension', tab: { id: 7, windowId: 99 } }
+    );
+    assert.equal(movedWindowSelection.ok, true);
+    assert.deepEqual(runtime.captures, [99]);
+    assert.equal(runtime.downloads.length, 1);
+    assert.equal(
+      runtime.storage.snapvereActiveCapture,
+      undefined,
+      'region selection must complete after the owning tab moves to another window'
     );
   }
 
