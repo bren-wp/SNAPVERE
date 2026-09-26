@@ -4,7 +4,28 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
-No unreleased changes are documented after v0.1.20 yet.
+No unreleased changes are documented after v0.1.21 yet.
+
+## [0.1.21] - 2026-09-26
+
+### Windows capture-feedback recovery containment
+
+- Contain WinUI failures while creating, activating or closing the capture-feedback surface so a secondary recovery-window failure cannot replace an existing capture/recording error with an unhandled exception.
+- Clear stale feedback-window ownership before rollback and record best-effort cleanup failures through startup diagnostics.
+- Preserve the existing localized capture, persistence, recording and shutdown feedback states without changing capture ownership or save behavior.
+
+### Browser capture-runtime sender validation
+
+- Validate the runtime sender before the injected capture helper accepts Region or Full Page commands.
+- Reject spoofed or foreign-extension capture messages before they can enter crop, scroll, tile, assembly or cleanup work.
+- Keep Chrome, Edge, Opera and Firefox capture sources in parity and add cross-browser runtime regression coverage for both valid self-extension messages and rejected foreign senders.
+- Preserve the existing permission allow-list and local-only capture model.
+
+### Setup and production presentation polish
+
+- Remove the remaining unnecessary website reference from the corrupted-package Setup recovery copy while keeping package-integrity failure handling unchanged.
+- Rewrite the EN/HR README positioning for a clearer production-facing product story without overstating supported features.
+- Keep the existing real visual-QA screenshots of Tray, Settings and Window Capture prominent and explicitly identify them as rendered application surfaces rather than design mockups.
 
 ## [0.1.20] - 2026-09-26
 

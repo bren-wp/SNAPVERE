@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.20**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.20
+- Current public release: **v0.1.21**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.21
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,39 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No unreleased changes are documented after v0.1.20 yet.
+No unreleased changes are documented after v0.1.21 yet.
+
+---
+
+## v0.1.21 — 2026-09-26
+
+SNAPVERE 0.1.21 is a focused Windows and browser reliability/security release that hardens recovery UI containment and the injected browser capture command boundary. It preserves the existing local-first model, compact recording controls, browser permission allow-list and exact six-asset release contract.
+
+### Windows capture-feedback recovery containment
+
+- Capture feedback is now treated as an explicit recovery boundary: failures while creating, activating or closing the feedback window are diagnosed instead of escaping the original capture/recording error path.
+- Stale feedback-window ownership is cleared before rollback so a failed recovery surface cannot poison later notifications.
+- Best-effort cleanup failures are recorded independently and do not block the remaining capture/shutdown lifecycle.
+- Existing localized feedback categories and capture ownership semantics are unchanged.
+
+### Browser injected capture sender validation
+
+- Chrome, Edge, Opera and Firefox now validate that Region/Full Page runtime messages received by the injected capture helper originate from the same SNAPVERE extension runtime.
+- Foreign or spoofed senders are rejected before crop, scroll, tile storage, assembly or cleanup work begins.
+- The cross-browser capture runtime test now proves both the accepted self-extension path and rejection of a foreign sender for all four maintained variants.
+- No new browser permission, host access, remote code or telemetry is introduced.
+
+### Setup and production presentation polish
+
+- The corrupted-package recovery message no longer repeats the product website; it asks the user to use a fresh Setup package while leaving integrity enforcement unchanged.
+- EN/HR README copy is rewritten for a clearer production-facing product story with supported features and limitations stated directly.
+- Real visual-QA screenshots of the Tray, Settings and Window Capture surfaces remain the README visuals and are explicitly identified as rendered application screenshots, not generated mockups.
+
+### Validation contract
+
+- Product Contract CI, Browser Extensions CI, CodeQL Advanced and full Windows CI must pass before merge.
+- x64 tests, x86/ARM64 builds, rendered Windows UI QA, universal Setup/Portable validation, package-size budgets and real x64/x86 lifecycle checks remain required.
+- The release publishes exactly six public assets: Setup, Portable and Chrome/Edge/Opera/Firefox ZIPs, followed by published-asset SHA-256 verification.
 
 ---
 

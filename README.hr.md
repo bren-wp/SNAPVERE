@@ -8,15 +8,17 @@
 
 ### Snimi. Uredi. Gotovo.
 
-**Brz, lokalno usmjeren alat za snimke zaslona i Windows video snimanje.**  
-Bez računa. Bez telemetrije snimki. Bez automatskog cloud uploada.
+**Jedan local-first capture workflow za Windows i preglednike koje već koristite.**  
+Snimite regiju, prozor, cijeli zaslon ili web-stranicu, brzo označite rezultat, snimite primarni zaslon i zadržite datoteku na svom uređaju.
+
+**Bez računa · Bez automatskog cloud uploada · Bez first-party capture telemetrije**
 
 [![Windows CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/ci.yml)
 [![Extensions CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/extensions-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/extensions-ci.yml)
 [![Product Contract](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Web stranica](https://snapvere.com) · [Preuzmi v0.1.20](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.20) · [Dokumentacija](docs/hr/README.md) · [English](README.md)
+[Web stranica](https://snapvere.com) · [Preuzmi v0.1.21](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.21) · [Dokumentacija](docs/hr/README.md) · [English](README.md)
 
 </div>
 
@@ -24,7 +26,9 @@ Bez računa. Bez telemetrije snimki. Bez automatskog cloud uploada.
 
 ## Zašto SNAPVERE
 
-SNAPVERE 0.1.20 namijenjen je korisnicima koji žele brz i čist screenshot workflow: snimiti točne piksele, označiti ih, kopirati ili spremiti lokalno i nastaviti raditi.
+SNAPVERE je napravljen za brzo svakodnevno snimanje bez pretvaranja screenshota u cloud workflow. Sučelje ostaje kompaktno, radnje su blizu Windowsa i preglednika, a svaki način snimanja ima jasnu i predvidljivu svrhu.
+
+**Od screenshota u nekoliko sekundi do duljeg lokalnog snimanja, tijek ostaje isti: odaberite što želite snimiti, dovršite rezultat, spremite ga lokalno i nastavite raditi.**
 
 | | Što dobivate |
 | --- | --- |
@@ -36,9 +40,9 @@ SNAPVERE 0.1.20 namijenjen je korisnicima koji žele brz i čist screenshot work
 | 📦 **Setup ili Portable** | Universal Windows paketi s x86, x64 i ARM64 aplikacijskim payloadima. |
 | 🌐 **Četiri preglednika** | Chrome, Edge, Opera i Firefox dijele isti zaključani SNAPVERE brand i ograničeno capture ponašanje. |
 
-SNAPVERE 0.1.20 čini upravljanje snimanjem manjim i jasnijim: Postavke koriste odvojene kompaktne Start i Stop kontrole, a aktivno snimanje mali borderless always-on-top timer s jednom namjenskom Stop akcijom. Setup sada vodi kroz prihvat licence i instalacijske opcije kao odvojene korake, a uspješan install/uninstall ispravno izlazi iz busy stanja prije gumba Završi. Browser Recent zadržava click-time revalidation uveden u v0.1.14. Recording ostaje primary-display H.264 MP4 samo s videom; mikrofon i sistemski zvuk nisu navedeni kao podržani.
+SNAPVERE 0.1.21 nastavlja reliability hardening kroz cijelu Windows i browser površinu. Windows capture-feedback UI sada je containmentan kao recovery granica, pa sekundarni WinUI problem ne može zamijeniti izvornu capture grešku. Injektirani browser capture runtime dodatno provjerava SNAPVERE extension sender prije prihvaćanja Region ili Full Page rada u Chromeu, Edgeu, Operi i Firefoxu.
 
-Browser runtime sada odvaja capture naredbe iz SNAPVERE extension stranica od callbackova capture sesije u vlasničkoj kartici. Injektirani tab script i strani extension identitet ne mogu pokrenuti top-level SNAPVERE capture naredbe; region callbackovi i dalje moraju odgovarati tokenu, kartici i prozoru, a background odgovor prema UI-ju više ne vraća raw interne exception poruke. Postojeći v0.1.5 concurrency, memory, responsive UI i shortcut hardening ostaje zadržan.
+Recording zadržava odvojene kompaktne Start i Stop kontrole u Postavkama te mali always-on-top kontroler s proteklim vremenom dok je snimanje aktivno. Setup ostaje vođeni License → Installation → Finish tijek. Recording je primary-display H.264 MP4 samo s videom; mikrofon i sistemski zvuk nisu navedeni kao podržani.
 
 ## Windows workflow
 
@@ -69,9 +73,9 @@ Dozvole su točno `activeTab`, `scripting`, `downloads`, `downloads.open` i `sto
 
 Browser ZIP paketi namijenjeni su ručnoj instalaciji. Vanjsko store odobrenje ne tvrdi se dok stvarni listing nije objavljen.
 
-## SNAPVERE u stvarnom radu
+## Stvarni screenshotovi aplikacije
 
-Ovo su **stvarne renderirane Windows površine koje je snimio SNAPVERE visual-QA pipeline** iz istog validiranog koda — nisu dizajnerski mockupovi.
+Slike ispod su **stvarne renderirane Windows površine koje je snimio SNAPVERE visual-QA pipeline iz validiranog builda aplikacije**. Nisu generirani koncepti niti dizajnerski mockupovi.
 
 <table>
 <tr>
@@ -86,8 +90,8 @@ Ovo su **stvarne renderirane Windows površine koje je snimio SNAPVERE visual-QA
 
 ## Preuzimanja
 
-Aktualno izdanje: **SNAPVERE 0.1.20**<br>
-Izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.20
+Aktualno izdanje: **SNAPVERE 0.1.21**<br>
+Izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.21
 
 | Platforma | Paket |
 | --- | --- |

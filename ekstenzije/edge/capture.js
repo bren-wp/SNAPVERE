@@ -29,6 +29,17 @@
     return error && typeof error.message === "string" ? error.message : "Capture failed.";
   }
 
+  function ensureExtensionSender(sender) {
+    const runtimeId = chrome.runtime && typeof chrome.runtime.id === "string"
+      ? chrome.runtime.id
+      : "";
+    const senderId = sender && typeof sender.id === "string" ? sender.id : "";
+
+    if (!runtimeId || senderId !== runtimeId) {
+      throw new Error("Capture message sender is not this SNAPVERE extension.");
+    }
+  }
+
   function sendRuntime(message) {
     return new Promise((resolve, reject) => {
       try {
@@ -577,12 +588,23 @@
     }
   }
 
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const accepted = new Set([
       "REGION_START", "REGION_CLEANUP", "REGION_CROP", "FULL_PREP", "FULL_SCROLL",
       "FULL_HIDE_FLOATING", "FULL_STORE_TILE", "FULL_ASSEMBLE", "FULL_CLEANUP"
     ]);
     if (!message || !accepted.has(message.type)) return false;
+
+    try {
+      ensureExtensionSender(sender);
+    } catch (error) {
+      sendResponse({
+        ok: false,
+        errorKey: "captureFailed",
+        message: safeError(error)
+      });
+      return false;
+    }
 
     Promise.resolve(handle(message))
       .then((result) => sendResponse({ ok: true, ...(result || {}) }))
