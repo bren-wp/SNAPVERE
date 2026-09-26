@@ -16,9 +16,9 @@ No unreleased changes are documented after v0.1.17 yet.
 
 ### Browser region-session ownership
 
-- Require `REGION_CANCELLED` callbacks to match the active token, tab ID and window ID before releasing the browser capture lock.
-- Keep Chrome, Edge, Opera and Firefox background sources in parity with the same ownership rule.
-- Add cross-browser runtime regression coverage proving that a wrong-window cancellation cannot release the active region lock while the owning window still can.
+- Keep `REGION_CANCELLED` bound to the active token and owning tab ID so cancellation still succeeds after the tab is moved to another browser window.
+- Keep Chrome, Edge, Opera and Firefox background sources in parity with the same tab-move-safe ownership rule.
+- Add cross-browser runtime regression coverage proving that Escape/cancel from the moved owning tab releases the active region lock.
 
 ## [0.1.16] - 2026-09-23
 
