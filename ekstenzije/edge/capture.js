@@ -265,8 +265,16 @@
         return;
       }
 
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
       cleanupRegion();
-      void sendRuntime({ type: "REGION_SELECTED", token, rect })
+      void sendRuntime({
+        type: "REGION_SELECTED",
+        token,
+        rect,
+        viewportWidth,
+        viewportHeight
+      })
         .then((response) => {
           if (!response || response.ok !== true) {
             const errorKey = response && typeof response.errorKey === "string"
@@ -293,17 +301,28 @@
     window.addEventListener("keydown", onKeyDown, true);
   }
 
-  async function cropRegion(token, rect, dataUrl) {
+  async function cropRegion(token, rect, dataUrl, viewportWidth, viewportHeight) {
     if (!validToken(token)) throw new Error("Invalid region capture token.");
     if (!rect || ![rect.x, rect.y, rect.width, rect.height].every(Number.isFinite)) {
       throw new Error("Invalid region geometry.");
+    }
+    if (!Number.isFinite(viewportWidth) || !Number.isFinite(viewportHeight) ||
+        viewportWidth <= 0 || viewportHeight <= 0) {
+      throw new Error("Invalid region viewport snapshot.");
+    }
+    if (window.innerWidth !== viewportWidth || window.innerHeight !== viewportHeight) {
+      throw new Error("Browser viewport changed during region capture.");
     }
 
     const image = await loadImage(dataUrl);
     let canvas = null;
     try {
-      const scaleX = image.naturalWidth / Math.max(1, window.innerWidth);
-      const scaleY = image.naturalHeight / Math.max(1, window.innerHeight);
+      if (window.innerWidth !== viewportWidth || window.innerHeight !== viewportHeight) {
+        throw new Error("Browser viewport changed during region capture.");
+      }
+
+      const scaleX = image.naturalWidth / Math.max(1, viewportWidth);
+      const scaleY = image.naturalHeight / Math.max(1, viewportHeight);
       const sourceX = Math.max(0, Math.floor(rect.x * scaleX));
       const sourceY = Math.max(0, Math.floor(rect.y * scaleY));
       const sourceWidth = Math.min(image.naturalWidth - sourceX, Math.max(1, Math.round(rect.width * scaleX)));
@@ -540,7 +559,14 @@
     switch (message.type) {
       case "REGION_START": startRegion(message.token); return {};
       case "REGION_CLEANUP": cleanupRegionForToken(message.token); return {};
-      case "REGION_CROP": return { dataUrl: await cropRegion(message.token, message.rect, message.dataUrl) };
+      case "REGION_CROP": return {
+        dataUrl: await cropRegion(
+          message.token,
+          message.rect,
+          message.dataUrl,
+          Number(message.viewportWidth),
+          Number(message.viewportHeight))
+      };
       case "FULL_PREP": return prepFull(message.token);
       case "FULL_SCROLL": return fullScroll(message.token, Number(message.x), Number(message.y));
       case "FULL_HIDE_FLOATING": hideFloating(message.token); return {};

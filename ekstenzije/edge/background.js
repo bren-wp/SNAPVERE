@@ -478,13 +478,22 @@
         throw new SnapvereError("regionTooSmall", "Selected region is too small.");
       }
 
+      const viewportWidth = Number(message.viewportWidth);
+      const viewportHeight = Number(message.viewportHeight);
+      if (!Number.isFinite(viewportWidth) || !Number.isFinite(viewportHeight) ||
+          viewportWidth <= 0 || viewportHeight <= 0) {
+        throw new SnapvereError("captureFailed", "Region viewport snapshot is invalid.");
+      }
+
       await ensureCaptureTabActive(tabId, windowId);
       const dataUrl = await captureExpectedVisible(tabId, windowId);
       const cropped = await sendTab(tabId, {
         type: "REGION_CROP",
         token: lock.token,
         rect,
-        dataUrl
+        dataUrl,
+        viewportWidth,
+        viewportHeight
       });
       if (typeof cropped.dataUrl !== "string" || cropped.dataUrl.length > MAX_REGION_DATA_URL || !cropped.dataUrl.startsWith("data:image/png;base64,")) {
         throw new SnapvereError("captureFailed", "Region crop result is invalid or too large.");

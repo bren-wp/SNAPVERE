@@ -807,8 +807,26 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         if (_recordingControllerWindow is not null)
         {
-            _recordingControllerWindow.Activate();
-            return;
+            var existing = _recordingControllerWindow;
+            try
+            {
+                existing.Activate();
+                return;
+            }
+            catch
+            {
+                if (ReferenceEquals(_recordingControllerWindow, existing))
+                {
+                    _recordingControllerWindow = null;
+                }
+
+                RequestRecordingStopBestEffort(
+                    "Stop recording after stale controller activation failure");
+                CloseRecordingControllerBestEffort(
+                    existing,
+                    "Recover stale screen-recording controller");
+                throw;
+            }
         }
 
         var preferences = _services.GetRequiredService<CapturePreferencesService>();
@@ -823,15 +841,63 @@ public partial class App : Microsoft.UI.Xaml.Application
                 _recordingControllerWindow = null;
             }
         };
-        controller.Activate();
+
+        try
+        {
+            controller.Activate();
+        }
+        catch
+        {
+            if (ReferenceEquals(_recordingControllerWindow, controller))
+            {
+                _recordingControllerWindow = null;
+            }
+
+            RequestRecordingStopBestEffort(
+                "Stop recording after controller activation failure");
+            CloseRecordingControllerBestEffort(
+                controller,
+                "Rollback failed screen-recording controller activation");
+            throw;
+        }
     }
 
     private void CloseRecordingController()
     {
         var controller = _recordingControllerWindow;
         _recordingControllerWindow = null;
-        controller?.CloseFromOwner();
+        if (controller is not null)
+        {
+            CloseRecordingControllerBestEffort(controller, "Close screen-recording controller");
+        }
     }
+
+    private static void CloseRecordingControllerBestEffort(
+        RecordingControllerWindow controller,
+        string operation)
+    {
+        try
+        {
+            controller.CloseFromOwner();
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Record(operation, exception);
+        }
+    }
+
+    private void RequestRecordingStopBestEffort(string operation)
+    {
+        try
+        {
+            _window?.StopScreenRecording();
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Record(operation, exception);
+        }
+    }
+
 
     private void OnGlobalHotkeyPressed(object? sender, CaptureHotkeyPressedEventArgs e)
     {
@@ -865,6 +931,23 @@ public partial class App : Microsoft.UI.Xaml.Application
         try
         {
             action();
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Record(operation, exception);
+        }
+    }
+
+    private static void CloseWindowBestEffort(Window? window, string operation)
+    {
+        if (window is null)
+        {
+            return;
+        }
+
+        try
+        {
+            window.Close();
         }
         catch (Exception exception)
         {
@@ -951,24 +1034,52 @@ public partial class App : Microsoft.UI.Xaml.Application
                 _trayMenuWindow = null;
             }
         };
-        menu.ShowNearTray();
+
+        try
+        {
+            menu.ShowNearTray();
+        }
+        catch
+        {
+            if (ReferenceEquals(_trayMenuWindow, menu))
+            {
+                _trayMenuWindow = null;
+            }
+
+            CloseWindowBestEffort(menu, "Rollback failed tray-menu activation");
+            throw;
+        }
     }
 
     private void CloseTrayMenu()
     {
         var menu = _trayMenuWindow;
         _trayMenuWindow = null;
-        menu?.Close();
+        CloseWindowBestEffort(menu, "Close tray menu");
     }
 
     private void ShowOptions(OptionsSection section)
     {
         if (_optionsWindow is not null)
         {
-            _optionsWindow.SetScreenRecordingState(_window?.IsScreenRecordingActive ?? false);
-            _optionsWindow.ShowSection(section);
-            _optionsWindow.Activate();
-            return;
+            var existing = _optionsWindow;
+            try
+            {
+                existing.SetScreenRecordingState(_window?.IsScreenRecordingActive ?? false);
+                existing.ShowSection(section);
+                existing.Activate();
+                return;
+            }
+            catch
+            {
+                if (ReferenceEquals(_optionsWindow, existing))
+                {
+                    _optionsWindow = null;
+                }
+
+                CloseWindowBestEffort(existing, "Recover stale Options window");
+                throw;
+            }
         }
 
         var options = _services.GetRequiredService<OptionsWindow>();
@@ -988,7 +1099,21 @@ public partial class App : Microsoft.UI.Xaml.Application
                 _optionsWindow = null;
             }
         };
-        options.Activate();
+
+        try
+        {
+            options.Activate();
+        }
+        catch
+        {
+            if (ReferenceEquals(_optionsWindow, options))
+            {
+                _optionsWindow = null;
+            }
+
+            CloseWindowBestEffort(options, "Rollback failed Options activation");
+            throw;
+        }
     }
 
     private void ShowLanguage()
@@ -1001,8 +1126,22 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         if (_aboutWindow is not null)
         {
-            _aboutWindow.Activate();
-            return;
+            var existing = _aboutWindow;
+            try
+            {
+                existing.Activate();
+                return;
+            }
+            catch
+            {
+                if (ReferenceEquals(_aboutWindow, existing))
+                {
+                    _aboutWindow = null;
+                }
+
+                CloseWindowBestEffort(existing, "Recover stale About window");
+                throw;
+            }
         }
 
         var about = new AboutWindow();
@@ -1014,7 +1153,21 @@ public partial class App : Microsoft.UI.Xaml.Application
                 _aboutWindow = null;
             }
         };
-        about.Activate();
+
+        try
+        {
+            about.Activate();
+        }
+        catch
+        {
+            if (ReferenceEquals(_aboutWindow, about))
+            {
+                _aboutWindow = null;
+            }
+
+            CloseWindowBestEffort(about, "Rollback failed About activation");
+            throw;
+        }
     }
 
     private void OpenCaptureFolder()
@@ -1036,12 +1189,12 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         CloseRecordingController();
         CloseTrayMenu();
-        _optionsWindow?.Close();
+        CloseWindowBestEffort(_optionsWindow, "Close Options during shutdown");
         _optionsWindow = null;
         LanguagePickerWindow.CloseStandalone();
-        _probeLanguageWindow?.Close();
+        CloseWindowBestEffort(_probeLanguageWindow, "Close language probe during shutdown");
         _probeLanguageWindow = null;
-        _aboutWindow?.Close();
+        CloseWindowBestEffort(_aboutWindow, "Close About during shutdown");
         _aboutWindow = null;
 
         if (_window is not null)

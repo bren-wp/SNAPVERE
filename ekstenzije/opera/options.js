@@ -300,15 +300,17 @@
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!settingsSubmit || settingsSubmit.disabled) return;
-    settingsSubmit.disabled = true;
+
+    const saveAs = saveAsInput.checked === true;
+    setSettingsInteractive(false);
     setStatus(settingsStatus, "");
     try {
-      await setLocal({ [SETTINGS_KEY]: { saveAs: saveAsInput.checked === true } });
+      await setLocal({ [SETTINGS_KEY]: { saveAs } });
       setStatus(settingsStatus, t("settingsSaved"));
     } catch {
       setStatus(settingsStatus, t("settingsSaveFailed"), true);
     } finally {
-      settingsSubmit.disabled = false;
+      setSettingsInteractive(true);
     }
   });
 
