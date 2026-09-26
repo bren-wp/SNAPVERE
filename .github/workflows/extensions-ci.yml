@@ -54,6 +54,7 @@ jobs:
           node --check ekstenzije/tools/smoke-test-background.mjs
           node --check ekstenzije/tools/test-hotkey-failure-feedback.mjs
           node --check ekstenzije/tools/test-options-runtime.mjs
+          node --check ekstenzije/tools/test-capture-runtime.mjs
           python -m py_compile ekstenzije/tools/generate-store-assets.py
 
       - name: Exercise background runtime behavior
@@ -64,6 +65,9 @@ jobs:
 
       - name: Exercise options runtime race and activation behavior
         run: node ekstenzije/tools/test-options-runtime.mjs
+
+      - name: Exercise capture runtime viewport behavior
+        run: node ekstenzije/tools/test-capture-runtime.mjs
 
       - name: Generate browser store assets
         shell: bash
