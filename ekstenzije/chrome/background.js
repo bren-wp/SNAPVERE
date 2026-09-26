@@ -486,7 +486,6 @@
         rect,
         dataUrl
       });
-      await ensureCaptureTabActive(tabId, windowId);
       if (typeof cropped.dataUrl !== "string" || cropped.dataUrl.length > MAX_REGION_DATA_URL || !cropped.dataUrl.startsWith("data:image/png;base64,")) {
         throw new SnapvereError("captureFailed", "Region crop result is invalid or too large.");
       }
