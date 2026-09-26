@@ -106,13 +106,18 @@
   async function initializeSettings() {
     setSettingsInteractive(false);
     setStatus(settingsStatus, t("loadingSettings"));
+    let loaded = false;
     try {
       await loadSettings();
+      loaded = true;
       setStatus(settingsStatus, "");
     } catch {
       setStatus(settingsStatus, t("settingsLoadFailed"), true);
     } finally {
-      setSettingsInteractive(true);
+      // Never allow a failed initial read to be overwritten by the default
+      // checkbox state. Reloading the Options page gives storage another
+      // chance to recover without mutating existing settings.
+      setSettingsInteractive(loaded);
     }
   }
 

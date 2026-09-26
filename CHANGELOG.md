@@ -4,7 +4,21 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
-No unreleased changes are documented after v0.1.19 yet.
+No unreleased changes are documented after v0.1.20 yet.
+
+## [0.1.20] - 2026-09-26
+
+### Windows duplicate-launch stability
+
+- Route the existing-instance activation path through the same contained WinUI command boundary used by tray and global-hotkey actions.
+- Record an Options/tray cleanup activation failure instead of allowing a duplicate-launch dispatcher callback to escape and terminate the running process.
+- Preserve the existing second-launch probe and single-instance behavior while making the UI transition failure-safe.
+
+### Browser Settings load-failure containment
+
+- Keep Save As and Save disabled when the initial browser-local settings read fails instead of re-enabling controls with a default checkbox value.
+- Prevent a failed initial read from overwriting an existing stored preference with an unverified local/default state.
+- Add a dedicated Chrome/Edge/Opera/Firefox runtime regression test and execute it in Browser Extensions CI and the exact release workflow.
 
 ## [0.1.19] - 2026-09-26
 

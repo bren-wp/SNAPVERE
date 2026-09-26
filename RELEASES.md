@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.19**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.19
+- Current public release: **v0.1.20**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.20
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,32 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No unreleased changes are documented after v0.1.19 yet.
+No unreleased changes are documented after v0.1.20 yet.
+
+---
+
+## v0.1.20 — 2026-09-26
+
+SNAPVERE 0.1.20 is a focused Windows and browser reliability release that closes two remaining user-triggered state/error paths discovered after v0.1.19. It preserves the local-first model, existing permission allow-list, compact recording controls and exact six-asset release contract.
+
+### Windows duplicate-launch UI containment
+
+- The existing-instance activation path now executes through the same contained WinUI command boundary used by tray and global-hotkey actions.
+- A failure while closing the tray surface or showing Settings after a duplicate launch is recorded through startup diagnostics instead of escaping the dispatcher callback and risking process termination.
+- Single-instance ownership, second-launch activation and the existing lifecycle probe remain unchanged.
+
+### Browser Settings initial-load failure containment
+
+- Chrome, Edge, Opera and Firefox keep **Save As** and Save disabled when the initial browser-local settings read fails.
+- A failed storage read can no longer re-enable the form with a default checkbox value and subsequently overwrite an existing stored preference.
+- The visible load-failure state remains on screen; reloading the Options page retries the read without mutating stored settings.
+- Browser CI and the exact release workflow include a dedicated cross-browser runtime regression test proving that failed initialization stays non-interactive and performs no storage write.
+
+### Validation contract
+
+- Product Contract CI, Browser Extensions CI, CodeQL Advanced and full Windows CI must pass before merge.
+- x64 tests, x86/ARM64 builds, rendered Windows UI QA, universal Setup/Portable validation, package-size budgets and real x64/x86 lifecycle checks remain required.
+- The release publishes exactly six public assets: Setup, Portable and Chrome/Edge/Opera/Firefox ZIPs, followed by published-asset SHA-256 verification.
 
 ---
 
