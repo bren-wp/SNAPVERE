@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.21**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.21
+- Current public release: **v0.1.22**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.22
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,33 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No unreleased changes are documented after v0.1.21 yet.
+No unreleased changes are documented after v0.1.22 yet.
+
+---
+
+## v0.1.22 — 2026-09-26
+
+SNAPVERE 0.1.22 is a focused Windows/browser stability release that closes two ownership/lifecycle gaps found after v0.1.21: partial shutdown after a secondary WinUI close failure and abandoned browser Region overlays outliving their capture lock.
+
+### Windows requested-shutdown containment
+
+- Explicit Exit now treats each secondary window close as an independent best-effort operation.
+- A stale or invalid Options, Language, About or probe surface can no longer abort the rest of the shutdown sequence after shutdown ownership has already been committed.
+- Secondary-window references are cleared as cleanup is attempted and the Capture Center close is still reached.
+- Deferred shutdown during an active capture and graceful screen-recording Stop/finalization semantics remain unchanged.
+
+### Browser Region watchdog and lock alignment
+
+- Region selection now has a four-minute page-side watchdog, shorter than the five-minute background capture-lock TTL.
+- If the selector is abandoned, SNAPVERE removes its overlay, pointer/keyboard handlers and injected style before the lock can be treated as stale by a future capture.
+- The watchdog sends the existing REGION_CANCELLED callback so background ownership is released through the normal token/tab validation path.
+- Chrome, Edge, Opera and Firefox use identical runtime behavior and the capture-runtime regression suite validates watchdog creation and cancellation notification.
+
+### Validation contract
+
+- Product Contract CI, Browser Extensions CI, CodeQL Advanced and full Windows CI must pass before merge.
+- x64 tests, x86/ARM64 builds, rendered Windows UI QA, universal Setup/Portable validation, package-size budgets and real x64/x86 lifecycle checks remain required.
+- The release publishes exactly six public assets: Setup, Portable and Chrome/Edge/Opera/Firefox ZIPs, followed by published-asset SHA-256 verification.
 
 ---
 
