@@ -76,9 +76,19 @@ try {
         throw 'MSI File table does not contain Snapvere.exe.'
     }
 
+    $shortcutDirectory = Get-MsiScalar "SELECT `Directory_` FROM `Shortcut` WHERE `Shortcut` = 'StartMenuShortcut'"
+    if ($shortcutDirectory -ne 'ApplicationProgramsFolder') {
+        throw "MSI Start Menu shortcut directory is invalid: '$shortcutDirectory'."
+    }
+
+    $shortcutComponent = Get-MsiScalar "SELECT `Component_` FROM `Shortcut` WHERE `Shortcut` = 'StartMenuShortcut'"
+    if ($shortcutComponent -ne 'MainExecutable') {
+        throw "MSI Start Menu shortcut is not owned by MainExecutable: '$shortcutComponent'."
+    }
+
     $shortcutTarget = Get-MsiScalar "SELECT `Target` FROM `Shortcut` WHERE `Shortcut` = 'StartMenuShortcut'"
-    if ($shortcutTarget -ne '[INSTALLFOLDER]Snapvere.exe') {
-        throw "MSI Start Menu shortcut target is invalid: '$shortcutTarget'."
+    if ([string]::IsNullOrWhiteSpace($shortcutTarget) -or $shortcutTarget -eq '[INSTALLFOLDER]Snapvere.exe') {
+        throw "MSI Start Menu shortcut is not authored as an advertised application shortcut: '$shortcutTarget'."
     }
 
     $upgradeVersionMax = Get-MsiScalar "SELECT `VersionMax` FROM `Upgrade` WHERE `UpgradeCode` = '$($expected.UpgradeCode)'"
