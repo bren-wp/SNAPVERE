@@ -233,8 +233,47 @@ def main() -> int:
             fail(f"MSI Package/{name} mismatch: expected {expected!r}, got {package.get(name)!r}")
     if package.find("w:MajorUpgrade", ns) is None:
         fail("MSI package must author an explicit MajorUpgrade policy")
-    if package.find(".//w:Shortcut[@Id='StartMenuShortcut']", ns) is None:
-        fail("MSI package must install the SNAPVERE Start Menu shortcut")
+
+    program_menu = package.find("w:StandardDirectory[@Id='ProgramMenuFolder']", ns)
+    if program_menu is None or program_menu.find("w:Directory[@Id='ApplicationProgramsFolder']", ns) is None:
+        fail("MSI package must place SNAPVERE shortcuts under ProgramMenuFolder/ApplicationProgramsFolder")
+    if package.find("w:StandardDirectory[@Id='CommonProgramsFolder']", ns) is not None:
+        fail("CommonProgramsFolder is not valid StandardDirectory authoring")
+
+    executable = package.find(".//w:File[@Id='SnapvereExecutable']", ns)
+    if executable is None or executable.get("Source") != r"$(var.SnapverePayloadDir)\Snapvere.exe":
+        fail("MSI package must explicitly author SnapvereExecutable from the release payload")
+    if executable.get("KeyPath") != "yes":
+        fail("SnapvereExecutable must be the MainExecutable component key path")
+
+    shortcut = executable.find("w:Shortcut[@Id='StartMenuShortcut']", ns)
+    if shortcut is None:
+        fail("MSI package must install the SNAPVERE Start Menu shortcut from SnapvereExecutable")
+    expected_shortcut = {
+        "Directory": "ApplicationProgramsFolder",
+        "WorkingDirectory": "INSTALLFOLDER",
+        "Advertise": "yes",
+    }
+    for name, expected in expected_shortcut.items():
+        if shortcut.get(name) != expected:
+            fail(f"MSI StartMenuShortcut/{name} mismatch: expected {expected!r}, got {shortcut.get(name)!r}")
+    if shortcut.get("Target") is not None:
+        fail("advertised StartMenuShortcut must inherit its target from parent SnapvereExecutable")
+
+    main_component = package.find(".//w:Component[@Id='MainExecutable']", ns)
+    if main_component is None or main_component.find("w:File[@Id='SnapvereExecutable']", ns) is None:
+        fail("MSI SnapvereExecutable must be owned by MainExecutable")
+
+    excludes = [
+        element.get("Files")
+        for element in package.findall(".//w:Files/w:Exclude", ns)
+        if element.get("Files")
+    ]
+    if r"$(var.SnapverePayloadDir)\Snapvere.exe" not in excludes:
+        fail("MSI wildcard harvesting must exclude explicitly authored Snapvere.exe")
+    if package.find(".//w:RegistryValue[@Root='HKLM']", ns) is not None:
+        fail("MSI Start Menu ownership must not use an HKLM registry key path")
+
     if package.find(".//w:CustomAction", ns) is not None:
         fail("MSI package must not introduce custom actions without an explicit reviewed need")
 
