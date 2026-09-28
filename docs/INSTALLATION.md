@@ -1,6 +1,6 @@
 # Installing SNAPVERE
 
-Current public release: **v0.1.15**. Published tags and assets are immutable; later `main` hardening is not retroactively part of that release.
+The active release version is defined by [`product-version.json`](../product-version.json). Published tags and assets are immutable; use the latest release page for the current binaries.
 
 ## Windows Setup
 
@@ -37,6 +37,17 @@ SNAPVERE-Setup.exe --uninstall --silent
 
 A silent install without `--accept-license` exits without installing.
 
+## Windows Installer (MSI)
+
+`SNAPVERE-Setup.msi` is the standard x64 Windows Installer package. It installs per-machine under `Program Files\Brendigo\SNAPVERE`, registers SNAPVERE in Installed Apps, creates the Start Menu shortcut, supports Windows Installer repair and major upgrades, and supports unattended administration:
+
+```text
+msiexec /i SNAPVERE-Setup.msi /qn /norestart
+msiexec /x SNAPVERE-Setup.msi /qn /norestart
+```
+
+MSI lifecycle QA validates database metadata, clean installation, repair, silent install/uninstall, major-upgrade replacement and removal. User capture data is outside the MSI-owned application directory and is not intentionally removed by package uninstall.
+
 ## Windows Portable
 
 `SNAPVERE-Portable.exe` is the portable option. It validates its embedded payload before reuse and does not require a traditional installation.
@@ -52,4 +63,4 @@ The current release provides:
 
 The ZIP files are source-ready release packages for manual installation. Store publication is a separate external process and is not claimed unless an actual store listing exists.
 
-Current release: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.15
+Current release: https://github.com/bren-wp/SNAPVERE/releases/latest

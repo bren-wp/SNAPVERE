@@ -4,7 +4,27 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
-No unreleased changes are documented after v0.1.22 yet.
+No unreleased changes are documented after v0.1.23 yet.
+
+## [0.1.23] - 2026-09-28
+
+### MSI distribution and lifecycle QA
+
+- Add a real x64 per-machine WiX MSI with stable UpgradeCode, standard repair/major-upgrade behavior, Installed Apps metadata and Start Menu integration.
+- Add MSI metadata validation plus silent clean-install, repair, synthetic previous-version upgrade and uninstall lifecycle tests with verbose Windows Installer logging.
+- Make `SNAPVERE-Setup.msi` a mandatory member of the seven-main-asset release contract.
+
+### Generic release and supply-chain evidence
+
+- Replace the active release path with a generic workflow driven by `product-version.json`.
+- Build and validate Setup EXE, MSI, Portable and browser ZIPs before publication; refuse replacement of an existing release/tag target.
+- Sign Windows packages only when credentials are configured, then generate final SHA-256 hashes, SPDX SBOM output and GitHub artifact attestations.
+
+### Localization and documentation consistency
+
+- Restrict the public Windows language picker to the complete English and Croatian catalogs instead of advertising partial locales that fall back to English.
+- Add all-key translation/placeholder regression coverage and a declared EN/HR Windows/browser support matrix.
+- Remove stale version numbers from evergreen documentation and extend product-contract validation to make release, MSI, localization and documentation drift fail CI.
 
 ## [0.1.22] - 2026-09-26
 

@@ -1,6 +1,6 @@
 # SNAPVERE — rješavanje problema
 
-Aktualno javno izdanje: **v0.1.6**. Grana `main` može sadržavati kasniji neobjavljeni reliability i security hardening.
+Aktivna verzija izdanja definirana je u `product-version.json`; vodič se odnosi na održavanu površinu proizvoda.
 
 ## Windows snimanje ne radi
 

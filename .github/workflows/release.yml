@@ -1,0 +1,466 @@
+name: Release SNAPVERE
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/release-triggers/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: snapvere-release
+  cancel-in-progress: false
+
+jobs:
+  browser-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Resolve release version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(python -c "import json; print(json.load(open('product-version.json', encoding='utf-8'))['currentRelease'])")"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          echo "SNAPVERE_VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Validate browser source store and version contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_REF" == 'refs/heads/main' ]]
+          [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]]
+          node ekstenzije/tools/validate-extensions.mjs
+          node ekstenzije/tools/verify-extension-parity.mjs
+          node ekstenzije/tools/smoke-test-background.mjs
+          node ekstenzije/tools/test-hotkey-failure-feedback.mjs
+          node ekstenzije/tools/test-options-runtime.mjs
+          node ekstenzije/tools/test-options-load-failure.mjs
+          node ekstenzije/tools/test-capture-runtime.mjs
+          python eng/validate-product-contract.py
+          python -m pip install --disable-pip-version-check --no-cache-dir 'Pillow==11.3.0'
+          python ekstenzije/tools/generate-store-assets.py
+          node ekstenzije/tools/validate-store-readiness.mjs
+
+      - name: Build reproducible browser packages twice
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash ekstenzije/tools/package-extensions.sh release-browser-pass-1
+          bash ekstenzije/tools/package-extensions.sh release-browser-pass-2
+          for name in Chrome Edge Opera Firefox; do
+            cmp "release-browser-pass-1/SNAPVERE-$name.zip" "release-browser-pass-2/SNAPVERE-$name.zip"
+          done
+          cmp release-browser-pass-1/SHA256SUMS.txt release-browser-pass-2/SHA256SUMS.txt
+          (cd release-browser-pass-1 && sha256sum -c SHA256SUMS.txt)
+          mv release-browser-pass-1 release-browser
+          rm -rf release-browser-pass-2
+
+      - name: Upload validated browser payload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: snapvere-browser-release-${{ github.sha }}
+          path: |
+            release-browser/SNAPVERE-Chrome.zip
+            release-browser/SNAPVERE-Edge.zip
+            release-browser/SNAPVERE-Opera.zip
+            release-browser/SNAPVERE-Firefox.zip
+            release-browser/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    needs: [browser-release]
+    runs-on: windows-2022
+    timeout-minutes: 210
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Checkout exact release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: global.json
+
+      - name: Install pinned WiX validation CLI
+        shell: pwsh
+        run: |
+          dotnet tool install --tool-path artifacts/wix-cli wix --version 5.0.2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./artifacts/wix-cli/wix.exe --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Resolve and validate release source contract
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -ne 'refs/heads/main') { throw "Release must run from main. Actual: $env:GITHUB_REF" }
+          if ((git rev-parse HEAD).Trim() -ne $env:GITHUB_SHA) { throw 'Checkout is not the exact release commit.' }
+
+          $contract = Get-Content -LiteralPath 'product-version.json' -Raw | ConvertFrom-Json
+          $version = [string]$contract.currentRelease
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'currentRelease must use x.y.z.' }
+          $tag = "v$version"
+          $trigger = ".github/release-triggers/$tag"
+          if (-not (Test-Path -LiteralPath $trigger -PathType Leaf) -and $env:GITHUB_EVENT_NAME -ne 'workflow_dispatch') {
+            throw "Missing release trigger $trigger."
+          }
+          "SNAPVERE_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "SNAPVERE_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          python eng/validate-product-contract.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Restore audit build and test Windows source
+        shell: pwsh
+        run: |
+          dotnet restore SNAPVERE.sln
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet build SNAPVERE.sln --configuration Release --no-restore -p:Platform=x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet test tests/Snapvere.UnitTests/Snapvere.UnitTests.csproj --configuration Release --no-restore -p:Platform=x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($target in @(@{ Rid='win-x86'; Platform='x86' }, @{ Rid='win-arm64'; Platform='ARM64' })) {
+            dotnet restore src/Snapvere.App/Snapvere.App.csproj --runtime $target.Rid
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            dotnet build src/Snapvere.App/Snapvere.App.csproj --configuration Release --runtime $target.Rid --no-restore "-p:Platform=$($target.Platform)"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Build architecture payloads and integrity manifests
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          $platforms = @{ x86='x86'; x64='x64'; arm64='ARM64' }
+          foreach ($arch in @('x86','x64','arm64')) {
+            $rid = "win-$arch"
+            $output = "artifacts/app-$arch"
+            dotnet publish src/Snapvere.App/Snapvere.App.csproj --configuration Release --runtime $rid "-p:Platform=$($platforms[$arch])" -p:SelfContained=true -p:WindowsAppSDKSelfContained=true -p:PublishReadyToRun=true -p:DebugType=None -p:DebugSymbols=false "-p:Version=$env:SNAPVERE_VERSION" --output $output
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+            $root = (Resolve-Path $output).Path
+            $files = @(Get-ChildItem -LiteralPath $root -Recurse -File | ForEach-Object {
+              $relative = [System.IO.Path]::GetRelativePath($root, $_.FullName).Replace('\','/')
+              [pscustomobject]@{ Path=$relative; Length=$_.Length; Sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToUpperInvariant() }
+            } | Sort-Object Path)
+            if ($files.Count -eq 0) { throw "$arch payload is empty." }
+            [pscustomobject]@{ FormatVersion=1; Files=$files } | ConvertTo-Json -Depth 4 -Compress | Set-Content -LiteralPath "artifacts/SNAPVERE-payload-$arch.integrity.json" -Encoding utf8NoBOM
+            Compress-Archive -Path "$output/*" -DestinationPath "artifacts/SNAPVERE-payload-$arch.zip" -CompressionLevel Optimal
+          }
+
+      - name: Build Setup EXE and Portable
+        shell: pwsh
+        run: |
+          $x86 = (Resolve-Path 'artifacts/SNAPVERE-payload-x86.zip').Path
+          $x64 = (Resolve-Path 'artifacts/SNAPVERE-payload-x64.zip').Path
+          $arm64 = (Resolve-Path 'artifacts/SNAPVERE-payload-arm64.zip').Path
+          $x86Integrity = (Resolve-Path 'artifacts/SNAPVERE-payload-x86.integrity.json').Path
+          $x64Integrity = (Resolve-Path 'artifacts/SNAPVERE-payload-x64.integrity.json').Path
+          $arm64Integrity = (Resolve-Path 'artifacts/SNAPVERE-payload-arm64.integrity.json').Path
+
+          dotnet publish src/Snapvere.Setup/Snapvere.Setup.csproj --configuration Release --runtime win-x86 -p:Platform=x86 -p:SelfContained=true "-p:Version=$env:SNAPVERE_VERSION" "-p:SnapverePayloadX86Path=$x86" "-p:SnapverePayloadX64Path=$x64" "-p:SnapverePayloadArm64Path=$arm64" --output artifacts/setup-universal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet publish src/Snapvere.Portable/Snapvere.Portable.csproj --configuration Release --runtime win-x86 -p:Platform=x86 -p:SelfContained=true "-p:Version=$env:SNAPVERE_VERSION" "-p:SnapverePayloadX86Path=$x86" "-p:SnapverePayloadX64Path=$x64" "-p:SnapverePayloadArm64Path=$arm64" "-p:SnapverePayloadX86IntegrityPath=$x86Integrity" "-p:SnapverePayloadX64IntegrityPath=$x64Integrity" "-p:SnapverePayloadArm64IntegrityPath=$arm64Integrity" --output artifacts/portable-universal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          Copy-Item artifacts/setup-universal/SNAPVERE-Setup.exe release/SNAPVERE-Setup.exe
+          Copy-Item artifacts/portable-universal/SNAPVERE-Portable.exe release/SNAPVERE-Portable.exe
+
+      - name: Build current and previous MSI packages
+        shell: pwsh
+        run: |
+          $payload = (Resolve-Path 'artifacts/app-x64').Path
+          $parts = $env:SNAPVERE_VERSION.Split('.') | ForEach-Object { [int]$_ }
+          if ($parts[2] -le 0) { throw 'MSI previous-version QA needs a patch version greater than zero.' }
+          $previous = "$($parts[0]).$($parts[1]).$($parts[2] - 1)"
+          "SNAPVERE_PREVIOUS_MSI_VERSION=$previous" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          foreach ($build in @(
+            @{ Version=$env:SNAPVERE_VERSION; Output='artifacts/msi-current' },
+            @{ Version=$previous; Output='artifacts/msi-previous' }
+          )) {
+            $output = Join-Path $PWD $build.Output
+            New-Item -ItemType Directory -Force -Path $output | Out-Null
+            dotnet build src/Snapvere.Msi/Snapvere.Msi.wixproj --configuration Release -t:Rebuild "-p:SnapvereVersion=$($build.Version)" "-p:SnapverePayloadDir=$payload" "-p:OutputPath=$output\"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+            $msi = Join-Path $output 'SNAPVERE-Setup.msi'
+            if (-not (Test-Path -LiteralPath $msi -PathType Leaf)) { throw "MSI build did not produce $msi." }
+            & ./eng/Normalize-SnapvereMsiLanguageMetadata.ps1 -MsiPath $msi -WixExePath './artifacts/wix-cli/wix.exe' -ReportPath (Join-Path $output 'language-normalization.json')
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            & ./artifacts/wix-cli/wix.exe msi validate $msi
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+          & ./eng/Assert-SnapvereMsi.ps1 -MsiPath artifacts/msi-current/SNAPVERE-Setup.msi -Version $env:SNAPVERE_VERSION -Architecture x64
+          & ./eng/Assert-SnapvereMsi.ps1 -MsiPath artifacts/msi-previous/SNAPVERE-Setup.msi -Version $previous -Architecture x64
+          & ./eng/Assert-SnapvereMsiUpgradePair.ps1 `
+            -CurrentMsiPath artifacts/msi-current/SNAPVERE-Setup.msi `
+            -CurrentVersion $env:SNAPVERE_VERSION `
+            -PreviousMsiPath artifacts/msi-previous/SNAPVERE-Setup.msi `
+            -PreviousVersion $previous
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item artifacts/msi-current/SNAPVERE-Setup.msi release/SNAPVERE-Setup.msi
+
+      - name: Validate Setup Portable and MSI lifecycle
+        shell: pwsh
+        run: |
+          & ./eng/Assert-SnapverePackageSize.ps1 -ArtifactsRoot (Join-Path $PWD 'artifacts')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          $setup = (Resolve-Path 'release/SNAPVERE-Setup.exe').Path
+          $portable = (Resolve-Path 'release/SNAPVERE-Portable.exe').Path
+          try {
+            foreach ($arch in @('x64','x86')) {
+              $env:SNAPVERE_PAYLOAD_ARCH = $arch
+              & ./eng/Test-SnapverePackageLifecycle.ps1 -SetupPath $setup -PortablePath $portable -Version $env:SNAPVERE_VERSION -Arch $arch
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              & ./eng/Test-SnapvereTrayFirstLaunch.ps1 -SetupPath $setup -PortablePath $portable -Version $env:SNAPVERE_VERSION -Arch $arch
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+          } finally {
+            Remove-Item Env:SNAPVERE_PAYLOAD_ARCH -ErrorAction SilentlyContinue
+          }
+
+          & ./eng/Test-SnapvereMsiLifecycle.ps1 `
+            -MsiPath release/SNAPVERE-Setup.msi `
+            -Version $env:SNAPVERE_VERSION `
+            -PreviousMsiPath artifacts/msi-previous/SNAPVERE-Setup.msi `
+            -PreviousVersion $env:SNAPVERE_PREVIOUS_MSI_VERSION `
+            -LogDirectory (Join-Path $PWD 'artifacts/msi-release-logs')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Sign Windows release packages when credentials are configured
+        shell: pwsh
+        env:
+          SNAPVERE_SIGNING_PFX_BASE64: ${{ secrets.SNAPVERE_SIGNING_PFX_BASE64 }}
+          SNAPVERE_SIGNING_PFX_PASSWORD: ${{ secrets.SNAPVERE_SIGNING_PFX_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:SNAPVERE_SIGNING_PFX_BASE64)) {
+            Write-Host 'Authenticode signing credentials are not configured; release remains explicitly unsigned.'
+            "SNAPVERE_SIGNING_REQUIRED=false" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            exit 0
+          }
+          if ([string]::IsNullOrWhiteSpace($env:SNAPVERE_SIGNING_PFX_PASSWORD)) { throw 'Signing certificate is configured without its password.' }
+
+          $pfx = Join-Path $env:RUNNER_TEMP 'snapvere-signing.pfx'
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:SNAPVERE_SIGNING_PFX_BASE64))
+          try {
+            $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Filter signtool.exe -Recurse -File |
+              Where-Object { $_.FullName -match '\\x64\\signtool\.exe$' } |
+              Sort-Object FullName -Descending |
+              Select-Object -First 1
+            if ($null -eq $signtool) { throw 'signtool.exe was not found.' }
+
+            foreach ($path in @('release/SNAPVERE-Setup.exe','release/SNAPVERE-Portable.exe','release/SNAPVERE-Setup.msi')) {
+              & $signtool.FullName sign /fd SHA256 /td SHA256 /tr 'http://timestamp.digicert.com' /f $pfx /p $env:SNAPVERE_SIGNING_PFX_PASSWORD $path
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+              & $signtool.FullName verify /pa /all /v $path
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+          }
+          finally {
+            Remove-Item -LiteralPath $pfx -Force -ErrorAction SilentlyContinue
+          }
+          "SNAPVERE_SIGNING_REQUIRED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Download validated browser payload
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: snapvere-browser-release-${{ github.sha }}
+          path: artifacts/browser-release
+
+      - name: Assemble seven main release assets
+        shell: pwsh
+        run: |
+          $browserRoot = (Resolve-Path 'artifacts/browser-release').Path
+          $checksumPath = Join-Path $browserRoot 'SHA256SUMS.txt'
+          $browserHashes = @{}
+          foreach ($line in Get-Content -LiteralPath $checksumPath) {
+            if ($line -match '^([0-9a-fA-F]{64})\s+\*?(SNAPVERE-(Chrome|Edge|Opera|Firefox)\.zip)$') {
+              $browserHashes[$matches[2]] = $matches[1].ToLowerInvariant()
+            }
+          }
+          $browserNames = @('SNAPVERE-Chrome.zip','SNAPVERE-Edge.zip','SNAPVERE-Opera.zip','SNAPVERE-Firefox.zip')
+          if ($browserHashes.Count -ne 4) { throw 'Browser checksum manifest must contain exactly four release ZIP digests.' }
+          foreach ($name in $browserNames) {
+            $path = Join-Path $browserRoot $name
+            $actual = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if (-not [string]::Equals($actual, $browserHashes[$name], [StringComparison]::OrdinalIgnoreCase)) { throw "Browser transfer digest mismatch for $name." }
+            Copy-Item -LiteralPath $path -Destination (Join-Path release $name)
+          }
+
+          $contract = Get-Content -LiteralPath product-version.json -Raw | ConvertFrom-Json
+          $expected = @($contract.releaseAssets | Sort-Object)
+          $actualNames = @(Get-ChildItem release -File | Select-Object -ExpandProperty Name | Sort-Object)
+          if ($actualNames.Count -ne $expected.Count -or @(Compare-Object $expected $actualNames).Count -ne 0) {
+            throw "Main release assets do not match product-version.json. Actual: $($actualNames -join ', ')"
+          }
+          if (-not ($actualNames -contains 'SNAPVERE-Setup.msi')) { throw 'MSI release blocker: SNAPVERE-Setup.msi is absent.' }
+
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          path: release
+          format: spdx-json
+          output-file: artifacts/SNAPVERE-SBOM.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          dependency-snapshot: false
+
+      - name: Finalize hashes after signing and SBOM generation
+        shell: pwsh
+        run: |
+          Copy-Item artifacts/SNAPVERE-SBOM.spdx.json release/SNAPVERE-SBOM.spdx.json
+          $hashTargets = @(Get-ChildItem release -File | Sort-Object Name)
+          $lines = foreach ($file in $hashTargets) {
+            $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash *$($file.Name)"
+          }
+          $lines | Set-Content -LiteralPath release/SHA256SUMS.txt -Encoding ascii
+
+          $all = @(Get-ChildItem release -File | Sort-Object Name)
+          $hashes = @{}
+          foreach ($file in $all) {
+            $hashes[$file.Name] = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          }
+          $hashes | ConvertTo-Json | Set-Content -LiteralPath artifacts/release-hashes.json -Encoding utf8NoBOM
+
+      - name: Generate SLSA build provenance attestations
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: 'release/*'
+
+      - name: Generate SBOM attestation for main packages
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            release/SNAPVERE-Setup.exe
+            release/SNAPVERE-Setup.msi
+            release/SNAPVERE-Portable.exe
+            release/SNAPVERE-Chrome.zip
+            release/SNAPVERE-Edge.zip
+            release/SNAPVERE-Opera.zip
+            release/SNAPVERE-Firefox.zip
+          sbom-path: artifacts/SNAPVERE-SBOM.spdx.json
+
+      - name: Extract canonical release notes
+        shell: pwsh
+        run: |
+          $script = @'
+          import os
+          from pathlib import Path
+          version = os.environ["SNAPVERE_VERSION"]
+          lines = Path("RELEASES.md").read_text(encoding="utf-8").splitlines()
+          starts = [i for i, line in enumerate(lines) if line.startswith(f"## v{version} — ")]
+          if len(starts) != 1:
+              raise SystemExit(f"expected exactly one v{version} section, found {len(starts)}")
+          start = starts[0]
+          end = next((i for i in range(start + 1, len(lines)) if lines[i].strip() == "---"), None)
+          if end is None:
+              raise SystemExit("release section terminator not found")
+          Path("artifacts/release-notes-final.md").write_text("\n".join(lines[start:end]).strip() + "\n", encoding="utf-8", newline="\n")
+          '@
+          Set-Content -LiteralPath artifacts/extract-release-notes.py -Value $script -Encoding utf8NoBOM
+          python artifacts/extract-release-notes.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Add-Content -LiteralPath artifacts/release-notes-final.md -Value "`n## SHA-256 digests`n"
+          foreach ($line in Get-Content -LiteralPath release/SHA256SUMS.txt) {
+            if ($line -match '^([0-9a-f]{64}) \*(.+)$') {
+              Add-Content -LiteralPath artifacts/release-notes-final.md -Value "- ``$($matches[2])``: ``$($matches[1])``"
+            }
+          }
+
+      - name: Refuse existing release and create immutable tag
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $repository = '${{ github.repository }}'
+          $tag = $env:SNAPVERE_TAG
+          $releaseLookup = @(& gh api "repos/$repository/releases/tags/$tag" 2>&1)
+          if ($LASTEXITCODE -eq 0) { throw "$tag GitHub Release already exists; refusing mutation." }
+          if ((($releaseLookup | ForEach-Object { $_.ToString() }) -join "`n") -notmatch 'HTTP 404') {
+            throw 'Could not safely determine existing release state.'
+          }
+
+          $encoded = [Uri]::EscapeDataString($tag)
+          $refLookup = @(& gh api "repos/$repository/git/ref/tags/$encoded" 2>&1)
+          if ($LASTEXITCODE -eq 0) {
+            $ref = (($refLookup | ForEach-Object { $_.ToString() }) -join "`n") | ConvertFrom-Json
+            $target = $ref.object.sha
+            if ($ref.object.type -eq 'tag') {
+              $obj = (& gh api "repos/$repository/git/tags/$target") | ConvertFrom-Json
+              $target = $obj.object.sha
+            }
+            if ($target -ne $env:GITHUB_SHA) { throw "Immutable $tag points to $target instead of $env:GITHUB_SHA." }
+          } else {
+            if ((($refLookup | ForEach-Object { $_.ToString() }) -join "`n") -notmatch 'HTTP 404') { throw "Could not query $tag." }
+            & gh api --method POST "repos/$repository/git/refs" -f ref="refs/tags/$tag" -f sha="$env:GITHUB_SHA" | Out-Null
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Publish GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          & gh release create $env:SNAPVERE_TAG `
+            release/SNAPVERE-Setup.exe `
+            release/SNAPVERE-Setup.msi `
+            release/SNAPVERE-Portable.exe `
+            release/SNAPVERE-Chrome.zip `
+            release/SNAPVERE-Edge.zip `
+            release/SNAPVERE-Opera.zip `
+            release/SNAPVERE-Firefox.zip `
+            release/SNAPVERE-SBOM.spdx.json `
+            release/SHA256SUMS.txt `
+            --title "SNAPVERE $env:SNAPVERE_TAG" `
+            --notes-file artifacts/release-notes-final.md `
+            --latest `
+            --verify-tag
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Verify published release assets and digests
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $release = (& gh release view $env:SNAPVERE_TAG --json tagName,isDraft,isPrerelease,assets,targetCommitish) | ConvertFrom-Json
+          if ($release.tagName -ne $env:SNAPVERE_TAG -or $release.isDraft -or $release.isPrerelease) { throw 'Published release metadata is invalid.' }
+
+          $contract = Get-Content -LiteralPath product-version.json -Raw | ConvertFrom-Json
+          $expected = @($contract.releaseAssets) + @('SNAPVERE-SBOM.spdx.json','SHA256SUMS.txt') | Sort-Object
+          $published = @($release.assets | ForEach-Object { $_.name } | Sort-Object)
+          if ($published.Count -ne $expected.Count -or @(Compare-Object $expected $published).Count -ne 0) {
+            throw "Published release asset contract mismatch: $($published -join ', ')"
+          }
+          if (-not ($published -contains 'SNAPVERE-Setup.msi')) { throw 'Published release is invalid because MSI is missing.' }
+
+          $local = Get-Content -Raw -LiteralPath artifacts/release-hashes.json | ConvertFrom-Json -AsHashtable
+          foreach ($asset in $release.assets) {
+            if (-not $local.ContainsKey($asset.name)) { throw "Unexpected published asset $($asset.name)." }
+            $expectedDigest = "sha256:$($local[$asset.name])"
+            if ([string]::IsNullOrWhiteSpace($asset.digest)) { throw "Published asset $($asset.name) has no GitHub digest." }
+            if (-not [string]::Equals($asset.digest, $expectedDigest, [StringComparison]::OrdinalIgnoreCase)) {
+              throw "Digest mismatch for $($asset.name)."
+            }
+          }
+          Write-Host "Verified $env:SNAPVERE_TAG with MSI, SBOM, hashes and matching published digests."

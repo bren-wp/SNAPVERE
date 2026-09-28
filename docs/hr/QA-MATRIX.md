@@ -1,19 +1,21 @@
 # SNAPVERE QA matrica
 
-Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani Windows/browser proizvod. Aktualno javno izdanje je v0.1.15, dok `main` može sadržavati kasniji neobjavljeni hardening. Zeleni gate znači da je provjereni ugovor prošao na tom commitu; ne predstavlja apsolutno jamstvo platformskog ponašanja.
+Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani Windows/browser proizvod. Aktivna verzija izdanja čita se iz `product-version.json`. Zeleni gate znači da je provjereni ugovor prošao na tom commitu; ne predstavlja apsolutno jamstvo platformskog ponašanja.
 
 ## Windows gateovi
 
 - .NET restore s vulnerability auditom.
 - x64 build i unit-test suite, uključujući paralelno PNG spremanje dviju snimki s istim timestampom, stale/recent/foreign/locked capture-temp cleanup granice, tipiziranu access-denied/storage-full/write-failure persistence klasifikaciju s invalid-target integration slučajem, provjeru da Portable startup poruke ne izlažu umetnute privatne putanje iz exception teksta i bounded provjeru local-shell failure taksonomije.
 - x86 build i ARM64 cross-build.
+- nativni Windows ARM64 runtime CI na `windows-11-vs2026-arm`, uključujući direktni ARM64 startup aplikacije, Universal Setup/Portable ARM64 lifecycle probeove i ARM64 MSI clean/repair/major-upgrade/uninstall.
 - provjera native payload strukture.
 - stvarni renderirani WinUI snapshotovi za Region, Window, Tray, Options, Language i About.
 - PR visual usporedba s posljednjim uspješnim `main` baselineom.
 - universal Setup/Portable build.
-- točan two-file Windows package contract.
+- točan ugovor od sedam glavnih release asseta, uključujući obavezni pravi `SNAPVERE-Setup.msi`.
 - package-size regression budget.
 - x64 i x86 Setup/Portable lifecycle completion.
+- x64 MSI database validacija te silent clean install, repair, sintetički previous-version major upgrade i silent uninstall uz zadržavanje detaljnih Windows Installer logova kao QA dokaza.
 - locked-file uninstall failure injection koji zahtijeva da Installed Apps/startup/prečac metadata ostane dok file cleanup stvarno ne uspije, nakon čega slijede repair i uspješan uninstall.
 - provjera odbijanja deferred cleanupa s neispravnim parent PID-om i Setup-mutex contentiona, uz zahtjev da instalacijski ugovor ostane nepromijenjen.
 - tray-first launch provjera unutar lifecycle probea, uključujući dokaz da drugi Installed ili Portable launch aktivira postojeći proces bez stvaranja duplikata te unit-testirani bounded Explorer tray-recovery backoff.

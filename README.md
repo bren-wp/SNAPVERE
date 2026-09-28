@@ -16,9 +16,10 @@ Capture regions, windows, full screens and web pages, annotate quickly, record t
 [![Windows CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/ci.yml)
 [![Extensions CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/extensions-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/extensions-ci.yml)
 [![Product Contract](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml)
+[![MSI CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/msi-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/msi-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Website](https://snapvere.com) · [Download v0.1.22](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.22) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
+[Website](https://snapvere.com) · [Download v0.1.23](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.23) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
 
 </div>
 
@@ -37,10 +38,10 @@ SNAPVERE is built for fast everyday capture without turning screenshots into a c
 | ✏️ **Built-in annotation** | Pen, Line, Arrow, Box and Highlight tools directly in the Windows region workflow. |
 | 🖥️ **Native Windows workflow** | Tray-first operation, global shortcuts, recent captures, local settings and DPI-aware multi-monitor handling. |
 | 🔒 **Local-first by design** | Core capture processing stays local; no account is required for capture and no first-party screenshot telemetry is built into the capture runtime. |
-| 📦 **Portable or installed** | Universal Windows Setup and Portable packages carry x86, x64 and ARM64 application payloads. |
+| 📦 **Three Windows delivery models** | Guided Setup EXE, standard x64 Windows Installer (MSI), and Universal Portable. Setup/Portable carry x86, x64 and ARM64 application payloads. |
 | 🌐 **Browser coverage** | Chrome, Edge, Opera and Firefox share the same locked SNAPVERE brand and bounded capture behavior. |
 
-SNAPVERE 0.1.22 continues the reliability work across the full Windows and browser surface. Windows capture-feedback UI is now contained as a recovery boundary so a secondary WinUI failure cannot replace the original capture error. The injected browser capture runtime also validates the SNAPVERE extension sender before accepting Region or Full Page work in Chrome, Edge, Opera and Firefox.
+SNAPVERE 0.1.23 makes MSI a first-class release requirement, closes the public-language fallback gap by exposing only complete EN/HR locales, and continues reliability work across the Windows and browser surface. Windows capture-feedback UI is now contained as a recovery boundary so a secondary WinUI failure cannot replace the original capture error. The injected browser capture runtime also validates the SNAPVERE extension sender before accepting Region or Full Page work in Chrome, Edge, Opera and Firefox.
 
 Recording keeps separate compact Start and Stop controls in Settings and a small always-on-top elapsed-time controller while active. Setup remains a guided License → Installation → Finish flow. Recording is primary-display H.264 MP4 and video-only; microphone and system audio are not claimed as supported.
 
@@ -97,19 +98,20 @@ The images below are **real rendered Windows surfaces captured by SNAPVERE's vis
 
 ## Downloads
 
-Current release: **SNAPVERE 0.1.22**<br>
-Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.22
+Current release: **SNAPVERE 0.1.23**<br>
+Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.23
 
 | Platform | Package |
 | --- | --- |
-| Windows Setup | `SNAPVERE-Setup.exe` |
+| Windows Setup EXE | `SNAPVERE-Setup.exe` |
+| Windows Installer (MSI) | `SNAPVERE-Setup.msi` |
 | Windows Portable | `SNAPVERE-Portable.exe` |
 | Chrome | `SNAPVERE-Chrome.zip` |
 | Edge | `SNAPVERE-Edge.zip` |
 | Opera | `SNAPVERE-Opera.zip` |
 | Firefox | `SNAPVERE-Firefox.zip` |
 
-The active product contract contains these six maintained packages.
+The active product contract contains these seven maintained main packages. Release metadata also includes SHA-256 checksums and an SPDX SBOM.
 
 ## Quality you can inspect
 
@@ -119,9 +121,10 @@ SNAPVERE does not treat a successful compile as sufficient evidence. CI currentl
 - x86 build and ARM64 cross-build;
 - real rendered WinUI screenshots for Region, Window, Tray, Options, Language and About surfaces;
 - visual comparison against the last successful `main` baseline;
-- universal Setup/Portable construction;
-- exact public package contract and package-size regression budgets;
-- real x64/x86 Setup and Portable lifecycle completion;
+- universal Setup/Portable construction plus a real x64 Windows Installer package;
+- exact seven-package public contract and package-size regression budgets;
+- real x64/x86 Setup/Portable lifecycle completion;
+- MSI database validation plus silent clean-install, repair, synthetic previous-version major-upgrade and uninstall lifecycle QA;
 - browser manifest, permission, runtime, brand-lock, locale and cross-browser parity rules;
 - bounded browser full-page memory design and deterministic extension packages;
 - Product Contract CI and CodeQL for C#, JavaScript/TypeScript, Python and GitHub Actions.
@@ -139,7 +142,7 @@ For the exact boundaries and security model, read [Privacy](docs/PRIVACY.md), [S
 | Guide | Purpose |
 | --- | --- |
 | [User Guide](docs/USER-GUIDE.md) | Everyday Windows and browser usage. |
-| [Installation](docs/INSTALLATION.md) | Setup, Portable and browser package installation. |
+| [Installation](docs/INSTALLATION.md) | MSI, Setup EXE, Portable and browser package installation. |
 | [Performance & Stability](docs/PERFORMANCE.md) | Memory, lifecycle and regression-hardening notes. |
 | [Window Capture](docs/WINDOW-CAPTURE.md) | Native window discovery, frozen picker and WGC acquisition. |
 | [Image Pipeline](docs/IMAGE-PIPELINE.md) | Frame validation, crop/annotation, PNG encode and atomic publication. |

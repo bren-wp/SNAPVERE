@@ -1,13 +1,13 @@
 # SNAPVERE dokumentacija
 
-Aktualna održavana linija proizvoda je **SNAPVERE 0.1.22** za Windows te Chrome, Edge, Operu i Firefox.
+Aktualna održavana linija proizvoda je **SNAPVERE 0.1.23** za Windows te Chrome, Edge, Operu i Firefox.
 
-Ova dokumentacija opisuje produkcijske funkcije, tehničke granice i provjere koje stvarno izvodi CI. Aktualne javne binarne datoteke su v0.1.22, dok kasnije promjene na `main` mogu sadržavati izričito dokumentiran neobjavljeni reliability/security/UX hardening. Povijesne činjenice o starijim izdanjima ostaju u release dokumentaciji.
+Ova dokumentacija opisuje produkcijske funkcije, tehničke granice i provjere koje stvarno izvodi CI. Aktualne javne binarne datoteke su v0.1.23, dok kasnije promjene na `main` mogu sadržavati izričito dokumentiran neobjavljeni reliability/security/UX hardening. Povijesne činjenice o starijim izdanjima ostaju u release dokumentaciji.
 
 ## Počnite ovdje
 
 - [Korisnički vodič](USER-GUIDE.md) — capture, anotacije, copy/save i svakodnevni rad.
-- [Instalacija](INSTALLATION.md) — Windows Setup/Portable i browser paketi.
+- [Instalacija](INSTALLATION.md) — Windows MSI, Setup EXE, Portable i browser paketi.
 - [Performanse i stabilnost](PERFORMANCE.md) — memorija, capture hardening, lifecycle i regresijski gateovi.
 - [Rješavanje problema](TROUBLESHOOTING.md) — dijagnostika i kontrolirani recovery.
 - [Status proizvoda](PRODUCT-STATUS.md) — što se održava i što CI rezultat stvarno dokazuje.
@@ -16,7 +16,7 @@ Ova dokumentacija opisuje produkcijske funkcije, tehničke granice i provjere ko
 
 - [Window Capture](WINDOW-CAPTURE.md) — native discovery, zamrznuti multi-monitor picker i WGC acquisition.
 - [Image Pipeline](IMAGE-PIPELINE.md) — frame validation, crop/anotacije, PNG encode i atomsko spremanje.
-- [Tray i lifecycle](TRAY-LIFECYCLE.md) — single-instance, native tray host, Explorer recovery i Setup/Portable lifecycle dokaz.
+- [Tray i lifecycle](TRAY-LIFECYCLE.md) — single-instance, native tray host, Explorer recovery i Setup/Portable lifecycle dokaz; MSI lifecycle dokaz opisan je u QA matrici.
 - [Korisnički vodič](USER-GUIDE.md) — Region Capture i lokalne Windows/browser postavke u jednom praktičnom vodiču.
 - [QA matrica](QA-MATRIX.md) — automatizirani dokazi i njihove granice.
 - [Engleska arhitektura](../ARCHITECTURE.md) — capture engine, multi-monitor/DPI, persistence i browser tehničke granice.
@@ -34,4 +34,4 @@ Ova dokumentacija opisuje produkcijske funkcije, tehničke granice i provjere ko
 
 Službena stranica: https://snapvere.com  
 Podrška: info@snapvere.com  
-Aktualno izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.22
+Aktualno izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.23

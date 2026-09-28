@@ -1,0 +1,18 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+  <PropertyGroup>
+    <OutputType>Package</OutputType>
+    <OutputName>SNAPVERE-Setup</OutputName>
+    <MsiArchitecture Condition="'$(MsiArchitecture)' == ''">x64</MsiArchitecture>
+    <InstallerPlatform>$(MsiArchitecture)</InstallerPlatform>
+    <SuppressValidation>false</SuppressValidation>
+    <SuppressIces>ICE03</SuppressIces>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <SnapvereVersion Condition="'$(SnapvereVersion)' == ''">$(VersionPrefix)</SnapvereVersion>
+    <DefineConstants>$(DefineConstants);SnapvereVersion=$(SnapvereVersion);SnapverePayloadDir=$(SnapverePayloadDir)</DefineConstants>
+  </PropertyGroup>
+
+  <Target Name="ValidateSnapverePayload" BeforeTargets="BeforeBuild">
+    <Error Condition="'$(SnapverePayloadDir)' == ''" Text="SnapverePayloadDir must point to a published SNAPVERE x64 application payload." />
+    <Error Condition="!Exists('$(SnapverePayloadDir)\Snapvere.exe')" Text="SnapverePayloadDir does not contain Snapvere.exe." />
+  </Target>
+</Project>

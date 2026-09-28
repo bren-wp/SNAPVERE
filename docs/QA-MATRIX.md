@@ -1,19 +1,21 @@
 # SNAPVERE QA Matrix
 
-This matrix documents automated regression evidence for the actively maintained Windows/browser product. The current public release is v0.1.15; `main` may contain later unreleased hardening. A green gate means the tested contract passed on that commit; it does not convert platform behavior into an absolute guarantee.
+This matrix documents automated regression evidence for the actively maintained Windows/browser product. The active release version comes from `product-version.json`. A green gate means the tested contract passed on that commit; it does not convert platform behavior into an absolute guarantee.
 
 ## Windows build and runtime gates
 
 - .NET restore with vulnerability auditing.
 - x64 build and unit-test suite, including concurrent same-timestamp PNG publication coverage, stale/recent/foreign/locked capture-temp cleanup boundaries, typed access-denied/storage-full/write-failure persistence classification with an invalid-target integration case, Portable startup-message sanitization against injected private-path exception text and bounded local-shell failure taxonomy coverage.
 - x86 build and ARM64 cross-build.
+- native Windows ARM64 runtime CI on `windows-11-vs2026-arm`, covering direct ARM64 app startup, Universal Setup/Portable ARM64 lifecycle probes and ARM64 MSI clean/repair/major-upgrade/uninstall.
 - native payload-structure validation.
 - real rendered WinUI snapshot capture for Region, Window, Tray, Options, Language and About surfaces.
 - PR visual comparison against the last successful `main` baseline.
 - universal Setup/Portable construction.
-- exact two-file Windows public package contract.
+- exact seven-main-asset release contract, including a mandatory real `SNAPVERE-Setup.msi`.
 - package-size regression budgets for payloads and public executables.
 - x64 and x86 Setup/Portable lifecycle completion markers.
+- x64 MSI database validation plus silent clean install, repair, synthetic previous-version major upgrade and silent uninstall, with verbose Windows Installer logs retained as QA evidence.
 - locked-file uninstall failure injection that requires Installed Apps/startup/shortcut metadata to remain until file cleanup succeeds, followed by repair and successful removal.
 - deferred-cleanup rejection for invalid parent PID plus Setup-mutex contention coverage, with the installed contract required to remain unchanged.
 - tray-first launch behavior inside the package lifecycle probes, including proof that a second Installed or Portable launch activates the existing process without creating a duplicate, plus unit-tested bounded Explorer tray-recovery backoff.

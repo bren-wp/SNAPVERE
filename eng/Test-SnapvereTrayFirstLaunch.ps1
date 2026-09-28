@@ -9,7 +9,7 @@ param(
     [string] $Version,
 
     [Parameter(Mandatory = $true)]
-    [ValidateSet('x64', 'x86')]
+    [ValidateSet('x64', 'x86', 'arm64')]
     [string] $Arch
 )
 

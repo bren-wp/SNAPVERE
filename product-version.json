@@ -1,22 +1,22 @@
 {
   "schemaVersion": 1,
   "product": "SNAPVERE",
-  "currentRelease": "0.1.22",
-  "releaseTag": "v0.1.22",
-  "releaseUrl": "https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.22",
+  "currentRelease": "0.1.23",
+  "releaseTag": "v0.1.23",
+  "releaseUrl": "https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.23",
   "supportedPlatforms": [
     "windows",
     "browsers"
   ],
   "windows": {
-    "productVersion": "0.1.22",
-    "assemblyVersion": "0.1.22.0",
-    "fileVersion": "0.1.22.0",
+    "productVersion": "0.1.23",
+    "assemblyVersion": "0.1.23.0",
+    "fileVersion": "0.1.23.0",
     "minimumWindowsBuild": 17763,
     "wgcMinimumWindowsBuild": 19041
   },
   "browsers": {
-    "extensionVersion": "0.1.22",
+    "extensionVersion": "0.1.23",
     "variants": [
       "chrome",
       "edge",
@@ -27,10 +27,21 @@
   },
   "releaseAssets": [
     "SNAPVERE-Setup.exe",
+    "SNAPVERE-Setup.msi",
     "SNAPVERE-Portable.exe",
     "SNAPVERE-Chrome.zip",
     "SNAPVERE-Edge.zip",
     "SNAPVERE-Opera.zip",
     "SNAPVERE-Firefox.zip"
-  ]
+  ],
+  "localization": {
+    "windows": [
+      "en",
+      "hr"
+    ],
+    "browsers": [
+      "en",
+      "hr"
+    ]
+  }
 }

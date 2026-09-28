@@ -1,4 +1,5 @@
 using Snapvere.Shared;
+using System.Text.RegularExpressions;
 
 namespace Snapvere.UnitTests;
 
@@ -35,12 +36,27 @@ public sealed class SnapvereLocalizationTests
     ];
 
     [Fact]
-    public void SupportedLanguages_ContainsEnglishCroatianAndAllPublishedChoices()
+    public void SupportedLanguages_ContainsOnlyFullyTranslatedPublishedChoices()
     {
-        Assert.Equal(28, SnapvereLocalization.SupportedLanguages.Count);
-        Assert.Contains(SnapvereLocalization.SupportedLanguages, language => language.Code == "en");
-        Assert.Contains(SnapvereLocalization.SupportedLanguages, language => language.Code == "hr");
-        Assert.Contains(SnapvereLocalization.SupportedLanguages, language => language.Code == "zh-CN");
+        Assert.Equal(["en", "hr"], SnapvereLocalization.SupportedLanguages.Select(language => language.Code).ToArray());
+    }
+
+    [Fact]
+    public void EveryPublishedTranslation_IsCompleteAndPlaceholderCompatible()
+    {
+        foreach (var language in SnapvereLocalization.SupportedLanguages.Where(language => language.Code != SnapvereLocalization.DefaultLanguageCode))
+        {
+            foreach (var key in SnapvereLocalization.CanonicalKeys)
+            {
+                Assert.True(
+                    SnapvereLocalization.HasDedicatedTranslation(key, language.Code),
+                    $"Published language {language.Code} is missing canonical key {key}.");
+
+                var englishPlaceholders = Placeholders(SnapvereLocalization.T(key, "en"));
+                var translatedPlaceholders = Placeholders(SnapvereLocalization.T(key, language.Code));
+                Assert.Equal(englishPlaceholders, translatedPlaceholders);
+            }
+        }
     }
 
     [Theory]
@@ -49,7 +65,8 @@ public sealed class SnapvereLocalizationTests
     [InlineData("EN-us", "en")]
     [InlineData("hr-HR", "hr")]
     [InlineData("x32", "en")]
-    [InlineData("zh-CN", "zh-CN")]
+    [InlineData("zh-CN", "en")]
+    [InlineData("de-DE", "en")]
     public void NormalizeLanguageCode_ReturnsSupportedStableCode(string? input, string expected)
         => Assert.Equal(expected, SnapvereLocalization.NormalizeLanguageCode(input));
 
@@ -85,17 +102,6 @@ public sealed class SnapvereLocalizationTests
         }
     }
 
-    [Fact]
-    public void SecondaryUiKeys_FallBackToCanonicalEnglish_WhenTranslationIsMissing()
-    {
-        foreach (var key in SecondaryUiKeys)
-        {
-            Assert.Equal(
-                SnapvereLocalization.T(key, "en"),
-                SnapvereLocalization.T(key, "de"));
-        }
-    }
-
     [Theory]
     [InlineData("LanguageSaved", "Jezik je spremljen. SNAPVERE sada koristi ovaj jezik.")]
     public void Croatian_LanguageSaved_ReflectsImmediateApplication(string key, string expected)
@@ -114,19 +120,18 @@ public sealed class SnapvereLocalizationTests
     }
 
     [Theory]
-    [InlineData("WindowHint", "Point to a window · click to capture · Esc to cancel")]
-    [InlineData("RegionMoveHelp", "Move or resize selection")]
-    [InlineData("ResizeBottomRight", "Resize bottom right")]
-    [InlineData("RegionCaptureFailed", "SNAPVERE could not complete the region capture. Press Esc and try again.")]
-    [InlineData("CaptureStorageFull", "The capture was created, but the storage device is full. Free some space and try again.")]
-    public void MissingCaptureSurfaceTranslation_FallsBackToEnglish(string key, string expected)
-        => Assert.Equal(expected, SnapvereLocalization.T(key, "ja"));
-
-    [Fact]
-    public void MissingTranslation_FallsBackToEnglish()
-        => Assert.Equal("Start SNAPVERE with Windows", SnapvereLocalization.T("StartWithWindows", "ja"));
+    [InlineData("ja", "WindowHint", "Point to a window · click to capture · Esc to cancel")]
+    [InlineData("de-DE", "StartWithWindows", "Start SNAPVERE with Windows")]
+    public void UnsupportedLanguage_NormalizesToCanonicalEnglish(string language, string key, string expected)
+        => Assert.Equal(expected, SnapvereLocalization.T(key, language));
 
     [Fact]
     public void UnknownKey_ReturnsKeyInsteadOfThrowing()
         => Assert.Equal("MissingKey", SnapvereLocalization.T("MissingKey", "hr"));
+
+    private static string[] Placeholders(string value)
+        => Regex.Matches(value, @"\{\d+(?::[^}]*)?\}")
+            .Select(match => match.Value)
+            .OrderBy(value => value, StringComparer.Ordinal)
+            .ToArray();
 }

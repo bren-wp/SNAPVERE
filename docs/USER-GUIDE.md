@@ -1,6 +1,6 @@
 # SNAPVERE User Guide
 
-SNAPVERE is a local-first capture tool for Windows and modern browsers. The current public release is v0.1.15.
+SNAPVERE is a local-first capture tool for Windows and modern browsers. The active release version is defined by `product-version.json`.
 
 ## Windows
 
