@@ -260,6 +260,14 @@ def main() -> int:
     if shortcut.get("Target") is not None:
         fail("advertised StartMenuShortcut must inherit its target from parent SnapvereExecutable")
 
+    remove_folder = package.find(".//w:RemoveFolder[@Id='RemoveApplicationProgramsFolder']", ns)
+    if (
+        remove_folder is None
+        or remove_folder.get("Directory") != "ApplicationProgramsFolder"
+        or remove_folder.get("On") != "uninstall"
+    ):
+        fail("MSI must remove ApplicationProgramsFolder when MainExecutable is uninstalled")
+
     main_component = package.find(".//w:Component[@Id='MainExecutable']", ns)
     if main_component is None or main_component.find("w:File[@Id='SnapvereExecutable']", ns) is None:
         fail("MSI SnapvereExecutable must be owned by MainExecutable")
