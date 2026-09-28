@@ -198,7 +198,7 @@ jobs:
           )) {
             $output = Join-Path $PWD $build.Output
             New-Item -ItemType Directory -Force -Path $output | Out-Null
-            dotnet build src/Snapvere.Msi/Snapvere.Msi.wixproj --configuration Release "-p:SnapvereVersion=$($build.Version)" "-p:SnapverePayloadDir=$payload" "-p:OutputPath=$output\"
+            dotnet build src/Snapvere.Msi/Snapvere.Msi.wixproj --configuration Release -t:Rebuild "-p:SnapvereVersion=$($build.Version)" "-p:SnapverePayloadDir=$payload" "-p:OutputPath=$output\"
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
             $msi = Join-Path $output 'SNAPVERE-Setup.msi'
@@ -211,6 +211,12 @@ jobs:
 
           & ./eng/Assert-SnapvereMsi.ps1 -MsiPath artifacts/msi-current/SNAPVERE-Setup.msi -Version $env:SNAPVERE_VERSION -Architecture x64
           & ./eng/Assert-SnapvereMsi.ps1 -MsiPath artifacts/msi-previous/SNAPVERE-Setup.msi -Version $previous -Architecture x64
+          & ./eng/Assert-SnapvereMsiUpgradePair.ps1 `
+            -CurrentMsiPath artifacts/msi-current/SNAPVERE-Setup.msi `
+            -CurrentVersion $env:SNAPVERE_VERSION `
+            -PreviousMsiPath artifacts/msi-previous/SNAPVERE-Setup.msi `
+            -PreviousVersion $previous
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Copy-Item artifacts/msi-current/SNAPVERE-Setup.msi release/SNAPVERE-Setup.msi
 
       - name: Validate Setup Portable and MSI lifecycle
