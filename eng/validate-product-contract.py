@@ -208,8 +208,10 @@ def main() -> int:
 
     msi_normalizer = read_text(ROOT / "eng" / "Normalize-SnapvereMsiLanguageMetadata.ps1")
     for required in (
-        "CultureInfo]::GetCultureInfo",
-        "CultureNotFoundException",
+        "IsValidLocale",
+        "LocaleSupported",
+        "GetMethod(",
+        ".Invoke($null, $arguments)",
         "NormalizedLanguage = '0'",
         "database.Commit()",
         "File.Language",
