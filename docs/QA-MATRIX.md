@@ -1,6 +1,6 @@
 # SNAPVERE QA Matrix
 
-This matrix documents automated regression evidence for the actively maintained Windows/browser product. The active release version comes from `product-version.json`. A green gate means the tested contract passed on that commit; it does not convert platform behavior into an absolute guarantee.ntained Windows/browser product. The current public release is v0.1.15; `main` may contain later unreleased hardening. A green gate means the tested contract passed on that commit; it does not convert platform behavior into an absolute guarantee.
+This matrix documents automated regression evidence for the actively maintained Windows/browser product. The active release version comes from `product-version.json`. A green gate means the tested contract passed on that commit; it does not convert platform behavior into an absolute guarantee.
 
 ## Windows build and runtime gates
 
