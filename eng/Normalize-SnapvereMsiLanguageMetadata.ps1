@@ -31,7 +31,9 @@ function Invoke-WixMsiValidation {
 }
 
 function Get-FileLanguageRow(
-    $db,
+    [Parameter(Mandatory = $true)]
+    $Database,
+
     [Parameter(Mandatory = $true)]
     [string] $FileKey
 ) {
@@ -39,7 +41,7 @@ function Get-FileLanguageRow(
     $view = $null
     $record = $null
     try {
-        $view = $db.OpenView("SELECT `FileName`, `Language` FROM `File` WHERE `File` = '$safeKey'")
+        $view = $Database.OpenView("SELECT `FileName`, `Language` FROM `File` WHERE `File` = '$safeKey'")
         $view.Execute()
         $record = $view.Fetch()
         if ($null -eq $record) {
@@ -125,7 +127,7 @@ try {
                 throw 'WiX ICE03 returned an empty File-table key; refusing metadata normalization.'
             }
 
-            $row = Get-FileLanguageRow -db $database -FileKey $key
+            $row = Get-FileLanguageRow -Database $database -FileKey $key
             if ($null -eq $row) {
                 throw "WiX ICE03 reported File key '$key' but the File table row could not be resolved."
             }
