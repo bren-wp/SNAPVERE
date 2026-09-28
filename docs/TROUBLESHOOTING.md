@@ -1,6 +1,6 @@
 # SNAPVERE Troubleshooting
 
-Current public release: **v0.1.6**. The `main` branch may contain later unreleased reliability and security hardening.
+The active release version is defined by `product-version.json`; this guide applies to the maintained product surface.
 
 ## Windows does not capture
 
