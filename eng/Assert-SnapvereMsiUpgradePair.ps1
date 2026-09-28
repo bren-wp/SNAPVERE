@@ -31,7 +31,7 @@ function Read-MsiIdentity([string] $path) {
                 $view.Execute()
                 $record = $view.Fetch()
                 if ($null -eq $record) { return $null }
-                return [string]$record.StringData(1)
+                return ([string]$record.StringData(1)).Trim()
             }
             finally {
                 if ($null -ne $record) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($record) }
@@ -45,8 +45,8 @@ function Read-MsiIdentity([string] $path) {
                 ProductVersion = Get-Property 'ProductVersion'
                 ProductCode = Get-Property 'ProductCode'
                 UpgradeCode = Get-Property 'UpgradeCode'
-                Template = [string]$summary.Property(7)
-                PackageCode = [string]$summary.Property(9)
+                Template = ([string]$summary.Property(7)).Trim()
+                PackageCode = ([string]$summary.Property(9)).Trim()
             }
         }
         finally {
