@@ -30,31 +30,32 @@ function Invoke-WixMsiValidation {
     }
 }
 
-function Get-FileLanguageRows($db) {
+function Get-FileLanguageRow(
+    $db,
+    [Parameter(Mandatory = $true)]
+    [string] $FileKey
+) {
+    $safeKey = $FileKey.Replace("'", "''")
     $view = $null
+    $record = $null
     try {
-        $view = $db.OpenView('SELECT `File`, `FileName`, `Language` FROM `File`')
+        $view = $db.OpenView("SELECT `FileName`, `Language` FROM `File` WHERE `File` = '$safeKey'")
         $view.Execute()
-        $rows = [System.Collections.Generic.List[object]]::new()
-        while ($true) {
-            $record = $view.Fetch()
-            if ($null -eq $record) {
-                break
-            }
-            try {
-                $rows.Add([pscustomobject]@{
-                    File = [string]$record.StringData(1)
-                    FileName = [string]$record.StringData(2)
-                    Language = [string]$record.StringData(3)
-                })
-            }
-            finally {
-                [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($record)
-            }
+        $record = $view.Fetch()
+        if ($null -eq $record) {
+            return $null
         }
-        return $rows
+
+        return [pscustomobject]@{
+            File = $FileKey
+            FileName = [string]$record.StringData(1)
+            Language = [string]$record.StringData(2)
+        }
     }
     finally {
+        if ($null -ne $record) {
+            [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($record)
+        }
         if ($null -ne $view) {
             [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($view)
         }
@@ -118,18 +119,17 @@ try {
         # identified by Windows Installer ICE03. File hashes, versions,
         # cabinet data, component authoring and all other tables remain intact.
         $database = $installer.OpenDatabase($msi, 1)
-        $rows = @(Get-FileLanguageRows $database)
-        $rowsById = @{}
-        foreach ($row in $rows) {
-            $rowsById[$row.File] = $row
-        }
 
         foreach ($key in ($targetKeys | Sort-Object)) {
-            if (-not $rowsById.ContainsKey($key)) {
+            if ([string]::IsNullOrWhiteSpace($key)) {
+                throw 'WiX ICE03 returned an empty File-table key; refusing metadata normalization.'
+            }
+
+            $row = Get-FileLanguageRow -db $database -FileKey $key
+            if ($null -eq $row) {
                 throw "WiX ICE03 reported File key '$key' but the File table row could not be resolved."
             }
 
-            $row = $rowsById[$key]
             $safeId = $key.Replace("'", "''")
             $view = $null
             try {
