@@ -197,10 +197,19 @@ def main() -> int:
         "<MsiArchitecture Condition=\"'$(MsiArchitecture)' == ''\">x64</MsiArchitecture>",
         "<InstallerPlatform>$(MsiArchitecture)</InstallerPlatform>",
         "<SuppressValidation>false</SuppressValidation>",
+        "<SuppressIces>ICE03</SuppressIces>",
         "SnapverePayloadDir",
     ):
         if required not in msi_project:
             fail(f"MSI project is missing required build contract: {required}")
+
+    if xml_property(ROOT / "src" / "Snapvere.Msi" / "Snapvere.Msi.wixproj", "SuppressIces") != "ICE03":
+        fail("MSI initial build may suppress only ICE03; the final package must be normalized and fully revalidated")
+
+    msi_normalizer = read_text(ROOT / "eng" / "Normalize-SnapvereMsiLanguageMetadata.ps1")
+    for required in ("IsValidLocale", "NormalizedLanguage = '0'", "database.Commit()", "File.Language"):
+        if required not in msi_normalizer:
+            fail(f"MSI language normalizer is missing required safety fragment: {required}")
 
     try:
         msi_root = ET.fromstring(read_text(ROOT / "src" / "Snapvere.Msi" / "Package.wxs"))
@@ -245,8 +254,11 @@ def main() -> int:
         "Build current production MSI",
         "Build synthetic previous-version MSI for major-upgrade QA",
         "Assert-SnapvereMsi.ps1",
+        "Normalize-SnapvereMsiLanguageMetadata.ps1",
+        "./artifacts/wix-cli/wix.exe msi validate",
         "Test-SnapvereMsiLifecycle.ps1",
         "clean install repair major upgrade and uninstall",
+        "if-no-files-found: warn",
     ):
         if required not in msi_ci:
             fail(f"MSI CI is missing lifecycle gate: {required}")
@@ -274,6 +286,8 @@ def main() -> int:
         "python eng/validate-product-contract.py",
         "SNAPVERE-Setup.msi",
         "Assert-SnapvereMsi.ps1",
+        "Normalize-SnapvereMsiLanguageMetadata.ps1",
+        "./artifacts/wix-cli/wix.exe msi validate",
         "Test-SnapvereMsiLifecycle.ps1",
         "SHA256SUMS",
         "gh release create",
