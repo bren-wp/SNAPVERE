@@ -9,6 +9,26 @@ $ErrorActionPreference = 'Stop'
 $msi = (Resolve-Path -LiteralPath $MsiPath).Path
 
 
+$script:LocaleSupported = [uint32]0x00000002
+$script:LocaleValidatorType = Add-Type -TypeDefinition @"
+using System.Runtime.InteropServices;
+
+public static class SnapvereLocaleValidation
+{
+    [DllImport("kernel32.dll", SetLastError = false)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool IsValidLocale(uint locale, uint flags);
+}
+"@ -PassThru
+
+$script:IsValidLocaleMethod = $script:LocaleValidatorType.GetMethod(
+    "IsValidLocale",
+    [Reflection.BindingFlags]::Public -bor [Reflection.BindingFlags]::Static)
+
+if ($null -eq $script:IsValidLocaleMethod) {
+    throw 'Could not resolve kernel32 IsValidLocale validator.'
+}
+
 $installer = New-Object -ComObject WindowsInstaller.Installer
 $database = $null
 
@@ -32,10 +52,9 @@ function Test-MsiLanguage([string] $value) {
         if ($languageId -lt 0 -or $languageId -gt 0xFFFF) {
             return $false
         }
-        try {
-            [void][Globalization.CultureInfo]::GetCultureInfo($languageId)
-        }
-        catch [Globalization.CultureNotFoundException] {
+        $arguments = [object[]]@([uint32]$languageId, $script:LocaleSupported)
+        $isValid = [bool]$script:IsValidLocaleMethod.Invoke($null, $arguments)
+        if (-not $isValid) {
             return $false
         }
     }
