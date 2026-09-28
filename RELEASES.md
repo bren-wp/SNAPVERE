@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.22**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.22
+- Current public release: **v0.1.23**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.23
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,7 +28,43 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No unreleased changes are documented after v0.1.22 yet.
+No unreleased changes are documented after v0.1.23 yet.
+
+---
+
+## v0.1.23 — 2026-09-28
+
+SNAPVERE 0.1.23 is a release-engineering, packaging and localization-integrity release. It introduces a real Windows Installer package as a mandatory public artifact, replaces the version-specific release workflow with an active product-contract-driven workflow, and stops publicly advertising partially translated Windows languages.
+
+### Windows Installer and lifecycle QA
+
+- Add a real x64 per-machine `SNAPVERE-Setup.msi` built with WiX Toolset 5.0.2.
+- The package declares **SNAPVERE** / **Brendigo**, uses a stable UpgradeCode with a fresh ProductCode per package build, installs under Program Files, registers Installed Apps metadata, creates the Start Menu shortcut and uses standard Windows Installer repair/major-upgrade behavior without custom actions.
+- Add MSI database validation for ProductName, Manufacturer, ProductVersion, ProductCode/UpgradeCode separation, architecture, PackageCode, application payload and Start Menu shortcut ownership.
+- Add silent clean-install, repair, synthetic previous-version major-upgrade and silent uninstall runtime QA using `msiexec`, retaining verbose Windows Installer logs for failed-run diagnosis.
+- Keep capture files outside MSI-owned application files so package removal does not intentionally delete user captures.
+
+### Release contract and supply-chain evidence
+
+- Expand the main release contract from six to seven required public product assets by adding `SNAPVERE-Setup.msi`.
+- Add an explicit MSI release blocker in the product validator, MSI CI and generic release workflow.
+- Replace the active version-specific release logic with one workflow that derives the version from `product-version.json`, verifies the exact main commit, builds Windows and browser packages, exercises Setup/Portable/MSI lifecycle gates and refuses mutation of an existing release.
+- Generate final SHA-256 hashes only after the optional Authenticode signing stage, generate an SPDX JSON SBOM and create GitHub artifact attestations for the released packages.
+- Signing is conditional on configured signing credentials; the workflow does not claim a package is signed when credentials are unavailable.
+
+### Localization and documentation integrity
+
+- Public Windows language selection now exposes only English and Croatian because those are the two complete Windows resource sets.
+- Add regression coverage that walks every canonical Windows localization key, requires a dedicated translation for every publicly exposed non-English language and verifies formatting-placeholder compatibility.
+- Keep browser locale support explicitly EN/HR and validate the locale-directory support matrix.
+- Remove stale hardcoded current-release values from evergreen Installation, QA, User Guide, Tray/Lifecycle, Troubleshooting and Branding documentation.
+- Extend Product Contract CI so stale evergreen version markers, incorrect release metadata, missing MSI authoring/lifecycle gates or mismatched language support can no longer produce a green contract result.
+
+### Evidence boundary
+
+- x64 MSI install/repair/upgrade/uninstall is exercised on Windows CI.
+- x86 and ARM64 application payloads remain build-validated; ARM64 runtime behavior is **not** claimed as tested unless a real ARM64 runner is available.
+- Browser source consolidation and the broader WinUI secondary-window coordinator remain separate follow-up work; this release does not claim those unfinished refactors.
 
 ---
 
