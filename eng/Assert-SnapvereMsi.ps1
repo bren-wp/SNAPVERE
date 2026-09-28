@@ -41,7 +41,9 @@ function Get-MsiScalar([string] $query) {
 
 function Get-MsiProperty([string] $name) {
     $safe = $name.Replace("'", "''")
-    return Get-MsiScalar "SELECT `Value` FROM `Property` WHERE `Property` = '$safe'"
+    $value = Get-MsiScalar "SELECT `Value` FROM `Property` WHERE `Property` = '$safe'"
+    if ($null -eq $value) { return $null }
+    return $value.Trim()
 }
 
 try {
