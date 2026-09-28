@@ -74,7 +74,7 @@ try {
     $fileView = $null
     $snapvereFileFound = $false
     try {
-        $fileView = $database.OpenView("SELECT `FileName` FROM `File`")
+        $fileView = $database.OpenView("SELECT ``FileName`` FROM ``File``")
         $fileView.Execute()
         while ($true) {
             $fileRecord = $fileView.Fetch()
