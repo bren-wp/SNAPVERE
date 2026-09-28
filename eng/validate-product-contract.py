@@ -193,7 +193,12 @@ def main() -> int:
     msi_project = read_text(ROOT / "src" / "Snapvere.Msi" / "Snapvere.Msi.wixproj")
     if 'WixToolset.Sdk/5.0.2' not in msi_project:
         fail("MSI build toolchain must remain pinned to the reviewed WiX 5.0.2 SDK")
-    for required in ("<InstallerPlatform>x64</InstallerPlatform>", "<SuppressValidation>false</SuppressValidation>", "SnapverePayloadDir"):
+    for required in (
+        "<MsiArchitecture Condition=\"'$(MsiArchitecture)' == ''\">x64</MsiArchitecture>",
+        "<InstallerPlatform>$(MsiArchitecture)</InstallerPlatform>",
+        "<SuppressValidation>false</SuppressValidation>",
+        "SnapverePayloadDir",
+    ):
         if required not in msi_project:
             fail(f"MSI project is missing required build contract: {required}")
 
@@ -223,6 +228,17 @@ def main() -> int:
         fail("MSI package must install the SNAPVERE Start Menu shortcut")
     if package.find(".//w:CustomAction", ns) is not None:
         fail("MSI package must not introduce custom actions without an explicit reviewed need")
+
+    arm64_ci = read_text(ROOT / ".github" / "workflows" / "arm64-runtime-ci.yml")
+    for required in (
+        "runs-on: windows-11-vs2026-arm",
+        "Confirm native ARM64 runner",
+        "-Arch arm64",
+        "-p:MsiArchitecture=arm64",
+        "Run native ARM64 MSI lifecycle",
+    ):
+        if required not in arm64_ci:
+            fail(f"ARM64 runtime CI is missing native-runtime gate: {required}")
 
     msi_ci = read_text(ROOT / ".github" / "workflows" / "msi-ci.yml")
     for required in (
