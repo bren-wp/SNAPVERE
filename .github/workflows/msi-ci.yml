@@ -78,6 +78,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path $output | Out-Null
           dotnet build src/Snapvere.Msi/Snapvere.Msi.wixproj `
             --configuration Release `
+            -t:Rebuild `
             -p:SnapvereVersion=$env:SNAPVERE_VERSION `
             "-p:SnapverePayloadDir=$payload" `
             "-p:OutputPath=$output\"
@@ -99,6 +100,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path $output | Out-Null
           dotnet build src/Snapvere.Msi/Snapvere.Msi.wixproj `
             --configuration Release `
+            -t:Rebuild `
             -p:SnapvereVersion=$env:SNAPVERE_PREVIOUS_MSI_VERSION `
             "-p:SnapverePayloadDir=$payload" `
             "-p:OutputPath=$output\"
@@ -127,6 +129,13 @@ jobs:
             -Architecture x64
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+          & ./eng/Assert-SnapvereMsiUpgradePair.ps1 `
+            -CurrentMsiPath 'artifacts/msi-current/SNAPVERE-Setup.msi' `
+            -CurrentVersion $env:SNAPVERE_VERSION `
+            -PreviousMsiPath 'artifacts/msi-previous/SNAPVERE-Setup.msi' `
+            -PreviousVersion $env:SNAPVERE_PREVIOUS_MSI_VERSION
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Test MSI clean install repair major upgrade and uninstall
         shell: pwsh
         run: |
@@ -145,6 +154,7 @@ jobs:
           name: snapvere-msi-qa-${{ github.sha }}
           path: |
             artifacts/msi-current/SNAPVERE-Setup.msi
+            artifacts/msi-previous/SNAPVERE-Setup.msi
             artifacts/msi-current/language-normalization.json
             artifacts/msi-previous/language-normalization.json
             artifacts/msi-logs/*.log
