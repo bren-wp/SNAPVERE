@@ -2,7 +2,8 @@
   <PropertyGroup>
     <OutputType>Package</OutputType>
     <OutputName>SNAPVERE-Setup</OutputName>
-    <InstallerPlatform>x64</InstallerPlatform>
+    <MsiArchitecture Condition="'$(MsiArchitecture)' == ''">x64</MsiArchitecture>
+    <InstallerPlatform>$(MsiArchitecture)</InstallerPlatform>
     <SuppressValidation>false</SuppressValidation>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <SnapvereVersion Condition="'$(SnapvereVersion)' == ''">$(VersionPrefix)</SnapvereVersion>
