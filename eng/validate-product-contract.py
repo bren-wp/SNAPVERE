@@ -208,13 +208,15 @@ def main() -> int:
 
     msi_normalizer = read_text(ROOT / "eng" / "Normalize-SnapvereMsiLanguageMetadata.ps1")
     for required in (
-        "IsValidLocale",
-        "LocaleSupported",
-        "GetMethod(",
-        ".Invoke($null, $arguments)",
+        "WixExePath",
+        "wix msi validate",
+        "ICE03",
+        "Table:\\s*File",
+        "Column:\\s*Language",
         "NormalizedLanguage = '0'",
         "database.Commit()",
-        "File.Language",
+        "non-language ICE error",
+        "full WiX/Windows Installer validation",
     ):
         if required not in msi_normalizer:
             fail(f"MSI language normalizer is missing required safety fragment: {required}")
@@ -296,9 +298,12 @@ def main() -> int:
     arm64_ci = read_text(ROOT / ".github" / "workflows" / "arm64-runtime-ci.yml")
     for required in (
         "runs-on: windows-11-vs2026-arm",
+        "Install pinned WiX validation CLI",
         "Confirm native ARM64 runner",
         "-Arch arm64",
         "-p:MsiArchitecture=arm64",
+        "Normalize-SnapvereMsiLanguageMetadata.ps1",
+        "./artifacts/wix-cli/wix.exe msi validate",
         "Run native ARM64 MSI lifecycle",
     ):
         if required not in arm64_ci:
@@ -310,6 +315,7 @@ def main() -> int:
         "Build synthetic previous-version MSI for major-upgrade QA",
         "Assert-SnapvereMsi.ps1",
         "Normalize-SnapvereMsiLanguageMetadata.ps1",
+        "-WixExePath './artifacts/wix-cli/wix.exe'",
         "./artifacts/wix-cli/wix.exe msi validate",
         "Test-SnapvereMsiLifecycle.ps1",
         "clean install repair major upgrade and uninstall",
