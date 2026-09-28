@@ -8,18 +8,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $msi = (Resolve-Path -LiteralPath $MsiPath).Path
 
-Add-Type @"
-using System.Runtime.InteropServices;
 
-internal static class SnapvereLocaleValidation
-{
-    [DllImport("kernel32.dll", SetLastError = false)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    internal static extern bool IsValidLocale(uint locale, uint flags);
-}
-"@
-
-$LocaleSupported = 0x00000002
 $installer = New-Object -ComObject WindowsInstaller.Installer
 $database = $null
 
@@ -43,7 +32,10 @@ function Test-MsiLanguage([string] $value) {
         if ($languageId -lt 0 -or $languageId -gt 0xFFFF) {
             return $false
         }
-        if (-not [SnapvereLocaleValidation]::IsValidLocale([uint32]$languageId, $LocaleSupported)) {
+        try {
+            [void][Globalization.CultureInfo]::GetCultureInfo($languageId)
+        }
+        catch [Globalization.CultureNotFoundException] {
             return $false
         }
     }
