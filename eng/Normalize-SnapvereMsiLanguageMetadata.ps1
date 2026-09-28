@@ -77,13 +77,13 @@ function Write-ValidationFailure {
 
 $initial = Invoke-WixMsiValidation -Path $msi
 $languageErrorPattern = 'ICE03:\s+(?:Invalid Language Id|String overflow .*?);\s*Table:\s*File,\s*Column:\s*Language,\s*Key\(s\):\s*(?<key>\S+)\s*$'
-$errorPattern = '\berror\s+WIX\d+:'
+$diagnosticPattern = '\b(?:error|warning)\s+WIX\d+:'
 
 $targetKeys = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
-$unexpectedErrors = [System.Collections.Generic.List[string]]::new()
+$unexpectedDiagnostics = [System.Collections.Generic.List[string]]::new()
 
 foreach ($line in $initial.Lines) {
-    if ($line -notmatch $errorPattern) {
+    if ($line -notmatch $diagnosticPattern) {
         continue
     }
 
@@ -93,20 +93,16 @@ foreach ($line in $initial.Lines) {
         continue
     }
 
-    $unexpectedErrors.Add($line)
+    $unexpectedDiagnostics.Add($line)
 }
 
-if ($initial.ExitCode -eq 0) {
-    if ($targetKeys.Count -ne 0) {
-        throw 'WiX validation returned success while reporting File.Language ICE03 errors.'
-    }
-}
-elseif ($unexpectedErrors.Count -gt 0 -or $targetKeys.Count -eq 0) {
+if ($unexpectedDiagnostics.Count -gt 0) {
     Write-ValidationFailure -Validation $initial
-    if ($unexpectedErrors.Count -gt 0) {
-        throw "MSI validation failed with $($unexpectedErrors.Count) non-language ICE error(s); refusing metadata normalization."
-    }
-    throw 'MSI validation failed without a recognized File.Language ICE03 error; refusing metadata normalization.'
+    throw "MSI validation reported $($unexpectedDiagnostics.Count) non-language ICE diagnostic(s); refusing metadata normalization."
+}
+if ($initial.ExitCode -ne 0 -and $targetKeys.Count -eq 0) {
+    Write-ValidationFailure -Validation $initial
+    throw 'MSI validation failed without a recognized File.Language ICE03 diagnostic; refusing metadata normalization.'
 }
 
 $report = [System.Collections.Generic.List[object]]::new()
@@ -166,9 +162,10 @@ finally {
 }
 
 $final = Invoke-WixMsiValidation -Path $msi
-if ($final.ExitCode -ne 0) {
+$finalDiagnostics = @($final.Lines | Where-Object { $_ -match $diagnosticPattern })
+if ($final.ExitCode -ne 0 -or $finalDiagnostics.Count -ne 0) {
     Write-ValidationFailure -Validation $final
-    throw 'MSI still fails full WiX/Windows Installer validation after targeted File.Language normalization.'
+    throw "MSI final WiX/Windows Installer validation is not clean after targeted File.Language normalization (exit=$($final.ExitCode), diagnostics=$($finalDiagnostics.Count))."
 }
 
 if (-not [string]::IsNullOrWhiteSpace($ReportPath)) {
@@ -182,17 +179,19 @@ if (-not [string]::IsNullOrWhiteSpace($ReportPath)) {
         Msi = [IO.Path]::GetFileName($msi)
         Validator = 'WiX 5.0.2 / Windows Installer ICE03'
         InitialValidationExitCode = $initial.ExitCode
+        InitialDiagnosticCount = @($initial.Lines | Where-Object { $_ -match $diagnosticPattern }).Count
         FinalValidationExitCode = $final.ExitCode
+        FinalDiagnosticCount = $finalDiagnostics.Count
         NormalizedCount = $report.Count
         Files = @($report)
     } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $ReportPath -Encoding utf8NoBOM
 }
 
 if ($report.Count -eq 0) {
-    Write-Host 'MSI passed full WiX/Windows Installer validation without File.Language normalization.'
+    Write-Host 'MSI passed full WiX/Windows Installer validation with zero diagnostics and without File.Language normalization.'
 }
 else {
-    Write-Host "Normalized $($report.Count) File.Language value(s) reported invalid by ICE03; full validation now passes."
+    Write-Host "Normalized $($report.Count) File.Language value(s) reported by ICE03; full validation now passes with zero diagnostics."
     foreach ($entry in $report) {
         Write-Host "  $($entry.FileName): '$($entry.OriginalLanguage)' -> 0"
     }
