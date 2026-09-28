@@ -203,7 +203,7 @@ jobs:
 
             $msi = Join-Path $output 'SNAPVERE-Setup.msi'
             if (-not (Test-Path -LiteralPath $msi -PathType Leaf)) { throw "MSI build did not produce $msi." }
-            & ./eng/Normalize-SnapvereMsiLanguageMetadata.ps1 -MsiPath $msi -ReportPath (Join-Path $output 'language-normalization.json')
+            & ./eng/Normalize-SnapvereMsiLanguageMetadata.ps1 -MsiPath $msi -WixExePath './artifacts/wix-cli/wix.exe' -ReportPath (Join-Path $output 'language-normalization.json')
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             & ./artifacts/wix-cli/wix.exe msi validate $msi
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
