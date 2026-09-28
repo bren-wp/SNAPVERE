@@ -215,7 +215,9 @@ def main() -> int:
         "Column:\\s*Language",
         "NormalizedLanguage = '0'",
         "database.Commit()",
-        "non-language ICE error",
+        "non-language ICE diagnostic",
+        "(?:error|warning)",
+        "zero diagnostics",
         "full WiX/Windows Installer validation",
     ):
         if required not in msi_normalizer:
@@ -299,7 +301,7 @@ def main() -> int:
     if re.search(r'OpenView\([^\n]*\bLIKE\b', msi_assertion, re.IGNORECASE):
         fail("MSI database assertions must not use unsupported LIKE expressions in Windows Installer SQL")
     for required in (
-        "SELECT `FileName` FROM `File`",
+        "SELECT ``FileName`` FROM ``File``",
         "Snapvere.exe",
         "StartMenuShortcut",
         "MainExecutable",
