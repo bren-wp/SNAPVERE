@@ -1,6 +1,6 @@
 # Instalacija SNAPVERE-a
 
-Aktualno javno izdanje: **v0.1.15**. Objavljeni tagovi i asseti su immutable; kasniji hardening na `main` grani nije retroaktivni dio tog izdanja.
+Aktivna verzija izdanja definirana je u [`product-version.json`](../../product-version.json). Objavljeni tagovi i asseti su immutable; za aktualne binarne datoteke koristi stranicu najnovijeg izdanja.
 
 ## Windows Setup
 
@@ -37,6 +37,17 @@ SNAPVERE-Setup.exe --uninstall --silent
 
 Tihi install bez `--accept-license` završava bez instalacije.
 
+## Windows Installer (MSI)
+
+`SNAPVERE-Setup.msi` je standardni x64 Windows Installer paket. Instalira se per-machine u `Program Files\Brendigo\SNAPVERE`, registrira SNAPVERE u Installed Apps, izrađuje Start Menu prečac, podržava Windows Installer repair i major upgrade te administrirani tihi rad:
+
+```text
+msiexec /i SNAPVERE-Setup.msi /qn /norestart
+msiexec /x SNAPVERE-Setup.msi /qn /norestart
+```
+
+MSI lifecycle QA provjerava metapodatke baze, čistu instalaciju, repair, silent install/uninstall, major-upgrade zamjenu i uklanjanje. Korisničke snimke nalaze se izvan MSI-owned aplikacijske mape i uninstall ih namjerno ne briše.
+
 ## Windows Portable
 
 `SNAPVERE-Portable.exe` je portable opcija. Prije ponovne uporabe provjerava ugrađeni payload i ne zahtijeva klasičnu instalaciju.
@@ -52,4 +63,4 @@ Aktualno izdanje sadrži:
 
 ZIP paketi služe za ručnu instalaciju. Objavu u službenim trgovinama ne treba smatrati završenom dok stvarni vanjski listing nije objavljen.
 
-Aktualno izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.15
+Aktualno izdanje: https://github.com/bren-wp/SNAPVERE/releases/latest
