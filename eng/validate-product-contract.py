@@ -207,7 +207,13 @@ def main() -> int:
         fail("MSI initial build may suppress only ICE03; the final package must be normalized and fully revalidated")
 
     msi_normalizer = read_text(ROOT / "eng" / "Normalize-SnapvereMsiLanguageMetadata.ps1")
-    for required in ("IsValidLocale", "NormalizedLanguage = '0'", "database.Commit()", "File.Language"):
+    for required in (
+        "CultureInfo]::GetCultureInfo",
+        "CultureNotFoundException",
+        "NormalizedLanguage = '0'",
+        "database.Commit()",
+        "File.Language",
+    ):
         if required not in msi_normalizer:
             fail(f"MSI language normalizer is missing required safety fragment: {required}")
 
