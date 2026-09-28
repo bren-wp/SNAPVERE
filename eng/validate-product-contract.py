@@ -312,6 +312,20 @@ def main() -> int:
     if "-split '\\\\|'" in msi_assertion:
         fail("MSI FileName parsing must split short|long names on a literal pipe, not a backslash")
 
+    upgrade_pair_assertion = read_text(ROOT / "eng" / "Assert-SnapvereMsiUpgradePair.ps1")
+    for required in (
+        "CurrentVersion",
+        "PreviousVersion",
+        "ProductVersion",
+        "ProductCode",
+        "PackageCode",
+        "UpgradeCode",
+        "Major-upgrade pair reused ProductCode",
+        "Major-upgrade pair reused PackageCode",
+    ):
+        if required not in upgrade_pair_assertion:
+            fail(f"MSI upgrade-pair assertion is missing identity guard: {required}")
+
     arm64_ci = read_text(ROOT / ".github" / "workflows" / "arm64-runtime-ci.yml")
     for required in (
         "runs-on: windows-11-vs2026-arm",
@@ -321,6 +335,8 @@ def main() -> int:
         "-p:MsiArchitecture=arm64",
         "Normalize-SnapvereMsiLanguageMetadata.ps1",
         "./artifacts/wix-cli/wix.exe msi validate",
+        "Assert-SnapvereMsiUpgradePair.ps1",
+        "-t:Rebuild",
         "Run native ARM64 MSI lifecycle",
     ):
         if required not in arm64_ci:
@@ -334,6 +350,8 @@ def main() -> int:
         "Normalize-SnapvereMsiLanguageMetadata.ps1",
         "-WixExePath './artifacts/wix-cli/wix.exe'",
         "./artifacts/wix-cli/wix.exe msi validate",
+        "Assert-SnapvereMsiUpgradePair.ps1",
+        "-t:Rebuild",
         "Test-SnapvereMsiLifecycle.ps1",
         "clean install repair major upgrade and uninstall",
         "if-no-files-found: warn",
@@ -366,6 +384,8 @@ def main() -> int:
         "Assert-SnapvereMsi.ps1",
         "Normalize-SnapvereMsiLanguageMetadata.ps1",
         "./artifacts/wix-cli/wix.exe msi validate",
+        "Assert-SnapvereMsiUpgradePair.ps1",
+        "-t:Rebuild",
         "Test-SnapvereMsiLifecycle.ps1",
         "SHA256SUMS",
         "gh release create",
