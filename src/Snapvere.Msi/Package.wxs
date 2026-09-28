@@ -24,31 +24,31 @@
     <StandardDirectory Id="ProgramFiles6432Folder">
       <Directory Id="BrendigoFolder" Name="Brendigo">
         <Directory Id="INSTALLFOLDER" Name="SNAPVERE">
-          <Files Include="$(var.SnapverePayloadDir)\**" />
+          <Component Id="MainExecutable" Guid="{04B12F10-9D2A-4C37-8D74-BF17887D8913}">
+            <File
+                Id="SnapvereExecutable"
+                Source="$(var.SnapverePayloadDir)\Snapvere.exe"
+                KeyPath="yes">
+              <Shortcut
+                  Id="StartMenuShortcut"
+                  Name="SNAPVERE"
+                  Description="SNAPVERE — Capture anything."
+                  Directory="ApplicationProgramsFolder"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="Snapvere.exe"
+                  Advertise="yes" />
+            </File>
+          </Component>
+
+          <Files Include="$(var.SnapverePayloadDir)\**">
+            <Exclude Files="$(var.SnapverePayloadDir)\Snapvere.exe" />
+          </Files>
         </Directory>
       </Directory>
     </StandardDirectory>
 
-    <StandardDirectory Id="CommonProgramsFolder">
-      <Directory Id="ApplicationProgramsFolder" Name="SNAPVERE">
-        <Component Id="ApplicationShortcut" Guid="{04B12F10-9D2A-4C37-8D74-BF17887D8913}">
-          <Shortcut
-              Id="StartMenuShortcut"
-              Name="SNAPVERE"
-              Description="SNAPVERE — Capture anything."
-              Target="[INSTALLFOLDER]Snapvere.exe"
-              WorkingDirectory="INSTALLFOLDER"
-              Icon="Snapvere.exe" />
-          <RemoveFolder Id="RemoveApplicationProgramsFolder" On="uninstall" />
-          <RegistryValue
-              Root="HKLM"
-              Key="Software\Brendigo\SNAPVERE"
-              Name="InstalledVersion"
-              Type="string"
-              Value="$(var.SnapvereVersion)"
-              KeyPath="yes" />
-        </Component>
-      </Directory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="SNAPVERE" />
     </StandardDirectory>
   </Package>
 </Wix>
