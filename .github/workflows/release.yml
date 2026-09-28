@@ -99,6 +99,14 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Install pinned WiX validation CLI
+        shell: pwsh
+        run: |
+          dotnet tool install --tool-path artifacts/wix-cli wix --version 5.0.2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./artifacts/wix-cli/wix.exe --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Resolve and validate release source contract
         shell: pwsh
         run: |
@@ -191,6 +199,13 @@ jobs:
             $output = Join-Path $PWD $build.Output
             New-Item -ItemType Directory -Force -Path $output | Out-Null
             dotnet build src/Snapvere.Msi/Snapvere.Msi.wixproj --configuration Release "-p:SnapvereVersion=$($build.Version)" "-p:SnapverePayloadDir=$payload" "-p:OutputPath=$output\"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+            $msi = Join-Path $output 'SNAPVERE-Setup.msi'
+            if (-not (Test-Path -LiteralPath $msi -PathType Leaf)) { throw "MSI build did not produce $msi." }
+            & ./eng/Normalize-SnapvereMsiLanguageMetadata.ps1 -MsiPath $msi -ReportPath (Join-Path $output 'language-normalization.json')
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            & ./artifacts/wix-cli/wix.exe msi validate $msi
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
 
