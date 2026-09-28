@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+      Name="SNAPVERE"
+      Manufacturer="Brendigo"
+      Version="$(var.SnapvereVersion)"
+      ProductCode="*"
+      UpgradeCode="{A680451A-7E71-4E13-9814-8517D3BC6A89}"
+      UpgradeStrategy="majorUpgrade"
+      Scope="perMachine"
+      InstallerVersion="500"
+      Language="1033"
+      Compressed="yes">
+
+    <MajorUpgrade
+        AllowSameVersionUpgrades="no"
+        DowngradeErrorMessage="A newer version of SNAPVERE is already installed." />
+
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="Snapvere.exe" SourceFile="$(var.SnapverePayloadDir)\Snapvere.exe" />
+    <Property Id="ARPPRODUCTICON" Value="Snapvere.exe" />
+
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="BrendigoFolder" Name="Brendigo">
+        <Directory Id="INSTALLFOLDER" Name="SNAPVERE">
+          <Files Include="$(var.SnapverePayloadDir)\**" />
+        </Directory>
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="SNAPVERE">
+        <Component Id="ApplicationShortcut" Guid="{04B12F10-9D2A-4C37-8D74-BF17887D8913}">
+          <Shortcut
+              Id="StartMenuShortcut"
+              Name="SNAPVERE"
+              Description="SNAPVERE — Capture anything."
+              Target="[INSTALLFOLDER]Snapvere.exe"
+              WorkingDirectory="INSTALLFOLDER"
+              Icon="Snapvere.exe" />
+          <RemoveFolder Id="RemoveApplicationProgramsFolder" On="uninstall" />
+          <RegistryValue
+              Root="HKLM"
+              Key="Software\Brendigo\SNAPVERE"
+              Name="InstalledVersion"
+              Type="string"
+              Value="$(var.SnapvereVersion)"
+              KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+  </Package>
+</Wix>
