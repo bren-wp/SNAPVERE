@@ -7,6 +7,7 @@ Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani 
 - .NET restore s vulnerability auditom.
 - x64 build i unit-test suite, uključujući paralelno PNG spremanje dviju snimki s istim timestampom, stale/recent/foreign/locked capture-temp cleanup granice, tipiziranu access-denied/storage-full/write-failure persistence klasifikaciju s invalid-target integration slučajem, provjeru da Portable startup poruke ne izlažu umetnute privatne putanje iz exception teksta i bounded provjeru local-shell failure taksonomije.
 - x86 build i ARM64 cross-build.
+- nativni Windows ARM64 runtime CI na `windows-11-vs2026-arm`, uključujući direktni ARM64 startup aplikacije, Universal Setup/Portable ARM64 lifecycle probeove i ARM64 MSI clean/repair/major-upgrade/uninstall.
 - provjera native payload strukture.
 - stvarni renderirani WinUI snapshotovi za Region, Window, Tray, Options, Language i About.
 - PR visual usporedba s posljednjim uspješnim `main` baselineom.
