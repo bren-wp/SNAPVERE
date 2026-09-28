@@ -7,6 +7,7 @@ This matrix documents automated regression evidence for the actively maintained 
 - .NET restore with vulnerability auditing.
 - x64 build and unit-test suite, including concurrent same-timestamp PNG publication coverage, stale/recent/foreign/locked capture-temp cleanup boundaries, typed access-denied/storage-full/write-failure persistence classification with an invalid-target integration case, Portable startup-message sanitization against injected private-path exception text and bounded local-shell failure taxonomy coverage.
 - x86 build and ARM64 cross-build.
+- native Windows ARM64 runtime CI on `windows-11-vs2026-arm`, covering direct ARM64 app startup, Universal Setup/Portable ARM64 lifecycle probes and ARM64 MSI clean/repair/major-upgrade/uninstall.
 - native payload-structure validation.
 - real rendered WinUI snapshot capture for Region, Window, Tray, Options, Language and About surfaces.
 - PR visual comparison against the last successful `main` baseline.
