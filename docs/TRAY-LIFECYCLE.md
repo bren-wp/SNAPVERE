@@ -1,6 +1,6 @@
 # SNAPVERE Tray and Process Lifecycle
 
-Current public release: **v0.1.12**. The `main` branch may contain later unreleased lifecycle hardening.
+The active release version is defined by `product-version.json`; this guide documents the maintained tray and lifecycle contract.
 
 The Windows application is designed as a **tray-first** process. A normal launch keeps SNAPVERE available for capture without opening a permanent dashboard window, while global shortcuts and the notification-area host provide the primary entry points.
 
