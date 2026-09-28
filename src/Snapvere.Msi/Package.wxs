@@ -38,6 +38,10 @@
                   Icon="Snapvere.exe"
                   Advertise="yes" />
             </File>
+            <RemoveFolder
+                Id="RemoveApplicationProgramsFolder"
+                Directory="ApplicationProgramsFolder"
+                On="uninstall" />
           </Component>
 
           <Files Include="$(var.SnapverePayloadDir)\**">
