@@ -1,0 +1,59 @@
+name: Localization Completeness CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: snapvere-localization-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  translation-completeness:
+    runs-on: windows-2022
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: global.json
+
+      - name: Validate declared public locale support matrix
+        shell: pwsh
+        run: |
+          python eng/validate-product-contract.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Restore localization tests
+        shell: pwsh
+        run: |
+          dotnet restore tests/Snapvere.UnitTests/Snapvere.UnitTests.csproj -p:Platform=x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Require all canonical Windows keys and compatible placeholders
+        shell: pwsh
+        run: |
+          dotnet test tests/Snapvere.UnitTests/Snapvere.UnitTests.csproj `
+            --configuration Release `
+            --no-restore `
+            -p:Platform=x64 `
+            --filter "FullyQualifiedName~SnapvereLocalizationTests" `
+            --logger "trx;LogFileName=snapvere-localization-tests.trx"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Validate browser locale key parity
+        shell: pwsh
+        run: |
+          node ekstenzije/tools/validate-extensions.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
