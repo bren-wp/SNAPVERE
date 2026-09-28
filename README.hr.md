@@ -16,9 +16,10 @@ Snimite regiju, prozor, cijeli zaslon ili web-stranicu, brzo označite rezultat,
 [![Windows CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/ci.yml)
 [![Extensions CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/extensions-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/extensions-ci.yml)
 [![Product Contract](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml)
+[![MSI CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/msi-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/msi-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Web stranica](https://snapvere.com) · [Preuzmi v0.1.22](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.22) · [Dokumentacija](docs/hr/README.md) · [English](README.md)
+[Web stranica](https://snapvere.com) · [Preuzmi v0.1.23](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.23) · [Dokumentacija](docs/hr/README.md) · [English](README.md)
 
 </div>
 
@@ -37,10 +38,10 @@ SNAPVERE je napravljen za brzo svakodnevno snimanje bez pretvaranja screenshota 
 | ✏️ **Ugrađene anotacije** | Pen, Line, Arrow, Box i Highlight izravno u Windows region workflowu. |
 | 🖥️ **Nativni Windows workflow** | Tray-first rad, globalni prečaci, nedavne snimke, lokalne postavke i DPI-aware multi-monitor podrška. |
 | 🔒 **Local-first pristup** | Osnovna obrada snimki ostaje lokalna; račun nije potreban i capture runtime nema first-party telemetriju snimki. |
-| 📦 **Setup ili Portable** | Universal Windows paketi s x86, x64 i ARM64 aplikacijskim payloadima. |
+| 📦 **Tri Windows načina distribucije** | Vođeni Setup EXE, standardni x64 Windows Installer (MSI) i Universal Portable; Setup/Portable nose x86, x64 i ARM64 payloade. |
 | 🌐 **Četiri preglednika** | Chrome, Edge, Opera i Firefox dijele isti zaključani SNAPVERE brand i ograničeno capture ponašanje. |
 
-SNAPVERE 0.1.22 nastavlja reliability hardening kroz cijelu Windows i browser površinu. Windows capture-feedback UI sada je containmentan kao recovery granica, pa sekundarni WinUI problem ne može zamijeniti izvornu capture grešku. Injektirani browser capture runtime dodatno provjerava SNAPVERE extension sender prije prihvaćanja Region ili Full Page rada u Chromeu, Edgeu, Operi i Firefoxu.
+SNAPVERE 0.1.23 uvodi MSI kao obavezan release artefakt, zatvara jezični fallback tako da se javno nude samo potpuni EN/HR prijevodi te nastavlja reliability hardening kroz Windows i browser površinu. Windows capture-feedback UI sada je containmentan kao recovery granica, pa sekundarni WinUI problem ne može zamijeniti izvornu capture grešku. Injektirani browser capture runtime dodatno provjerava SNAPVERE extension sender prije prihvaćanja Region ili Full Page rada u Chromeu, Edgeu, Operi i Firefoxu.
 
 Recording zadržava odvojene kompaktne Start i Stop kontrole u Postavkama te mali always-on-top kontroler s proteklim vremenom dok je snimanje aktivno. Setup ostaje vođeni License → Installation → Finish tijek. Recording je primary-display H.264 MP4 samo s videom; mikrofon i sistemski zvuk nisu navedeni kao podržani.
 
@@ -90,23 +91,24 @@ Slike ispod su **stvarne renderirane Windows površine koje je snimio SNAPVERE v
 
 ## Preuzimanja
 
-Aktualno izdanje: **SNAPVERE 0.1.22**<br>
-Izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.22
+Aktualno izdanje: **SNAPVERE 0.1.23**<br>
+Izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.23
 
 | Platforma | Paket |
 | --- | --- |
-| Windows Setup | `SNAPVERE-Setup.exe` |
+| Windows Setup EXE | `SNAPVERE-Setup.exe` |
+| Windows Installer (MSI) | `SNAPVERE-Setup.msi` |
 | Windows Portable | `SNAPVERE-Portable.exe` |
 | Chrome | `SNAPVERE-Chrome.zip` |
 | Edge | `SNAPVERE-Edge.zip` |
 | Opera | `SNAPVERE-Opera.zip` |
 | Firefox | `SNAPVERE-Firefox.zip` |
 
-Aktualni ugovor proizvoda sadrži ovih šest održavanih paketa.
+Aktualni ugovor proizvoda sadrži ovih sedam glavnih održavanih paketa. Release dodatno objavljuje SHA-256 provjere i SPDX SBOM.
 
 ## Kvaliteta koju možete provjeriti
 
-CI ne provjerava samo kompilaciju. Trenutno obuhvaća x64 build i unit testove, x86 i ARM64 buildove, stvarne renderirane WinUI snapshotove, usporedbu s `main` baselineom, universal Setup/Portable pakiranje, package-size budget, x64/x86 lifecycle provjeru, browser runtime i permission validaciju, brand lock, EN/HR paritet, reproducibilno pakiranje, Product Contract CI i CodeQL.
+CI ne provjerava samo kompilaciju. Trenutno obuhvaća x64 build i unit testove, x86 i ARM64 buildove, stvarne renderirane WinUI snapshotove, usporedbu s `main` baselineom, universal Setup/Portable pakiranje, pravi x64 MSI, MSI clean-install/repair/major-upgrade/uninstall QA, package-size budget, x64/x86 lifecycle provjeru, browser runtime i permission validaciju, brand lock, EN/HR paritet, reproducibilno pakiranje, Product Contract CI i CodeQL.
 
 Ti gateovi smanjuju rizik regresija; nisu tvrdnja da Windows, driver ili preglednik nikada ne može pogriješiti.
 
