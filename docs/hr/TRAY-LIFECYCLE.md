@@ -1,6 +1,6 @@
 # SNAPVERE Tray i lifecycle
 
-Aktualno javno izdanje: **v0.1.12**. Grana `main` može sadržavati kasniji neobjavljeni lifecycle hardening.
+Aktivna verzija izdanja definirana je u `product-version.json`; vodič opisuje održavani tray i lifecycle ugovor.
 
 Windows aplikacija radi kao **tray-first** proces. Normalan launch drži SNAPVERE spremnim za capture bez stalno otvorenog dashboarda, dok globalni prečaci i notification-area host služe kao glavni ulazi u capture workflow.
 
