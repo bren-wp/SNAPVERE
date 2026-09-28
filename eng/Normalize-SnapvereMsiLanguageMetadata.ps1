@@ -2,64 +2,32 @@ param(
     [Parameter(Mandatory = $true)]
     [string] $MsiPath,
 
+    [Parameter(Mandatory = $true)]
+    [string] $WixExePath,
+
     [string] $ReportPath
 )
 
 $ErrorActionPreference = 'Stop'
 $msi = (Resolve-Path -LiteralPath $MsiPath).Path
+$wix = (Resolve-Path -LiteralPath $WixExePath).Path
 
+function Invoke-WixMsiValidation {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Path
+    )
 
-$script:LocaleSupported = [uint32]0x00000002
-$script:LocaleValidatorType = Add-Type -TypeDefinition @"
-using System.Runtime.InteropServices;
-
-public static class SnapvereLocaleValidation
-{
-    [DllImport("kernel32.dll", SetLastError = false)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool IsValidLocale(uint locale, uint flags);
-}
-"@ -PassThru
-
-$script:IsValidLocaleMethod = $script:LocaleValidatorType.GetMethod(
-    "IsValidLocale",
-    [Reflection.BindingFlags]::Public -bor [Reflection.BindingFlags]::Static)
-
-if ($null -eq $script:IsValidLocaleMethod) {
-    throw 'Could not resolve kernel32 IsValidLocale validator.'
-}
-
-$installer = New-Object -ComObject WindowsInstaller.Installer
-$database = $null
-
-function Test-MsiLanguage([string] $value) {
-    if ([string]::IsNullOrWhiteSpace($value)) {
-        return $true
+    $lines = [System.Collections.Generic.List[string]]::new()
+    & $wix msi validate $Path 2>&1 | ForEach-Object {
+        $lines.Add($_.ToString())
     }
+    $exitCode = $LASTEXITCODE
 
-    if ($value.Length -gt 20 -or $value -notmatch '^\d{1,5}(,\d{1,5})*$') {
-        return $false
+    return [pscustomobject]@{
+        ExitCode = $exitCode
+        Lines = @($lines)
     }
-
-    foreach ($token in $value.Split(',')) {
-        $languageId = 0
-        if (-not [int]::TryParse($token, [ref]$languageId)) {
-            return $false
-        }
-        if ($languageId -eq 0) {
-            continue
-        }
-        if ($languageId -lt 0 -or $languageId -gt 0xFFFF) {
-            return $false
-        }
-        $arguments = [object[]]@([uint32]$languageId, $script:LocaleSupported)
-        $isValid = [bool]$script:IsValidLocaleMethod.Invoke($null, $arguments)
-        if (-not $isValid) {
-            return $false
-        }
-    }
-
-    return $true
 }
 
 function Get-FileLanguageRows($db) {
@@ -93,71 +61,137 @@ function Get-FileLanguageRows($db) {
     }
 }
 
+function Write-ValidationFailure {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object] $Validation
+    )
+
+    foreach ($line in $Validation.Lines) {
+        Write-Host $line
+    }
+}
+
+$initial = Invoke-WixMsiValidation -Path $msi
+$languageErrorPattern = 'ICE03:\s+(?:Invalid Language Id|String overflow .*?);\s*Table:\s*File,\s*Column:\s*Language,\s*Key\(s\):\s*(?<key>\S+)\s*$'
+$errorPattern = '\berror\s+WIX\d+:'
+
+$targetKeys = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+$unexpectedErrors = [System.Collections.Generic.List[string]]::new()
+
+foreach ($line in $initial.Lines) {
+    if ($line -notmatch $errorPattern) {
+        continue
+    }
+
+    $match = [Regex]::Match($line, $languageErrorPattern, [Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    if ($match.Success) {
+        [void]$targetKeys.Add($match.Groups['key'].Value)
+        continue
+    }
+
+    $unexpectedErrors.Add($line)
+}
+
+if ($initial.ExitCode -eq 0) {
+    if ($targetKeys.Count -ne 0) {
+        throw 'WiX validation returned success while reporting File.Language ICE03 errors.'
+    }
+}
+elseif ($unexpectedErrors.Count -gt 0 -or $targetKeys.Count -eq 0) {
+    Write-ValidationFailure -Validation $initial
+    if ($unexpectedErrors.Count -gt 0) {
+        throw "MSI validation failed with $($unexpectedErrors.Count) non-language ICE error(s); refusing metadata normalization."
+    }
+    throw 'MSI validation failed without a recognized File.Language ICE03 error; refusing metadata normalization.'
+}
+
+$report = [System.Collections.Generic.List[object]]::new()
+$installer = $null
+$database = $null
+
 try {
-    # Transacted mode lets us correct only File.Language metadata before the
-    # final full ICE pass. File hashes, versions, cabinet data and component
-    # authoring remain untouched.
-    $database = $installer.OpenDatabase($msi, 1)
-    $rows = @(Get-FileLanguageRows $database)
-    $invalid = @($rows | Where-Object { -not (Test-MsiLanguage $_.Language) })
+    if ($targetKeys.Count -gt 0) {
+        $installer = New-Object -ComObject WindowsInstaller.Installer
 
-    $report = [System.Collections.Generic.List[object]]::new()
-    foreach ($row in $invalid) {
-        $safeId = $row.File.Replace("'", "''")
-        $view = $null
-        try {
-            $view = $database.OpenView("UPDATE `File` SET `Language` = '0' WHERE `File` = '$safeId'")
-            $view.Execute()
+        # Transacted mode changes only the File.Language cells explicitly
+        # identified by Windows Installer ICE03. File hashes, versions,
+        # cabinet data, component authoring and all other tables remain intact.
+        $database = $installer.OpenDatabase($msi, 1)
+        $rows = @(Get-FileLanguageRows $database)
+        $rowsById = @{}
+        foreach ($row in $rows) {
+            $rowsById[$row.File] = $row
         }
-        finally {
-            if ($null -ne $view) {
-                [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($view)
+
+        foreach ($key in ($targetKeys | Sort-Object)) {
+            if (-not $rowsById.ContainsKey($key)) {
+                throw "WiX ICE03 reported File key '$key' but the File table row could not be resolved."
             }
+
+            $row = $rowsById[$key]
+            $safeId = $key.Replace("'", "''")
+            $view = $null
+            try {
+                $view = $database.OpenView("UPDATE `File` SET `Language` = '0' WHERE `File` = '$safeId'")
+                $view.Execute()
+            }
+            finally {
+                if ($null -ne $view) {
+                    [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($view)
+                }
+            }
+
+            $report.Add([pscustomobject]@{
+                File = $row.File
+                FileName = $row.FileName
+                OriginalLanguage = $row.Language
+                NormalizedLanguage = '0'
+                Reason = 'Reported by WiX/Windows Installer ICE03 as invalid File.Language metadata'
+            })
         }
 
-        $report.Add([pscustomobject]@{
-            File = $row.File
-            FileName = $row.FileName
-            OriginalLanguage = $row.Language
-            NormalizedLanguage = '0'
-        })
-    }
-
-    if ($invalid.Count -gt 0) {
         $database.Commit()
-    }
-
-    $remaining = @((Get-FileLanguageRows $database) | Where-Object { -not (Test-MsiLanguage $_.Language) })
-    if ($remaining.Count -ne 0) {
-        throw "MSI still contains $($remaining.Count) invalid File.Language value(s) after normalization."
-    }
-
-    if (-not [string]::IsNullOrWhiteSpace($ReportPath)) {
-        $reportDirectory = Split-Path -Parent $ReportPath
-        if (-not [string]::IsNullOrWhiteSpace($reportDirectory)) {
-            New-Item -ItemType Directory -Force -Path $reportDirectory | Out-Null
-        }
-        [pscustomobject]@{
-            FormatVersion = 1
-            Msi = [IO.Path]::GetFileName($msi)
-            NormalizedCount = $report.Count
-            Files = @($report)
-        } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $ReportPath -Encoding utf8NoBOM
-    }
-
-    if ($report.Count -eq 0) {
-        Write-Host 'MSI File.Language metadata was already valid; no normalization was required.'
-    }
-    else {
-        Write-Host "Normalized $($report.Count) invalid File.Language value(s) to language-neutral 0 before final ICE validation."
-        foreach ($entry in $report) {
-            Write-Host "  $($entry.FileName): '$($entry.OriginalLanguage)' -> 0"
-        }
     }
 }
 finally {
     if ($null -ne $database) {
         [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($database)
     }
-    [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($installer)
+    if ($null -ne $installer) {
+        [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($installer)
+    }
+}
+
+$final = Invoke-WixMsiValidation -Path $msi
+if ($final.ExitCode -ne 0) {
+    Write-ValidationFailure -Validation $final
+    throw 'MSI still fails full WiX/Windows Installer validation after targeted File.Language normalization.'
+}
+
+if (-not [string]::IsNullOrWhiteSpace($ReportPath)) {
+    $reportDirectory = Split-Path -Parent $ReportPath
+    if (-not [string]::IsNullOrWhiteSpace($reportDirectory)) {
+        New-Item -ItemType Directory -Force -Path $reportDirectory | Out-Null
+    }
+
+    [pscustomobject]@{
+        FormatVersion = 2
+        Msi = [IO.Path]::GetFileName($msi)
+        Validator = 'WiX 5.0.2 / Windows Installer ICE03'
+        InitialValidationExitCode = $initial.ExitCode
+        FinalValidationExitCode = $final.ExitCode
+        NormalizedCount = $report.Count
+        Files = @($report)
+    } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $ReportPath -Encoding utf8NoBOM
+}
+
+if ($report.Count -eq 0) {
+    Write-Host 'MSI passed full WiX/Windows Installer validation without File.Language normalization.'
+}
+else {
+    Write-Host "Normalized $($report.Count) File.Language value(s) reported invalid by ICE03; full validation now passes."
+    foreach ($entry in $report) {
+        Write-Host "  $($entry.FileName): '$($entry.OriginalLanguage)' -> 0"
+    }
 }
