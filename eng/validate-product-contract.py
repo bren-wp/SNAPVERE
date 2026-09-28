@@ -299,7 +299,7 @@ def main() -> int:
     if re.search(r'OpenView\([^\n]*\bLIKE\b', msi_assertion, re.IGNORECASE):
         fail("MSI database assertions must not use unsupported LIKE expressions in Windows Installer SQL")
     for required in (
-        'SELECT `FileName` FROM `File`',
+        "SELECT `FileName` FROM `File`",
         "Snapvere.exe",
         "StartMenuShortcut",
         "MainExecutable",
