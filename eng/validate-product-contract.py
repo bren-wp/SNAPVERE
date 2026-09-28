@@ -295,6 +295,18 @@ def main() -> int:
     if package.find(".//w:CustomAction", ns) is not None:
         fail("MSI package must not introduce custom actions without an explicit reviewed need")
 
+    msi_assertion = read_text(ROOT / "eng" / "Assert-SnapvereMsi.ps1")
+    if re.search(r'OpenView\([^\n]*\bLIKE\b', msi_assertion, re.IGNORECASE):
+        fail("MSI database assertions must not use unsupported LIKE expressions in Windows Installer SQL")
+    for required in (
+        'SELECT `FileName` FROM `File`',
+        "Snapvere.exe",
+        "StartMenuShortcut",
+        "MainExecutable",
+    ):
+        if required not in msi_assertion:
+            fail(f"MSI database assertion is missing required portable SQL fragment: {required}")
+
     arm64_ci = read_text(ROOT / ".github" / "workflows" / "arm64-runtime-ci.yml")
     for required in (
         "runs-on: windows-11-vs2026-arm",
