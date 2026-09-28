@@ -71,8 +71,31 @@ try {
         throw 'MSI ProductCode must not reuse the stable UpgradeCode.'
     }
 
-    $snapvereFile = Get-MsiScalar "SELECT `FileName` FROM `File` WHERE `FileName` LIKE '%Snapvere.exe%'"
-    if ([string]::IsNullOrWhiteSpace($snapvereFile)) {
+    $fileView = $null
+    $snapvereFileFound = $false
+    try {
+        $fileView = $database.OpenView("SELECT `FileName` FROM `File`")
+        $fileView.Execute()
+        while ($true) {
+            $fileRecord = $fileView.Fetch()
+            if ($null -eq $fileRecord) { break }
+            try {
+                $fileName = [string]$fileRecord.StringData(1)
+                $longName = ($fileName -split '\\|')[-1]
+                if ([string]::Equals($longName, 'Snapvere.exe', [StringComparison]::OrdinalIgnoreCase)) {
+                    $snapvereFileFound = $true
+                    break
+                }
+            }
+            finally {
+                [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($fileRecord)
+            }
+        }
+    }
+    finally {
+        if ($null -ne $fileView) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($fileView) }
+    }
+    if (-not $snapvereFileFound) {
         throw 'MSI File table does not contain Snapvere.exe.'
     }
 
