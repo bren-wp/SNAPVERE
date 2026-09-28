@@ -192,6 +192,7 @@ jobs:
             New-Item -ItemType Directory -Force -Path $output | Out-Null
             dotnet build src/Snapvere.Msi/Snapvere.Msi.wixproj `
               --configuration Release `
+              -t:Rebuild `
               "-p:SnapvereVersion=$($build.Version)" `
               -p:MsiArchitecture=arm64 `
               "-p:SnapverePayloadDir=$payload" `
@@ -209,6 +210,13 @@ jobs:
           & ./eng/Assert-SnapvereMsi.ps1 -MsiPath artifacts/msi-arm64-current/SNAPVERE-Setup.msi -Version $env:SNAPVERE_VERSION -Architecture arm64
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & ./eng/Assert-SnapvereMsi.ps1 -MsiPath artifacts/msi-arm64-previous/SNAPVERE-Setup.msi -Version $env:SNAPVERE_PREVIOUS_MSI_VERSION -Architecture arm64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          & ./eng/Assert-SnapvereMsiUpgradePair.ps1 `
+            -CurrentMsiPath artifacts/msi-arm64-current/SNAPVERE-Setup.msi `
+            -CurrentVersion $env:SNAPVERE_VERSION `
+            -PreviousMsiPath artifacts/msi-arm64-previous/SNAPVERE-Setup.msi `
+            -PreviousVersion $env:SNAPVERE_PREVIOUS_MSI_VERSION
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Run native ARM64 MSI lifecycle
@@ -229,6 +237,7 @@ jobs:
           name: snapvere-arm64-runtime-qa-${{ github.sha }}
           path: |
             artifacts/msi-arm64-current/SNAPVERE-Setup.msi
+            artifacts/msi-arm64-previous/SNAPVERE-Setup.msi
             artifacts/msi-arm64-current/language-normalization.json
             artifacts/msi-arm64-previous/language-normalization.json
             artifacts/msi-arm64-logs/*.log
