@@ -1,6 +1,6 @@
 # Contributing to SNAPVERE
 
-SNAPVERE 0.1.22 is the current public release. The actively maintained product surface is **Windows plus Chrome, Edge, Opera and Firefox**.
+SNAPVERE 0.1.23 is the current public release. The actively maintained product surface is **Windows plus Chrome, Edge, Opera and Firefox**.
 
 Changes should improve correctness, reliability, accessibility, performance, security or maintainability without weakening the local-first model, capture ownership rules, package integrity or evidence gates.
 
@@ -36,9 +36,10 @@ CI additionally validates:
 - native payload structure;
 - rendered Region/Window/Tray/Options/Language/About UI snapshots;
 - visual comparison against the successful `main` baseline;
-- universal Setup and Portable generation;
+- universal Setup and Portable generation plus the x64 MSI build;
 - package-size regression budgets;
-- real x64/x86 Setup and Portable lifecycle completion.
+- real x64/x86 Setup and Portable lifecycle completion;
+- MSI metadata plus silent clean-install, repair, major-upgrade and uninstall lifecycle QA.
 
 Changes affecting capture geometry, DPI, paths, payload integrity, file publication, single-instance behavior or Setup/Portable lifecycle should include focused unit or lifecycle regression coverage when feasible.
 
@@ -76,7 +77,7 @@ Run:
 python3 eng/validate-product-contract.py
 ```
 
-`product-version.json` is the canonical active Windows/browser product contract. It governs the current version, supported platforms and six maintained package names.
+`product-version.json` is the canonical active Windows/browser product contract. It governs the current version, supported platforms and seven maintained main package names, including the mandatory MSI.
 
 `RELEASES.md` is the canonical detailed release-history file. Historical sections describe what was true at the time of publication and must not be rewritten to match today's product. `CHANGELOG.md` carries the concise engineering history, including an `Unreleased` section for merged post-release work.
 
