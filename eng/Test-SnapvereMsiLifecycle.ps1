@@ -18,7 +18,8 @@ $previousMsi = if ([string]::IsNullOrWhiteSpace($PreviousMsiPath)) { $null } els
 $msiexec = Join-Path $env:SystemRoot 'System32\msiexec.exe'
 $installRoot = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFiles)) 'Brendigo\SNAPVERE'
 $appPath = Join-Path $installRoot 'Snapvere.exe'
-$shortcutPath = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::CommonPrograms)) 'SNAPVERE\SNAPVERE.lnk'
+$shortcutDirectory = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::CommonPrograms)) 'SNAPVERE'
+$shortcutPath = Join-Path $shortcutDirectory 'SNAPVERE.lnk'
 $uninstallRoot = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall'
 
 New-Item -ItemType Directory -Force -Path $LogDirectory | Out-Null
@@ -81,6 +82,9 @@ function Assert-Uninstalled {
     }
     if (Test-Path -LiteralPath $shortcutPath -PathType Leaf) {
         throw "Start Menu shortcut remains after MSI uninstall: $shortcutPath"
+    }
+    if (Test-Path -LiteralPath $shortcutDirectory -PathType Container) {
+        throw "Start Menu folder remains after MSI uninstall: $shortcutDirectory"
     }
     if (@(Get-SnapvereArpEntries).Count -ne 0) {
         throw 'SNAPVERE Installed Apps registration remains after MSI uninstall.'
