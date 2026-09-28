@@ -305,9 +305,12 @@ def main() -> int:
         "Snapvere.exe",
         "StartMenuShortcut",
         "MainExecutable",
+        "-split '\\|'",
     ):
         if required not in msi_assertion:
             fail(f"MSI database assertion is missing required portable SQL fragment: {required}")
+    if "-split '\\\\|'" in msi_assertion:
+        fail("MSI FileName parsing must split short|long names on a literal pipe, not a backslash")
 
     arm64_ci = read_text(ROOT / ".github" / "workflows" / "arm64-runtime-ci.yml")
     for required in (

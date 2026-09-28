@@ -81,7 +81,7 @@ try {
             if ($null -eq $fileRecord) { break }
             try {
                 $fileName = [string]$fileRecord.StringData(1)
-                $longName = ($fileName -split '\\|')[-1]
+                $longName = ($fileName -split '\|')[-1]
                 if ([string]::Equals($longName, 'Snapvere.exe', [StringComparison]::OrdinalIgnoreCase)) {
                     $snapvereFileFound = $true
                     break
