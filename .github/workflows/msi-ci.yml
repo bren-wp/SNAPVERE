@@ -29,6 +29,14 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Install pinned WiX validation CLI
+        shell: pwsh
+        run: |
+          dotnet tool install --tool-path artifacts/wix-cli wix --version 5.0.2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./artifacts/wix-cli/wix.exe --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Resolve MSI versions
         shell: pwsh
         run: |
@@ -74,9 +82,14 @@ jobs:
             "-p:SnapverePayloadDir=$payload" `
             "-p:OutputPath=$output\"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          if (-not (Test-Path -LiteralPath (Join-Path $output 'SNAPVERE-Setup.msi') -PathType Leaf)) {
+          $msi = Join-Path $output 'SNAPVERE-Setup.msi'
+          if (-not (Test-Path -LiteralPath $msi -PathType Leaf)) {
             throw 'Current MSI build did not produce SNAPVERE-Setup.msi.'
           }
+          & ./eng/Normalize-SnapvereMsiLanguageMetadata.ps1 -MsiPath $msi -ReportPath (Join-Path $output 'language-normalization.json')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./artifacts/wix-cli/wix.exe msi validate $msi
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Build synthetic previous-version MSI for major-upgrade QA
         shell: pwsh
@@ -90,9 +103,14 @@ jobs:
             "-p:SnapverePayloadDir=$payload" `
             "-p:OutputPath=$output\"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          if (-not (Test-Path -LiteralPath (Join-Path $output 'SNAPVERE-Setup.msi') -PathType Leaf)) {
+          $msi = Join-Path $output 'SNAPVERE-Setup.msi'
+          if (-not (Test-Path -LiteralPath $msi -PathType Leaf)) {
             throw 'Previous-version MSI build did not produce SNAPVERE-Setup.msi.'
           }
+          & ./eng/Normalize-SnapvereMsiLanguageMetadata.ps1 -MsiPath $msi -ReportPath (Join-Path $output 'language-normalization.json')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./artifacts/wix-cli/wix.exe msi validate $msi
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Validate MSI database contract
         shell: pwsh
@@ -121,12 +139,14 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Upload MSI QA evidence
-        if: ${{ !cancelled() }}
+        if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: snapvere-msi-qa-${{ github.sha }}
           path: |
             artifacts/msi-current/SNAPVERE-Setup.msi
+            artifacts/msi-current/language-normalization.json
+            artifacts/msi-previous/language-normalization.json
             artifacts/msi-logs/*.log
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
