@@ -5,6 +5,7 @@
     <MsiArchitecture Condition="'$(MsiArchitecture)' == ''">x64</MsiArchitecture>
     <InstallerPlatform>$(MsiArchitecture)</InstallerPlatform>
     <SuppressValidation>false</SuppressValidation>
+    <SuppressIces>ICE03</SuppressIces>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <SnapvereVersion Condition="'$(SnapvereVersion)' == ''">$(VersionPrefix)</SnapvereVersion>
     <DefineConstants>$(DefineConstants);SnapvereVersion=$(SnapvereVersion);SnapverePayloadDir=$(SnapverePayloadDir)</DefineConstants>
