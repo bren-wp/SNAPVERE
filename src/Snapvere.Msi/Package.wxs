@@ -29,7 +29,7 @@
       </Directory>
     </StandardDirectory>
 
-    <StandardDirectory Id="ProgramMenuFolder">
+    <StandardDirectory Id="CommonProgramsFolder">
       <Directory Id="ApplicationProgramsFolder" Name="SNAPVERE">
         <Component Id="ApplicationShortcut" Guid="{04B12F10-9D2A-4C37-8D74-BF17887D8913}">
           <Shortcut
