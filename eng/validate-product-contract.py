@@ -326,6 +326,32 @@ def main() -> int:
         if required not in upgrade_pair_assertion:
             fail(f"MSI upgrade-pair assertion is missing identity guard: {required}")
 
+    identity_normalization = read_text(ROOT / "eng" / "MsiIdentityNormalization.ps1")
+    for required in (
+        r"\\p{Cf}",
+        "[Guid]::TryParseExact",
+        "'B'",
+        "ToUpperInvariant",
+    ):
+        if required not in identity_normalization:
+            fail(f"MSI identity normalizer is missing strict canonicalization guard: {required}")
+
+    identity_normalization_test = read_text(ROOT / "eng" / "Test-SnapvereMsiIdentityNormalization.ps1")
+    for required in (
+        "ASCII whitespace",
+        "BOM boundary",
+        "zero-width boundary",
+        "directional boundary",
+        "lowercase canonical",
+        "Invalid GUID regression case was accepted",
+    ):
+        if required not in identity_normalization_test:
+            fail(f"MSI identity normalization regression test is missing case: {required}")
+
+    product_contract_ci = read_text(ROOT / ".github" / "workflows" / "product-contract-ci.yml")
+    if "Test MSI identity normalization regression guards" not in product_contract_ci:
+        fail("Product Contract CI must execute the MSI identity normalization regression test")
+
     arm64_ci = read_text(ROOT / ".github" / "workflows" / "arm64-runtime-ci.yml")
     for required in (
         "runs-on: windows-11-vs2026-arm",
