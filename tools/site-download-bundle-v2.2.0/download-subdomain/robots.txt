@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /storage/
+Sitemap: https://download.snapvere.com/sitemap.xml
