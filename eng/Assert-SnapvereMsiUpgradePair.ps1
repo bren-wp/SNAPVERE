@@ -31,7 +31,7 @@ function Read-MsiIdentity([string] $path) {
             try {
                 $safe = $name.Replace("'", "''")
                 $view = $database.OpenView("SELECT `Value` FROM `Property` WHERE `Property` = '$safe'")
-                $view.Execute()
+                [void]$view.Execute()
                 $record = $view.Fetch()
                 if ($null -eq $record) { return $null }
                 return [string]$record.StringData(1)
