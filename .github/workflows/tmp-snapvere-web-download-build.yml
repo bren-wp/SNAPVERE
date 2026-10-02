@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf dist
+          rm -rf dist dist-portable
           cp -a web-download-build/site dist
           mkdir -p dist/storage/packages dist/storage/data
           cp web-download-build/SHA256SUMS.txt dist/storage/packages/SHA256SUMS.txt
@@ -93,18 +93,50 @@ jobs:
           test -f dist/storage/data/.htaccess
           test ! -e dist/storage/data/.secrets.json
 
-      - name: Inventory
+      - name: Split deployment for transfer limit
         shell: bash
         run: |
           set -euo pipefail
-          du -sh dist
-          find dist -maxdepth 3 -type f -printf '%p %s bytes\n' | sort
+          mkdir -p dist-portable/storage/packages
+          cp dist/storage/packages/.htaccess dist-portable/storage/packages/.htaccess
+          mv dist/storage/packages/SNAPVERE-Portable.exe dist-portable/storage/packages/SNAPVERE-Portable.exe
+          cat > dist-portable/PART2-README.txt <<'EOF'
+          SNAPVERE WEB — PART 2
+          =====================
+          Extract this archive into the SAME document root as PART 1.
+          It adds storage/packages/SNAPVERE-Portable.exe.
+          Do not expose storage/packages directly over HTTP.
+          EOF
 
-      - name: Upload deployable website package
+      - name: Validate split package contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f dist/storage/packages/SNAPVERE-Setup.exe
+          test ! -e dist/storage/packages/SNAPVERE-Portable.exe
+          test -f dist/storage/packages/SNAPVERE-Chrome.zip
+          test -f dist/storage/packages/SNAPVERE-Edge.zip
+          test -f dist/storage/packages/SNAPVERE-Firefox.zip
+          test -f dist/storage/packages/SNAPVERE-Opera.zip
+          test -f dist-portable/storage/packages/SNAPVERE-Portable.exe
+          echo "PART 1:" && du -sh dist
+          echo "PART 2:" && du -sh dist-portable
+
+      - name: Upload PART 1 — web core, Setup and extensions
         uses: actions/upload-artifact@v4
         with:
-          name: SNAPVERE-web-email-downloads-v0.1.22
+          name: SNAPVERE-web-PART1-core-setup-extensions-v0.1.22
           path: dist/
+          if-no-files-found: error
+          include-hidden-files: true
+          compression-level: 0
+          retention-days: 14
+
+      - name: Upload PART 2 — Portable
+        uses: actions/upload-artifact@v4
+        with:
+          name: SNAPVERE-web-PART2-portable-v0.1.22
+          path: dist-portable/
           if-no-files-found: error
           include-hidden-files: true
           compression-level: 0
