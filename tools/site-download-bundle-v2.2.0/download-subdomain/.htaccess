@@ -1,0 +1,22 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule ^storage/ - [F,L,NC]
+RewriteRule ^api/config(?:\.local)?\.php$ - [F,L,NC]
+RewriteRule ^api/bootstrap\.php$ - [F,L,NC]
+</IfModule>
+
+<IfModule mod_headers.c>
+Header always unset X-Powered-By
+Header always set X-Content-Type-Options "nosniff"
+Header always set X-Frame-Options "DENY"
+Header always set Referrer-Policy "strict-origin-when-cross-origin"
+Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+Header always set Cross-Origin-Opener-Policy "same-origin"
+Header always set Cross-Origin-Resource-Policy "same-origin"
+</IfModule>
+
+<FilesMatch "^(config\.local\.php|\.runtime-secret|.*\.lock|.*\.jsonl?)$">
+  Require all denied
+</FilesMatch>
