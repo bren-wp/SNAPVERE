@@ -328,7 +328,7 @@ def main() -> int:
 
     identity_normalization = read_text(ROOT / "eng" / "MsiIdentityNormalization.ps1")
     for required in (
-        r"\\p{Cf}",
+        r"\p{Cf}",
         "[Guid]::TryParseExact",
         "'B'",
         "ToUpperInvariant",
