@@ -322,6 +322,7 @@ def main() -> int:
         "UpgradeCode",
         "Major-upgrade pair reused ProductCode",
         "Major-upgrade pair reused PackageCode",
+        "[void]$view.Execute()",
     ):
         if required not in upgrade_pair_assertion:
             fail(f"MSI upgrade-pair assertion is missing identity guard: {required}")
