@@ -1,0 +1,5 @@
+Contact: mailto:info@snapvere.com
+Canonical: https://snapvere.com/.well-known/security.txt
+Policy: https://snapvere.com/security
+Preferred-Languages: en, hr
+Expires: 2027-10-02T00:00:00Z

@@ -1,0 +1,111 @@
+name: Temporary SNAPVERE web download package
+
+on:
+  push:
+    branches:
+      - tmp/snapvere-web-download-build-20261002
+    paths:
+      - "web-download-build/**"
+      - ".github/workflows/tmp-snapvere-web-download-build.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tmp-snapvere-web-download-build-20261002
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare deployment tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf dist
+          cp -a web-download-build/site dist
+          mkdir -p dist/storage/packages dist/storage/data
+          cp web-download-build/SHA256SUMS.txt dist/storage/packages/SHA256SUMS.txt
+
+      - name: Download verified release packages into protected local storage
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://github.com/bren-wp/SNAPVERE/releases/download/v0.1.22"
+          curl --fail --location --retry 5 --retry-delay 2 --output dist/storage/packages/SNAPVERE-Setup.exe "$base/SNAPVERE-Setup.exe"
+          curl --fail --location --retry 5 --retry-delay 2 --output dist/storage/packages/SNAPVERE-Portable.exe "$base/SNAPVERE-Portable.exe"
+          curl --fail --location --retry 5 --retry-delay 2 --output dist/storage/packages/SNAPVERE-Chrome.zip "$base/SNAPVERE-Chrome.zip"
+          curl --fail --location --retry 5 --retry-delay 2 --output dist/storage/packages/SNAPVERE-Edge.zip "$base/SNAPVERE-Edge.zip"
+          curl --fail --location --retry 5 --retry-delay 2 --output dist/storage/packages/SNAPVERE-Firefox.zip "$base/SNAPVERE-Firefox.zip"
+          curl --fail --location --retry 5 --retry-delay 2 --output dist/storage/packages/SNAPVERE-Opera.zip "$base/SNAPVERE-Opera.zip"
+
+      - name: Verify package SHA-256
+        shell: bash
+        working-directory: dist/storage/packages
+        run: sha256sum --check SHA256SUMS.txt
+
+      - name: PHP syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            php -l "$file"
+          done < <(find dist -type f -name '*.php' -print0)
+
+      - name: JavaScript syntax
+        shell: bash
+        run: node --check dist/assets/js/download.js
+
+      - name: Production security contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f dist/.htaccess
+          test -f dist/storage/.htaccess
+          test -f dist/storage/packages/.htaccess
+          test -f dist/storage/data/.htaccess
+          test "$(find dist/storage/packages -maxdepth 1 -type f \( -name '*.exe' -o -name '*.zip' \) | wc -l)" -eq 6
+          if find dist -path 'dist/storage/packages' -prune -o -type f \( -name '*.php' -o -name '*.js' -o -name '*.css' -o -name '*.txt' \) ! -name 'README-DEPLOY.txt' -print0 | xargs -0 grep -n -E 'github\.com|githubusercontent\.com|releases/download'; then
+            echo "Production web code contains a GitHub URL." >&2
+            exit 1
+          fi
+          grep -q "info@brendigo.com" dist/storage/config.php
+          grep -q "mailinator.com" dist/storage/config.php
+          grep -q "Accept-Ranges" dist/api/file.php
+          grep -q "snap_record_download_once" dist/api/file.php
+
+      - name: Deployment self-test
+        shell: bash
+        working-directory: dist
+        run: php tools/self-test.php
+
+      - name: Remove build-time runtime state
+        shell: bash
+        run: |
+          set -euo pipefail
+          find dist/storage/data -type f ! -name '.htaccess' -delete
+          test -f dist/storage/data/.htaccess
+          test ! -e dist/storage/data/.secrets.json
+
+      - name: Inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          du -sh dist
+          find dist -maxdepth 3 -type f -printf '%p %s bytes\n' | sort
+
+      - name: Upload deployable website package
+        uses: actions/upload-artifact@v4
+        with:
+          name: SNAPVERE-web-email-downloads-v0.1.22
+          path: dist/
+          if-no-files-found: error
+          include-hidden-files: true
+          compression-level: 0
+          retention-days: 14
