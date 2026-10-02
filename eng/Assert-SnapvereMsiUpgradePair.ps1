@@ -13,6 +13,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+. (Join-Path $PSScriptRoot 'MsiIdentityNormalization.ps1')
+
 $current = (Resolve-Path -LiteralPath $CurrentMsiPath).Path
 $previous = (Resolve-Path -LiteralPath $PreviousMsiPath).Path
 $installer = New-Object -ComObject WindowsInstaller.Installer
@@ -42,11 +45,11 @@ function Read-MsiIdentity([string] $path) {
         $summary = $database.SummaryInformation(0)
         try {
             return [pscustomobject]@{
-                ProductVersion = Get-Property 'ProductVersion'
-                ProductCode = Get-Property 'ProductCode'
-                UpgradeCode = Get-Property 'UpgradeCode'
-                Template = [string]$summary.Property(7)
-                PackageCode = [string]$summary.Property(9)
+                ProductVersion = Normalize-SnapvereMsiText -Value (Get-Property 'ProductVersion')
+                ProductCode = ConvertTo-SnapvereCanonicalMsiGuid -Value (Get-Property 'ProductCode') -Name "ProductCode ($path)"
+                UpgradeCode = ConvertTo-SnapvereCanonicalMsiGuid -Value (Get-Property 'UpgradeCode') -Name "UpgradeCode ($path)"
+                Template = Normalize-SnapvereMsiText -Value ([string]$summary.Property(7))
+                PackageCode = ConvertTo-SnapvereCanonicalMsiGuid -Value ([string]$summary.Property(9)) -Name "PackageCode ($path)"
             }
         }
         finally {
