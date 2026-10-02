@@ -24,5 +24,9 @@ jobs:
       - name: Check validator syntax
         run: python3 -m py_compile eng/validate-product-contract.py
 
+      - name: Test MSI identity normalization regression guards
+        shell: pwsh
+        run: ./eng/Test-SnapvereMsiIdentityNormalization.ps1
+
       - name: Validate cross-platform product contract and documentation
         run: python3 eng/validate-product-contract.py
