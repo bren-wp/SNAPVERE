@@ -67,6 +67,7 @@ public sealed class OptionsWindow : Window
         _recentSummary = Text("Pictures\\SNAPVERE", 10, Subtle);
         _statusText = Text(LocalStatusText(), 10, Success);
         _statusText.TextWrapping = TextWrapping.Wrap;
+        AutomationProperties.SetLiveSetting(_statusText, AutomationLiveSetting.Polite);
 
         _startupToggle = CreateToggle(L("StartWithWindows"));
         _cursorToggle = CreateToggle(L("IncludeCursor"));
