@@ -26,6 +26,13 @@ def main() -> int:
     ):
         require(path, ("KeyDown +=", "VirtualKey.Escape", "e.Handled = true"))
 
+    for path in (
+        "src/Snapvere.App/Services/OptionsWindow.cs",
+        "src/Snapvere.App/RegionCaptureWindow.cs",
+        "src/Snapvere.App/Services/RecordingControllerWindow.cs",
+    ):
+        require(path, ("using Microsoft.UI.Xaml.Automation.Peers;",))
+
     require(
         "src/Snapvere.App/Services/OptionsWindow.cs",
         ("AutomationLiveSetting.Polite", "_statusText"),
