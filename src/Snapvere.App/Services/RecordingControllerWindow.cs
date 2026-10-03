@@ -119,6 +119,7 @@ public sealed class RecordingControllerWindow : Window
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = Strong
         };
+        AutomationProperties.SetLiveSetting(statusText, AutomationLiveSetting.Polite);
         status.Children.Add(statusText);
         var elapsed = new TextBlock
         {
@@ -145,15 +146,7 @@ public sealed class RecordingControllerWindow : Window
             BorderThickness = new Thickness(1),
             Foreground = Strong,
             VerticalAlignment = VerticalAlignment.Center,
-            Content = new TextBlock
-            {
-                Text = "■",
-                FontFamily = new FontFamily("Segoe UI Symbol"),
-                FontSize = 13,
-                Foreground = Strong,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            }
+            Content = CreateStopGlyph()
         };
         AutomationProperties.SetName(stop, L("StopScreenRecording"));
         ToolTipService.SetToolTip(stop, L("StopScreenRecording"));
@@ -183,16 +176,19 @@ public sealed class RecordingControllerWindow : Window
 
         _stopRequested = true;
         _statusText.Text = UserText("Finishing recording…", "Dovršavanje snimanja…");
-        _stopButton.Content = new TextBlock
+        var stoppingText = UserText(
+            "Finishing screen recording",
+            "Dovršavanje snimanja zaslona");
+        _stopButton.Content = new ProgressRing
         {
-            Text = "■",
-            FontFamily = new FontFamily("Segoe UI Symbol"),
-            FontSize = 13,
-            Foreground = Strong
+            Width = 18,
+            Height = 18,
+            IsActive = true,
+            IsTabStop = false
         };
-        AutomationProperties.SetName(
-            _stopButton,
-            UserText("Stopping screen recording", "Zaustavljanje snimanja zaslona"));
+        AutomationProperties.SetName(_stopButton, stoppingText);
+        AutomationProperties.SetHelpText(_stopButton, stoppingText);
+        ToolTipService.SetToolTip(_stopButton, stoppingText);
         _stopButton.IsEnabled = false;
         StopTimer();
 
@@ -212,12 +208,27 @@ public sealed class RecordingControllerWindow : Window
             _statusText.Text = UserText(
                 "Recording is still active. Try Stop again.",
                 "Snimanje je još aktivno. Pokušajte ponovno zaustaviti.");
-            AutomationProperties.SetName(_stopButton, L("StopScreenRecording"));
+            _stopButton.Content = CreateStopGlyph();
+            var stopText = L("StopScreenRecording");
+            AutomationProperties.SetName(_stopButton, stopText);
+            AutomationProperties.SetHelpText(_stopButton, stopText);
+            ToolTipService.SetToolTip(_stopButton, stopText);
             _stopButton.IsEnabled = true;
             _elapsed.Start();
             _timer.Start();
         }
     }
+
+    private static TextBlock CreateStopGlyph()
+        => new()
+        {
+            Text = "■",
+            FontFamily = new FontFamily("Segoe UI Symbol"),
+            FontSize = 13,
+            Foreground = Strong,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
 
     private string UserText(string english, string croatian)
         => string.Equals(_languageCode, "hr", StringComparison.OrdinalIgnoreCase)
