@@ -179,9 +179,13 @@ jobs:
           dotnet publish src/Snapvere.Portable/Snapvere.Portable.csproj --configuration Release --runtime win-x86 -p:Platform=x86 -p:SelfContained=true "-p:Version=$env:SNAPVERE_VERSION" "-p:SnapverePayloadX86Path=$x86" "-p:SnapverePayloadX64Path=$x64" "-p:SnapverePayloadArm64Path=$arm64" "-p:SnapverePayloadX86IntegrityPath=$x86Integrity" "-p:SnapverePayloadX64IntegrityPath=$x64Integrity" "-p:SnapverePayloadArm64IntegrityPath=$arm64Integrity" --output artifacts/portable-universal
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+          New-Item -ItemType Directory -Force -Path artifacts/universal | Out-Null
+          Copy-Item artifacts/setup-universal/SNAPVERE-Setup.exe artifacts/universal/SNAPVERE-Setup.exe
+          Copy-Item artifacts/portable-universal/SNAPVERE-Portable.exe artifacts/universal/SNAPVERE-Portable.exe
+
           New-Item -ItemType Directory -Force -Path release | Out-Null
-          Copy-Item artifacts/setup-universal/SNAPVERE-Setup.exe release/SNAPVERE-Setup.exe
-          Copy-Item artifacts/portable-universal/SNAPVERE-Portable.exe release/SNAPVERE-Portable.exe
+          Copy-Item artifacts/universal/SNAPVERE-Setup.exe release/SNAPVERE-Setup.exe
+          Copy-Item artifacts/universal/SNAPVERE-Portable.exe release/SNAPVERE-Portable.exe
 
       - name: Build current and previous MSI packages
         shell: pwsh
