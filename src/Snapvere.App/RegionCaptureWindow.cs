@@ -169,6 +169,7 @@ public sealed class RegionCaptureWindow : Window
 
         _overlayStatusText = Text(string.Empty, 11, Strong, Microsoft.UI.Text.FontWeights.SemiBold);
         _overlayStatusText.TextWrapping = TextWrapping.Wrap;
+        AutomationProperties.SetLiveSetting(_overlayStatusText, AutomationLiveSetting.Polite);
         _overlayStatusText.MaxWidth = 620;
         _overlayStatus = BuildStatusPanel();
 
