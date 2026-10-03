@@ -8,7 +8,7 @@ using Microsoft.UI.Xaml.Media;
 using Snapvere.Shared;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
-using Windows.System;
+using VirtualKey = Windows.System.VirtualKey;
 
 namespace Snapvere.App.Services;
 
