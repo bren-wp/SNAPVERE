@@ -3,10 +3,12 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Snapvere.Application.Capture;
 using Snapvere.Shared;
 using Windows.Graphics;
+using Windows.System;
 
 namespace Snapvere.App.Services;
 
@@ -57,7 +59,9 @@ public sealed class LanguagePickerWindow : Window
         _status.Visibility = Visibility.Collapsed;
         AutomationProperties.SetLiveSetting(_status, AutomationLiveSetting.Polite);
 
-        Content = BuildContent();
+        var content = BuildContent();
+        content.KeyDown += Root_KeyDown;
+        Content = content;
         SelectCurrentLanguage();
         _initializing = false;
         Activated += LanguagePickerWindow_Activated;
@@ -219,6 +223,17 @@ public sealed class LanguagePickerWindow : Window
         Grid.SetRow(_closeButton, 3);
         root.Children.Add(_closeButton);
         return root;
+    }
+
+    private void Root_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != VirtualKey.Escape)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        Close();
     }
 
     private void SelectCurrentLanguage()
