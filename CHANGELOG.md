@@ -4,7 +4,13 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
-No unreleased changes are documented after v0.1.23 yet.
+### Windows UI/UX polish
+
+- Make Settings, Language and About consistently close with Escape while preserving existing control-specific keyboard behavior.
+- Announce Settings and Region Capture status changes through polite accessibility live regions.
+- Replace the ambiguous static Stop glyph with an active progress indicator while screen recording is being finalized, restoring the Stop control if the stop request fails.
+- Add a CI-enforced Windows UI interaction/accessibility contract so these keyboard, status and recording-finalization behaviors cannot silently regress.
+- Audit private members across the Windows app layer for declaration-only dead code; no safe deletion candidates were found, so no runtime code was removed speculatively.
 
 ## [0.1.23] - 2026-09-28
 

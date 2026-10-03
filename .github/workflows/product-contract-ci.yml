@@ -28,5 +28,8 @@ jobs:
         shell: pwsh
         run: ./eng/Test-SnapvereMsiIdentityNormalization.ps1
 
+      - name: Validate Windows UI interaction and accessibility contract
+        run: python3 eng/validate-ui-contract.py
+
       - name: Validate cross-platform product contract and documentation
         run: python3 eng/validate-product-contract.py

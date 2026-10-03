@@ -28,7 +28,13 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-No unreleased changes are documented after v0.1.23 yet.
+The next SNAPVERE maintenance line begins with focused Windows UI/UX and accessibility hardening:
+
+- Settings, Language and About now support a consistent Escape-to-close interaction.
+- Settings and Region Capture status feedback is announced as a polite accessibility live region.
+- The recording controller now shows an active finishing indicator while the MP4 is being finalized instead of leaving the same Stop glyph visible.
+- A dedicated CI UI contract guards the keyboard/accessibility/finalization behavior.
+- A private-member dead-code audit of the Windows app layer found no declaration-only members that could be removed safely without changing behavior.
 
 ---
 
