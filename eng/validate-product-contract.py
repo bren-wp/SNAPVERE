@@ -414,6 +414,8 @@ def main() -> int:
         "Assert-SnapvereMsiUpgradePair.ps1",
         "-t:Rebuild",
         "Test-SnapvereMsiLifecycle.ps1",
+        "artifacts/universal/SNAPVERE-Setup.exe",
+        "artifacts/universal/SNAPVERE-Portable.exe",
         "SHA256SUMS",
         "gh release create",
     ):
