@@ -910,9 +910,13 @@ public partial class App : Microsoft.UI.Xaml.Application
             return;
         }
 
-        _ = queue.TryEnqueue(() => ExecuteUiBoundary(
-            $"Global hotkey {e.Binding.Mode}",
-            () => window.StartCaptureFromHotkey(e.Binding.Mode)));
+        if (!queue.TryEnqueue(() => ExecuteUiBoundary(
+                $"Global hotkey {e.Binding.Mode}",
+                () => window.StartCaptureFromHotkey(e.Binding.Mode))))
+        {
+            StartupDiagnostics.WriteLine(
+                $"Global hotkey {e.Binding.Mode} was not queued because the UI dispatcher is shutting down.");
+        }
     }
 
     private void OnTrayCommandInvoked(object? sender, TrayCommandEventArgs e)
@@ -923,9 +927,13 @@ public partial class App : Microsoft.UI.Xaml.Application
             return;
         }
 
-        _ = queue.TryEnqueue(() => ExecuteUiBoundary(
-            $"Tray command {e.Command}",
-            () => ExecuteTrayCommand(e.Command)));
+        if (!queue.TryEnqueue(() => ExecuteUiBoundary(
+                $"Tray command {e.Command}",
+                () => ExecuteTrayCommand(e.Command))))
+        {
+            StartupDiagnostics.WriteLine(
+                $"Tray command {e.Command} was not queued because the UI dispatcher is shutting down.");
+        }
     }
 
     private static void ExecuteUiBoundary(string operation, Action action)
@@ -961,7 +969,7 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         try
         {
-            LanguagePickerWindow.CloseStandalone();
+            CloseStandaloneLanguageBestEffort();
         }
         catch (Exception exception)
         {
