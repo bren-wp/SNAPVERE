@@ -41,7 +41,7 @@ SNAPVERE je napravljen za brzo svakodnevno snimanje bez pretvaranja screenshota 
 | 📦 **Tri Windows načina distribucije** | Vođeni Setup EXE, standardni x64 Windows Installer (MSI) i Universal Portable; Setup/Portable nose x86, x64 i ARM64 payloade. |
 | 🌐 **Četiri preglednika** | Chrome, Edge, Opera i Firefox dijele isti zaključani SNAPVERE brand i ograničeno capture ponašanje. |
 
-SNAPVERE 0.1.25 usmjeren je na Windows UI/UX, pristupačnost i pouzdan oporavak pri gašenju. Postavke, Jezik i O programu dosljedno se zatvaraju tipkom Escape, dinamičke statusne poruke koriste polite accessibility live regije, završavanje snimanja zaslona prikazuje aktivni napredak, a očekivani neuspjeh pri otvaranju mape snimki sada prikazuje lokalizirane upute umjesto tihog neuspjeha. Tray/global-hotkey dispatch i završno čišćenje Language prozora dodatno su učvršćeni i zaštićeni CI ugovorima.
+SNAPVERE 0.1.25 učvršćuje preostale izravne Tray-menu i secondary-window dispatch putove. Tray komande, Nedavne snimke i Jezik sada prolaze kroz isti zaštićeni UI boundary kao ostale vanjske radnje, greška pri zatvaranju Traya ostaje dijagnostička i best-effort, a odbijeni About language refresh tijekom gašenja bilježi se umjesto tihog gubitka događaja. Izdanje zadržava accessibility, recording-finalization i capture-folder recovery poboljšanja iz 0.1.24.
 
 Recording zadržava odvojene kompaktne Start i Stop kontrole u Postavkama te mali always-on-top kontroler s proteklim vremenom dok je snimanje aktivno. Setup ostaje vođeni License → Installation → Finish tijek. Recording je primary-display H.264 MP4 samo s videom; mikrofon i sistemski zvuk nisu navedeni kao podržani.
 
