@@ -75,7 +75,11 @@ public sealed class AboutWindow : Window
             return;
         }
 
-        _ = _dispatcherQueue.TryEnqueue(RefreshLanguageSafely);
+        if (!_dispatcherQueue.TryEnqueue(RefreshLanguageSafely))
+        {
+            StartupDiagnostics.WriteLine(
+                "About language refresh was not queued because the UI dispatcher is shutting down.");
+        }
     }
 
     private void RefreshLanguageSafely()

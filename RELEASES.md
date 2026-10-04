@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.24**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.24
+- Current public release: **v0.1.25**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.25
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -27,6 +27,30 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 ---
 
 ## Unreleased
+
+---
+
+## v0.1.25 — 2026-10-04
+
+SNAPVERE 0.1.25 is a focused Windows command-boundary and secondary-UI reliability release. It closes the remaining direct Tray-menu callback path that could bypass the application's exception containment and records rejected About-language dispatch during shutdown.
+
+### Tray command containment
+
+- Tray menu commands now enter the same `ExecuteUiBoundary` protection used by global hotkeys, duplicate-launch activation and tray-icon dispatch.
+- Recent Captures and Language actions launched from the Tray menu are also contained at the application boundary.
+- Closing the Tray menu before a command/action is best-effort and diagnostic, so a stale WinUI surface cannot suppress the user's requested action.
+- Failures are recorded without exposing raw exception details in the product UI.
+
+### Secondary UI dispatcher hardening
+
+- About-window language refresh now checks the result of `DispatcherQueue.TryEnqueue`.
+- A rejected refresh during dispatcher shutdown is explicitly recorded instead of being silently discarded.
+- The UI contract validator enforces both the Tray callback boundary and the About dispatcher rejection path.
+
+### Packaging scope
+
+- Windows assembly/file/package versions and Chrome, Edge, Opera and Firefox extension versions advance together to 0.1.25.
+- Setup EXE, MSI, Portable and browser ZIPs remain gated by Product Contract CI, Windows CI, MSI lifecycle validation, localization checks, CodeQL and native ARM64 runtime validation before publication.
 
 ---
 

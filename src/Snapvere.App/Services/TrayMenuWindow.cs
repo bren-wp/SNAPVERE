@@ -361,7 +361,7 @@ public sealed class TrayMenuWindow : Window
     {
         if (_closingForCommand) return;
         _closingForCommand = true;
-        Close();
+        CloseForActionBestEffort("Close tray menu for command");
         _commandHandler(command);
     }
 
@@ -369,8 +369,20 @@ public sealed class TrayMenuWindow : Window
     {
         if (_closingForCommand) return;
         _closingForCommand = true;
-        Close();
+        CloseForActionBestEffort("Close tray menu for action");
         action();
+    }
+
+    private void CloseForActionBestEffort(string operation)
+    {
+        try
+        {
+            Close();
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Record(operation, exception);
+        }
     }
 
     private void Root_KeyDown(object sender, KeyRoutedEventArgs e)

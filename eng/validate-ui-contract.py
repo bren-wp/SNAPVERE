@@ -54,6 +54,22 @@ def main() -> int:
     )
 
     require(
+        "src/Snapvere.App/Services/AboutWindow.cs",
+        (
+            "if (!_dispatcherQueue.TryEnqueue(RefreshLanguageSafely))",
+            "About language refresh was not queued because the UI dispatcher is shutting down.",
+        ),
+    )
+    require(
+        "src/Snapvere.App/Services/TrayMenuWindow.cs",
+        (
+            'CloseForActionBestEffort("Close tray menu for command")',
+            'CloseForActionBestEffort("Close tray menu for action")',
+            "StartupDiagnostics.Record(operation, exception);",
+        ),
+    )
+
+    require(
         "src/Snapvere.App/Services/CaptureFeedbackWindow.cs",
         (
             "OpenCaptureFolderFailed",
@@ -79,6 +95,10 @@ def main() -> int:
         "LanguagePickerWindow.CloseStandalone();",
         "StartupDiagnostics.Record(\"Open capture folder from tray\", exception);",
         "_window?.ShowCaptureFolderOpenFailure();",
+        'command => ExecuteUiBoundary(',
+        '$"Tray menu command {command}"',
+        '"Tray menu recent captures"',
+        '"Tray menu language"',
     ):
         if fragment not in app_text:
             raise RuntimeError(f"src/Snapvere.App/App.xaml.cs is missing UI contract fragment: {fragment}")

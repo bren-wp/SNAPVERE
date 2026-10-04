@@ -4,6 +4,15 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.25] - 2026-10-04
+
+### Windows tray and secondary-UI reliability
+
+- Route direct Tray menu command, Recent Captures and Language callbacks through the application UI exception boundary so a secondary WinUI activation failure cannot escape a button click and terminate the process.
+- Close the Tray surface through a best-effort diagnostic boundary before invoking its command/action callback, so stale-window cleanup cannot suppress the requested action.
+- Record a rejected About-window language refresh when its dispatcher is already shutting down instead of silently dropping the update.
+- Extend the UI contract validator to lock the Tray callback containment and About dispatcher-rejection behavior.
+
 ## [0.1.24] - 2026-10-04
 
 ### Windows UI/UX polish
