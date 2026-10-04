@@ -1050,9 +1050,15 @@ public partial class App : Microsoft.UI.Xaml.Application
         CloseTrayMenu();
         var preferences = _services.GetRequiredService<CapturePreferencesService>();
         var menu = new TrayMenuWindow(
-            ExecuteTrayCommand,
-            () => ShowOptions(OptionsSection.RecentCaptures),
-            ShowLanguage,
+            command => ExecuteUiBoundary(
+                $"Tray menu command {command}",
+                () => ExecuteTrayCommand(command)),
+            () => ExecuteUiBoundary(
+                "Tray menu recent captures",
+                () => ShowOptions(OptionsSection.RecentCaptures)),
+            () => ExecuteUiBoundary(
+                "Tray menu language",
+                ShowLanguage),
             preferences.Current.LanguageCode,
             _window?.IsScreenRecordingActive ?? false);
         _trayMenuWindow = menu;
