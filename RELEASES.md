@@ -30,6 +30,8 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 The next SNAPVERE maintenance line begins with focused Windows UI/UX and accessibility hardening:
 
+- Tray and global-hotkey dispatch now records when the UI dispatcher rejects a queued action during shutdown instead of failing silently.
+- Final standalone Language cleanup uses the same best-effort containment as the other secondary WinUI surfaces.
 - Settings, Language and About now support a consistent Escape-to-close interaction.
 - Settings and Region Capture status feedback is announced as a polite accessibility live region.
 - The recording controller now shows an active finishing indicator while the MP4 is being finalized instead of leaving the same Stop glyph visible.

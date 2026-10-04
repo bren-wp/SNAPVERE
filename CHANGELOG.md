@@ -6,6 +6,9 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ### Windows UI/UX polish
 
+- Record rejected Tray and global-hotkey dispatch attempts instead of silently dropping a user action while the UI dispatcher is shutting down.
+- Route final standalone Language cleanup through the same contained best-effort shutdown boundary as other secondary windows.
+
 - Make Settings, Language and About consistently close with Escape while preserving existing control-specific keyboard behavior.
 - Announce Settings and Region Capture status changes through polite accessibility live regions.
 - Replace the ambiguous static Stop glyph with an active progress indicator while screen recording is being finalized, restoring the Stop control if the stop request fails.

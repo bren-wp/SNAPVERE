@@ -53,6 +53,15 @@ def main() -> int:
         ),
     )
 
+    require(
+        "src/Snapvere.App/App.xaml.cs",
+        (
+            "if (!queue.TryEnqueue",
+            "was not queued because the UI dispatcher is shutting down.",
+            "CloseStandaloneLanguageBestEffort();",
+        ),
+    )
+
     print("Validated Windows UI interaction and accessibility contract.")
     return 0
 
