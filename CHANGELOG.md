@@ -4,10 +4,13 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.24] - 2026-10-04
+
 ### Windows UI/UX polish
 
 - Record rejected Tray and global-hotkey dispatch attempts instead of silently dropping a user action while the UI dispatcher is shutting down.
 - Route final standalone Language cleanup through the same contained best-effort shutdown boundary as other secondary windows.
+- Surface expected **Open capture folder** failures with localized recovery feedback instead of silently logging the user action.
 
 - Make Settings, Language and About consistently close with Escape while preserving existing control-specific keyboard behavior.
 - Announce Settings and Region Capture status changes through polite accessibility live regions.

@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.23**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.23
+- Current public release: **v0.1.24**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.24
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -28,15 +28,30 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 
 ## Unreleased
 
-The next SNAPVERE maintenance line begins with focused Windows UI/UX and accessibility hardening:
+---
 
-- Tray and global-hotkey dispatch now records when the UI dispatcher rejects a queued action during shutdown instead of failing silently.
-- Final standalone Language cleanup uses the same best-effort containment as the other secondary WinUI surfaces.
-- Settings, Language and About now support a consistent Escape-to-close interaction.
-- Settings and Region Capture status feedback is announced as a polite accessibility live region.
-- The recording controller now shows an active finishing indicator while the MP4 is being finalized instead of leaving the same Stop glyph visible.
-- A dedicated CI UI contract guards the keyboard/accessibility/finalization behavior.
-- A private-member dead-code audit of the Windows app layer found no declaration-only members that could be removed safely without changing behavior.
+## v0.1.24 — 2026-10-04
+
+SNAPVERE 0.1.24 is a focused Windows UI/UX, accessibility and shutdown-recovery release. It packages the post-0.1.23 hardening already validated on main and adds explicit user feedback when Windows cannot open the capture folder.
+
+### Windows UI/UX and accessibility
+
+- Settings, Language and About close consistently with Escape while preserving existing control-specific keyboard behavior.
+- Settings and Region Capture status changes are announced through polite accessibility live regions.
+- The recording controller shows an active progress indicator while MP4 finalization is in progress and restores the Stop action if finalization cannot begin.
+- **Open capture folder** no longer fails silently for expected Windows shell, access or I/O failures; SNAPVERE records diagnostics and shows fixed EN/HR recovery guidance without exposing raw exception text.
+
+### Shutdown and regression hardening
+
+- Rejected Tray and global-hotkey dispatch attempts are recorded when the UI dispatcher is already shutting down.
+- Final standalone Language cleanup uses the same best-effort containment boundary as other secondary WinUI surfaces.
+- The UI contract validator checks keyboard behavior, accessibility live regions, recording-finalization feedback, capture-folder recovery feedback and the non-recursive Language cleanup implementation.
+- A private-member dead-code audit of the Windows app layer found no declaration-only candidates safe to remove, so runtime code was not deleted speculatively.
+
+### Packaging scope
+
+- The unified product contract advances Windows, Chrome, Edge, Opera and Firefox package versions together to 0.1.24.
+- Setup EXE, MSI, Portable and browser ZIPs remain release-gated by Product Contract CI, Windows CI, MSI lifecycle validation, localization checks, CodeQL and native ARM64 runtime validation before publication.
 
 ---
 

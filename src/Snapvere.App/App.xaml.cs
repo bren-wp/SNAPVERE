@@ -1211,6 +1211,7 @@ public partial class App : Microsoft.UI.Xaml.Application
         catch (Exception exception) when (LocalShellActionFailurePolicy.IsExpected(exception))
         {
             StartupDiagnostics.Record("Open capture folder from tray", exception);
+            _window?.ShowCaptureFolderOpenFailure();
         }
     }
 

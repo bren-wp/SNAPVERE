@@ -53,12 +53,32 @@ def main() -> int:
         ),
     )
 
+    require(
+        "src/Snapvere.App/Services/CaptureFeedbackWindow.cs",
+        (
+            "OpenCaptureFolderFailed",
+            "Mapa snimki nije dostupna",
+            "Capture folder is unavailable",
+            "Postojeće snimke nisu mijenjane",
+            "Existing captures were not changed",
+        ),
+    )
+    require(
+        "src/Snapvere.App/CaptureCenterWindow.cs",
+        (
+            "public void ShowCaptureFolderOpenFailure()",
+            "ShowCaptureFeedback(CaptureFeedbackKind.OpenCaptureFolderFailed)",
+        ),
+    )
+
     app_text = read("src/Snapvere.App/App.xaml.cs")
     for fragment in (
         "if (!queue.TryEnqueue",
         "was not queued because the UI dispatcher is shutting down.",
         "CloseStandaloneLanguageBestEffort();",
         "LanguagePickerWindow.CloseStandalone();",
+        "StartupDiagnostics.Record(\"Open capture folder from tray\", exception);",
+        "_window?.ShowCaptureFolderOpenFailure();",
     ):
         if fragment not in app_text:
             raise RuntimeError(f"src/Snapvere.App/App.xaml.cs is missing UI contract fragment: {fragment}")

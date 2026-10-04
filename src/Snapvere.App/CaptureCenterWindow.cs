@@ -107,6 +107,9 @@ public sealed class CaptureCenterWindow : Window
         _ = ExecuteScreenRecordingAsync(session);
     }
 
+    public void ShowCaptureFolderOpenFailure()
+        => ShowCaptureFeedback(CaptureFeedbackKind.OpenCaptureFolderFailed);
+
     public void StopScreenRecording()
     {
         if (_recordingSessionGate.RequestStop())
