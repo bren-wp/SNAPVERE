@@ -41,7 +41,7 @@ SNAPVERE is built for fast everyday capture without turning screenshots into a c
 | 📦 **Three Windows delivery models** | Guided Setup EXE, standard x64 Windows Installer (MSI), and Universal Portable. Setup/Portable carry x86, x64 and ARM64 application payloads. |
 | 🌐 **Browser coverage** | Chrome, Edge, Opera and Firefox share the same locked SNAPVERE brand and bounded capture behavior. |
 
-SNAPVERE 0.1.24 makes MSI a first-class release requirement, closes the public-language fallback gap by exposing only complete EN/HR locales, and continues reliability work across the Windows and browser surface. Windows capture-feedback UI is now contained as a recovery boundary so a secondary WinUI failure cannot replace the original capture error. The injected browser capture runtime also validates the SNAPVERE extension sender before accepting Region or Full Page work in Chrome, Edge, Opera and Firefox.
+SNAPVERE 0.1.24 focuses on Windows interaction polish, accessibility and shutdown/recovery reliability. Settings, Language and About close consistently with Escape, dynamic status changes use polite accessibility live regions, screen-recording finalization shows active progress, and expected failures while opening the capture folder now surface localized recovery guidance instead of failing silently. Tray/global-hotkey dispatch and standalone Language cleanup are hardened during shutdown, with CI contracts protecting these behaviors.
 
 Recording keeps separate compact Start and Stop controls in Settings and a small always-on-top elapsed-time controller while active. Setup remains a guided License → Installation → Finish flow. Recording is primary-display H.264 MP4 and video-only; microphone and system audio are not claimed as supported.
 
