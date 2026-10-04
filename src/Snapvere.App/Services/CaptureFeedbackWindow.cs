@@ -16,6 +16,7 @@ public enum CaptureFeedbackKind
     RecordingSaved,
     RecordingFailed,
     RecordingUnsupported,
+    OpenCaptureFolderFailed,
     WindowUnsupported,
     RegionFailed,
     WindowFailed,
@@ -58,6 +59,8 @@ public sealed class CaptureFeedbackWindow : Window
             (CaptureFeedbackKind.RecordingSaved, _) => L("RecordingSavedTitle"),
             (CaptureFeedbackKind.RecordingFailed, _) => L("RecordingFailedTitle"),
             (CaptureFeedbackKind.RecordingUnsupported, _) => L("RecordingUnsupportedTitle"),
+            (CaptureFeedbackKind.OpenCaptureFolderFailed, true) => "Mapa snimki nije dostupna",
+            (CaptureFeedbackKind.OpenCaptureFolderFailed, false) => "Capture folder is unavailable",
             (CaptureFeedbackKind.WindowUnsupported, true) => "Snimanje prozora nije dostupno",
             (CaptureFeedbackKind.WindowUnsupported, false) => "Window capture is unavailable",
             (CaptureFeedbackKind.SaveAccessDenied or CaptureFeedbackKind.StorageFull or CaptureFeedbackKind.SaveFailed, _) =>
@@ -80,6 +83,10 @@ public sealed class CaptureFeedbackWindow : Window
             (CaptureFeedbackKind.RecordingSaved, _) => L("RecordingSavedMessage"),
             (CaptureFeedbackKind.RecordingFailed, _) => L("RecordingFailedMessage"),
             (CaptureFeedbackKind.RecordingUnsupported, _) => L("RecordingUnsupportedMessage"),
+            (CaptureFeedbackKind.OpenCaptureFolderFailed, true) =>
+                "SNAPVERE nije mogao otvoriti mapu snimki u Eksploreru datoteka. Postojeće snimke nisu mijenjane. Pokušaj ponovno; ako se problem ponavlja, provjeri pristup mapi Slike.",
+            (CaptureFeedbackKind.OpenCaptureFolderFailed, false) =>
+                "SNAPVERE could not open the capture folder in File Explorer. Existing captures were not changed. Try again; if the problem continues, check access to your Pictures folder.",
             (CaptureFeedbackKind.WindowUnsupported, true) =>
                 "Ova verzija sustava Windows ne podržava SNAPVERE snimanje pojedinačnog prozora. Snimanje područja i zaslona i dalje je dostupno.",
             (CaptureFeedbackKind.WindowUnsupported, false) =>
