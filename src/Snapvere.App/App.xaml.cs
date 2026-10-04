@@ -969,7 +969,7 @@ public partial class App : Microsoft.UI.Xaml.Application
     {
         try
         {
-            CloseStandaloneLanguageBestEffort();
+            LanguagePickerWindow.CloseStandalone();
         }
         catch (Exception exception)
         {
@@ -1220,7 +1220,7 @@ public partial class App : Microsoft.UI.Xaml.Application
         CloseTrayMenu();
         CloseWindowBestEffort(_optionsWindow, "Close Options during shutdown");
         _optionsWindow = null;
-        LanguagePickerWindow.CloseStandalone();
+        CloseStandaloneLanguageBestEffort();
         CloseWindowBestEffort(_probeLanguageWindow, "Close language probe during shutdown");
         _probeLanguageWindow = null;
         CloseWindowBestEffort(_aboutWindow, "Close About during shutdown");

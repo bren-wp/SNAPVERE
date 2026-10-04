@@ -53,14 +53,33 @@ def main() -> int:
         ),
     )
 
-    require(
-        "src/Snapvere.App/App.xaml.cs",
-        (
-            "if (!queue.TryEnqueue",
-            "was not queued because the UI dispatcher is shutting down.",
-            "CloseStandaloneLanguageBestEffort();",
-        ),
-    )
+    app_text = read("src/Snapvere.App/App.xaml.cs")
+    for fragment in (
+        "if (!queue.TryEnqueue",
+        "was not queued because the UI dispatcher is shutting down.",
+        "CloseStandaloneLanguageBestEffort();",
+        "LanguagePickerWindow.CloseStandalone();",
+    ):
+        if fragment not in app_text:
+            raise RuntimeError(f"src/Snapvere.App/App.xaml.cs is missing UI contract fragment: {fragment}")
+
+    if app_text.count("LanguagePickerWindow.CloseStandalone();") != 1:
+        raise RuntimeError(
+            "Standalone Language cleanup must have exactly one direct implementation call, inside the best-effort helper."
+        )
+
+    helper_start = app_text.index("private static void CloseStandaloneLanguageBestEffort()")
+    helper_end = app_text.index("private void ExecuteTrayCommand", helper_start)
+    helper_text = app_text[helper_start:helper_end]
+    if "LanguagePickerWindow.CloseStandalone();" not in helper_text:
+        raise RuntimeError("Language cleanup helper must call LanguagePickerWindow.CloseStandalone().")
+    if helper_text.count("CloseStandaloneLanguageBestEffort();") != 0:
+        raise RuntimeError("Language cleanup helper must not recursively call itself.")
+
+    shutdown_start = app_text.index("private void OnMainWindowClosed")
+    shutdown_text = app_text[shutdown_start:]
+    if "CloseStandaloneLanguageBestEffort();" not in shutdown_text:
+        raise RuntimeError("Final shutdown must use the contained Language cleanup helper.")
 
     print("Validated Windows UI interaction and accessibility contract.")
     return 0
