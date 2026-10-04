@@ -2,6 +2,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
@@ -169,6 +170,7 @@ public sealed class RegionCaptureWindow : Window
 
         _overlayStatusText = Text(string.Empty, 11, Strong, Microsoft.UI.Text.FontWeights.SemiBold);
         _overlayStatusText.TextWrapping = TextWrapping.Wrap;
+        AutomationProperties.SetLiveSetting(_overlayStatusText, AutomationLiveSetting.Polite);
         _overlayStatusText.MaxWidth = 620;
         _overlayStatus = BuildStatusPanel();
 

@@ -1,12 +1,15 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Snapvere.Application.Capture;
 using Snapvere.Shared;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
+using Windows.System;
 
 namespace Snapvere.App.Services;
 
@@ -67,6 +70,7 @@ public sealed class OptionsWindow : Window
         _recentSummary = Text("Pictures\\SNAPVERE", 10, Subtle);
         _statusText = Text(LocalStatusText(), 10, Success);
         _statusText.TextWrapping = TextWrapping.Wrap;
+        AutomationProperties.SetLiveSetting(_statusText, AutomationLiveSetting.Polite);
 
         _startupToggle = CreateToggle(L("StartWithWindows"));
         _cursorToggle = CreateToggle(L("IncludeCursor"));
@@ -82,7 +86,9 @@ public sealed class OptionsWindow : Window
 
         BuildPreferencesPanel();
         BuildRecentPanel();
-        Content = BuildContent();
+        var content = BuildContent();
+        content.KeyDown += Root_KeyDown;
+        Content = content;
         ShowSection(OptionsSection.Preferences);
         Activated += OptionsWindow_Activated;
     }
@@ -783,6 +789,17 @@ public sealed class OptionsWindow : Window
             StartupDiagnostics.Record("Open capture folder", exception);
             SetStatus(L("OpenCaptureFolderFailed"), Error);
         }
+    }
+
+    private void Root_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != VirtualKey.Escape)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        Close();
     }
 
     private void OptionsWindow_Activated(object sender, WindowActivatedEventArgs args)
