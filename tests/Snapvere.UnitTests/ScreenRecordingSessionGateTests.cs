@@ -96,7 +96,7 @@ public sealed class ScreenRecordingSessionGateTests
     [Fact]
     public void Dispose_StopCallbackFailureStillFinalizesSessionCleanup()
     {
-        var gate = new ScreenRecordingSessionGate();
+        using var gate = new ScreenRecordingSessionGate();
         var session = Assert.IsType<ScreenRecordingSession>(gate.TryBegin());
 
         using var registration = session.StopToken.Register(
