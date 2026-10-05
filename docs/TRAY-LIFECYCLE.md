@@ -20,6 +20,8 @@ The Portable launcher probes the same desktop-instance identity before expensive
 
 The tray icon uses `Shell_NotifyIcon` with notification protocol version 4. A left click, double click or keyboard selection requests Region Capture. Right click/context-menu activation requests the branded WinUI tray menu.
 
+The tray menu is intentionally compact (392 × 542 design DIPs). Its origin is computed from the cursor and the active monitor work area: on a standard bottom taskbar the popup sits 4 DIPs above the work-area edge, while top/side taskbar layouts fall back to the side with usable space. The placement is clamped so the whole popup remains reachable on the active monitor.
+
 Rapid Region Capture clicks are debounced. Exceptions raised by UI command subscribers are contained so they cannot terminate the native tray message loop.
 
 ## Explorer recovery and localization

@@ -16,8 +16,11 @@ namespace Snapvere.App.Services;
 /// </summary>
 public sealed class TrayMenuWindow : Window
 {
-    private const int FlyoutWidth = 418;
-    private const int FlyoutHeight = 578;
+    private const int FlyoutWidth = 392;
+    private const int FlyoutHeight = 542;
+    private const int FlyoutEdgeMargin = 4;
+    private const int CursorGap = 4;
+    private const int CursorHorizontalAnchorOffset = 20;
 
     private readonly Action<TrayCommand> _commandHandler;
     private readonly Action _recentCapturesHandler;
@@ -68,7 +71,7 @@ public sealed class TrayMenuWindow : Window
         {
             RequestedTheme = ElementTheme.Dark,
             Background = Surface,
-            Padding = new Thickness(18, 18, 18, 14)
+            Padding = new Thickness(16, 16, 16, 12)
         };
         root.KeyDown += Root_KeyDown;
         root.SizeChanged += (_, args) => ApplyResponsiveLayout(root, args.NewSize.Width);
@@ -77,7 +80,7 @@ public sealed class TrayMenuWindow : Window
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.Children.Add(BuildHeader());
 
-        var actions = new StackPanel { Spacing = 3, Margin = new Thickness(0, 12, 0, 0) };
+        var actions = new StackPanel { Spacing = 3, Margin = new Thickness(0, 10, 0, 0) };
         actions.Children.Add(CreateMenuButton("\uE722", L("CaptureRegion"), "Print Screen", TrayCommand.RegionCapture, primary: true));
         actions.Children.Add(CreateMenuButton("\uE7F4", L("CaptureWindow"), "Ctrl + Shift + 2", TrayCommand.WindowCapture));
         actions.Children.Add(CreateMenuButton("\uE7F8", L("CaptureScreen"), "Ctrl + Shift + 3", TrayCommand.ScreenCapture));
@@ -98,7 +101,7 @@ public sealed class TrayMenuWindow : Window
         actions.Children.Add(CreateMenuButton("\uE7E8", L("Exit"), string.Empty, TrayCommand.Exit, danger: true));
         var actionScroller = new ScrollViewer
         {
-            Margin = new Thickness(0, 12, 0, 0),
+            Margin = new Thickness(0, 10, 0, 0),
             VerticalScrollMode = ScrollMode.Auto,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollMode = ScrollMode.Disabled,
@@ -110,7 +113,7 @@ public sealed class TrayMenuWindow : Window
         Grid.SetRow(actionScroller, 1);
         root.Children.Add(actionScroller);
 
-        var footer = new Grid { Margin = new Thickness(5, 8, 5, 0) };
+        var footer = new Grid { Margin = new Thickness(4, 6, 4, 0) };
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var ready = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
@@ -140,14 +143,14 @@ public sealed class TrayMenuWindow : Window
             Background = Surface,
             BorderBrush = Outline,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(20),
+            CornerRadius = new CornerRadius(18),
             Child = root
         };
     }
 
     private FrameworkElement BuildHeader()
     {
-        var header = new Grid { Height = 58 };
+        var header = new Grid { Height = 54 };
         _header = header;
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -158,12 +161,12 @@ public sealed class TrayMenuWindow : Window
         var identity = new StackPanel
         {
             Spacing = 0,
-            Margin = new Thickness(14, 0, 0, 0),
+            Margin = new Thickness(12, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center
         };
         var product = new TextBlock
         {
-            FontSize = 25,
+            FontSize = 24,
             FontWeight = Microsoft.UI.Text.FontWeights.Bold,
             CharacterSpacing = 35
         };
@@ -177,10 +180,10 @@ public sealed class TrayMenuWindow : Window
 
         var languageButton = new Button
         {
-            Width = 38,
-            Height = 38,
+            Width = 36,
+            Height = 36,
             Padding = new Thickness(0),
-            CornerRadius = new CornerRadius(12),
+            CornerRadius = new CornerRadius(11),
             Background = Brush(0xFF, 0x14, 0x1A, 0x28),
             BorderBrush = Brush(0xFF, 0x2B, 0x36, 0x4B),
             BorderThickness = new Thickness(1),
@@ -203,18 +206,18 @@ public sealed class TrayMenuWindow : Window
 
     private static FrameworkElement BuildBrandMark()
     {
-        var mark = new Grid { Width = 54, Height = 54 };
+        var mark = new Grid { Width = 50, Height = 50 };
         mark.Children.Add(new Border
         {
-            CornerRadius = new CornerRadius(16),
+            CornerRadius = new CornerRadius(15),
             Background = AccentGradient(),
             BorderBrush = Brush(0x70, 0xC9, 0xC0, 0xFF),
             BorderThickness = new Thickness(1)
         });
         var shard = new Grid
         {
-            Width = 30,
-            Height = 30,
+            Width = 28,
+            Height = 28,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -296,6 +299,8 @@ public sealed class TrayMenuWindow : Window
         {
             var hint = Text(shortcut, 9, primary ? Brush(0xFF, 0xDA, 0xD2, 0xFF) : Subtle);
             hint.VerticalAlignment = VerticalAlignment.Center;
+            hint.HorizontalAlignment = HorizontalAlignment.Right;
+            hint.TextAlignment = TextAlignment.Right;
             hint.TextTrimming = TextTrimming.CharacterEllipsis;
             hint.MaxWidth = 108;
             _shortcutHints.Add(hint);
@@ -306,7 +311,7 @@ public sealed class TrayMenuWindow : Window
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            MinHeight = primary ? 52 : 38,
+            MinHeight = primary ? 46 : 38,
             Padding = new Thickness(10, 4, 10, 4),
             CornerRadius = new CornerRadius(12),
             Background = primary ? Brush(0xFF, 0x39, 0x28, 0x78) : Transparent,
@@ -333,8 +338,8 @@ public sealed class TrayMenuWindow : Window
         var veryCompact = width < 300;
 
         root.Padding = compact
-            ? new Thickness(12, 14, 12, 12)
-            : new Thickness(18, 18, 18, 14);
+            ? new Thickness(12, 12, 12, 10)
+            : new Thickness(16, 16, 16, 12);
 
         foreach (var hint in _shortcutHints)
         {
@@ -348,12 +353,12 @@ public sealed class TrayMenuWindow : Window
 
         if (_productText is not null)
         {
-            _productText.FontSize = veryCompact ? 20 : compact ? 22 : 25;
+            _productText.FontSize = veryCompact ? 20 : compact ? 22 : 24;
         }
 
         if (_header is not null)
         {
-            _header.Height = compact ? 52 : 58;
+            _header.Height = compact ? 50 : 54;
         }
     }
 
@@ -423,40 +428,61 @@ public sealed class TrayMenuWindow : Window
     private void PositionNearCursor()
     {
         if (!NativeMethods.GetCursorPos(out var cursor)) return;
+
         var flyoutWidth = AppWindow.Size.Width;
         var flyoutHeight = AppWindow.Size.Height;
         var monitor = NativeMethods.MonitorFromPoint(cursor, 2);
-        var info = new NativeMethods.MonitorInfo { Size = (uint)System.Runtime.InteropServices.Marshal.SizeOf<NativeMethods.MonitorInfo>() };
-        if (monitor == nint.Zero || !NativeMethods.GetMonitorInfo(monitor, ref info))
+        var info = new NativeMethods.MonitorInfo
         {
-            var fallbackX = cursor.X - flyoutWidth + 24;
-            var fallbackY = cursor.Y - flyoutHeight - 12;
-            var virtualLeft = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenX);
-            var virtualTop = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenY);
-            var virtualWidth = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenWidth);
-            var virtualHeight = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenHeight);
+            Size = (uint)System.Runtime.InteropServices.Marshal.SizeOf<NativeMethods.MonitorInfo>()
+        };
 
-            if (virtualWidth > 0 && virtualHeight > 0)
-            {
-                const int margin = 8;
-                var fallbackMinX = virtualLeft + margin;
-                var fallbackMaxX = Math.Max(fallbackMinX, virtualLeft + virtualWidth - flyoutWidth - margin);
-                var fallbackMinY = virtualTop + margin;
-                var fallbackMaxY = Math.Max(fallbackMinY, virtualTop + virtualHeight - flyoutHeight - margin);
-                fallbackX = Math.Clamp(fallbackX, fallbackMinX, fallbackMaxX);
-                fallbackY = Math.Clamp(fallbackY, fallbackMinY, fallbackMaxY);
-            }
+        if (monitor != nint.Zero && NativeMethods.GetMonitorInfo(monitor, ref info))
+        {
+            var placement = TrayPopupPlacementPolicy.Place(
+                cursor.X,
+                cursor.Y,
+                flyoutWidth,
+                flyoutHeight,
+                info.WorkArea.Left,
+                info.WorkArea.Top,
+                info.WorkArea.Right,
+                info.WorkArea.Bottom,
+                FlyoutEdgeMargin,
+                CursorGap,
+                CursorHorizontalAnchorOffset);
 
-            AppWindow.Move(new PointInt32(fallbackX, fallbackY));
+            AppWindow.Move(new PointInt32(placement.X, placement.Y));
             return;
         }
-        var minX = info.WorkArea.Left + 8;
-        var maxX = Math.Max(minX, info.WorkArea.Right - flyoutWidth - 8);
-        var minY = info.WorkArea.Top + 8;
-        var maxY = Math.Max(minY, info.WorkArea.Bottom - flyoutHeight - 8);
+
+        var virtualLeft = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenX);
+        var virtualTop = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenY);
+        var virtualWidth = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenWidth);
+        var virtualHeight = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenHeight);
+
+        if (virtualWidth > 0 && virtualHeight > 0)
+        {
+            var placement = TrayPopupPlacementPolicy.Place(
+                cursor.X,
+                cursor.Y,
+                flyoutWidth,
+                flyoutHeight,
+                virtualLeft,
+                virtualTop,
+                checked(virtualLeft + virtualWidth),
+                checked(virtualTop + virtualHeight),
+                FlyoutEdgeMargin,
+                CursorGap,
+                CursorHorizontalAnchorOffset);
+
+            AppWindow.Move(new PointInt32(placement.X, placement.Y));
+            return;
+        }
+
         AppWindow.Move(new PointInt32(
-            Math.Clamp(cursor.X - flyoutWidth + 24, minX, maxX),
-            Math.Clamp(cursor.Y - flyoutHeight - 12, minY, maxY)));
+            cursor.X - flyoutWidth + CursorHorizontalAnchorOffset,
+            cursor.Y - flyoutHeight - CursorGap));
     }
 
     private static TextBlock Text(string value, double size, SolidColorBrush foreground, Windows.UI.Text.FontWeight? weight = null)

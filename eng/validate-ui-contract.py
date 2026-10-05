@@ -68,6 +68,12 @@ def main() -> int:
             'CloseForActionBestEffort("Close tray menu for command")',
             'CloseForActionBestEffort("Close tray menu for action")',
             "StartupDiagnostics.Record(operation, exception);",
+            "private const int FlyoutWidth = 392;",
+            "private const int FlyoutHeight = 542;",
+            "private const int FlyoutEdgeMargin = 4;",
+            "TrayPopupPlacementPolicy.Place(",
+            "MinHeight = primary ? 46 : 38",
+            "hint.TextAlignment = TextAlignment.Right",
         ),
     )
 
