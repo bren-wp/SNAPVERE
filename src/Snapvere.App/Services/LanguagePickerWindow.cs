@@ -222,7 +222,49 @@ public sealed class LanguagePickerWindow : Window
         _closeButton.Click += (_, _) => Close();
         Grid.SetRow(_closeButton, 3);
         root.Children.Add(_closeButton);
+
+        root.SizeChanged += (_, args) =>
+            ApplyResponsiveLayout(root, card, args.NewSize.Width);
+        ApplyResponsiveLayout(root, card, WindowWidth);
         return root;
+    }
+
+    private void ApplyResponsiveLayout(Grid root, Border card, double width)
+    {
+        var compact = width < 440;
+
+        root.Padding = compact
+            ? new Thickness(16)
+            : new Thickness(26);
+        card.Padding = compact
+            ? new Thickness(14)
+            : new Thickness(18);
+        card.CornerRadius = compact
+            ? new CornerRadius(15)
+            : new CornerRadius(18);
+
+        if (_titleText is not null)
+        {
+            _titleText.FontSize = compact ? 22 : 26;
+        }
+
+        if (_introText is not null)
+        {
+            _introText.Margin = compact
+                ? new Thickness(0, 16, 0, 10)
+                : new Thickness(0, 22, 0, 12);
+        }
+
+        if (_closeButton is not null)
+        {
+            _closeButton.Margin = compact
+                ? new Thickness(0, 14, 0, 0)
+                : new Thickness(0, 18, 0, 0);
+            _closeButton.HorizontalAlignment = compact
+                ? HorizontalAlignment.Stretch
+                : HorizontalAlignment.Right;
+            _closeButton.HorizontalContentAlignment = HorizontalAlignment.Center;
+        }
     }
 
     private void Root_KeyDown(object sender, KeyRoutedEventArgs e)
