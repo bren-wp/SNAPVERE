@@ -296,6 +296,8 @@ public sealed class TrayMenuWindow : Window
         {
             var hint = Text(shortcut, 9, primary ? Brush(0xFF, 0xDA, 0xD2, 0xFF) : Subtle);
             hint.VerticalAlignment = VerticalAlignment.Center;
+            hint.HorizontalAlignment = HorizontalAlignment.Right;
+            hint.TextAlignment = TextAlignment.Right;
             hint.TextTrimming = TextTrimming.CharacterEllipsis;
             hint.MaxWidth = 108;
             _shortcutHints.Add(hint);
@@ -306,7 +308,7 @@ public sealed class TrayMenuWindow : Window
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            MinHeight = primary ? 52 : 38,
+            MinHeight = primary ? 46 : 38,
             Padding = new Thickness(10, 4, 10, 4),
             CornerRadius = new CornerRadius(12),
             Background = primary ? Brush(0xFF, 0x39, 0x28, 0x78) : Transparent,
