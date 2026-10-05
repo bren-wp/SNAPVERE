@@ -10,6 +10,7 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 - Preserve the 460-pixel Region Capture guidance width on normal desktops while clamping it to the live overlay width on narrow/high-DPI work areas.
 - Clamp Region status chrome to the current work area and reduce top/bottom margins on short displays without changing capture geometry or input handling.
+- Keep the Region annotation tool rail fully reachable on short logical work areas by shrinking its viewport to the available overlay height and enabling vertical scrolling only when needed.
 - Make the Window Capture instruction card responsive and wrap localized guidance instead of assuming a wide monitor.
 - Bound the selected-window label to the current overlay width so long localized window titles cannot extend beyond the active monitor.
 - Extend the Windows UI contract validator to lock the responsive Region/Window overlay behavior.
