@@ -189,7 +189,9 @@ public sealed class AboutWindow : Window
         versionRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var title = new StackPanel { Spacing = 3 };
         title.Children.Add(Text(L("AboutLocalFirstTitle"), 15, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
-        title.Children.Add(Text(L("AboutCaptureDescription"), 10.5, Muted));
+        var captureDescription = Text(L("AboutCaptureDescription"), 10.5, Muted);
+        captureDescription.TextWrapping = TextWrapping.Wrap;
+        title.Children.Add(captureDescription);
         versionRow.Children.Add(title);
         var badge = new Border
         {
@@ -265,6 +267,21 @@ public sealed class AboutWindow : Window
         close.Click += (_, _) => Close();
         Grid.SetRow(close, 2);
         root.Children.Add(close);
+
+        root.SizeChanged += (_, args) =>
+        {
+            var compact = args.NewSize.Width < 480;
+            root.Padding = compact
+                ? new Thickness(16)
+                : new Thickness(24);
+            card.Padding = compact
+                ? new Thickness(14)
+                : new Thickness(18);
+            close.HorizontalAlignment = args.NewSize.Width < 380
+                ? HorizontalAlignment.Stretch
+                : HorizontalAlignment.Right;
+            close.HorizontalContentAlignment = HorizontalAlignment.Center;
+        };
         return root;
     }
 
@@ -350,8 +367,11 @@ public sealed class AboutWindow : Window
     private static Border BuildShortcutRow(string shortcut, string action)
     {
         var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
+        var shortcutColumn = new ColumnDefinition { Width = new GridLength(150) };
+        grid.ColumnDefinitions.Add(shortcutColumn);
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
         var shortcutBadge = new Border
         {
@@ -370,6 +390,21 @@ public sealed class AboutWindow : Window
         actionText.VerticalAlignment = VerticalAlignment.Center;
         Grid.SetColumn(actionText, 1);
         grid.Children.Add(actionText);
+
+        grid.SizeChanged += (_, args) =>
+        {
+            var compact = args.NewSize.Width < 420;
+            shortcutColumn.Width = compact
+                ? GridLength.Auto
+                : new GridLength(150);
+            Grid.SetRow(actionText, compact ? 1 : 0);
+            Grid.SetColumn(actionText, compact ? 0 : 1);
+            Grid.SetColumnSpan(actionText, compact ? 2 : 1);
+            actionText.Margin = compact
+                ? new Thickness(0, 6, 0, 0)
+                : new Thickness(0);
+        };
+
         return new Border { Child = grid };
     }
 
