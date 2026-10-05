@@ -121,7 +121,10 @@ public sealed class RecordingControllerWindow : Window
             Text = L("ScreenRecordingActive"),
             FontSize = 11,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = Strong
+            Foreground = Strong,
+            TextWrapping = TextWrapping.NoWrap,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            MaxLines = 1
         };
         AutomationProperties.SetLiveSetting(statusText, AutomationLiveSetting.Polite);
         status.Children.Add(statusText);
