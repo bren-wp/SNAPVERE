@@ -44,7 +44,7 @@ def main() -> int:
             "AutomationLiveSetting.Polite",
             "_overlayStatusText",
             "ApplyResponsiveOverlayChrome(e.NewSize.Width, e.NewSize.Height)",
-            "_captureHint.MaxWidth = Math.Min(460d, availableWidth)",
+            "_captureHint.Width = Math.Min(460d, availableWidth)",
             "_overlayStatus.MaxWidth = Math.Min(620d, availableWidth)",
             "hint.TextWrapping = TextWrapping.Wrap",
             "hint.MaxLines = 3",
