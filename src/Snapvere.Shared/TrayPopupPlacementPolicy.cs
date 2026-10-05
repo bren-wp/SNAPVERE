@@ -15,7 +15,7 @@ public static class TrayPopupPlacementPolicy
         int workAreaTop,
         int workAreaRight,
         int workAreaBottom,
-        int edgeMargin = 6,
+        int edgeMargin = 4,
         int cursorGap = 4,
         int horizontalAnchorOffset = 20)
     {
