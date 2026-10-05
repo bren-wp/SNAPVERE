@@ -8,7 +8,7 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ### Responsive capture overlay UI/UX
 
-- Replace the fixed 460-pixel Region Capture guidance surface with bounded-width wrapped content that adapts to the live overlay width.
+- Preserve the 460-pixel Region Capture guidance width on normal desktops while clamping it to the live overlay width on narrow/high-DPI work areas.
 - Clamp Region status chrome to the current work area and reduce top/bottom margins on short displays without changing capture geometry or input handling.
 - Make the Window Capture instruction card responsive and wrap localized guidance instead of assuming a wide monitor.
 - Bound the selected-window label to the current overlay width so long localized window titles cannot extend beyond the active monitor.
