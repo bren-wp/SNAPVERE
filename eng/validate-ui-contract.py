@@ -23,6 +23,7 @@ def main() -> int:
         "src/Snapvere.App/Services/LanguagePickerWindow.cs",
         "src/Snapvere.App/Services/AboutWindow.cs",
         "src/Snapvere.App/Services/TrayMenuWindow.cs",
+        "src/Snapvere.App/Services/RecordingControllerWindow.cs",
     ):
         require(path, ("KeyDown +=", "VirtualKey.Escape", "e.Handled = true"))
 
@@ -50,6 +51,7 @@ def main() -> int:
             "CreateStopGlyph()",
             "Finishing screen recording",
             "ToolTipService.SetToolTip",
+            "_stopButton.Focus(FocusState.Programmatic)",
         ),
     )
 
