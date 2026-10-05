@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.25**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.25
+- Current public release: **v0.1.26**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.26
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -27,6 +27,30 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 ---
 
 ## Unreleased
+
+---
+
+## v0.1.26 — 2026-10-05
+
+SNAPVERE 0.1.26 is a Windows recording-lifecycle and Portable cache-security hardening release. It removes a re-entrant cancellation deadlock path, makes the recording Stop surface keyboard-recoverable, and narrows reparse-point redirection windows around Portable cache staging.
+
+### Screen recording lifecycle
+
+- Recording Stop no longer runs synchronous CancellationToken callbacks while the recording-session gate lock is held.
+- Cancellation-token source disposal is deferred when a Stop callback is still unwinding, preserving deterministic ownership without racing cleanup.
+- A regression test exercises re-entrant session completion from inside a cancellation callback and requires Stop to complete without deadlock.
+- The recording controller accepts Escape as a Stop request and focuses the Stop button when activated; the UI contract validator locks both behaviors.
+
+### Portable cache hardening
+
+- Portable revalidates the staging directory ancestor chain immediately after staging creation before extracting the embedded payload.
+- Staging and launcher ancestor chains are revalidated again at the final cache commit boundary before Directory.Move.
+- Existing integrity-manifest verification, safe ZIP extraction and reparse-point rejection remain unchanged.
+
+### Packaging scope
+
+- Windows assembly/file/package versions and Chrome, Edge, Opera and Firefox extension versions advance together to 0.1.26.
+- Setup EXE, MSI, Portable and browser ZIPs remain gated by Product Contract CI, Windows CI, MSI lifecycle validation, localization checks, CodeQL and native ARM64 runtime validation before publication.
 
 ---
 
