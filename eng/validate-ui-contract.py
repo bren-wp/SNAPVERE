@@ -52,6 +52,41 @@ def main() -> int:
             "Finishing screen recording",
             "ToolTipService.SetToolTip",
             "_stopButton.Focus(FocusState.Programmatic)",
+            "TextTrimming = TextTrimming.CharacterEllipsis",
+            "MaxLines = 1",
+        ),
+    )
+
+    require(
+        "src/Snapvere.App/Services/OptionsWindow.cs",
+        (
+            "root.SizeChanged +=",
+            "ApplyResponsiveLayout(root, tabs, contentFrame, footer, close",
+            "tabs.Orientation = narrow",
+            "Grid.SetRow(close, narrow ? 1 : 0)",
+        ),
+    )
+    require(
+        "src/Snapvere.App/Services/LanguagePickerWindow.cs",
+        (
+            "ApplyResponsiveLayout(root, card",
+            "_titleText.FontSize = compact ? 22 : 26",
+            "_closeButton.HorizontalAlignment = compact",
+        ),
+    )
+    require(
+        "src/Snapvere.App/Services/AboutWindow.cs",
+        (
+            "captureDescription.TextWrapping = TextWrapping.Wrap",
+            "shortcutColumn.Width = compact",
+            "Grid.SetRow(actionText, compact ? 1 : 0)",
+        ),
+    )
+    require(
+        "src/Snapvere.App/Services/TrayMenuWindow.cs",
+        (
+            "MinHeight = primary ? 46 : 38",
+            "hint.TextAlignment = TextAlignment.Right",
         ),
     )
 
