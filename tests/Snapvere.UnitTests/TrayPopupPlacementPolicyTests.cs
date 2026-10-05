@@ -9,15 +9,16 @@ public sealed class TrayPopupPlacementPolicyTests
     {
         var placement = TrayPopupPlacementPolicy.Place(
             cursorX: 1900,
-            cursorY: 1040,
+            cursorY: 1060,
             popupWidth: 392,
             popupHeight: 542,
             workAreaLeft: 0,
             workAreaTop: 0,
             workAreaRight: 1920,
-            workAreaBottom: 1040);
+            workAreaBottom: 1040,
+            edgeMargin: 4);
 
-        Assert.Equal(1522, placement.X);
+        Assert.Equal(1524, placement.X);
         Assert.Equal(494, placement.Y);
         Assert.Equal(4, 1040 - (placement.Y + 542));
     }
@@ -33,10 +34,11 @@ public sealed class TrayPopupPlacementPolicyTests
             workAreaLeft: 0,
             workAreaTop: 40,
             workAreaRight: 1920,
-            workAreaBottom: 1080);
+            workAreaBottom: 1080,
+            edgeMargin: 4);
 
         Assert.Equal(828, placement.X);
-        Assert.Equal(46, placement.Y);
+        Assert.Equal(44, placement.Y);
     }
 
     [Fact]
@@ -50,9 +52,10 @@ public sealed class TrayPopupPlacementPolicyTests
             workAreaLeft: 0,
             workAreaTop: 0,
             workAreaRight: 800,
-            workAreaBottom: 600);
+            workAreaBottom: 600,
+            edgeMargin: 4);
 
-        Assert.Equal(402, placement.X);
+        Assert.Equal(404, placement.X);
         Assert.Equal(24, placement.Y);
         Assert.InRange(placement.Y + 542, 0, 594);
     }
