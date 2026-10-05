@@ -4,6 +4,16 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.29] - 2026-10-05
+
+### Responsive capture overlay UI/UX
+
+- Replace the fixed 460-pixel Region Capture guidance surface with bounded-width wrapped content that adapts to the live overlay width.
+- Clamp Region status chrome to the current work area and reduce top/bottom margins on short displays without changing capture geometry or input handling.
+- Make the Window Capture instruction card responsive and wrap localized guidance instead of assuming a wide monitor.
+- Bound the selected-window label to the current overlay width so long localized window titles cannot extend beyond the active monitor.
+- Extend the Windows UI contract validator to lock the responsive Region/Window overlay behavior.
+
 ## [0.1.28] - 2026-10-05
 
 ### Tray popup UI/UX polish
