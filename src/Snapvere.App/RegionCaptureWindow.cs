@@ -342,8 +342,8 @@ public sealed class RegionCaptureWindow : Window
 
         return new Border
         {
-            MaxWidth = 460,
-            MinHeight = 44,
+            Width = 460,
+            MinHeight = 47,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Top,
             Margin = new Thickness(16, 36, 16, 0),
@@ -428,7 +428,7 @@ public sealed class RegionCaptureWindow : Window
     private void ApplyResponsiveOverlayChrome(double width, double height)
     {
         var availableWidth = Math.Max(120d, width - 32d);
-        _captureHint.MaxWidth = Math.Min(460d, availableWidth);
+        _captureHint.Width = Math.Min(460d, availableWidth);
         _captureHint.Margin = new Thickness(
             16,
             height < 520d ? 16 : 36,
