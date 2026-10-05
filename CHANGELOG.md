@@ -14,9 +14,16 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ### MP4 publication integrity
 
-- Flush the completed temporary recording through the file handle before publication.
+- Flush the completed temporary recording through a writer-owned file handle before publication, independent of recorder stream-lifetime behavior.
 - Reject successful recorder results that contain zero output bytes, empty source/encoded dimensions or a completion timestamp earlier than the start timestamp.
 - Preserve the existing temporary-file plus atomic final-move contract so invalid or incomplete recordings never appear as completed MP4 captures.
+
+### Responsive UI/UX polish
+
+- Reflow Settings tabs/footer and reduce outer spacing on narrow work areas while preserving the established desktop layout.
+- Make the Language window adapt its padding, title scale and Close action at compact widths.
+- Wrap About description copy and reflow shortcut rows instead of forcing long localized text into a fixed narrow column.
+- Balance the primary Tray action height, right-align shortcut hints and prevent recording-controller status text from overflowing its compact surface.
 
 ## [0.1.26] - 2026-10-05
 
