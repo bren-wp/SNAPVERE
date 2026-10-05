@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.27**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.27
+- Current public release: **v0.1.28**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.28
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -27,6 +27,31 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 ---
 
 ## Unreleased
+
+---
+
+## v0.1.28 — 2026-10-05
+
+SNAPVERE 0.1.28 is a focused notification-area UI/UX release. It makes the right-click Tray menu more compact and positions it closer to the actual taskbar edge while retaining multi-monitor and non-standard taskbar safety.
+
+### Compact Tray surface
+
+- The Tray menu design size moves from 418 × 578 to 392 × 542 DIPs.
+- Outer padding, header height, brand mark and language action are tightened without reducing body text size.
+- The primary Region Capture row drops from 52 to 46 DIPs so it no longer visually overwhelms neighboring commands.
+- Shortcut hints are right-aligned for a cleaner action/hotkey rhythm.
+
+### Taskbar-aware placement
+
+- Popup placement is now computed by a pure shared policy from the invocation point and active monitor work area.
+- With a standard bottom taskbar, the popup is clamped to 4 DIPs above the work-area boundary so it sits visibly closer to the notification icon.
+- Top and side taskbar layouts choose the usable side automatically, and fallback virtual-screen placement remains bounded.
+- Unit tests cover bottom-taskbar, top-taskbar, small work-area and invalid-boundary cases; the Windows UI contract validator locks the new dimensions and policy usage.
+
+### Packaging scope
+
+- Windows assembly/file/package versions and Chrome, Edge, Opera and Firefox extension versions advance together to 0.1.28.
+- Setup EXE, MSI, Portable and browser ZIPs remain gated by Product Contract CI, Windows CI, rendered visual QA, MSI lifecycle validation, localization checks, CodeQL and native ARM64 runtime validation before publication.
 
 ---
 
