@@ -198,6 +198,8 @@ public sealed class OptionsWindow : Window
         var footer = new Grid { Margin = new Thickness(2, 14, 2, 0) };
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         _statusText.VerticalAlignment = VerticalAlignment.Center;
         footer.Children.Add(_statusText);
 
@@ -206,7 +208,65 @@ public sealed class OptionsWindow : Window
         footer.Children.Add(close);
         Grid.SetRow(footer, 3);
         root.Children.Add(footer);
+
+        root.SizeChanged += (_, args) =>
+            ApplyResponsiveLayout(root, tabs, contentFrame, footer, close, args.NewSize.Width);
+        ApplyResponsiveLayout(root, tabs, contentFrame, footer, close, 760);
         return root;
+    }
+
+    private void ApplyResponsiveLayout(
+        Grid root,
+        StackPanel tabs,
+        Border contentFrame,
+        Grid footer,
+        Button close,
+        double width)
+    {
+        var compact = width < 600;
+        var narrow = width < 440;
+
+        root.Padding = compact
+            ? new Thickness(16)
+            : new Thickness(24);
+        tabs.Margin = compact
+            ? new Thickness(0, 16, 0, 12)
+            : new Thickness(0, 22, 0, 16);
+        tabs.Orientation = narrow
+            ? Orientation.Vertical
+            : Orientation.Horizontal;
+
+        foreach (var tab in new[] { _preferencesTab, _recentTab })
+        {
+            tab.HorizontalAlignment = narrow
+                ? HorizontalAlignment.Stretch
+                : HorizontalAlignment.Left;
+            tab.HorizontalContentAlignment = narrow
+                ? HorizontalAlignment.Center
+                : HorizontalAlignment.Left;
+        }
+
+        contentFrame.Padding = compact
+            ? new Thickness(14)
+            : new Thickness(20);
+        contentFrame.CornerRadius = compact
+            ? new CornerRadius(16)
+            : new CornerRadius(20);
+
+        footer.Margin = compact
+            ? new Thickness(0, 10, 0, 0)
+            : new Thickness(2, 14, 2, 0);
+
+        Grid.SetRow(close, narrow ? 1 : 0);
+        Grid.SetColumn(close, narrow ? 0 : 1);
+        Grid.SetColumnSpan(close, narrow ? 2 : 1);
+        close.HorizontalAlignment = narrow
+            ? HorizontalAlignment.Stretch
+            : HorizontalAlignment.Right;
+        close.HorizontalContentAlignment = HorizontalAlignment.Center;
+        close.Margin = narrow
+            ? new Thickness(0, 8, 0, 0)
+            : new Thickness(0);
     }
 
     private FrameworkElement BuildHeader()
