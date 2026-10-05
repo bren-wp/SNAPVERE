@@ -46,6 +46,14 @@ SNAPVERE 0.1.27 is a focused screen-recording integrity hotfix. It closes the re
 - The writer refuses to publish zero-byte output, empty source or encoded dimensions, or a session whose completion timestamp precedes its start timestamp.
 - Validation failures remove the temporary file and leave no visible partial recording, preserving the existing atomic move contract.
 
+### UI/UX polish
+
+- Settings now reflows tabs and the footer at narrow widths and reduces outer padding without changing the established desktop-size visual structure.
+- Language adapts title scale, card padding and the Close action for compact work areas.
+- About wraps its long localized product description and moves shortcut explanations below their key badges when horizontal space is constrained.
+- Tray shortcut hints align consistently and the primary Region action is less vertically oversized relative to neighboring commands.
+- The active recording controller trims long status text instead of allowing it to crowd the Stop control.
+
 ### Packaging scope
 
 - Windows assembly/file/package versions and Chrome, Edge, Opera and Firefox extension versions advance together to 0.1.27.
