@@ -92,8 +92,17 @@ public sealed class ScreenRecordingSessionGate : IDisposable
         // Keep cancellation outside _gate for the same re-entrancy reason as
         // RequestStop. If another thread already owns cancellation, disposal is
         // deferred by the session until that cancellation callback stack exits.
-        _ = session.TryRequestStop();
-        session.DisposeStopSourceWhenSafe();
+        try
+        {
+            _ = session.TryRequestStop();
+        }
+        finally
+        {
+            // Cancellation callbacks are external code and may throw. Cleanup
+            // must still run after TryRequestStop finishes unwinding so the
+            // token source and its registrations cannot leak during shutdown.
+            session.DisposeStopSourceWhenSafe();
+        }
     }
 }
 
