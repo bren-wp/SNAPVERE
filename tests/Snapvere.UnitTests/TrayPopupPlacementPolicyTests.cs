@@ -53,7 +53,8 @@ public sealed class TrayPopupPlacementPolicyTests
             workAreaBottom: 600);
 
         Assert.Equal(402, placement.X);
-        Assert.Equal(52, placement.Y);
+        Assert.Equal(24, placement.Y);
+        Assert.InRange(placement.Y + 542, 0, 594);
     }
 
     [Fact]
