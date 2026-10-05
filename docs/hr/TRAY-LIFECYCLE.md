@@ -20,6 +20,8 @@ Portable launcher prije skupog payload verification/extraction koraka provjerava
 
 Tray ikona koristi `Shell_NotifyIcon` s notification protocol version 4. Left click, double click ili keyboard selection pokreću Region Capture. Right click/context-menu poziv otvara SNAPVERE WinUI tray menu.
 
+Tray menu je namjerno kompaktan (392 × 542 design DIP-a). Njegova pozicija računa se iz položaja kursora i work-area aktivnog monitora: kod standardnog donjeg taskbara popup ostaje 4 DIP-a iznad ruba work-area, dok se za taskbar gore ili sa strane bira strana s dovoljno prostora. Položaj se clamp-a tako da cijeli popup ostane dostupan na aktivnom monitoru.
+
 Brzi uzastopni Region Capture klikovi debounceaju se. Exception u UI subscriberu zadržava se unutar command dispatcha kako ne bi srušio native tray message loop.
 
 ## Explorer recovery i lokalizacija
