@@ -19,7 +19,7 @@ Snimite regiju, prozor, cijeli zaslon ili web-stranicu, brzo označite rezultat,
 [![MSI CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/msi-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/msi-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Web stranica](https://snapvere.com) · [Preuzmi v0.1.27](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.27) · [Dokumentacija](docs/hr/README.md) · [English](README.md)
+[Web stranica](https://snapvere.com) · [Preuzmi v0.1.28](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.28) · [Dokumentacija](docs/hr/README.md) · [English](README.md)
 
 </div>
 
@@ -41,7 +41,7 @@ SNAPVERE je napravljen za brzo svakodnevno snimanje bez pretvaranja screenshota 
 | 📦 **Tri Windows načina distribucije** | Vođeni Setup EXE, standardni x64 Windows Installer (MSI) i Universal Portable; Setup/Portable nose x86, x64 i ARM64 payloade. |
 | 🌐 **Četiri preglednika** | Chrome, Edge, Opera i Firefox dijele isti zaključani SNAPVERE brand i ograničeno capture ponašanje. |
 
-SNAPVERE 0.1.27 učvršćuje finalizaciju snimanja zaslona i integritet objave MP4 datoteka. Shutdown snimanja sada jamči cleanup stop-token izvora čak i ako cancellation callback baci exception, dok recording writer prije atomskog finalnog premještanja flush-a dovršenu privremenu datoteku na disk i odbija zero-byte output, prazne source/encoded dimenzije ili obrnute vremenske oznake završetka. Izdanje zadržava keyboard recovery i Portable cache hardening uveden u v0.1.26.
+SNAPVERE 0.1.28 dodatno polira rad iz područja obavijesti. Tray popup koji se otvara desnim klikom sada je manji, vizualno lakši i postavljen bliže aktivnom rubu taskbara/work-area umjesto da nepotrebno lebdi previsoko iznad ikone. Pozicioniranje uzima u obzir aktivni monitor i nestandardni položaj taskbara te zadržava cijeli popup unutar zaslona.
 
 Recording zadržava odvojene kompaktne Start i Stop kontrole u Postavkama te mali always-on-top kontroler s proteklim vremenom dok je snimanje aktivno. Setup ostaje vođeni License → Installation → Finish tijek. Recording je primary-display H.264 MP4 samo s videom; mikrofon i sistemski zvuk nisu navedeni kao podržani.
 
@@ -91,8 +91,8 @@ Slike ispod su **stvarne renderirane Windows površine koje je snimio SNAPVERE v
 
 ## Preuzimanja
 
-Aktualno izdanje: **SNAPVERE 0.1.27**<br>
-Izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.27
+Aktualno izdanje: **SNAPVERE 0.1.28**<br>
+Izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.28
 
 | Platforma | Paket |
 | --- | --- |
