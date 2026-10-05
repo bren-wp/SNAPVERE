@@ -1042,9 +1042,9 @@ public sealed class RegionCaptureWindow : Window
         double badgeY,
         double badgeHeight)
     {
-        var toolPaletteHeight = Math.Min(
-            ToolPaletteHeight,
-            Math.Max(1d, totalHeight - 16d));
+        var toolPaletteHeight = RegionOverlayLayoutPolicy.FitToolPaletteHeight(
+            totalHeight,
+            ToolPaletteHeight);
         _toolPalette.Height = toolPaletteHeight;
 
         var toolX = right + 14d + ToolPaletteWidth <= totalWidth

@@ -47,7 +47,7 @@ def main() -> int:
             "_captureHint.Width = Math.Min(460d, availableWidth)",
             "_overlayStatus.MaxWidth = Math.Min(620d, availableWidth)",
             "VerticalScrollBarVisibility = ScrollBarVisibility.Auto",
-            "var toolPaletteHeight = Math.Min(",
+            "RegionOverlayLayoutPolicy.FitToolPaletteHeight(",
             "_toolPalette.Height = toolPaletteHeight",
             "totalHeight - toolPaletteHeight - 8d",
             "hint.TextWrapping = TextWrapping.Wrap",
