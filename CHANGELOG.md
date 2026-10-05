@@ -4,6 +4,15 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.28] - 2026-10-05
+
+### Tray popup UI/UX polish
+
+- Reduce the branded right-click Tray popup from 418 × 578 to 392 × 542 design DIPs and trim oversized chrome while preserving readable text and familiar actions.
+- Keep the popup close to the notification area: on a standard bottom taskbar its lower edge sits 4 DIPs above the active monitor work-area boundary instead of floating unnecessarily high.
+- Add work-area-aware placement for top/side taskbar layouts and multi-monitor setups, with clamping that keeps the complete popup reachable.
+- Add unit coverage for bottom-taskbar, top-taskbar and constrained-work-area placement plus UI-contract checks for the compact dimensions and positioning policy.
+
 ## [0.1.27] - 2026-10-05
 
 ### Recording shutdown cleanup
