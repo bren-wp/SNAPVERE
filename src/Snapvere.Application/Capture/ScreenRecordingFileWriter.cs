@@ -78,14 +78,26 @@ public sealed class ScreenRecordingFileWriter
                 session = await _recordingService
                     .RecordDisplayAsync(display, includeCursor, stream, stopToken)
                     .ConfigureAwait(false);
-
-                // The recorder owns MP4 production, but the writer owns the
-                // publication boundary. Force buffered bytes through the file
-                // handle and reject an obviously incomplete result before the
-                // temporary path becomes a visible completed capture.
-                stream.Flush(flushToDisk: true);
-                ValidateCompletedRecording(session, stream.Length);
             }
+
+            // The production WinRT random-access adapter is allowed to close
+            // the destination stream it wraps. Reopen the completed staging
+            // file under writer ownership so durability validation never
+            // depends on recorder stream-lifetime behavior.
+            long outputBytes;
+            using (var durabilityStream = new FileStream(
+                temporaryPath,
+                FileMode.Open,
+                FileAccess.ReadWrite,
+                FileShare.None,
+                bufferSize: 1,
+                FileOptions.None))
+            {
+                durabilityStream.Flush(flushToDisk: true);
+                outputBytes = durabilityStream.Length;
+            }
+
+            ValidateCompletedRecording(session, outputBytes);
 
             var finalPath = PublishTemporaryFile(temporaryPath, directory, timestamp);
             return new ScreenRecordingSaveResult(
