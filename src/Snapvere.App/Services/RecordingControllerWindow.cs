@@ -3,10 +3,12 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Snapvere.Shared;
 using System.Diagnostics;
 using System.Globalization;
+using Windows.System;
 
 namespace Snapvere.App.Services;
 
@@ -81,6 +83,7 @@ public sealed class RecordingControllerWindow : Window
             RequestedTheme = ElementTheme.Dark,
             Padding = new Thickness(12, 10, 10, 10)
         };
+        grid.KeyDown += Root_KeyDown;
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -247,6 +250,17 @@ public sealed class RecordingControllerWindow : Window
             : string.Create(CultureInfo.InvariantCulture, $"{(int)Math.Max(0, elapsed.TotalMinutes):00}:{elapsed.Seconds:00}");
     }
 
+    private void Root_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != VirtualKey.Escape)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        RequestStop();
+    }
+
     private void RecordingControllerWindow_Activated(
         object sender,
         WindowActivatedEventArgs args)
@@ -272,6 +286,8 @@ public sealed class RecordingControllerWindow : Window
         AppWindow.Move(new Windows.Graphics.PointInt32(
             workArea.X + Math.Max(0, workArea.Width - AppWindow.Size.Width - 16),
             workArea.Y + 16));
+
+        _ = _stopButton.Focus(FocusState.Programmatic);
     }
 
     private void RecordingControllerWindow_Closed(object sender, WindowEventArgs args)
