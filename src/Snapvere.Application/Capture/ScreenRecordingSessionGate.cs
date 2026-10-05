@@ -34,25 +34,27 @@ public sealed class ScreenRecordingSessionGate : IDisposable
 
     public bool RequestStop()
     {
+        ScreenRecordingSession? session;
         lock (_gate)
         {
-            if (_disposed ||
-                _activeSession is null ||
-                _activeSession.StopSource.IsCancellationRequested)
+            if (_disposed || _activeSession is null)
             {
                 return false;
             }
 
-            _activeSession.StopSource.Cancel();
-            return true;
+            session = _activeSession;
         }
+
+        // CancellationTokenSource.Cancel invokes callbacks synchronously. Never
+        // call it while holding the gate lock because a cancellation callback
+        // is allowed to complete the session and re-enter this gate.
+        return session.TryRequestStop();
     }
 
     public bool Complete(ScreenRecordingSession session)
     {
         ArgumentNullException.ThrowIfNull(session);
 
-        CancellationTokenSource? source = null;
         lock (_gate)
         {
             if (!ReferenceEquals(_activeSession, session))
@@ -61,16 +63,15 @@ public sealed class ScreenRecordingSessionGate : IDisposable
             }
 
             _activeSession = null;
-            source = session.StopSource;
         }
 
-        source.Dispose();
+        session.DisposeStopSourceWhenSafe();
         return true;
     }
 
     public void Dispose()
     {
-        CancellationTokenSource? source = null;
+        ScreenRecordingSession? session;
         lock (_gate)
         {
             if (_disposed)
@@ -79,44 +80,107 @@ public sealed class ScreenRecordingSessionGate : IDisposable
             }
 
             _disposed = true;
-            if (_activeSession is not null)
-            {
-                source = _activeSession.StopSource;
-                _activeSession = null;
-            }
+            session = _activeSession;
+            _activeSession = null;
         }
 
-        if (source is null)
+        if (session is null)
         {
             return;
         }
 
-        try
-        {
-            if (!source.IsCancellationRequested)
-            {
-                source.Cancel();
-            }
-        }
-        finally
-        {
-            source.Dispose();
-        }
+        // Keep cancellation outside _gate for the same re-entrancy reason as
+        // RequestStop. If another thread already owns cancellation, disposal is
+        // deferred by the session until that cancellation callback stack exits.
+        _ = session.TryRequestStop();
+        session.DisposeStopSourceWhenSafe();
     }
 }
 
 public sealed class ScreenRecordingSession
 {
+    private readonly object _lifecycleGate = new();
+    private readonly CancellationTokenSource _stopSource = new();
     private readonly CancellationToken _stopToken;
+    private bool _stopCancellationStarted;
+    private bool _stopCancellationFinished;
+    private bool _disposeRequested;
+    private bool _stopSourceDisposed;
 
     internal ScreenRecordingSession()
     {
-        _stopToken = StopSource.Token;
+        _stopToken = _stopSource.Token;
     }
-
-    internal CancellationTokenSource StopSource { get; } = new();
 
     public CancellationToken StopToken => _stopToken;
 
     public bool IsStopRequested => _stopToken.IsCancellationRequested;
+
+    internal bool TryRequestStop()
+    {
+        lock (_lifecycleGate)
+        {
+            if (_stopSourceDisposed || _stopCancellationStarted)
+            {
+                return false;
+            }
+
+            _stopCancellationStarted = true;
+        }
+
+        try
+        {
+            _stopSource.Cancel();
+            return true;
+        }
+        finally
+        {
+            FinishStopCancellation();
+        }
+    }
+
+    internal void DisposeStopSourceWhenSafe()
+    {
+        var disposeNow = false;
+        lock (_lifecycleGate)
+        {
+            if (_stopSourceDisposed)
+            {
+                return;
+            }
+
+            if (_stopCancellationStarted && !_stopCancellationFinished)
+            {
+                _disposeRequested = true;
+                return;
+            }
+
+            _stopSourceDisposed = true;
+            disposeNow = true;
+        }
+
+        if (disposeNow)
+        {
+            _stopSource.Dispose();
+        }
+    }
+
+    private void FinishStopCancellation()
+    {
+        var disposeNow = false;
+        lock (_lifecycleGate)
+        {
+            _stopCancellationFinished = true;
+            if (_disposeRequested && !_stopSourceDisposed)
+            {
+                _stopSourceDisposed = true;
+                disposeNow = true;
+            }
+        }
+
+        if (disposeNow)
+        {
+            _stopSource.Dispose();
+        }
+    }
 }
