@@ -94,6 +94,28 @@ public sealed class ScreenRecordingSessionGateTests
     }
 
     [Fact]
+    public void Dispose_StopCallbackFailureStillFinalizesSessionCleanup()
+    {
+        using var gate = new ScreenRecordingSessionGate();
+        var session = Assert.IsType<ScreenRecordingSession>(gate.TryBegin());
+
+        using var registration = session.StopToken.Register(
+            () => throw new InvalidOperationException("Injected stop callback failure."));
+
+        var exception = Assert.Throws<AggregateException>(gate.Dispose);
+
+        Assert.Contains(
+            exception.InnerExceptions,
+            inner => inner is InvalidOperationException invalid &&
+                     invalid.Message == "Injected stop callback failure.");
+        Assert.True(session.IsStopRequested);
+        Assert.False(gate.IsActive);
+        Assert.Throws<ObjectDisposedException>(() => _ = session.StopToken.WaitHandle);
+        Assert.Throws<ObjectDisposedException>(() => gate.TryBegin());
+        Assert.Null(Record.Exception(gate.Dispose));
+    }
+
+    [Fact]
     public void Dispose_CancelsActiveSessionAndClearsState()
     {
         var gate = new ScreenRecordingSessionGate();

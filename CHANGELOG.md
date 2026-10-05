@@ -4,6 +4,20 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.27] - 2026-10-05
+
+### Recording shutdown cleanup
+
+- Guarantee recording stop-token source disposal during application shutdown even when a synchronous cancellation callback throws.
+- Keep cancellation callbacks outside the session gate lock while preserving deterministic session ownership and cleanup.
+- Add regression coverage for the throwing-callback shutdown path so cleanup cannot silently regress.
+
+### MP4 publication integrity
+
+- Flush the completed temporary recording through the file handle before publication.
+- Reject successful recorder results that contain zero output bytes, empty source/encoded dimensions or a completion timestamp earlier than the start timestamp.
+- Preserve the existing temporary-file plus atomic final-move contract so invalid or incomplete recordings never appear as completed MP4 captures.
+
 ## [0.1.26] - 2026-10-05
 
 ### Screen-recording lifecycle and keyboard recovery

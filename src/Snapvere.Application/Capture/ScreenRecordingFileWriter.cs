@@ -80,6 +80,25 @@ public sealed class ScreenRecordingFileWriter
                     .ConfigureAwait(false);
             }
 
+            // The production WinRT random-access adapter is allowed to close
+            // the destination stream it wraps. Reopen the completed staging
+            // file under writer ownership so durability validation never
+            // depends on recorder stream-lifetime behavior.
+            long outputBytes;
+            using (var durabilityStream = new FileStream(
+                temporaryPath,
+                FileMode.Open,
+                FileAccess.ReadWrite,
+                FileShare.None,
+                bufferSize: 1,
+                FileOptions.None))
+            {
+                durabilityStream.Flush(flushToDisk: true);
+                outputBytes = durabilityStream.Length;
+            }
+
+            ValidateCompletedRecording(session, outputBytes);
+
             var finalPath = PublishTemporaryFile(temporaryPath, directory, timestamp);
             return new ScreenRecordingSaveResult(
                 finalPath,
@@ -98,6 +117,35 @@ public sealed class ScreenRecordingFileWriter
         {
             TryDeleteTemporaryFile(temporaryPath);
             throw;
+        }
+    }
+
+    private static void ValidateCompletedRecording(
+        ScreenRecordingSessionResult? session,
+        long outputBytes)
+    {
+        if (session is null)
+        {
+            throw new InvalidDataException(
+                "Screen recording completed without returning a session result.");
+        }
+
+        if (outputBytes <= 0)
+        {
+            throw new InvalidDataException(
+                "Screen recording completed without producing MP4 output.");
+        }
+
+        if (session.SourceSize.IsEmpty || session.EncodedSize.IsEmpty)
+        {
+            throw new InvalidDataException(
+                "Screen recording returned an invalid source or encoded size.");
+        }
+
+        if (session.CompletedAt < session.StartedAt)
+        {
+            throw new InvalidDataException(
+                "Screen recording returned an invalid completion timestamp.");
         }
     }
 
