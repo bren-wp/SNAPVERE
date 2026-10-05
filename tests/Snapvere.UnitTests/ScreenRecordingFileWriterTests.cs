@@ -97,6 +97,52 @@ public sealed class ScreenRecordingFileWriterTests
     }
 
     [Fact]
+    public async Task RecordAsync_SuccessWithoutOutputDoesNotPublishRecording()
+    {
+        var directory = CreateTemporaryDirectory();
+
+        try
+        {
+            var writer = new ScreenRecordingFileWriter(
+                new EmptySuccessfulScreenRecordingService(),
+                new CapturePathProvider(directory),
+                TimeProvider.System);
+
+            await Assert.ThrowsAsync<InvalidDataException>(
+                () => writer.RecordAsync(CreateDisplay(), false, CancellationToken.None));
+
+            Assert.Empty(Directory.EnumerateFileSystemEntries(directory));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RecordAsync_InvalidSessionTimelineDoesNotPublishRecording()
+    {
+        var directory = CreateTemporaryDirectory();
+
+        try
+        {
+            var writer = new ScreenRecordingFileWriter(
+                new InvalidTimelineScreenRecordingService(),
+                new CapturePathProvider(directory),
+                TimeProvider.System);
+
+            await Assert.ThrowsAsync<InvalidDataException>(
+                () => writer.RecordAsync(CreateDisplay(), false, CancellationToken.None));
+
+            Assert.Empty(Directory.EnumerateFileSystemEntries(directory));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task RecordAsync_CancellationDoesNotPublishPartialRecording()
     {
         var directory = CreateTemporaryDirectory();
@@ -182,6 +228,41 @@ public sealed class ScreenRecordingFileWriterTests
                 new PixelSize(display.Bounds.Width, display.Bounds.Height),
                 timestamp,
                 timestamp.AddSeconds(2));
+        }
+    }
+
+    private sealed class EmptySuccessfulScreenRecordingService : IScreenRecordingService
+    {
+        public Task<ScreenRecordingSessionResult> RecordDisplayAsync(
+            DisplayDescriptor display,
+            bool includeCursor,
+            Stream destination,
+            CancellationToken stopToken = default)
+        {
+            var now = DateTimeOffset.UtcNow;
+            return Task.FromResult(new ScreenRecordingSessionResult(
+                new PixelSize(display.Bounds.Width, display.Bounds.Height),
+                new PixelSize(display.Bounds.Width, display.Bounds.Height),
+                now,
+                now.AddSeconds(1)));
+        }
+    }
+
+    private sealed class InvalidTimelineScreenRecordingService : IScreenRecordingService
+    {
+        public async Task<ScreenRecordingSessionResult> RecordDisplayAsync(
+            DisplayDescriptor display,
+            bool includeCursor,
+            Stream destination,
+            CancellationToken stopToken = default)
+        {
+            await destination.WriteAsync(new byte[] { 1, 2, 3, 4 }, CancellationToken.None);
+            var now = DateTimeOffset.UtcNow;
+            return new ScreenRecordingSessionResult(
+                new PixelSize(display.Bounds.Width, display.Bounds.Height),
+                new PixelSize(display.Bounds.Width, display.Bounds.Height),
+                now,
+                now.AddSeconds(-1));
         }
     }
 
