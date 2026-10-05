@@ -71,6 +71,29 @@ public sealed class ScreenRecordingSessionGateTests
     }
 
     [Fact]
+    public async Task RequestStop_ReentrantCompletionCallbackDoesNotDeadlock()
+    {
+        using var gate = new ScreenRecordingSessionGate();
+        var session = Assert.IsType<ScreenRecordingSession>(gate.TryBegin());
+        var completionCalled = 0;
+
+        using var registration = session.StopToken.Register(() =>
+        {
+            if (gate.Complete(session))
+            {
+                Interlocked.Increment(ref completionCalled);
+            }
+        });
+
+        var stopTask = Task.Run(gate.RequestStop);
+        Assert.True(await stopTask.WaitAsync(TimeSpan.FromSeconds(2)));
+        Assert.Equal(1, completionCalled);
+        Assert.True(session.IsStopRequested);
+        Assert.False(gate.IsActive);
+        Assert.False(gate.Complete(session));
+    }
+
+    [Fact]
     public void Dispose_CancelsActiveSessionAndClearsState()
     {
         var gate = new ScreenRecordingSessionGate();
