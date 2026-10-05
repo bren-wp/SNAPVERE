@@ -16,8 +16,11 @@ namespace Snapvere.App.Services;
 /// </summary>
 public sealed class TrayMenuWindow : Window
 {
-    private const int FlyoutWidth = 418;
-    private const int FlyoutHeight = 578;
+    private const int FlyoutWidth = 392;
+    private const int FlyoutHeight = 542;
+    private const int FlyoutEdgeMargin = 6;
+    private const int CursorGap = 4;
+    private const int CursorHorizontalAnchorOffset = 20;
 
     private readonly Action<TrayCommand> _commandHandler;
     private readonly Action _recentCapturesHandler;
@@ -423,40 +426,61 @@ public sealed class TrayMenuWindow : Window
     private void PositionNearCursor()
     {
         if (!NativeMethods.GetCursorPos(out var cursor)) return;
+
         var flyoutWidth = AppWindow.Size.Width;
         var flyoutHeight = AppWindow.Size.Height;
         var monitor = NativeMethods.MonitorFromPoint(cursor, 2);
-        var info = new NativeMethods.MonitorInfo { Size = (uint)System.Runtime.InteropServices.Marshal.SizeOf<NativeMethods.MonitorInfo>() };
-        if (monitor == nint.Zero || !NativeMethods.GetMonitorInfo(monitor, ref info))
+        var info = new NativeMethods.MonitorInfo
         {
-            var fallbackX = cursor.X - flyoutWidth + 24;
-            var fallbackY = cursor.Y - flyoutHeight - 12;
-            var virtualLeft = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenX);
-            var virtualTop = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenY);
-            var virtualWidth = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenWidth);
-            var virtualHeight = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenHeight);
+            Size = (uint)System.Runtime.InteropServices.Marshal.SizeOf<NativeMethods.MonitorInfo>()
+        };
 
-            if (virtualWidth > 0 && virtualHeight > 0)
-            {
-                const int margin = 8;
-                var fallbackMinX = virtualLeft + margin;
-                var fallbackMaxX = Math.Max(fallbackMinX, virtualLeft + virtualWidth - flyoutWidth - margin);
-                var fallbackMinY = virtualTop + margin;
-                var fallbackMaxY = Math.Max(fallbackMinY, virtualTop + virtualHeight - flyoutHeight - margin);
-                fallbackX = Math.Clamp(fallbackX, fallbackMinX, fallbackMaxX);
-                fallbackY = Math.Clamp(fallbackY, fallbackMinY, fallbackMaxY);
-            }
+        if (monitor != nint.Zero && NativeMethods.GetMonitorInfo(monitor, ref info))
+        {
+            var placement = TrayPopupPlacementPolicy.Place(
+                cursor.X,
+                cursor.Y,
+                flyoutWidth,
+                flyoutHeight,
+                info.WorkArea.Left,
+                info.WorkArea.Top,
+                info.WorkArea.Right,
+                info.WorkArea.Bottom,
+                FlyoutEdgeMargin,
+                CursorGap,
+                CursorHorizontalAnchorOffset);
 
-            AppWindow.Move(new PointInt32(fallbackX, fallbackY));
+            AppWindow.Move(new PointInt32(placement.X, placement.Y));
             return;
         }
-        var minX = info.WorkArea.Left + 8;
-        var maxX = Math.Max(minX, info.WorkArea.Right - flyoutWidth - 8);
-        var minY = info.WorkArea.Top + 8;
-        var maxY = Math.Max(minY, info.WorkArea.Bottom - flyoutHeight - 8);
+
+        var virtualLeft = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenX);
+        var virtualTop = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenY);
+        var virtualWidth = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenWidth);
+        var virtualHeight = NativeMethods.GetSystemMetrics(NativeMethods.SystemMetricVirtualScreenHeight);
+
+        if (virtualWidth > 0 && virtualHeight > 0)
+        {
+            var placement = TrayPopupPlacementPolicy.Place(
+                cursor.X,
+                cursor.Y,
+                flyoutWidth,
+                flyoutHeight,
+                virtualLeft,
+                virtualTop,
+                checked(virtualLeft + virtualWidth),
+                checked(virtualTop + virtualHeight),
+                FlyoutEdgeMargin,
+                CursorGap,
+                CursorHorizontalAnchorOffset);
+
+            AppWindow.Move(new PointInt32(placement.X, placement.Y));
+            return;
+        }
+
         AppWindow.Move(new PointInt32(
-            Math.Clamp(cursor.X - flyoutWidth + 24, minX, maxX),
-            Math.Clamp(cursor.Y - flyoutHeight - 12, minY, maxY)));
+            cursor.X - flyoutWidth + CursorHorizontalAnchorOffset,
+            cursor.Y - flyoutHeight - CursorGap));
     }
 
     private static TextBlock Text(string value, double size, SolidColorBrush foreground, Windows.UI.Text.FontWeight? weight = null)
