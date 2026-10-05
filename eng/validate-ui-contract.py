@@ -58,6 +58,8 @@ def main() -> int:
             "_targetText.MaxWidth = Math.Min(",
             "description.TextWrapping = TextWrapping.Wrap",
             "description.MaxLines = 3",
+            "content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) })",
+            "Grid.SetColumn(copy, 1)",
         ),
     )
     require(
