@@ -18,7 +18,7 @@ public sealed class TrayMenuWindow : Window
 {
     private const int FlyoutWidth = 392;
     private const int FlyoutHeight = 542;
-    private const int FlyoutEdgeMargin = 6;
+    private const int FlyoutEdgeMargin = 4;
     private const int CursorGap = 4;
     private const int CursorHorizontalAnchorOffset = 20;
 
