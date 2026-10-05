@@ -176,13 +176,15 @@ public sealed class WindowTargetOverlayWindow : Window
 
     private static Border BuildHint()
     {
-        var content = new StackPanel
+        var content = new Grid
         {
-            Orientation = Orientation.Horizontal,
-            Spacing = 9,
+            ColumnSpacing = 9,
             VerticalAlignment = VerticalAlignment.Center
         };
-        content.Children.Add(new Border
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        var icon = new Border
         {
             Width = 30,
             Height = 30,
@@ -197,13 +199,13 @@ public sealed class WindowTargetOverlayWindow : Window
                 FontSize = 13,
                 Foreground = Strong
             }
-        });
+        };
+        content.Children.Add(icon);
 
         var copy = new StackPanel
         {
             Spacing = 1,
-            VerticalAlignment = VerticalAlignment.Center,
-            MinWidth = 0
+            VerticalAlignment = VerticalAlignment.Center
         };
         var title = Text(L("WindowHintTitle"), 11, Strong, Microsoft.UI.Text.FontWeights.SemiBold);
         title.TextWrapping = TextWrapping.Wrap;
@@ -213,6 +215,7 @@ public sealed class WindowTargetOverlayWindow : Window
         description.MaxLines = 3;
         copy.Children.Add(title);
         copy.Children.Add(description);
+        Grid.SetColumn(copy, 1);
         content.Children.Add(copy);
 
         return new Border
