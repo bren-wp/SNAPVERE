@@ -336,14 +336,18 @@ public sealed class RegionCaptureWindow : Window
             Microsoft.UI.Text.FontWeights.SemiBold);
         hint.HorizontalAlignment = HorizontalAlignment.Center;
         hint.VerticalAlignment = VerticalAlignment.Center;
+        hint.TextAlignment = TextAlignment.Center;
+        hint.TextWrapping = TextWrapping.Wrap;
+        hint.MaxLines = 3;
 
         return new Border
         {
-            Width = 460,
-            Height = 47,
+            MaxWidth = 460,
+            MinHeight = 44,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Top,
-            Margin = new Thickness(0, 36, 0, 0),
+            Margin = new Thickness(16, 36, 16, 0),
+            Padding = new Thickness(14, 9, 14, 9),
             Background = PaletteSurface,
             BorderBrush = Brush(0xFF, 0x3D, 0x48, 0x5F),
             BorderThickness = new Thickness(1),
@@ -404,6 +408,7 @@ public sealed class RegionCaptureWindow : Window
         try
         {
             _frozenImage.Source = await CreateFrozenBitmapAsync(_session.FrozenFrame);
+            ApplyResponsiveOverlayChrome(_overlayRoot.ActualWidth, _overlayRoot.ActualHeight);
             UpdateSelectionVisuals();
             _ = _keyboardFocusTarget.Focus(FocusState.Programmatic);
         }
@@ -415,7 +420,26 @@ public sealed class RegionCaptureWindow : Window
     }
 
     private void OverlayRoot_SizeChanged(object sender, SizeChangedEventArgs e)
-        => UpdateSelectionVisuals();
+    {
+        ApplyResponsiveOverlayChrome(e.NewSize.Width, e.NewSize.Height);
+        UpdateSelectionVisuals();
+    }
+
+    private void ApplyResponsiveOverlayChrome(double width, double height)
+    {
+        var availableWidth = Math.Max(120d, width - 32d);
+        _captureHint.MaxWidth = Math.Min(460d, availableWidth);
+        _captureHint.Margin = new Thickness(
+            16,
+            height < 520d ? 16 : 36,
+            16,
+            0);
+
+        _overlayStatus.MaxWidth = Math.Min(620d, availableWidth);
+        _overlayStatus.Margin = height < 420d
+            ? new Thickness(12)
+            : new Thickness(20);
+    }
 
     private void OverlayCanvas_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
