@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.26**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.26
+- Current public release: **v0.1.27**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.27
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -27,6 +27,29 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 ---
 
 ## Unreleased
+
+---
+
+## v0.1.27 — 2026-10-05
+
+SNAPVERE 0.1.27 is a focused screen-recording integrity hotfix. It closes the remaining shutdown cleanup hole identified after the v0.1.26 lifecycle refactor and adds a fail-closed publication barrier before a completed MP4 becomes visible in the capture folder.
+
+### Recording shutdown cleanup
+
+- `ScreenRecordingSessionGate.Dispose()` now runs stop-source disposal in a `finally` block, so a cancellation callback that throws cannot skip cleanup of the `CancellationTokenSource` and its registrations.
+- Cancellation still occurs outside the session gate lock, preserving the re-entrancy protection introduced in v0.1.26.
+- Regression coverage injects a throwing stop callback and verifies the gate is cleared, the session is canceled, the token source is disposed and repeated disposal remains safe.
+
+### MP4 publication integrity
+
+- After the recorder reports success, the temporary MP4 is flushed through the file handle before it crosses the publication boundary.
+- The writer refuses to publish zero-byte output, empty source or encoded dimensions, or a session whose completion timestamp precedes its start timestamp.
+- Validation failures remove the temporary file and leave no visible partial recording, preserving the existing atomic move contract.
+
+### Packaging scope
+
+- Windows assembly/file/package versions and Chrome, Edge, Opera and Firefox extension versions advance together to 0.1.27.
+- Setup EXE, MSI, Portable and browser ZIPs remain gated by Product Contract CI, Windows CI, MSI lifecycle validation, localization checks, CodeQL and native ARM64 runtime validation before publication.
 
 ---
 
