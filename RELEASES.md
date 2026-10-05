@@ -40,6 +40,7 @@ SNAPVERE 0.1.29 is a focused Windows capture-overlay responsiveness release. It 
 - Guidance text now wraps, remains centered and is capped to three lines.
 - The guidance card uses tighter top spacing on short work areas.
 - The bottom status surface receives the same bounded-width treatment so localized saving/error copy cannot extend beyond the overlay.
+- The annotation tool rail now clamps its viewport to the available logical overlay height and scrolls vertically only when required, so every tool remains reachable on short/high-DPI work areas.
 
 ### Window Capture responsiveness
 
