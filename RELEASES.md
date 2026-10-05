@@ -36,9 +36,9 @@ SNAPVERE 0.1.29 is a focused Windows capture-overlay responsiveness release. It 
 
 ### Region Capture responsiveness
 
-- The top guidance card no longer forces a fixed 460-pixel width/47-pixel height.
+- The top guidance card keeps its established 460-pixel desktop width and 47-pixel minimum height, but clamps that width to the live overlay when horizontal space is constrained.
 - Guidance text now wraps, remains centered and is capped to three lines.
-- The guidance card clamps to the live overlay width and uses tighter top spacing on short work areas.
+- The guidance card uses tighter top spacing on short work areas.
 - The bottom status surface receives the same bounded-width treatment so localized saving/error copy cannot extend beyond the overlay.
 
 ### Window Capture responsiveness
