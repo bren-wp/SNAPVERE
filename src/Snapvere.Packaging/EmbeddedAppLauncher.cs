@@ -163,6 +163,10 @@ public static class EmbeddedAppLauncher
         try
         {
             Directory.CreateDirectory(stagingRoot);
+            // Re-check after creation. The Portable cache is user-writable, so
+            // an ancestor must not be replaced by a junction/symlink between
+            // the pre-create validation and payload extraction.
+            InstallSafetyPolicy.EnsureExistingDirectoryChainHasNoReparsePoints(stagingRoot);
             using var payload = UniversalPayload.OpenEmbeddedPayload(hostAssembly, architecture);
             EmbeddedPayload.ExtractZipSafely(payload, stagingRoot);
 
@@ -194,6 +198,11 @@ public static class EmbeddedAppLauncher
                 }
             }
 
+            // Validate both sides again at the commit boundary so a
+            // user-writable cache cannot redirect the final directory move
+            // through a reparse-point ancestor introduced during extraction.
+            InstallSafetyPolicy.EnsureExistingDirectoryChainHasNoReparsePoints(stagingRoot);
+            InstallSafetyPolicy.EnsureExistingDirectoryChainHasNoReparsePoints(launcherRoot);
             Directory.Move(stagingRoot, cacheRoot);
         }
         finally
