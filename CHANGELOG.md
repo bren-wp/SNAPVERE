@@ -4,6 +4,20 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.26] - 2026-10-05
+
+### Screen-recording lifecycle and keyboard recovery
+
+- Move recording-session cancellation callbacks outside the session gate lock and defer token-source disposal until an in-flight cancellation callback stack completes, preventing re-entrant Stop/completion deadlocks.
+- Add regression coverage where a cancellation callback completes the active recording session while Stop is being requested.
+- Make the active recording controller accept Escape as a Stop request and move keyboard focus to the Stop control on activation.
+- Extend the Windows UI contract validator to keep the recording-controller keyboard/focus behavior from regressing.
+
+### Portable cache security hardening
+
+- Revalidate the Portable staging directory chain immediately after creation and revalidate staging/launcher ancestors again at the cache commit boundary.
+- Preserve the existing safe ZIP extraction, payload integrity manifest and reparse-point rejection model while narrowing the user-writable path redirection window.
+
 ## [0.1.25] - 2026-10-04
 
 ### Windows tray and secondary-UI reliability
