@@ -78,6 +78,13 @@ public sealed class ScreenRecordingFileWriter
                 session = await _recordingService
                     .RecordDisplayAsync(display, includeCursor, stream, stopToken)
                     .ConfigureAwait(false);
+
+                // The recorder owns MP4 production, but the writer owns the
+                // publication boundary. Force buffered bytes through the file
+                // handle and reject an obviously incomplete result before the
+                // temporary path becomes a visible completed capture.
+                stream.Flush(flushToDisk: true);
+                ValidateCompletedRecording(session, stream.Length);
             }
 
             var finalPath = PublishTemporaryFile(temporaryPath, directory, timestamp);
@@ -98,6 +105,35 @@ public sealed class ScreenRecordingFileWriter
         {
             TryDeleteTemporaryFile(temporaryPath);
             throw;
+        }
+    }
+
+    private static void ValidateCompletedRecording(
+        ScreenRecordingSessionResult? session,
+        long outputBytes)
+    {
+        if (session is null)
+        {
+            throw new InvalidDataException(
+                "Screen recording completed without returning a session result.");
+        }
+
+        if (outputBytes <= 0)
+        {
+            throw new InvalidDataException(
+                "Screen recording completed without producing MP4 output.");
+        }
+
+        if (session.SourceSize.IsEmpty || session.EncodedSize.IsEmpty)
+        {
+            throw new InvalidDataException(
+                "Screen recording returned an invalid source or encoded size.");
+        }
+
+        if (session.CompletedAt < session.StartedAt)
+        {
+            throw new InvalidDataException(
+                "Screen recording returned an invalid completion timestamp.");
         }
     }
 
