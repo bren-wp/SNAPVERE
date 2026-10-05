@@ -40,7 +40,25 @@ def main() -> int:
     )
     require(
         "src/Snapvere.App/RegionCaptureWindow.cs",
-        ("AutomationLiveSetting.Polite", "_overlayStatusText"),
+        (
+            "AutomationLiveSetting.Polite",
+            "_overlayStatusText",
+            "ApplyResponsiveOverlayChrome(e.NewSize.Width, e.NewSize.Height)",
+            "_captureHint.MaxWidth = Math.Min(460d, availableWidth)",
+            "_overlayStatus.MaxWidth = Math.Min(620d, availableWidth)",
+            "hint.TextWrapping = TextWrapping.Wrap",
+            "hint.MaxLines = 3",
+        ),
+    )
+    require(
+        "src/Snapvere.App/WindowTargetOverlayWindow.cs",
+        (
+            "ApplyResponsiveOverlayChrome(e.NewSize.Width, e.NewSize.Height)",
+            "_hint.MaxWidth = Math.Min(520d, availableWidth)",
+            "_targetText.MaxWidth = Math.Min(",
+            "description.TextWrapping = TextWrapping.Wrap",
+            "description.MaxLines = 3",
+        ),
     )
     require(
         "src/Snapvere.App/Services/RecordingControllerWindow.cs",
