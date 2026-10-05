@@ -19,7 +19,7 @@ Capture regions, windows, full screens and web pages, annotate quickly, record t
 [![MSI CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/msi-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/msi-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Website](https://snapvere.com) · [Download v0.1.26](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.26) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
+[Website](https://snapvere.com) · [Download v0.1.27](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.27) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
 
 </div>
 
@@ -41,7 +41,7 @@ SNAPVERE is built for fast everyday capture without turning screenshots into a c
 | 📦 **Three Windows delivery models** | Guided Setup EXE, standard x64 Windows Installer (MSI), and Universal Portable. Setup/Portable carry x86, x64 and ARM64 application payloads. |
 | 🌐 **Browser coverage** | Chrome, Edge, Opera and Firefox share the same locked SNAPVERE brand and bounded capture behavior. |
 
-SNAPVERE 0.1.26 hardens screen-recording lifecycle ownership and Portable cache integrity. Recording cancellation callbacks no longer run while the recording-session gate lock is held, preventing re-entrant Stop/completion deadlocks; the active recording controller supports Escape and receives keyboard focus on Stop; and Portable revalidates user-writable staging ancestors after creation and again at the final cache commit boundary. The release preserves the Tray and secondary-window containment introduced in 0.1.25.
+SNAPVERE 0.1.27 hardens screen-recording finalization and MP4 publication integrity. Recording shutdown now guarantees stop-token cleanup even if a cancellation callback throws, while the recording writer flushes the completed temporary file to disk and rejects zero-byte output, empty source/encoded dimensions or reversed completion timestamps before the atomic final move. The release keeps the keyboard recovery and Portable cache hardening introduced in 0.1.26.
 
 Recording keeps separate compact Start and Stop controls in Settings and a small always-on-top elapsed-time controller while active. Setup remains a guided License → Installation → Finish flow. Recording is primary-display H.264 MP4 and video-only; microphone and system audio are not claimed as supported.
 
@@ -98,8 +98,8 @@ The images below are **real rendered Windows surfaces captured by SNAPVERE's vis
 
 ## Downloads
 
-Current release: **SNAPVERE 0.1.26**<br>
-Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.26
+Current release: **SNAPVERE 0.1.27**<br>
+Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.27
 
 | Platform | Package |
 | --- | --- |
