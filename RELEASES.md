@@ -52,6 +52,7 @@ SNAPVERE 0.1.29 is a focused Windows capture-overlay responsiveness release. It 
 
 - The Windows UI contract validator requires the Region and Window responsive-width/wrapping hooks.
 - Existing rendered Region/Window visual QA remains part of the main Windows package gate, so the normal desktop-size surfaces must still render within the accepted baseline thresholds.
+- Full dead-code audit removes the unreferenced `VirtualDesktopLayout` helper and its self-only unit tests, moves the obsolete v0.1.22 publication workflow into `.github/release-archive/`, and prevents historical version-specific release workflows from becoming active automation again.
 
 ### Packaging scope
 
