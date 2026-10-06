@@ -15,7 +15,7 @@ When the user explicitly starts a capture, SNAPVERE processes only the data need
 - the rectangle chosen for region capture;
 - short-lived decoded image data while a tile/region is being rendered;
 - the local save preference;
-- short-lived capture-session metadata such as a random token, tab/window identifiers and start time.
+- short-lived capture-session metadata such as a random token, tab/window identifiers and start time; this uses session-scoped extension storage when supported, with a local-storage compatibility fallback only where needed.
 
 Decoded full-page tiles are drawn into one bounded local canvas and released after drawing. Completed PNG files are saved through the browser download flow. SNAPVERE does not automatically upload screenshots.
 
@@ -31,7 +31,7 @@ There is no background network client, remote-code loader, advertising SDK, anal
 
 ## Security and user control
 
-Capture starts after explicit user action. Capture messages are allow-listed; session tokens and sender tab/window identity are validated. Full-page allocation is bounded. Users can change the local save preference, delete downloaded files or remove the extension through normal browser controls.
+Capture starts after explicit user action. Capture messages are allow-listed; session tokens and sender tab/window identity are validated. Persistent local storage is reserved for user settings when session storage is available. Recent captures requests only a bounded SNAPVERE candidate set from browser download history and revalidates selected items before opening. Full-page allocation is bounded. Users can change the local save preference, delete downloaded files or remove the extension through normal browser controls.
 
 Protected browser pages can refuse capture or script injection; SNAPVERE does not attempt to bypass those restrictions.
 

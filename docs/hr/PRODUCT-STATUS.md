@@ -12,7 +12,7 @@ SNAPVERE 0.1.30 fokusira se na privacy/security hardening. Windows i Portable st
 
 Chrome, Edge, Opera i Firefox održavaju visible-area, selected-region i bounded full-page capture. SNAPVERE brand je zaključan. Validirani permission contract je `activeTab`, `scripting`, `downloads`, `downloads.open` i `storage`; `downloads.open` koristi se samo za izričitu Recent > Otvori radnju, nakon što click-time revalidacija potvrdi da odabrani download i dalje postoji, dovršen je i još odgovara SNAPVERE capture ugovoru. Široki host pristup nije dio održavanog dizajna. Browser runtime i dalje provjerava sender i active-tab ownership prije privilegiranih capture/download radnji te zadržava capture-lock hardening, async redoslijed Recent rezultata, zaštitu od dvostrukih akcija, kompatibilnost browser API poziva i responsive/reduced-motion ponašanje. macOS Full Page prečac ostaje izvan sistemski rezervirane kombinacije Command+Shift+3.
 
-Region capture sada prenosi dimenzije viewporta iz trenutka odabira kroz background-to-crop pipeline i prekida rad ako se viewport promijeni prije lokalnog PNG cropa, umjesto spremanja geometrijski pogrešnog izreza. Postavke također zaključavaju Save As zajedno s gumbom Spremi dok traje zapis u browser-local storage, čime prikazano stanje ostaje usklađeno sa spremljenim.
+Region capture i dalje prenosi dimenzije viewporta iz trenutka odabira kroz background-to-crop pipeline i prekida rad ako se geometrija promijeni. U 0.1.30 metadata vlasništva aktivne capture sesije prelazi u session-scoped extension storage kada je dostupan, dok trajni local storage ostaje za postavke; Nedavne snimke dodatno dohvaćaju samo ograničeni SNAPVERE kandidatni skup prije lokalnog filtriranja i otvaranja.
 
 ## Paketi
 

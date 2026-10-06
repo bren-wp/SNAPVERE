@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.29**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.29
+- Current public release: **v0.1.30**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.30
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -27,6 +27,34 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 ---
 
 ## Unreleased
+
+---
+
+## v0.1.30 — 2026-10-06
+
+SNAPVERE 0.1.30 is a focused privacy and security hardening release for local diagnostics and browser session metadata. Capture features and the local-first product model remain unchanged.
+
+### Local diagnostic privacy
+
+- Desktop and Portable startup exception details pass through one shared bounded redactor before persistence.
+- Absolute Windows/UNC paths, HTTP/HTTPS/file URIs, e-mail addresses and common credential/token patterns are removed from persisted diagnostic text.
+- Redaction uses bounded input and a regex timeout; a timeout fails closed to a generic redacted diagnostic instead of persisting unsanitized input.
+- User-facing fatal-startup messages remain category-based and do not expose raw exception text or local log paths.
+
+### Browser session privacy
+
+- Active capture ownership metadata uses `storage.session` when available, so tokens/tab/window IDs/start times do not normally survive a browser restart.
+- Browsers without session storage retain a compatibility fallback to `storage.local`; the behavior is runtime-tested across every maintained variant.
+- Persistent local storage remains the home for the explicit Save As user setting.
+- Recent captures now requests only a bounded `SNAPVERE-` candidate set from the downloads API before local filename/state filtering, instead of reading a broad recent-download set.
+- Click-time download ID revalidation and sender/tab/session ownership checks remain enforced.
+
+### Regression and release evidence
+
+- New C# tests cover path/URI/e-mail/secret redaction, non-sensitive diagnostic preservation and oversized-input truncation.
+- Browser smoke tests prove session-storage use plus compatibility fallback, and Options runtime tests lock the bounded Recent query.
+- Product Contract and browser source validators prevent these privacy boundaries from silently regressing.
+- Windows assembly/file/package versions and Chrome, Edge, Opera and Firefox extension versions advance together to 0.1.30.
 
 ---
 
