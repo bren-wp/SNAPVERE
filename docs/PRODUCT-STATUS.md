@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.29 Product Status
+# SNAPVERE 0.1.30 Product Status
 
 Active maintained product surfaces are **Windows** and **browser extensions**.
 
@@ -6,7 +6,7 @@ Active maintained product surfaces are **Windows** and **browser extensions**.
 
 Production implementation includes tray-first startup, Region/Window/Screen capture, local primary-display screen recording, frozen-frame selection, local annotation, clipboard, PNG and MP4 persistence workflows, local settings, recent captures, diagnostics and x86/x64/ARM64 application payloads inside universal Setup and Portable packages, plus a standard x64 MSI distribution.
 
-SNAPVERE 0.1.29 adds responsive chrome hardening to the Region and Window capture overlays. Region guidance/status surfaces now clamp to the live overlay width, wrap localized text and reduce vertical margins on short work areas. Window Capture applies the same bounded-width behavior to its instruction card and selected-window label, preventing long titles or localized guidance from overflowing on narrow/high-DPI monitors. Existing recording finalization integrity, responsive secondary windows, Setup lifecycle behavior and local-first capture semantics remain unchanged. The initial recording mode is video-only; system audio and microphone capture are not claimed as supported.
+SNAPVERE 0.1.30 focuses on privacy/security hardening. Windows and Portable startup diagnostics now pass persisted exception text through a bounded redactor for local/UNC paths, URLs/file URIs, e-mail addresses and common credential/token patterns while preserving exception type/HRESULT evidence. Existing capture, recording, responsive overlay and Setup lifecycle behavior remains unchanged. The initial recording mode is video-only; system audio and microphone capture are not claimed as supported.
 
 ## Browsers
 
@@ -18,7 +18,7 @@ GitHub release ZIPs are not represented as externally approved store listings un
 
 ## Packaging
 
-The active 0.1.29 package contract contains:
+The active 0.1.30 package contract contains:
 
 - `SNAPVERE-Setup.exe`
 - `SNAPVERE-Setup.msi`
@@ -34,6 +34,6 @@ CI covers Windows builds/tests, rendered WinUI visual QA, package construction, 
 
 These gates provide strong regression evidence; they are not a guarantee that every operating-system, driver or browser environment can never produce a platform-specific defect.
 
-The public release is **v0.1.29**. Later `main` hardening remains source state only until a future version is explicitly packaged and published.
+The public release is **v0.1.30**. Later `main` hardening remains source state only until a future version is explicitly packaged and published.
 
-See [Performance & Stability](PERFORMANCE.md), [QA Matrix](QA-MATRIX.md) and the [current release](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.29).
+See [Performance & Stability](PERFORMANCE.md), [QA Matrix](QA-MATRIX.md) and the [current release](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.30).

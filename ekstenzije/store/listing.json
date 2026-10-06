@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "product": "SNAPVERE",
-  "extensionVersion": "0.1.29",
-  "developmentChannel": "v0.1.29-release",
+  "extensionVersion": "0.1.30",
+  "developmentChannel": "v0.1.30-release",
   "category": "Productivity",
   "singlePurpose": "Capture the visible area, a full page, or a user-selected region of the active browser tab and save the result locally as a PNG.",
   "website": "https://snapvere.com",
@@ -12,7 +12,7 @@
     "activeTab": "Access only the tab on which the user explicitly invokes SNAPVERE so the requested screenshot can be captured.",
     "scripting": "Inject the local region/full-page capture helper into the active page after an explicit capture action.",
     "downloads": "Save user-requested screenshot PNG files to the local device.",
-    "storage": "Persist local settings and short-lived capture-session metadata needed to survive Manifest V3 background suspension.",
+    "storage": "Persist local settings. Short-lived capture-session ownership metadata uses session-scoped extension storage when supported, with a local-storage fallback only for browser compatibility.",
     "downloads.open": "Open a completed SNAPVERE download only after the user explicitly presses Open in Recent captures."
   },
   "dataPractices": {
@@ -27,7 +27,7 @@
     "requiresPayment": false,
     "localProcessing": [
       "Pixels from the user-requested screenshot are processed in browser memory and saved only through a local download initiated by the user.",
-      "Filename settings and short-lived active capture metadata are stored in browser-local storage.",
+      "User settings are stored locally; short-lived active capture ownership metadata is kept in session-scoped extension storage when supported and otherwise uses a compatibility fallback.",
       "Full-page capture decodes one bounded tile at a time, draws it into the bounded destination canvas, and releases the decoded tile before continuing."
     ]
   },
