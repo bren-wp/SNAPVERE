@@ -21,8 +21,8 @@ public sealed class SensitiveDiagnosticRedactorTests
     public void Redact_RemovesUrisEmailsAndCredentialLikeValues()
     {
         var input =
-            "Remote https://example.test/private?id=7 private@example.test " +
-            "token=abc123 Bearer header.secret.value";
+            "Remote https://example.test/private?id=7 private@example.test | " +
+            "token=abc123 | auth Bearer header.secret.value";
 
         var actual = SensitiveDiagnosticRedactor.Redact(input);
 
@@ -34,6 +34,32 @@ public sealed class SensitiveDiagnosticRedactorTests
         Assert.Contains("[email-redacted]", actual, StringComparison.Ordinal);
         Assert.Contains("token=[redacted]", actual, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Bearer [redacted]", actual, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Redact_StopsPathAtFollowingDiagnosticFields()
+    {
+        var input =
+            "Failed at C:\\Users\\private-user\\Secret Project\\capture.png " +
+            "from https://example.test/private?id=7 for private@example.test";
+
+        var actual = SensitiveDiagnosticRedactor.Redact(input);
+
+        Assert.Contains("[path-redacted]", actual, StringComparison.Ordinal);
+        Assert.Contains("from [uri-redacted]", actual, StringComparison.Ordinal);
+        Assert.Contains("for [email-redacted]", actual, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Redact_RemovesCompleteAuthorizationHeaderValue()
+    {
+        var input = "Authorization: Basic dXNlcjpwYXNz | stage=download";
+
+        var actual = SensitiveDiagnosticRedactor.Redact(input);
+
+        Assert.Contains("Authorization: [redacted]", actual, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("dXNlcjpwYXNz", actual, StringComparison.Ordinal);
+        Assert.Contains("stage=download", actual, StringComparison.Ordinal);
     }
 
     [Fact]

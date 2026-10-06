@@ -20,12 +20,17 @@ public static class SensitiveDiagnosticRedactor
         TimeSpan.FromMilliseconds(100));
 
     private static readonly Regex WindowsPathPattern = new(
-        @"(?<![A-Za-z0-9])(?:[A-Za-z]:\\|\\\\)[^\r\n\t|<>]*",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant,
+        @"(?<![A-Za-z0-9])(?:[A-Za-z]:\\|\\\\)(?:(?!\s+\|\s+|\s+(?:from|for)\s+(?=(?:https?|file)://|[A-Z0-9._%+-]+@)|:line\s+\d+|[\r\n<>""']).)+",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase,
         TimeSpan.FromMilliseconds(100));
 
     private static readonly Regex EmailPattern = new(
         @"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase,
+        TimeSpan.FromMilliseconds(100));
+
+    private static readonly Regex AuthorizationHeaderPattern = new(
+        @"\bAuthorization\s*:\s*[^\r\n|]+",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase,
         TimeSpan.FromMilliseconds(100));
 
@@ -35,7 +40,7 @@ public static class SensitiveDiagnosticRedactor
         TimeSpan.FromMilliseconds(100));
 
     private static readonly Regex SecretAssignmentPattern = new(
-        @"\b(password|passwd|pwd|token|secret|api[-_]?key|access[-_]?key|client[-_]?secret|authorization|cookie|session)\b\s*[:=]\s*[^\s,;]+",
+        @"\b(password|passwd|pwd|token|secret|api[-_]?key|access[-_]?key|client[-_]?secret|cookie|session)\b\s*[:=]\s*[^\r\n|;,]+",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase,
         TimeSpan.FromMilliseconds(100));
 
@@ -55,6 +60,7 @@ public static class SensitiveDiagnosticRedactor
             var redacted = UriPattern.Replace(bounded, RedactedUri);
             redacted = WindowsPathPattern.Replace(redacted, RedactedPath);
             redacted = EmailPattern.Replace(redacted, RedactedEmail);
+            redacted = AuthorizationHeaderPattern.Replace(redacted, "Authorization: [redacted]");
             redacted = BearerPattern.Replace(redacted, "Bearer [redacted]");
             redacted = SecretAssignmentPattern.Replace(
                 redacted,

@@ -138,6 +138,7 @@ def main() -> int:
         "WindowsPathPattern",
         "UriPattern",
         "EmailPattern",
+        "AuthorizationHeaderPattern",
         "BearerPattern",
         "SecretAssignmentPattern",
         "RegexMatchTimeoutException",
