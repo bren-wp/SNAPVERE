@@ -280,8 +280,8 @@ function validateSource(browser, browserDir) {
     }
 
     if (relative === "options.js") {
-      for (const required of ["setSettingsInteractive(false)", "await loadSettings()", "setSettingsInteractive(true)", 't("loadingSettings")']) {
-        if (!text.includes(required)) fail(browser + "/options.js must preserve initial Settings load gating: " + required);
+      for (const required of ["setSettingsInteractive(false)", "await loadSettings()", "setSettingsInteractive(true)", 't("loadingSettings")', 'const RECENT_QUERY = "SNAPVERE-"', "query: [RECENT_QUERY]", "limit: RECENT_LIMIT * 4"]) {
+        if (!text.includes(required)) fail(browser + "/options.js must preserve privacy-bounded Settings/Recent behavior: " + required);
       }
     }
 
@@ -299,6 +299,15 @@ function validateSource(browser, browserDir) {
     if (relative === "background.js") {
       if (!/REGION_CROP[\s\S]*viewportWidth[\s\S]*viewportHeight/.test(text)) {
         fail(`${browser}/background.js must forward the Region viewport snapshot to the crop runtime.`);
+      }
+      for (const required of [
+        "const lockStorageArea = chrome.storage.session || chrome.storage.local",
+        'invoke(chrome.storage.local, "get", keys)',
+        'invoke(lockStorageArea, "get", keys)',
+        'invoke(lockStorageArea, "set", items)',
+        'invoke(lockStorageArea, "remove", keys)'
+      ]) {
+        if (!text.includes(required)) fail(`${browser}/background.js must keep capture locks session-scoped while settings stay persistent: ${required}`);
       }
     }
 

@@ -3,6 +3,7 @@
 
   const SETTINGS_KEY = "snapvereSettings";
   const RECENT_LIMIT = 10;
+  const RECENT_QUERY = "SNAPVERE-";
   const form = document.getElementById("settings-form");
   const saveAsInput = document.getElementById("save-as");
   const settingsSubmit = form.querySelector('button[type="submit"]');
@@ -232,7 +233,11 @@
     recentList.setAttribute("aria-busy", "true");
     setStatus(recentStatus, t("loadingRecent"));
     try {
-      const items = await searchDownloads({ orderBy: ["-startTime"], limit: 100 });
+      const items = await searchDownloads({
+        query: [RECENT_QUERY],
+        orderBy: ["-startTime"],
+        limit: RECENT_LIMIT * 4
+      });
       if (generation !== recentLoadGeneration || activePanelId !== "recent-panel") return;
       const recent = items.filter(isSnapvereCapture).slice(0, RECENT_LIMIT);
       renderRecent(recent);

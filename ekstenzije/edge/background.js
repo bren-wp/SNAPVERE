@@ -77,9 +77,11 @@
     });
   }
 
-  const storageGet = (keys) => invoke(chrome.storage.local, "get", keys);
-  const storageSet = (items) => invoke(chrome.storage.local, "set", items);
-  const storageRemove = (keys) => invoke(chrome.storage.local, "remove", keys);
+  const persistentStorageGet = (keys) => invoke(chrome.storage.local, "get", keys);
+  const lockStorageArea = chrome.storage.session || chrome.storage.local;
+  const lockStorageGet = (keys) => invoke(lockStorageArea, "get", keys);
+  const lockStorageSet = (items) => invoke(lockStorageArea, "set", items);
+  const lockStorageRemove = (keys) => invoke(lockStorageArea, "remove", keys);
 
   function serializeStart(task) {
     const run = startQueue.then(task, task);
@@ -184,7 +186,7 @@
   }
 
   async function readLock() {
-    const values = await storageGet(LOCK_KEY);
+    const values = await lockStorageGet(LOCK_KEY);
     const lock = values ? values[LOCK_KEY] : null;
     return lock && typeof lock === "object" ? lock : null;
   }
@@ -201,7 +203,7 @@
     await serializeLockMutation(async () => {
       const current = await readLock();
       if (current && current.token === observed.token && isStaleLock(current)) {
-        await storageRemove(LOCK_KEY);
+        await lockStorageRemove(LOCK_KEY);
       }
     });
     return null;
@@ -211,7 +213,7 @@
     return serializeLockMutation(async () => {
       let existing = await readLock();
       if (existing && isStaleLock(existing)) {
-        await storageRemove(LOCK_KEY);
+        await lockStorageRemove(LOCK_KEY);
         existing = null;
       }
       if (existing) {
@@ -225,7 +227,7 @@
         windowId: tab.windowId,
         startedAt: Date.now()
       };
-      await storageSet({ [LOCK_KEY]: lock });
+      await lockStorageSet({ [LOCK_KEY]: lock });
       return lock;
     });
   }
@@ -235,7 +237,7 @@
     await serializeLockMutation(async () => {
       const current = await readLock();
       if (current && current.token === token) {
-        await storageRemove(LOCK_KEY);
+        await lockStorageRemove(LOCK_KEY);
       }
     });
   }
@@ -253,7 +255,7 @@
   }
 
   async function readSettings() {
-    const values = await storageGet(SETTINGS_KEY);
+    const values = await persistentStorageGet(SETTINGS_KEY);
     const raw = values && values[SETTINGS_KEY] && typeof values[SETTINGS_KEY] === "object"
       ? values[SETTINGS_KEY]
       : {};

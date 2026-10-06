@@ -69,6 +69,7 @@ elements["recent-tab"].dataset.panel = "recent-panel";
 elements["settings-form"].submitButton = new FakeElement("save-settings");
 
 const searchCallbacks = [];
+const searchQueries = [];
 const openCallbacks = [];
 const settingsSetCallbacks = [];
 const settingsSetValues = [];
@@ -92,7 +93,10 @@ const chrome = {
     }
   },
   downloads: {
-    search: (_query, callback) => { searchCallbacks.push(callback); },
+    search: (query, callback) => {
+      searchQueries.push(structuredClone(query));
+      searchCallbacks.push(callback);
+    },
     open: (_id, callback) => { openCalls += 1; openCallbacks.push(callback); },
     showDefaultFolder: () => { folderCalls += 1; }
   }
@@ -147,6 +151,9 @@ assert.equal(elements["settings-form"].getAttribute("aria-busy"), "false");
 assert.equal(elements["settings-status"].textContent, "settingsSaved");
 
 assert.equal(searchCallbacks.length, 1, "opening Recent should start one search");
+assert.deepEqual(Array.from(searchQueries[0].query || []), ["SNAPVERE-"], "Recent must query only SNAPVERE downloads");
+assert.deepEqual(Array.from(searchQueries[0].orderBy || []), ["-startTime"]);
+assert.equal(searchQueries[0].limit, 40, "Recent query should inspect only a bounded candidate set");
 elements["settings-tab"].dispatch("click");
 elements["recent-tab"].dispatch("click");
 assert.equal(searchCallbacks.length, 2, "returning to Recent should start a fresh search");
