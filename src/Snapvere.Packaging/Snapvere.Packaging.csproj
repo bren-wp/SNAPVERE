@@ -3,4 +3,7 @@
     <AssemblyName>Snapvere.Packaging</AssemblyName>
     <RootNamespace>Snapvere.Packaging</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Snapvere.Shared\Snapvere.Shared.csproj" />
+  </ItemGroup>
 </Project>

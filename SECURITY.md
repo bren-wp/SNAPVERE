@@ -1,10 +1,10 @@
 # SNAPVERE Security Policy
 
-Current public line: **SNAPVERE 0.1.29** — https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.29
+Current public line: **SNAPVERE 0.1.30** — https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.30
 
 SNAPVERE currently maintains the **Windows application** plus **Chrome, Edge, Opera and Firefox extensions**. Security reports affecting capture behavior, local screenshot data, settings/history, package extraction, Setup/Portable lifecycle, extension permissions/runtime, release integrity, CI or dependency supply chain are in scope.
 
-`main` may contain later unreleased security/reliability fixes that are not retroactively part of the immutable v0.1.29 binaries. Historical release tags and assets are not rewritten in place.
+`main` may contain later unreleased security/reliability fixes that are not retroactively part of the immutable v0.1.30 binaries. Historical release tags and assets are not rewritten in place.
 
 ## Report a vulnerability privately
 
@@ -34,7 +34,7 @@ A capture failure on protected content or a browser-reserved page is not by itse
 - Setup/Portable payload integrity is checked against architecture-specific trusted metadata.
 - Portable cache corruption or unexpected content causes rejection/rebuild rather than silent execution.
 - Package lifecycle is validated for x64 and x86; x86/x64/ARM64 application payloads are built and structurally checked.
-- Startup diagnostics are local and size-bounded. Desktop and Portable user-facing fatal startup messages use sanitized categories rather than raw exception text; technical exception details remain only in the local log. Product Contract CI rejects direct Portable `exception.Message` exposure.
+- Startup diagnostics are local and size-bounded. Desktop and Portable user-facing fatal startup messages use sanitized categories rather than raw exception text, and persisted diagnostics pass through a shared redactor that removes absolute Windows/UNC paths, URLs/file URIs, e-mail addresses and common credential/token patterns. Product Contract CI locks this redaction path and rejects direct Portable `exception.Message` exposure.
 
 ## Browser extension security boundaries
 
@@ -50,7 +50,7 @@ storage
 
 `downloads.open` grants only the browser API capability needed to open a completed download after an explicit user action; it does not grant host access. There is no broad host access, remote runtime script, first-party telemetry, advertising SDK, automatic screenshot uploader or remote-control channel.
 
-Capture messages use explicit types and bounded session state. Region completion validates sender tab/window identity. Visible/full/region capture revalidates the active tab around frame acquisition so a tab switch cannot silently admit another tab's frame. Full-page capture is bounded by tile, canvas and pixel limits and releases decoded tile resources after drawing.
+Capture messages use explicit types and bounded session state. Short-lived capture ownership metadata uses `storage.session` when available and falls back to `storage.local` only for browser compatibility; persistent user settings remain separate. Region completion validates sender tab/window identity. Visible/full/region capture revalidates the active tab around frame acquisition so a tab switch cannot silently admit another tab's frame. Recent-capture discovery queries only a bounded SNAPVERE candidate set before local contract filtering. Full-page capture is bounded by tile, canvas and pixel limits and releases decoded tile resources after drawing.
 
 The SNAPVERE product name, visible wordmark and saved filename prefix are locked by source and CI checks; user settings cannot rebrand the extension.
 

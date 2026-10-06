@@ -11,7 +11,9 @@ const browsers = ['chrome', 'edge', 'opera', 'firefox'];
 const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB';
 
 function createRuntime(initialStorage = {}, options = {}) {
-  const storage = structuredClone(initialStorage);
+  const localStorage = structuredClone(initialStorage);
+  const sessionStorage = structuredClone(initialStorage);
+  const lockStorage = options.withoutSessionStorage === true ? localStorage : sessionStorage;
   const downloads = [];
   const captures = [];
   const sentMessages = [];
@@ -28,6 +30,36 @@ function createRuntime(initialStorage = {}, options = {}) {
   let tabRemovedListener = null;
   let tabUpdatedListener = null;
 
+  function createStorageArea(backing) {
+    return {
+      get(keys, callback) {
+        const requested = Array.isArray(keys) ? keys : [keys];
+        const result = {};
+        for (const key of requested) {
+          if (Object.hasOwn(backing, key)) result[key] = structuredClone(backing[key]);
+        }
+        callback(result);
+      },
+      set(items, callback) {
+        Object.assign(backing, structuredClone(items));
+        callback();
+      },
+      remove(keys, callback) {
+        storageRemoveCount += 1;
+        const requested = Array.isArray(keys) ? [...keys] : [keys];
+        const apply = () => {
+          for (const key of requested) delete backing[key];
+          callback();
+        };
+        if (options.deferFirstStorageRemove === true && storageRemoveCount === 1) {
+          deferredRemovals.push(apply);
+          return;
+        }
+        apply();
+      }
+    };
+  }
+
   const chrome = {
     runtime: {
       id: "snapvere-test-extension",
@@ -38,33 +70,8 @@ function createRuntime(initialStorage = {}, options = {}) {
       onCommand: { addListener(listener) { commandListener = listener; } }
     },
     storage: {
-      local: {
-        get(keys, callback) {
-          const requested = Array.isArray(keys) ? keys : [keys];
-          const result = {};
-          for (const key of requested) {
-            if (Object.hasOwn(storage, key)) result[key] = structuredClone(storage[key]);
-          }
-          callback(result);
-        },
-        set(items, callback) {
-          Object.assign(storage, structuredClone(items));
-          callback();
-        },
-        remove(keys, callback) {
-          storageRemoveCount += 1;
-          const requested = Array.isArray(keys) ? [...keys] : [keys];
-          const apply = () => {
-            for (const key of requested) delete storage[key];
-            callback();
-          };
-          if (options.deferFirstStorageRemove === true && storageRemoveCount === 1) {
-            deferredRemovals.push(apply);
-            return;
-          }
-          apply();
-        }
-      }
+      local: createStorageArea(localStorage),
+      ...(options.withoutSessionStorage === true ? {} : { session: createStorageArea(sessionStorage) })
     },
     tabs: {
       query(queryInfo, callback) {
@@ -149,7 +156,9 @@ function createRuntime(initialStorage = {}, options = {}) {
 
   return {
     context,
-    storage,
+    storage: lockStorage,
+    localStorage,
+    sessionStorage,
     downloads,
     captures,
     sentMessages,
@@ -235,6 +244,8 @@ async function runVariant(browser) {
     assert.equal(result.ok, true);
     assert.equal(result.pending, true);
     assert.equal(runtime.storage.snapvereActiveCapture?.kind, 'region');
+    assert.equal(runtime.sessionStorage.snapvereActiveCapture?.kind, 'region');
+    assert.equal(runtime.localStorage.snapvereActiveCapture, undefined, 'capture lock must not persist in storage.local when storage.session is available');
     runtime.removeTab(7);
     await flush();
     assert.equal(runtime.storage.snapvereActiveCapture, undefined);
@@ -548,6 +559,18 @@ async function runVariant(browser) {
     assert.equal(response.errorKey, 'captureFailed');
     assert.equal(runtime.captures.length, 0);
     assert.equal(runtime.downloads.length, 0);
+  }
+
+  {
+    const runtime = createRuntime({}, { withoutSessionStorage: true });
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    const response = await send(runtime.listener, { type: 'CAPTURE_REGION' });
+    assert.equal(response.ok, true);
+    assert.equal(response.pending, true);
+    assert.equal(runtime.localStorage.snapvereActiveCapture?.kind, 'region', 'browsers without storage.session must use the compatibility fallback');
+    runtime.removeTab(7);
+    await flush();
+    assert.equal(runtime.localStorage.snapvereActiveCapture, undefined);
   }
 
   {

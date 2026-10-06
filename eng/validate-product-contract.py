@@ -133,6 +133,39 @@ def main() -> int:
     if "UserFacingDiagnosticsText.StartupFailureMessage" not in show_fatal:
         fail("Windows startup fatal UI must use the centralized sanitized diagnostics message")
 
+    diagnostic_redactor = read_text(ROOT / "src" / "Snapvere.Shared" / "SensitiveDiagnosticRedactor.cs")
+    for required in (
+        "WindowsPathPattern",
+        "UriPattern",
+        "EmailPattern",
+        "AuthorizationHeaderPattern",
+        "BearerPattern",
+        "SecretAssignmentPattern",
+        "RegexMatchTimeoutException",
+        "MaximumInputCharacters",
+    ):
+        if required not in diagnostic_redactor:
+            fail(f"sensitive diagnostic redactor is missing required hardening fragment: {required}")
+
+    for path, required_fragments in (
+        (
+            ROOT / "src" / "Snapvere.App" / "Services" / "StartupDiagnostics.cs",
+            (
+                "SensitiveDiagnosticRedactor.Redact(exception.Message)",
+                "SensitiveDiagnosticRedactor.Redact(exception.StackTrace)",
+                "SensitiveDiagnosticRedactor.Redact(message)",
+            ),
+        ),
+        (
+            ROOT / "src" / "Snapvere.Packaging" / "PortableStartupDiagnostics.cs",
+            ("SensitiveDiagnosticRedactor.Redact(exception.ToString())",),
+        ),
+    ):
+        text = read_text(path)
+        for required in required_fragments:
+            if required not in text:
+                fail(f"{path.relative_to(ROOT)} is missing persisted-diagnostic redaction: {required}")
+
     windows = contract.get("windows", {})
     props = ROOT / "Directory.Build.props"
     if xml_property(props, "VersionPrefix") != version or windows.get("productVersion") != version:

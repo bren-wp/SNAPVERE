@@ -62,7 +62,7 @@ internal static class StartupDiagnostics
             return;
         }
 
-        WriteRaw($"{DateTimeOffset.Now:O} | {message}{Environment.NewLine}");
+        WriteRaw($"{DateTimeOffset.Now:O} | {SensitiveDiagnosticRedactor.Redact(message)}{Environment.NewLine}");
     }
 
     public static void ShowFatal(string stage, Exception exception)
@@ -91,11 +91,11 @@ internal static class StartupDiagnostics
         builder.Append(" | HResult=0x");
         builder.Append(exception.HResult.ToString("X8", System.Globalization.CultureInfo.InvariantCulture));
         builder.Append(" | Message=");
-        builder.AppendLine(exception.Message);
+        builder.AppendLine(SensitiveDiagnosticRedactor.Redact(exception.Message));
 
         if (!string.IsNullOrWhiteSpace(exception.StackTrace))
         {
-            builder.AppendLine(exception.StackTrace);
+            builder.AppendLine(SensitiveDiagnosticRedactor.Redact(exception.StackTrace));
         }
 
         if (exception.InnerException is not null)

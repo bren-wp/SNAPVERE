@@ -4,6 +4,20 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.30] - 2026-10-06
+
+### Privacy and diagnostic hardening
+
+- Redact absolute Windows/UNC paths, HTTP/HTTPS/file URIs, e-mail addresses and common credential/token patterns before Desktop or Portable startup exception details are persisted locally.
+- Bound diagnostic redaction input and fail closed on regex timeout while preserving exception type/HRESULT evidence for troubleshooting.
+- Add regression tests plus Product Contract checks so raw persisted diagnostic paths cannot silently return.
+
+### Browser privacy hardening
+
+- Keep short-lived capture ownership metadata in `storage.session` when supported, with `storage.local` used only as a compatibility fallback; persistent user settings remain local and separate.
+- Narrow Recent captures discovery to a bounded `SNAPVERE-` candidate query instead of reading a broad recent-download set, while retaining click-time ID revalidation before opening.
+- Extend cross-browser runtime and source validators to lock session-scoped capture state and privacy-bounded Recent queries.
+
 ## [0.1.29] - 2026-10-05
 
 ### Responsive capture overlay UI/UX

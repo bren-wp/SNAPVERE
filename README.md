@@ -19,7 +19,7 @@ Capture regions, windows, full screens and web pages, annotate quickly, record t
 [![MSI CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/msi-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/msi-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Website](https://snapvere.com) · [Download v0.1.29](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.29) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
+[Website](https://snapvere.com) · [Download v0.1.30](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.30) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
 
 </div>
 
@@ -41,7 +41,7 @@ SNAPVERE is built for fast everyday capture without turning screenshots into a c
 | 📦 **Three Windows delivery models** | Guided Setup EXE, standard x64 Windows Installer (MSI), and Universal Portable. Setup/Portable carry x86, x64 and ARM64 application payloads. |
 | 🌐 **Browser coverage** | Chrome, Edge, Opera and Firefox share the same locked SNAPVERE brand and bounded capture behavior. |
 
-SNAPVERE 0.1.29 polishes the Windows capture overlays for smaller and high-DPI work areas. Region Capture hint/status chrome now wraps and clamps to the available width instead of relying on a fixed 460-pixel surface, while Window Capture adapts its instruction card and selected-window label to the current overlay width and height. Capture geometry and input behavior are unchanged.
+SNAPVERE 0.1.30 hardens privacy and security without changing the local-first capture model. Windows and Portable startup diagnostics now redact user paths, URLs, e-mail addresses and credential-like values before local persistence. Browser capture-session metadata uses session-scoped storage when available, while Recent captures narrows its downloads query to SNAPVERE candidates instead of inspecting a broad recent-download set.
 
 Recording keeps separate compact Start and Stop controls in Settings and a small always-on-top elapsed-time controller while active. Setup remains a guided License → Installation → Finish flow. Recording is primary-display H.264 MP4 and video-only; microphone and system audio are not claimed as supported.
 
@@ -77,7 +77,7 @@ The Chrome, Edge, Opera and Firefox variants provide:
 - English and Croatian UI;
 - fixed SNAPVERE product name, wordmark and saved-file prefix.
 
-The permission contract is exactly `activeTab`, `scripting`, `downloads`, `downloads.open` and `storage`, without broad host access. `downloads.open` is used only after the user explicitly chooses **Open** for a completed SNAPVERE item in Recent captures, and the selected download record is revalidated by ID immediately before the open call so a moved or deleted file is rejected and refreshed instead of silently doing nothing. Full-page capture decodes and draws tiles into one bounded destination canvas and releases tile resources immediately instead of retaining an unbounded image set.
+The permission contract is exactly `activeTab`, `scripting`, `downloads`, `downloads.open` and `storage`, without broad host access. Short-lived capture ownership metadata is kept in `storage.session` when the browser supports it, with a compatibility fallback only where session storage is unavailable; persistent `storage.local` remains reserved for user settings. Recent captures queries only a bounded SNAPVERE candidate set, and `downloads.open` is used only after the user explicitly chooses **Open** and the selected item is revalidated by ID. Full-page capture remains bounded and releases decoded tile resources after drawing.
 
 Browser ZIP packages are release packages for manual installation. External store approval is not claimed unless an actual store listing exists.
 
@@ -98,8 +98,8 @@ The images below are **real rendered Windows surfaces captured by SNAPVERE's vis
 
 ## Downloads
 
-Current release: **SNAPVERE 0.1.29**<br>
-Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.29
+Current release: **SNAPVERE 0.1.30**<br>
+Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.30
 
 | Platform | Package |
 | --- | --- |

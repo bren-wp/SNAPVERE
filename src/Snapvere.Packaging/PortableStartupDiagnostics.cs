@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Security;
 using System.Text;
+using Snapvere.Shared;
 
 namespace Snapvere.Packaging;
 
@@ -11,7 +12,6 @@ namespace Snapvere.Packaging;
 public static class PortableStartupDiagnostics
 {
     private const long MaximumLogBytes = 512 * 1024;
-    private const int MaximumDiagnosticCharacters = 64 * 1024;
     private const string DisplayLogPath = @"%LOCALAPPDATA%\SNAPVERE\Logs\startup.log";
 
     public static string GetStartupLogPath()
@@ -96,13 +96,9 @@ public static class PortableStartupDiagnostics
 
     private static string BuildDiagnosticRecord(Exception exception)
     {
-        var raw = exception.ToString();
-        if (raw.Length > MaximumDiagnosticCharacters)
-        {
-            raw = raw[..MaximumDiagnosticCharacters] + Environment.NewLine + "[diagnostic truncated]";
-        }
+        var sanitized = SensitiveDiagnosticRedactor.Redact(exception.ToString());
 
         return $"{DateTimeOffset.Now:O} | Portable startup failure{Environment.NewLine}" +
-               $"{raw}{Environment.NewLine}";
+               $"{sanitized}{Environment.NewLine}";
     }
 }
