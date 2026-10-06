@@ -400,6 +400,16 @@ def main() -> int:
 
     release_workflow = ROOT / ".github" / "workflows" / "release.yml"
     release_workflow_text = read_text(release_workflow)
+    stale_versioned_release_workflows = sorted(
+        path.relative_to(ROOT).as_posix()
+        for path in (ROOT / ".github" / "workflows").glob("release-*.yml")
+        if re.fullmatch(r"release-\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?\.yml", path.name)
+    )
+    if stale_versioned_release_workflows:
+        fail(
+            "version-specific release workflows must be archived outside .github/workflows: "
+            + ", ".join(stale_versioned_release_workflows)
+        )
     if re.search(r"(?m)^\s*SNAPVERE_VERSION:\s*\d+\.\d+\.\d+\s*$", release_workflow_text):
         fail("generic release workflow must not hardcode SNAPVERE_VERSION")
     for required in (

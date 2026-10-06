@@ -44,6 +44,7 @@ public sealed class WindowTargetOverlayWindow : Window
     private readonly Border _targetBorder;
     private readonly Border _targetLabel;
     private readonly TextBlock _targetText;
+    private readonly Border _hint;
     private readonly Button _focusTarget;
 
     private WindowDescriptor? _target;
@@ -122,6 +123,7 @@ public sealed class WindowTargetOverlayWindow : Window
         };
         AutomationProperties.SetName(_focusTarget, L("WindowKeyboardInput"));
 
+        _hint = BuildHint();
         _root = BuildRoot();
         Content = _root;
         ConfigureWindow();
@@ -167,20 +169,22 @@ public sealed class WindowTargetOverlayWindow : Window
         _chrome.Children.Add(_targetLabel);
         root.Children.Add(_chrome);
         root.Children.Add(_inputLayer);
-        root.Children.Add(BuildHint());
+        root.Children.Add(_hint);
         root.Children.Add(_focusTarget);
         return root;
     }
 
     private static Border BuildHint()
     {
-        var content = new StackPanel
+        var content = new Grid
         {
-            Orientation = Orientation.Horizontal,
-            Spacing = 9,
+            ColumnSpacing = 9,
             VerticalAlignment = VerticalAlignment.Center
         };
-        content.Children.Add(new Border
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        var icon = new Border
         {
             Width = 30,
             Height = 30,
@@ -195,15 +199,28 @@ public sealed class WindowTargetOverlayWindow : Window
                 FontSize = 13,
                 Foreground = Strong
             }
-        });
+        };
+        content.Children.Add(icon);
 
-        var copy = new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center };
-        copy.Children.Add(Text(L("WindowHintTitle"), 11, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
-        copy.Children.Add(Text(L("WindowHint"), 9.5, Muted));
+        var copy = new StackPanel
+        {
+            Spacing = 1,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var title = Text(L("WindowHintTitle"), 11, Strong, Microsoft.UI.Text.FontWeights.SemiBold);
+        title.TextWrapping = TextWrapping.Wrap;
+        title.MaxLines = 2;
+        var description = Text(L("WindowHint"), 9.5, Muted);
+        description.TextWrapping = TextWrapping.Wrap;
+        description.MaxLines = 3;
+        copy.Children.Add(title);
+        copy.Children.Add(description);
+        Grid.SetColumn(copy, 1);
         content.Children.Add(copy);
 
         return new Border
         {
+            MaxWidth = 520,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Top,
             Margin = new Thickness(16),
@@ -250,6 +267,7 @@ public sealed class WindowTargetOverlayWindow : Window
                 ?? throw new InvalidOperationException("The Window Capture frozen frame is no longer available.");
             _frozenImage.Source = await CreateFrozenBitmapAsync(frozenFrame);
             _frozenFrame = null;
+            ApplyResponsiveOverlayChrome(_root.ActualWidth, _root.ActualHeight);
             UpdateTargetVisual();
             _ = _focusTarget.Focus(FocusState.Programmatic);
         }
@@ -261,7 +279,25 @@ public sealed class WindowTargetOverlayWindow : Window
     }
 
     private void Root_SizeChanged(object sender, SizeChangedEventArgs e)
-        => UpdateTargetVisual();
+    {
+        ApplyResponsiveOverlayChrome(e.NewSize.Width, e.NewSize.Height);
+        UpdateTargetVisual();
+    }
+
+    private void ApplyResponsiveOverlayChrome(double width, double height)
+    {
+        var availableWidth = Math.Max(120d, width - 32d);
+        _hint.MaxWidth = Math.Min(520d, availableWidth);
+        _hint.Margin = new Thickness(
+            16,
+            height < 420d ? 8 : 16,
+            16,
+            0);
+
+        _targetText.MaxWidth = Math.Min(
+            460d,
+            Math.Max(80d, width - 44d));
+    }
 
     private void InputLayer_PointerMoved(object sender, PointerRoutedEventArgs e)
     {

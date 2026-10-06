@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.28**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.28
+- Current public release: **v0.1.29**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.29
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -27,6 +27,37 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 ---
 
 ## Unreleased
+
+---
+
+## v0.1.29 — 2026-10-05
+
+SNAPVERE 0.1.29 is a focused Windows capture-overlay responsiveness release. It removes remaining fixed-width assumptions from the user-facing Region and Window capture chrome while leaving capture geometry, target selection and persistence behavior unchanged.
+
+### Region Capture responsiveness
+
+- The top guidance card keeps its established 460-pixel desktop width and 47-pixel minimum height, but clamps that width to the live overlay when horizontal space is constrained.
+- Guidance text now wraps, remains centered and is capped to three lines.
+- The guidance card uses tighter top spacing on short work areas.
+- The bottom status surface receives the same bounded-width treatment so localized saving/error copy cannot extend beyond the overlay.
+- The annotation tool rail now clamps its viewport to the available logical overlay height and scrolls vertically only when required, so every tool remains reachable on short/high-DPI work areas.
+
+### Window Capture responsiveness
+
+- The instruction card now has a bounded maximum width and wraps localized title/help copy.
+- The instruction card reduces top spacing on short work areas instead of consuming excessive vertical space.
+- The selected-window label dynamically clamps its text width to the live overlay width before measurement and positioning, preventing long titles from overflowing narrow/high-DPI monitors.
+
+### Regression evidence
+
+- The Windows UI contract validator requires the Region and Window responsive-width/wrapping hooks.
+- Existing rendered Region/Window visual QA remains part of the main Windows package gate, so the normal desktop-size surfaces must still render within the accepted baseline thresholds.
+- Full dead-code audit removes the unreferenced `VirtualDesktopLayout` helper and its self-only unit tests, moves the obsolete v0.1.22 publication workflow into `.github/release-archive/`, and prevents historical version-specific release workflows from becoming active automation again.
+
+### Packaging scope
+
+- Windows assembly/file/package versions and Chrome, Edge, Opera and Firefox extension versions advance together to 0.1.29.
+- Setup EXE, MSI, Portable and browser ZIPs remain gated by Product Contract CI, Windows CI, rendered visual QA, MSI lifecycle validation, localization checks, CodeQL and native ARM64 runtime validation before publication.
 
 ---
 
