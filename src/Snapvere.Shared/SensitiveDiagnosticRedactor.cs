@@ -57,8 +57,8 @@ public static class SensitiveDiagnosticRedactor
 
         try
         {
-            var redacted = UriPattern.Replace(bounded, RedactedUri);
-            redacted = WindowsPathPattern.Replace(redacted, RedactedPath);
+            var redacted = WindowsPathPattern.Replace(bounded, RedactedPath);
+            redacted = UriPattern.Replace(redacted, RedactedUri);
             redacted = EmailPattern.Replace(redacted, RedactedEmail);
             redacted = AuthorizationHeaderPattern.Replace(redacted, "Authorization: [redacted]");
             redacted = BearerPattern.Replace(redacted, "Bearer [redacted]");
