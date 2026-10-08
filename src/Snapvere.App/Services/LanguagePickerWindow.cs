@@ -194,10 +194,15 @@ public sealed class LanguagePickerWindow : Window
         stack.Children.Add(_languageEyebrow);
         stack.Children.Add(_languageCombo);
         stack.Children.Add(_status);
-        // This compact surface never needs scrolling. Keeping the three controls
-        // directly in the card avoids transient overlay-scrollbar composition that
-        // can make the otherwise static picker visually unstable during capture.
-        card.Child = stack;
+        card.Child = new ScrollViewer
+        {
+            Content = stack,
+            VerticalScrollMode = ScrollMode.Auto,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollMode = ScrollMode.Disabled,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            IsTabStop = false
+        };
         Grid.SetRow(card, 2);
         root.Children.Add(card);
 
@@ -327,7 +332,7 @@ public sealed class LanguagePickerWindow : Window
     }
 
     private static FrameworkElement BuildBrandMark()
-        => SnapvereBrand.CreateMark(46);
+        => SnapvereBrand.CreateMark(52);
 
     private static TextBlock Text(
         string value,
