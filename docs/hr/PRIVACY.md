@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.30 privatnost
+# SNAPVERE 0.1.31 privatnost
 
 SNAPVERE je local-first. Osnovna obrada snimki na Windowsu i u browser ekstenzijama ne zahtijeva SNAPVERE račun, automatski cloud servis, first-party analitiku ni capture telemetriju.
 
