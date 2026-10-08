@@ -136,8 +136,8 @@ public sealed class CaptureFeedbackWindow : Window
             Width = 42,
             Height = 42,
             CornerRadius = new CornerRadius(13),
-            Background = AccentGradient(),
-            BorderBrush = Brush(0x70, 0xC9, 0xC0, 0xFF),
+            Background = SnapvereBrand.AccentGradient(),
+            BorderBrush = Brush(0x88, 0xA4, 0x8B, 0xFF),
             BorderThickness = new Thickness(1),
             Child = new FontIcon
             {
@@ -190,8 +190,8 @@ public sealed class CaptureFeedbackWindow : Window
             HorizontalAlignment = HorizontalAlignment.Right,
             Padding = new Thickness(18, 8, 18, 8),
             CornerRadius = new CornerRadius(10),
-            Background = Brush(0xFF, 0x39, 0x28, 0x78),
-            BorderBrush = Brush(0xFF, 0x86, 0x67, 0xF4),
+            Background = SnapvereBrand.AccentGradient(),
+            BorderBrush = SnapvereBrand.Lavender,
             BorderThickness = new Thickness(1),
             Foreground = Strong
         };
@@ -245,25 +245,13 @@ public sealed class CaptureFeedbackWindow : Window
             FontWeight = weight ?? Microsoft.UI.Text.FontWeights.Normal
         };
 
-    private static LinearGradientBrush AccentGradient()
-    {
-        var brush = new LinearGradientBrush
-        {
-            StartPoint = new Windows.Foundation.Point(0, 0),
-            EndPoint = new Windows.Foundation.Point(1, 1)
-        };
-        brush.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x61, 0x4A, 0xE8), Offset = 0 });
-        brush.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x37, 0xB6, 0xD4), Offset = 1 });
-        return brush;
-    }
-
     private static SolidColorBrush Brush(byte alpha, byte red, byte green, byte blue)
         => new(Windows.UI.Color.FromArgb(alpha, red, green, blue));
 
-    private static SolidColorBrush Surface => Brush(0xFF, 0x0D, 0x13, 0x21);
-    private static SolidColorBrush Elevated => Brush(0xFF, 0x12, 0x17, 0x24);
-    private static SolidColorBrush Outline => Brush(0xFF, 0x52, 0x61, 0x7F);
-    private static SolidColorBrush Strong => Brush(0xFF, 0xF7, 0xF5, 0xFF);
-    private static SolidColorBrush Muted => Brush(0xFF, 0xAF, 0xB6, 0xC8);
-    private static SolidColorBrush Accent => Brush(0xFF, 0xA7, 0x7C, 0xFF);
+    private static SolidColorBrush Surface => SnapvereBrand.Obsidian;
+    private static SolidColorBrush Elevated => SnapvereBrand.Surface;
+    private static SolidColorBrush Outline => SnapvereBrand.Outline;
+    private static SolidColorBrush Strong => SnapvereBrand.Strong;
+    private static SolidColorBrush Muted => SnapvereBrand.Muted;
+    private static SolidColorBrush Accent => SnapvereBrand.Lavender;
 }

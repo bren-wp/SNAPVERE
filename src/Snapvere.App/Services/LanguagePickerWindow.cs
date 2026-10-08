@@ -185,7 +185,7 @@ public sealed class LanguagePickerWindow : Window
         {
             Padding = new Thickness(18),
             CornerRadius = new CornerRadius(18),
-            Background = Brush(0xFF, 0x12, 0x17, 0x24),
+            Background = SnapvereBrand.Slate,
             BorderBrush = Outline,
             BorderThickness = new Thickness(1)
         };
@@ -213,8 +213,8 @@ public sealed class LanguagePickerWindow : Window
             Margin = new Thickness(0, 18, 0, 0),
             Padding = new Thickness(20, 9, 20, 9),
             CornerRadius = new CornerRadius(11),
-            Background = Brush(0xFF, 0x3A, 0x2B, 0x78),
-            BorderBrush = Brush(0xFF, 0x86, 0x67, 0xF4),
+            Background = SnapvereBrand.Violet,
+            BorderBrush = SnapvereBrand.Lavender,
             BorderThickness = new Thickness(1),
             Foreground = Strong
         };
@@ -332,31 +332,7 @@ public sealed class LanguagePickerWindow : Window
     }
 
     private static FrameworkElement BuildBrandMark()
-    {
-        var mark = new Grid { Width = 52, Height = 52 };
-        var gradient = new LinearGradientBrush
-        {
-            StartPoint = new Windows.Foundation.Point(0, 0),
-            EndPoint = new Windows.Foundation.Point(1, 1)
-        };
-        gradient.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x62, 0x4B, 0xE8), Offset = 0 });
-        gradient.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x37, 0xB6, 0xD4), Offset = 1 });
-        mark.Children.Add(new Border
-        {
-            CornerRadius = new CornerRadius(16),
-            Background = gradient,
-            BorderBrush = Brush(0x70, 0xC9, 0xC0, 0xFF),
-            BorderThickness = new Thickness(1),
-            Child = new FontIcon
-            {
-                Glyph = "\uE774",
-                FontFamily = new FontFamily("Segoe Fluent Icons"),
-                FontSize = 20,
-                Foreground = Strong
-            }
-        });
-        return mark;
-    }
+        => SnapvereBrand.CreateMark(52);
 
     private static TextBlock Text(
         string value,
@@ -374,11 +350,11 @@ public sealed class LanguagePickerWindow : Window
     private static SolidColorBrush Brush(byte alpha, byte red, byte green, byte blue)
         => new(Windows.UI.Color.FromArgb(alpha, red, green, blue));
 
-    private static SolidColorBrush Surface => Brush(0xFF, 0x0D, 0x13, 0x21);
-    private static SolidColorBrush Outline => Brush(0xFF, 0x52, 0x61, 0x7F);
-    private static SolidColorBrush Strong => Brush(0xFF, 0xF7, 0xF5, 0xFF);
-    private static SolidColorBrush Muted => Brush(0xFF, 0xAF, 0xB6, 0xC8);
-    private static SolidColorBrush Accent => Brush(0xFF, 0xA7, 0x7C, 0xFF);
-    private static SolidColorBrush Success => Brush(0xFF, 0x72, 0xD8, 0xB4);
-    private static SolidColorBrush Error => Brush(0xFF, 0xF0, 0x8C, 0x9A);
+    private static SolidColorBrush Surface => SnapvereBrand.Obsidian;
+    private static SolidColorBrush Outline => SnapvereBrand.Outline;
+    private static SolidColorBrush Strong => SnapvereBrand.Strong;
+    private static SolidColorBrush Muted => SnapvereBrand.Muted;
+    private static SolidColorBrush Accent => SnapvereBrand.Lavender;
+    private static SolidColorBrush Success => SnapvereBrand.Success;
+    private static SolidColorBrush Error => SnapvereBrand.Danger;
 }

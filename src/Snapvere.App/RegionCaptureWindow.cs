@@ -37,9 +37,9 @@ public sealed class RegionCaptureWindow : Window
 {
     private const double CornerHandleRadius = 6d;
     private const double EdgeHandleRadius = 5d;
-    private const double ToolPaletteWidth = 86d;
+    private const double ToolPaletteWidth = 94d;
     private const double ToolPaletteHeight = 327d;
-    private const double ActionPaletteWidth = 230d;
+    private const double ActionPaletteWidth = 250d;
     private const double ActionPaletteHeight = 48d;
 
     private readonly RegionCaptureWorkflow _workflow;
@@ -270,7 +270,7 @@ public sealed class RegionCaptureWindow : Window
             BorderBrush = PaletteOutline,
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(16),
-            Padding = new Thickness(5),
+            Padding = new Thickness(6),
             Child = scroll
         };
     }
@@ -330,8 +330,8 @@ public sealed class RegionCaptureWindow : Window
             Background = PaletteSurface,
             BorderBrush = PaletteOutline,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(13),
-            Padding = new Thickness(4),
+            CornerRadius = new CornerRadius(14),
+            Padding = new Thickness(5),
             Child = stack
         };
     }
@@ -357,8 +357,8 @@ public sealed class RegionCaptureWindow : Window
             VerticalAlignment = VerticalAlignment.Top,
             Margin = new Thickness(16, 36, 16, 0),
             Padding = new Thickness(14, 9, 14, 9),
-            Background = PaletteSurface,
-            BorderBrush = Brush(0xFF, 0x3D, 0x48, 0x5F),
+            Background = Brush(0xF2, 0x11, 0x15, 0x26),
+            BorderBrush = SnapvereBrand.Outline,
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(13),
             IsHitTestVisible = false,
@@ -852,8 +852,8 @@ public sealed class RegionCaptureWindow : Window
 
     private static void SetToolButtonState(Button button, bool active)
     {
-        button.Background = active ? Brush(0xFF, 0x38, 0x29, 0x75) : Transparent;
-        button.BorderBrush = active ? Brush(0xFF, 0x80, 0x66, 0xED) : Transparent;
+        button.Background = active ? Brush(0x66, 0x76, 0x55, 0xF6) : Transparent;
+        button.BorderBrush = active ? Brush(0x99, 0xA4, 0x8B, 0xFF) : Transparent;
     }
 
     private async Task CommitSelectionAsync()
@@ -1419,8 +1419,8 @@ public sealed class RegionCaptureWindow : Window
             Height = 38,
             Padding = new Thickness(7, 4, 7, 4),
             CornerRadius = new CornerRadius(9),
-            Background = primary ? Brush(0xFF, 0x65, 0x47, 0xD8) : Transparent,
-            BorderBrush = primary ? Brush(0xFF, 0x86, 0x67, 0xF4) : Transparent,
+            Background = primary ? SnapvereBrand.AccentGradient() : SnapvereBrand.Slate,
+            BorderBrush = primary ? SnapvereBrand.Lavender : SnapvereBrand.Outline,
             BorderThickness = new Thickness(1)
         };
         AutomationProperties.SetName(button, tooltip);
@@ -1462,7 +1462,7 @@ public sealed class RegionCaptureWindow : Window
             Width = 64,
             Margin = new Thickness(5, 2, 5, 2),
             HorizontalAlignment = HorizontalAlignment.Center,
-            Background = Brush(0xFF, 0x3A, 0x46, 0x5C)
+            Background = SnapvereBrand.Outline
         };
 
     private static string L(string key)
@@ -1484,10 +1484,10 @@ public sealed class RegionCaptureWindow : Window
     private static SolidColorBrush Brush(byte alpha, byte red, byte green, byte blue)
         => new(Windows.UI.Color.FromArgb(alpha, red, green, blue));
 
-    private static SolidColorBrush Strong => Brush(0xFF, 0xF7, 0xF5, 0xFF);
-    private static SolidColorBrush Accent => Brush(0xFF, 0xA7, 0x7C, 0xFF);
-    private static SolidColorBrush PaletteSurface => Brush(0xFF, 0x10, 0x16, 0x22);
-    private static SolidColorBrush PaletteOutline => Brush(0xFF, 0x4E, 0x59, 0x71);
+    private static SolidColorBrush Strong => SnapvereBrand.Strong;
+    private static SolidColorBrush Accent => SnapvereBrand.Lavender;
+    private static SolidColorBrush PaletteSurface => SnapvereBrand.Surface;
+    private static SolidColorBrush PaletteOutline => SnapvereBrand.Outline;
     private static SolidColorBrush Transparent => Brush(0x00, 0, 0, 0);
 
     private static void SetRectangle(

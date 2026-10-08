@@ -4,6 +4,30 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.31] - 2026-10-08
+
+### Premium brand system and faster hierarchy
+
+- Replace the legacy shard/feather identity with the supplied viewfinder-plus-lightning mark across Windows UI chrome, the notification-area icon, Setup, README branding assets and browser extension icons.
+- Use the supplied premium 48 px PNG mark directly in Windows chrome instead of a runtime-scaled vector redraw, keeping Windows/browser identity aligned and rendered visual QA deterministic.
+- Add a central `SnapvereBrand` production token layer matching the supplied Obsidian, Surface, Slate, Violet, Lavender, Ice, text and muted colors.
+- Rebuild the Tray surface around four primary capture/recording actions, Recent captures and Settings; keep folder, language, About and Exit available as compact secondary footer actions.
+- Rebuild Settings around a branded left navigation rail and keep local-first state visible without adding extra workflow steps.
+- Align Region/Window capture chrome, recording controller, About, Language, capture feedback and Setup to the same brand system.
+- Keep the normal app launch tray-first and hidden instead of adding a blocking splash or permanent dashboard.
+
+### Browser parity
+
+- Use the supplied 16/32/48/128 PNG icon assets identically in Chrome, Edge, Opera and Firefox.
+- Rebuild the popup around the three implemented capture modes plus Recent captures and Settings without adding permissions.
+- Apply the same premium palette and responsive layout to browser Options while preserving the existing privacy/session boundaries.
+
+### Regression safeguards
+
+- Extend the Windows UI contract to lock the premium palette, mark and primary layout fragments.
+- Extend browser validation to lock the premium CSS tokens and fast popup hierarchy.
+- Keep screen recording truthful to current capability: video-only primary-display recording without fake microphone/system-audio controls.
+
 ## [0.1.30] - 2026-10-06
 
 ### Privacy and diagnostic hardening

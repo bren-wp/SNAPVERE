@@ -1,14 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 144" role="img" aria-labelledby="title">
-  <title id="title">SNAPVERE — Capture. Edit. Done.</title>
-  <defs>
-    <linearGradient id="bg" x1="12" y1="10" x2="132" y2="134" gradientUnits="userSpaceOnUse"><stop stop-color="#281C48"/><stop offset="1" stop-color="#14192A"/></linearGradient>
-    <linearGradient id="blade" x1="38" y1="110" x2="108" y2="28" gradientUnits="userSpaceOnUse"><stop stop-color="#5C3EE8"/><stop offset=".52" stop-color="#8051F4"/><stop offset="1" stop-color="#A96CF3"/></linearGradient>
-    <linearGradient id="word" x1="182" y1="0" x2="544" y2="0" gradientUnits="userSpaceOnUse"><stop offset=".55" stop-color="#171A24"/><stop offset="1" stop-color="#7048D7"/></linearGradient>
-  </defs>
-  <rect x="4" y="4" width="136" height="136" rx="34" fill="url(#bg)" stroke="#624BC8" stroke-width="4"/>
-  <path d="M34 111C43 75 65 43 111 24C102 63 80 96 34 116C50 90 67 70 93 49C68 62 50 83 34 111Z" fill="url(#blade)"/>
-  <path d="M42 102C58 78 74 61 96 44C80 68 65 86 42 102Z" fill="#EEE2FF" fill-opacity=".84"/>
-  <path d="M37 116C53 95 68 79 86 66" fill="none" stroke="#F8F3FF" stroke-width="4" stroke-linecap="round"/>
-  <text x="178" y="77" fill="url(#word)" font-family="Segoe UI, Arial, sans-serif" font-size="52" font-weight="700" letter-spacing="2.4">SNAPVERE</text>
-  <text x="181" y="108" fill="#5F6879" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="500">Capture. Edit. Done.</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 144" role="img" aria-labelledby="title"><title id="title">SNAPVERE — Capture. Edit. Done.</title><defs><linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#211942"/><stop offset=".5" stop-color="#151838"/><stop offset="1" stop-color="#101625"/></linearGradient><linearGradient id="brand" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#B9A1FF"/><stop offset=".46" stop-color="#8B6DFF"/><stop offset="1" stop-color="#574EEB"/></linearGradient><linearGradient id="word" x1="180" y1="0" x2="520" y2="0"><stop offset=".48" stop-color="#F8F9FF"/><stop offset="1" stop-color="#A48BFF"/></linearGradient></defs><g transform="translate(8 8) scale(.98)"><rect x="1" y="1" width="126" height="126" rx="30" fill="url(#tile)" stroke="#4B427F" stroke-width="1.5"/><g fill="none" stroke="#B5A1FF" stroke-width="5" stroke-linecap="round"><path d="M26 49V35Q26 27 34 27H47"/><path d="M81 27H94Q102 27 102 35V49"/><path d="M102 79V93Q102 101 94 101H81"/><path d="M47 101H34Q26 101 26 93V79"/></g><path d="M73 35 48 67h17L55 93l30-35H67Z" fill="url(#brand)" stroke="#E3D9FF" stroke-width="1.7"/></g><text x="170" y="76" fill="#161B2E" font-family="Segoe UI,Arial,sans-serif" font-size="52" font-weight="700" letter-spacing="2">SNAPVERE</text><text x="173" y="108" fill="#5F6879" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="600" letter-spacing="3">CAPTURE. EDIT. DONE.</text></svg>

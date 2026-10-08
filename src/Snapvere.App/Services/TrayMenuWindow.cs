@@ -16,8 +16,8 @@ namespace Snapvere.App.Services;
 /// </summary>
 public sealed class TrayMenuWindow : Window
 {
-    private const int FlyoutWidth = 392;
-    private const int FlyoutHeight = 542;
+    private const int FlyoutWidth = 420;
+    private const int FlyoutHeight = 548;
     private const int FlyoutEdgeMargin = 4;
     private const int CursorGap = 4;
     private const int CursorHorizontalAnchorOffset = 20;
@@ -70,8 +70,8 @@ public sealed class TrayMenuWindow : Window
         var root = new Grid
         {
             RequestedTheme = ElementTheme.Dark,
-            Background = Surface,
-            Padding = new Thickness(16, 16, 16, 12)
+            Background = SnapvereBrand.Obsidian,
+            Padding = new Thickness(18, 18, 18, 14)
         };
         root.KeyDown += Root_KeyDown;
         root.SizeChanged += (_, args) => ApplyResponsiveLayout(root, args.NewSize.Width);
@@ -80,25 +80,21 @@ public sealed class TrayMenuWindow : Window
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.Children.Add(BuildHeader());
 
-        var actions = new StackPanel { Spacing = 3, Margin = new Thickness(0, 10, 0, 0) };
+        var actions = new StackPanel { Spacing = 8, Margin = new Thickness(0, 14, 0, 0) };
         actions.Children.Add(CreateMenuButton("\uE722", L("CaptureRegion"), "Print Screen", TrayCommand.RegionCapture, primary: true));
         actions.Children.Add(CreateMenuButton("\uE7F4", L("CaptureWindow"), "Ctrl + Shift + 2", TrayCommand.WindowCapture));
         actions.Children.Add(CreateMenuButton("\uE7F8", L("CaptureScreen"), "Ctrl + Shift + 3", TrayCommand.ScreenCapture));
         actions.Children.Add(CreateMenuButton(
             "\uE714",
             L(_screenRecordingActive ? "StopScreenRecording" : "StartScreenRecording"),
-            string.Empty,
+            "Ctrl + Shift + 4",
             _screenRecordingActive
                 ? TrayCommand.StopScreenRecording
                 : TrayCommand.StartScreenRecording,
             danger: _screenRecordingActive));
         actions.Children.Add(CreateSeparator());
-        actions.Children.Add(CreateMenuButton("\uE713", L("Settings"), string.Empty, TrayCommand.Show));
         actions.Children.Add(CreateActionButton("\uE81C", L("RecentCaptures"), string.Empty, _recentCapturesHandler));
-        actions.Children.Add(CreateMenuButton("\uE838", L("OpenCaptureFolder"), string.Empty, TrayCommand.OpenCaptureFolder));
-        actions.Children.Add(CreateMenuButton("\uE946", L("About"), string.Empty, TrayCommand.About));
-        actions.Children.Add(CreateSeparator());
-        actions.Children.Add(CreateMenuButton("\uE7E8", L("Exit"), string.Empty, TrayCommand.Exit, danger: true));
+        actions.Children.Add(CreateMenuButton("\uE713", L("Settings"), string.Empty, TrayCommand.Show));
         var actionScroller = new ScrollViewer
         {
             Margin = new Thickness(0, 10, 0, 0),
@@ -113,28 +109,37 @@ public sealed class TrayMenuWindow : Window
         Grid.SetRow(actionScroller, 1);
         root.Children.Add(actionScroller);
 
-        var footer = new Grid { Margin = new Thickness(4, 6, 4, 0) };
+        var footer = new Grid { Margin = new Thickness(4, 10, 4, 0) };
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
         var ready = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
         ready.Children.Add(new Border
         {
-            Width = 7,
-            Height = 7,
+            Width = 8,
+            Height = 8,
             CornerRadius = new CornerRadius(4),
-            Background = _screenRecordingActive
-                ? Brush(0xFF, 0xEC, 0x5F, 0x74)
-                : Brush(0xFF, 0x56, 0xD6, 0xAE)
+            Background = _screenRecordingActive ? SnapvereBrand.Danger : SnapvereBrand.Success
         });
         ready.Children.Add(Text(
             L(_screenRecordingActive ? "ScreenRecordingActive" : "Ready"),
             10,
-            _screenRecordingActive ? Strong : Muted));
+            _screenRecordingActive ? SnapvereBrand.Danger : SnapvereBrand.Muted));
         footer.Children.Add(ready);
-        var version = typeof(TrayMenuWindow).Assembly.GetName().Version?.ToString(3);
-        var versionText = Text(version is null ? "SNAPVERE" : $"v{version}", 10, Subtle);
-        Grid.SetColumn(versionText, 1);
-        footer.Children.Add(versionText);
+
+        var utilities = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 6,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        utilities.Children.Add(CreateFooterIconButton("\uE838", L("OpenCaptureFolder"), () => InvokeCommand(TrayCommand.OpenCaptureFolder)));
+        utilities.Children.Add(CreateFooterIconButton("\uE774", L("Language"), () => InvokeAction(_languageHandler)));
+        utilities.Children.Add(CreateFooterIconButton("\uE946", L("About"), () => InvokeCommand(TrayCommand.About)));
+        utilities.Children.Add(CreateFooterIconButton("\uE7E8", L("Exit"), () => InvokeCommand(TrayCommand.Exit), danger: true));
+        Grid.SetColumn(utilities, 1);
+        footer.Children.Add(utilities);
+
         Grid.SetRow(footer, 2);
         root.Children.Add(footer);
 
@@ -150,12 +155,12 @@ public sealed class TrayMenuWindow : Window
 
     private FrameworkElement BuildHeader()
     {
-        var header = new Grid { Height = 54 };
+        var header = new Grid { Height = 58 };
         _header = header;
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        _brandMark = BuildBrandMark();
+        _brandMark = SnapvereBrand.CreateMark(50);
         header.Children.Add(_brandMark);
 
         var identity = new StackPanel
@@ -164,88 +169,51 @@ public sealed class TrayMenuWindow : Window
             Margin = new Thickness(12, 0, 0, 0),
             VerticalAlignment = VerticalAlignment.Center
         };
-        var product = new TextBlock
-        {
-            FontSize = 24,
-            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-            CharacterSpacing = 35
-        };
-        product.Inlines.Add(new Run { Text = "SNAP", Foreground = Strong });
-        product.Inlines.Add(new Run { Text = "VERE", Foreground = Accent });
+        var product = SnapvereBrand.CreateWordmark(24);
         _productText = product;
         identity.Children.Add(product);
         identity.Children.Add(Text(Tagline(), 10.5, Muted));
         Grid.SetColumn(identity, 1);
         header.Children.Add(identity);
 
-        var languageButton = new Button
+        var readyBadge = new Border
         {
-            Width = 36,
-            Height = 36,
-            Padding = new Thickness(0),
-            CornerRadius = new CornerRadius(11),
-            Background = Brush(0xFF, 0x14, 0x1A, 0x28),
-            BorderBrush = Brush(0xFF, 0x2B, 0x36, 0x4B),
+            Padding = new Thickness(10, 6, 10, 6),
+            CornerRadius = new CornerRadius(12),
+            Background = Brush(0x22, 0x80, 0xE1, 0xE5),
+            BorderBrush = Brush(0x66, 0x80, 0xE1, 0xE5),
             BorderThickness = new Thickness(1),
-            Content = new FontIcon
-            {
-                Glyph = "\uE774",
-                FontFamily = new FontFamily("Segoe Fluent Icons"),
-                FontSize = 15,
-                Foreground = Accent
-            },
-            VerticalAlignment = VerticalAlignment.Center
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = Text(L(_screenRecordingActive ? "ScreenRecordingActive" : "Ready"), 9.5, _screenRecordingActive ? SnapvereBrand.Danger : SnapvereBrand.Ice, Microsoft.UI.Text.FontWeights.SemiBold)
         };
-        AutomationProperties.SetName(languageButton, L("Language"));
-        ToolTipService.SetToolTip(languageButton, L("ChooseLanguage"));
-        languageButton.Click += (_, _) => InvokeAction(_languageHandler);
-        Grid.SetColumn(languageButton, 2);
-        header.Children.Add(languageButton);
+        Grid.SetColumn(readyBadge, 2);
+        header.Children.Add(readyBadge);
         return header;
     }
 
-    private static FrameworkElement BuildBrandMark()
+    private Button CreateFooterIconButton(string glyph, string accessibleName, Action action, bool danger = false)
     {
-        var mark = new Grid { Width = 50, Height = 50 };
-        mark.Children.Add(new Border
+        var button = new Button
         {
-            CornerRadius = new CornerRadius(15),
-            Background = AccentGradient(),
-            BorderBrush = Brush(0x70, 0xC9, 0xC0, 0xFF),
-            BorderThickness = new Thickness(1)
-        });
-        var shard = new Grid
-        {
-            Width = 28,
-            Height = 28,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
+            Width = 34,
+            Height = 34,
+            Padding = new Thickness(0),
+            CornerRadius = new CornerRadius(10),
+            Background = SnapvereBrand.Slate,
+            BorderBrush = danger ? Brush(0x55, 0xF0, 0x63, 0x82) : SnapvereBrand.Outline,
+            BorderThickness = new Thickness(1),
+            Content = new FontIcon
+            {
+                Glyph = glyph,
+                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontSize = 13,
+                Foreground = danger ? SnapvereBrand.Danger : SnapvereBrand.Muted
+            }
         };
-        shard.Children.Add(new Border
-        {
-            Width = 8,
-            Height = 29,
-            CornerRadius = new CornerRadius(4),
-            Background = Strong,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5),
-            RenderTransform = new RotateTransform { Angle = 38 }
-        });
-        shard.Children.Add(new Border
-        {
-            Width = 5,
-            Height = 20,
-            CornerRadius = new CornerRadius(3),
-            Background = Brush(0xF0, 0xBD, 0xED, 0xFF),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(10, -6, 0, 0),
-            RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5),
-            RenderTransform = new RotateTransform { Angle = 38 }
-        });
-        mark.Children.Add(shard);
-        return mark;
+        AutomationProperties.SetName(button, accessibleName);
+        ToolTipService.SetToolTip(button, accessibleName);
+        button.Click += (_, _) => action();
+        return button;
     }
 
     private Button CreateMenuButton(
@@ -277,8 +245,8 @@ public sealed class TrayMenuWindow : Window
             Width = 32,
             Height = 32,
             CornerRadius = new CornerRadius(9),
-            Background = primary ? Brush(0x90, 0x65, 0x47, 0xD8) : danger ? Brush(0x28, 0xEC, 0x5F, 0x74) : Brush(0xFF, 0x14, 0x1A, 0x28),
-            BorderBrush = primary ? Brush(0xFF, 0x86, 0x67, 0xF4) : danger ? Brush(0x45, 0xEC, 0x5F, 0x74) : Brush(0xFF, 0x2B, 0x36, 0x4B),
+            Background = primary ? Brush(0x33, 0xF8, 0xF9, 0xFF) : danger ? Brush(0x28, 0xF0, 0x63, 0x82) : SnapvereBrand.Surface,
+            BorderBrush = primary ? Brush(0x66, 0xF8, 0xF9, 0xFF) : danger ? Brush(0x55, 0xF0, 0x63, 0x82) : SnapvereBrand.Outline,
             BorderThickness = new Thickness(1),
             Child = new FontIcon
             {
@@ -311,11 +279,11 @@ public sealed class TrayMenuWindow : Window
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            MinHeight = primary ? 46 : 38,
-            Padding = new Thickness(10, 4, 10, 4),
-            CornerRadius = new CornerRadius(12),
-            Background = primary ? Brush(0xFF, 0x39, 0x28, 0x78) : Transparent,
-            BorderBrush = primary ? Brush(0xFF, 0x86, 0x67, 0xF4) : Transparent,
+            MinHeight = primary ? 58 : 52,
+            Padding = new Thickness(12, 7, 12, 7),
+            CornerRadius = new CornerRadius(14),
+            Background = primary ? SnapvereBrand.AccentGradient() : SnapvereBrand.Slate,
+            BorderBrush = primary ? SnapvereBrand.Lavender : SnapvereBrand.Outline,
             BorderThickness = new Thickness(1),
             Content = content
         };
@@ -488,28 +456,15 @@ public sealed class TrayMenuWindow : Window
     private static TextBlock Text(string value, double size, SolidColorBrush foreground, Windows.UI.Text.FontWeight? weight = null)
         => new() { Text = value, FontSize = size, Foreground = foreground, FontWeight = weight ?? Microsoft.UI.Text.FontWeights.Normal };
 
-    private static LinearGradientBrush AccentGradient()
-    {
-        var brush = new LinearGradientBrush
-        {
-            StartPoint = new Windows.Foundation.Point(0, 0),
-            EndPoint = new Windows.Foundation.Point(1, 1)
-        };
-        brush.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x62, 0x4B, 0xE8), Offset = 0 });
-        brush.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x8B, 0x5C, 0xF6), Offset = 0.58 });
-        brush.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x37, 0xB6, 0xD4), Offset = 1 });
-        return brush;
-    }
-
     private static SolidColorBrush Brush(byte alpha, byte red, byte green, byte blue)
         => new(Windows.UI.Color.FromArgb(alpha, red, green, blue));
 
-    private static SolidColorBrush Surface => Brush(0xFF, 0x0D, 0x13, 0x21);
-    private static SolidColorBrush Outline => Brush(0xFF, 0x52, 0x61, 0x7F);
-    private static SolidColorBrush Strong => Brush(0xFF, 0xF7, 0xF5, 0xFF);
-    private static SolidColorBrush Muted => Brush(0xFF, 0xAF, 0xB6, 0xC8);
-    private static SolidColorBrush Subtle => Brush(0xFF, 0x7F, 0x89, 0xA1);
-    private static SolidColorBrush Accent => Brush(0xFF, 0xA7, 0x7C, 0xFF);
+    private static SolidColorBrush Surface => SnapvereBrand.Surface;
+    private static SolidColorBrush Outline => SnapvereBrand.Outline;
+    private static SolidColorBrush Strong => SnapvereBrand.Strong;
+    private static SolidColorBrush Muted => SnapvereBrand.Muted;
+    private static SolidColorBrush Subtle => SnapvereBrand.Subtle;
+    private static SolidColorBrush Accent => SnapvereBrand.Lavender;
     private static SolidColorBrush Transparent => Brush(0x00, 0, 0, 0);
 
     private static class NativeMethods

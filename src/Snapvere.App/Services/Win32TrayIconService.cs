@@ -631,17 +631,34 @@ public sealed class Win32TrayIconService : ITrayIconService
                 {
                     if (IsInsideRoundedSquare(x, y))
                     {
-                        SetPixel(pixels, x, y, 27, 20, 48, 245);
+                        SetPixel(pixels, x, y, 21, 24, 56, 250);
                     }
                 }
             }
 
-            DrawLine(pixels, 9, 24, 22, 7, 116, 75, 255, 255, 6);
-            DrawLine(pixels, 11, 24, 24, 10, 188, 130, 255, 255, 3);
-            DrawLine(pixels, 12, 21, 20, 17, 226, 202, 255, 235, 2);
-            DrawLine(pixels, 14, 18, 22, 13, 226, 202, 255, 220, 2);
-            SetPixel(pixels, 24, 8, 237, 222, 255, 255);
-            SetPixel(pixels, 25, 8, 192, 145, 255, 230);
+            // Production mark: viewfinder corners + lightning, legible at 16-32 px.
+            DrawLine(pixels, 7, 12, 7, 9, 181, 161, 255, 255, 2);
+            DrawLine(pixels, 7, 9, 9, 7, 181, 161, 255, 255, 2);
+            DrawLine(pixels, 9, 7, 12, 7, 181, 161, 255, 255, 2);
+
+            DrawLine(pixels, 20, 7, 23, 7, 181, 161, 255, 255, 2);
+            DrawLine(pixels, 23, 7, 25, 9, 181, 161, 255, 255, 2);
+            DrawLine(pixels, 25, 9, 25, 12, 181, 161, 255, 255, 2);
+
+            DrawLine(pixels, 25, 20, 25, 23, 181, 161, 255, 255, 2);
+            DrawLine(pixels, 25, 23, 23, 25, 181, 161, 255, 255, 2);
+            DrawLine(pixels, 23, 25, 20, 25, 181, 161, 255, 255, 2);
+
+            DrawLine(pixels, 12, 25, 9, 25, 181, 161, 255, 255, 2);
+            DrawLine(pixels, 9, 25, 7, 23, 181, 161, 255, 255, 2);
+            DrawLine(pixels, 7, 23, 7, 20, 181, 161, 255, 255, 2);
+
+            DrawLine(pixels, 19, 8, 13, 17, 181, 161, 255, 255, 3);
+            DrawLine(pixels, 13, 17, 17, 17, 164, 139, 255, 255, 3);
+            DrawLine(pixels, 17, 17, 13, 24, 118, 85, 246, 255, 3);
+            DrawLine(pixels, 13, 24, 22, 14, 118, 85, 246, 255, 3);
+            DrawLine(pixels, 22, 14, 17, 14, 164, 139, 255, 255, 2);
+            DrawLine(pixels, 17, 14, 19, 8, 227, 217, 255, 230, 1);
             return pixels;
         }
 

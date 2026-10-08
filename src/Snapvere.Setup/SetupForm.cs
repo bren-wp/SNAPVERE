@@ -14,17 +14,17 @@ internal sealed class SetupForm : Form
         Complete
     }
 
-    private static readonly Color Canvas = Color.FromArgb(7, 8, 13);
-    private static readonly Color Sidebar = Color.FromArgb(10, 11, 17);
-    private static readonly Color Surface = Color.FromArgb(15, 17, 25);
-    private static readonly Color SurfaceRaised = Color.FromArgb(22, 24, 34);
-    private static readonly Color Accent = Color.FromArgb(141, 121, 255);
-    private static readonly Color AccentStrong = Color.FromArgb(103, 80, 210);
-    private static readonly Color AccentHover = Color.FromArgb(154, 137, 255);
-    private static readonly Color Cyan = Color.FromArgb(54, 182, 213);
-    private static readonly Color Muted = Color.FromArgb(174, 172, 188);
-    private static readonly Color Subtle = Color.FromArgb(125, 124, 141);
-    private static readonly Color Border = Color.FromArgb(42, 46, 58);
+    private static readonly Color Canvas = Color.FromArgb(7, 9, 18);
+    private static readonly Color Sidebar = Color.FromArgb(12, 14, 29);
+    private static readonly Color Surface = Color.FromArgb(17, 21, 38);
+    private static readonly Color SurfaceRaised = Color.FromArgb(22, 27, 46);
+    private static readonly Color Accent = Color.FromArgb(164, 139, 255);
+    private static readonly Color AccentStrong = Color.FromArgb(118, 85, 246);
+    private static readonly Color AccentHover = Color.FromArgb(164, 139, 255);
+    private static readonly Color Cyan = Color.FromArgb(128, 225, 229);
+    private static readonly Color Muted = Color.FromArgb(142, 154, 182);
+    private static readonly Color Subtle = Color.FromArgb(111, 122, 149);
+    private static readonly Color Border = Color.FromArgb(52, 60, 91);
     private static readonly Color Success = Color.FromArgb(114, 216, 180);
 
     private readonly bool _uninstallMode;
@@ -472,7 +472,7 @@ internal sealed class SetupForm : Form
 
     private static Panel BuildSidebar(bool uninstallMode)
     {
-        var sidebar = new GradientPanel(Sidebar, Color.FromArgb(17, 14, 29))
+        var sidebar = new GradientPanel(Sidebar, Color.FromArgb(18, 16, 42))
         {
             Dock = DockStyle.Left,
             Width = 280
@@ -485,23 +485,33 @@ internal sealed class SetupForm : Form
         };
         sidebar.Controls.Add(mark);
 
-        var brand = new Label
+        var snap = new Label
         {
             AutoSize = true,
-            Text = "SNAPVERE",
-            ForeColor = Color.FromArgb(247, 245, 255),
+            Text = "SNAP",
+            ForeColor = Color.FromArgb(248, 249, 255),
             Font = new Font("Segoe UI Semibold", 15F, FontStyle.Bold),
             Location = new Point(30, 104)
         };
-        sidebar.Controls.Add(brand);
+        sidebar.Controls.Add(snap);
+
+        var vere = new Label
+        {
+            AutoSize = true,
+            Text = "VERE",
+            ForeColor = Accent,
+            Font = new Font("Segoe UI Semibold", 15F, FontStyle.Bold),
+            Location = new Point(78, 104)
+        };
+        sidebar.Controls.Add(vere);
 
         var tagline = new Label
         {
             AutoSize = true,
-            Text = "Capture. Edit. Done.",
-            ForeColor = Accent,
-            Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold),
-            Location = new Point(31, 135)
+            Text = "CAPTURE. EDIT. DONE.",
+            ForeColor = Muted,
+            Font = new Font("Segoe UI Semibold", 8.5F, FontStyle.Bold),
+            Location = new Point(31, 136)
         };
         sidebar.Controls.Add(tagline);
 
@@ -528,9 +538,9 @@ internal sealed class SetupForm : Form
         };
         sidebar.Controls.Add(statement);
 
-        AddSidebarFeature(sidebar, 323, "QUICK ACCESS", "Starts quietly and stays available from the notification area.", Accent);
-        AddSidebarFeature(sidebar, 403, "PRIVATE", "No account, telemetry or cloud upload is required.", Cyan);
-        AddSidebarFeature(sidebar, 483, "COMPATIBLE", "Setup automatically installs the right build for this Windows PC.", Accent);
+        AddSidebarFeature(sidebar, 323, "FAST", "Tray-first capture stays one click away without opening a dashboard.", Accent);
+        AddSidebarFeature(sidebar, 403, "PRIVATE", "No account, telemetry or automatic cloud upload is required.", Cyan);
+        AddSidebarFeature(sidebar, 483, "LOCAL", "Setup installs the correct build and keeps capture processing on this PC.", Accent);
 
         var footerDot = new Label
         {
@@ -945,7 +955,7 @@ internal sealed class SetupForm : Form
         button.FlatAppearance.BorderColor = Accent;
         button.FlatAppearance.BorderSize = 1;
         button.FlatAppearance.MouseOverBackColor = AccentHover;
-        button.FlatAppearance.MouseDownBackColor = Color.FromArgb(92, 72, 190);
+        button.FlatAppearance.MouseDownBackColor = Color.FromArgb(92, 65, 205);
         return button;
     }
 
@@ -965,7 +975,7 @@ internal sealed class SetupForm : Form
         };
         button.FlatAppearance.BorderColor = Border;
         button.FlatAppearance.BorderSize = 1;
-        button.FlatAppearance.MouseOverBackColor = Color.FromArgb(33, 36, 49);
+        button.FlatAppearance.MouseOverBackColor = Color.FromArgb(28, 34, 56);
         return button;
     }
 
@@ -1050,30 +1060,63 @@ internal sealed class SetupForm : Form
         protected override void OnPaint(PaintEventArgs e)
         {
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            var rect = new Rectangle(1, 1, Math.Max(1, Width - 3), Math.Max(1, Height - 3));
-            using var path = CreateRoundedRectangle(rect, 14);
-            using var gradient = new LinearGradientBrush(
-                rect,
-                Color.FromArgb(97, 74, 232),
-                Color.FromArgb(54, 182, 213),
+            var scale = Math.Min(Width, Height) / 128F;
+            e.Graphics.ScaleTransform(scale, scale);
+
+            var tile = new Rectangle(1, 1, 126, 126);
+            using (var tilePath = CreateRoundedRectangle(tile, 30))
+            using (var tileBrush = new LinearGradientBrush(
+                tile,
+                Color.FromArgb(33, 25, 66),
+                Color.FromArgb(16, 22, 37),
+                45F))
+            using (var tilePen = new Pen(Color.FromArgb(75, 66, 127), 1.5F))
+            {
+                e.Graphics.FillPath(tileBrush, tilePath);
+                e.Graphics.DrawPath(tilePen, tilePath);
+            }
+
+            var inner = new Rectangle(9, 9, 110, 110);
+            using (var innerPath = CreateRoundedRectangle(inner, 24))
+            using (var innerPen = new Pen(Color.FromArgb(55, 138, 113, 222), .8F))
+            {
+                e.Graphics.DrawPath(innerPen, innerPath);
+            }
+
+            using var finderPen = new Pen(Color.FromArgb(181, 161, 255), 5F)
+            {
+                StartCap = LineCap.Round,
+                EndCap = LineCap.Round,
+                LineJoin = LineJoin.Round
+            };
+            e.Graphics.DrawLines(finderPen, [new PointF(26, 49), new PointF(26, 35), new PointF(34, 27), new PointF(47, 27)]);
+            e.Graphics.DrawLines(finderPen, [new PointF(81, 27), new PointF(94, 27), new PointF(102, 35), new PointF(102, 49)]);
+            e.Graphics.DrawLines(finderPen, [new PointF(102, 79), new PointF(102, 93), new PointF(94, 101), new PointF(81, 101)]);
+            e.Graphics.DrawLines(finderPen, [new PointF(47, 101), new PointF(34, 101), new PointF(26, 93), new PointF(26, 79)]);
+
+            var bolt = new[]
+            {
+                new PointF(73, 35),
+                new PointF(48, 67),
+                new PointF(65, 67),
+                new PointF(55, 93),
+                new PointF(85, 58),
+                new PointF(67, 58)
+            };
+            using var boltPath = new GraphicsPath();
+            boltPath.AddPolygon(bolt);
+            var boltBounds = Rectangle.Round(boltPath.GetBounds());
+            using var boltBrush = new LinearGradientBrush(
+                boltBounds,
+                Color.FromArgb(181, 161, 255),
+                Color.FromArgb(87, 78, 235),
                 45F);
-            e.Graphics.FillPath(gradient, path);
-            using var borderPen = new Pen(Color.FromArgb(165, 155, 255), 1F);
-            e.Graphics.DrawPath(borderPen, path);
-
-            using var shardPen = new Pen(Color.FromArgb(247, 245, 255), 6F)
+            using var boltPen = new Pen(Color.FromArgb(227, 217, 255), 1.7F)
             {
-                StartCap = LineCap.Round,
-                EndCap = LineCap.Round
+                LineJoin = LineJoin.Round
             };
-            e.Graphics.DrawLine(shardPen, 18, 38, 35, 15);
-
-            using var highlightPen = new Pen(Color.FromArgb(210, 205, 255), 3F)
-            {
-                StartCap = LineCap.Round,
-                EndCap = LineCap.Round
-            };
-            e.Graphics.DrawLine(highlightPen, 27, 35, 39, 20);
+            e.Graphics.FillPath(boltBrush, boltPath);
+            e.Graphics.DrawPath(boltPen, boltPath);
         }
     }
 

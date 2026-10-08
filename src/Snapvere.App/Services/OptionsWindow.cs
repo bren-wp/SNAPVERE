@@ -81,8 +81,8 @@ public sealed class OptionsWindow : Window
         _startupToggle.Toggled += StartupToggle_Toggled;
         _cursorToggle.Toggled += CursorToggle_Toggled;
 
-        _preferencesTab = CreateTabButton(L("Settings"), () => ShowSection(OptionsSection.Preferences));
-        _recentTab = CreateTabButton(L("RecentCaptures"), () => ShowSection(OptionsSection.RecentCaptures));
+        _preferencesTab = CreateTabButton(L("Settings"), "\uE713", () => ShowSection(OptionsSection.Preferences));
+        _recentTab = CreateTabButton(L("RecentCaptures"), "\uE81C", () => ShowSection(OptionsSection.RecentCaptures));
 
         BuildPreferencesPanel();
         BuildRecentPanel();
@@ -158,26 +158,75 @@ public sealed class OptionsWindow : Window
         var root = new Grid
         {
             RequestedTheme = ElementTheme.Dark,
-            Background = Canvas,
-            Padding = new Thickness(24)
+            Background = SnapvereBrand.Obsidian,
+            Padding = new Thickness(18)
         };
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(196) });
+        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        root.Children.Add(BuildHeader());
-
-        var tabs = new StackPanel
+        var railStack = new StackPanel { Spacing = 10 };
+        var brandRow = new Grid { Margin = new Thickness(2, 2, 2, 10) };
+        brandRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        brandRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        brandRow.Children.Add(SnapvereBrand.CreateMark(42));
+        var brandCopy = new StackPanel
         {
-            Orientation = Orientation.Horizontal,
-            Spacing = 8,
-            Margin = new Thickness(0, 22, 0, 16)
+            Spacing = 1,
+            Margin = new Thickness(10, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center
         };
-        tabs.Children.Add(_preferencesTab);
-        tabs.Children.Add(_recentTab);
-        Grid.SetRow(tabs, 1);
-        root.Children.Add(tabs);
+        brandCopy.Children.Add(SnapvereBrand.CreateWordmark(17));
+        brandCopy.Children.Add(Text(
+            UserText("Capture. Edit. Done.", "Snimi. Uredi. Gotovo."),
+            8.5,
+            SnapvereBrand.Muted));
+        Grid.SetColumn(brandCopy, 1);
+        brandRow.Children.Add(brandCopy);
+        railStack.Children.Add(brandRow);
+
+        var navLabel = Text(L("Settings").ToUpperInvariant(), 9, SnapvereBrand.Subtle, Microsoft.UI.Text.FontWeights.SemiBold);
+        navLabel.CharacterSpacing = 120;
+        navLabel.Margin = new Thickness(6, 4, 0, 4);
+        railStack.Children.Add(navLabel);
+        railStack.Children.Add(_preferencesTab);
+        railStack.Children.Add(_recentTab);
+
+        var local = new Border
+        {
+            Margin = new Thickness(0, 14, 0, 0),
+            Padding = new Thickness(12),
+            CornerRadius = new CornerRadius(14),
+            Background = Brush(0x20, 0x80, 0xE1, 0xE5),
+            BorderBrush = Brush(0x55, 0x80, 0xE1, 0xE5),
+            BorderThickness = new Thickness(1)
+        };
+        var localCopy = new StackPanel { Spacing = 3 };
+        localCopy.Children.Add(Text(L("LocalFirst").ToUpperInvariant(), 8.5, SnapvereBrand.Ice, Microsoft.UI.Text.FontWeights.Bold));
+        var localDetail = Text(
+            UserText("Settings and captures stay local.", "Postavke i snimke ostaju lokalne."),
+            9,
+            SnapvereBrand.Muted);
+        localDetail.TextWrapping = TextWrapping.Wrap;
+        localCopy.Children.Add(localDetail);
+        local.Child = localCopy;
+        railStack.Children.Add(local);
+
+        var rail = new Border
+        {
+            Background = SnapvereBrand.Surface,
+            BorderBrush = SnapvereBrand.Outline,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(18),
+            Padding = new Thickness(14),
+            Child = railStack
+        };
+        root.Children.Add(rail);
+
+        var main = new Grid { Margin = new Thickness(18, 0, 0, 0) };
+        main.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        main.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        main.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        main.Children.Add(BuildHeader());
 
         _preferencesScroller.Content = _preferencesPanel;
         var host = new Grid();
@@ -185,63 +234,63 @@ public sealed class OptionsWindow : Window
         host.Children.Add(_recentPanel);
         var contentFrame = new Border
         {
+            Margin = new Thickness(0, 16, 0, 0),
             Padding = new Thickness(20),
-            CornerRadius = new CornerRadius(20),
-            Background = Surface,
-            BorderBrush = Outline,
+            CornerRadius = new CornerRadius(18),
+            Background = SnapvereBrand.Surface,
+            BorderBrush = SnapvereBrand.Outline,
             BorderThickness = new Thickness(1),
             Child = host
         };
-        Grid.SetRow(contentFrame, 2);
-        root.Children.Add(contentFrame);
+        Grid.SetRow(contentFrame, 1);
+        main.Children.Add(contentFrame);
 
-        var footer = new Grid { Margin = new Thickness(2, 14, 2, 0) };
+        var footer = new Grid { Margin = new Thickness(2, 12, 2, 0) };
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         _statusText.VerticalAlignment = VerticalAlignment.Center;
         footer.Children.Add(_statusText);
-
         var close = CreateSecondaryAction(L("Close"), "\uE711", Close);
         Grid.SetColumn(close, 1);
         footer.Children.Add(close);
-        Grid.SetRow(footer, 3);
-        root.Children.Add(footer);
+        Grid.SetRow(footer, 2);
+        main.Children.Add(footer);
+
+        Grid.SetColumn(main, 1);
+        root.Children.Add(main);
         return root;
     }
 
     private FrameworkElement BuildHeader()
     {
         var header = new Grid();
-        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        header.Children.Add(BuildBrandMark());
 
-        var identity = new StackPanel
-        {
-            Spacing = 2,
-            Margin = new Thickness(12, 0, 0, 0),
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        var brand = Text("SNAPVERE", 11, AccentText, Microsoft.UI.Text.FontWeights.Bold);
-        brand.CharacterSpacing = 70;
-        identity.Children.Add(brand);
-        identity.Children.Add(Text(L("Settings"), 25, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
-        Grid.SetColumn(identity, 1);
+        var identity = new StackPanel { Spacing = 3 };
+        identity.Children.Add(Text(L("Settings"), 27, SnapvereBrand.Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        var subtitle = Text(
+            UserText(
+                "Fast access to capture behavior, local storage and recent files.",
+                "Brz pristup ponašanju snimanja, lokalnoj pohrani i nedavnim datotekama."),
+            11,
+            SnapvereBrand.Muted);
+        subtitle.TextWrapping = TextWrapping.Wrap;
+        identity.Children.Add(subtitle);
         header.Children.Add(identity);
 
         var version = typeof(OptionsWindow).Assembly.GetName().Version?.ToString(3);
         var versionBadge = new Border
         {
             Padding = new Thickness(10, 6, 10, 6),
-            CornerRadius = new CornerRadius(11),
-            Background = Elevated,
-            BorderBrush = Outline,
+            CornerRadius = new CornerRadius(12),
+            Background = SnapvereBrand.Slate,
+            BorderBrush = SnapvereBrand.Outline,
             BorderThickness = new Thickness(1),
-            VerticalAlignment = VerticalAlignment.Center,
-            Child = Text(version is null ? "SNAPVERE" : $"v{version}", 10, Muted, Microsoft.UI.Text.FontWeights.SemiBold)
+            VerticalAlignment = VerticalAlignment.Top,
+            Child = Text(version is null ? "SNAPVERE" : $"v{version}", 9.5, SnapvereBrand.Muted, Microsoft.UI.Text.FontWeights.SemiBold)
         };
-        Grid.SetColumn(versionBadge, 2);
+        Grid.SetColumn(versionBadge, 1);
         header.Children.Add(versionBadge);
         return header;
     }
@@ -915,13 +964,30 @@ public sealed class OptionsWindow : Window
         return toggle;
     }
 
-    private static Button CreateTabButton(string label, Action action)
+    private static Button CreateTabButton(string label, string glyph, Action action)
     {
+        var content = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 10,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        content.Children.Add(new FontIcon
+        {
+            Glyph = glyph,
+            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontSize = 14
+        });
+        content.Children.Add(Text(label, 10.5, SnapvereBrand.Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+
         var button = new Button
         {
-            Content = label,
-            Padding = new Thickness(14, 8, 14, 8),
-            CornerRadius = new CornerRadius(10),
+            Content = content,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Left,
+            MinHeight = 46,
+            Padding = new Thickness(12, 8, 12, 8),
+            CornerRadius = new CornerRadius(12),
             Background = Transparent,
             BorderBrush = Transparent,
             BorderThickness = new Thickness(1)
@@ -933,9 +999,9 @@ public sealed class OptionsWindow : Window
 
     private static void ApplyTabVisual(Button button, bool active)
     {
-        button.Background = active ? Brush(0x55, 0x5E, 0x48, 0xBD) : Transparent;
-        button.BorderBrush = active ? Brush(0x78, 0x9D, 0x86, 0xFF) : Transparent;
-        button.Foreground = active ? Strong : Muted;
+        button.Background = active ? Brush(0x66, 0x76, 0x55, 0xF6) : Transparent;
+        button.BorderBrush = active ? Brush(0x99, 0xA4, 0x8B, 0xFF) : Transparent;
+        button.Foreground = active ? SnapvereBrand.Strong : SnapvereBrand.Muted;
     }
 
     private static Button CreateSecondaryAction(string label, string glyph, Action action)
@@ -963,28 +1029,6 @@ public sealed class OptionsWindow : Window
         return button;
     }
 
-    private static FrameworkElement BuildBrandMark()
-    {
-        var mark = new Grid { Width = 44, Height = 44 };
-        mark.Children.Add(new Border
-        {
-            CornerRadius = new CornerRadius(14),
-            Background = AccentGradient(),
-            BorderBrush = Brush(0x66, 0xCA, 0xC1, 0xFF),
-            BorderThickness = new Thickness(1)
-        });
-        mark.Children.Add(new FontIcon
-        {
-            Glyph = "\uE722",
-            FontFamily = new FontFamily("Segoe Fluent Icons"),
-            FontSize = 18,
-            Foreground = Strong,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
-        });
-        return mark;
-    }
-
     private void SetStatus(string message, SolidColorBrush color)
     {
         _statusText.Text = message;
@@ -1006,31 +1050,18 @@ public sealed class OptionsWindow : Window
             HorizontalAlignment = horizontalAlignment
         };
 
-    private static LinearGradientBrush AccentGradient()
-    {
-        var brush = new LinearGradientBrush
-        {
-            StartPoint = new Windows.Foundation.Point(0, 0),
-            EndPoint = new Windows.Foundation.Point(1, 1)
-        };
-        brush.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x61, 0x4A, 0xE8), Offset = 0 });
-        brush.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x8C, 0x5A, 0xF4), Offset = 0.62 });
-        brush.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x36, 0xB6, 0xD5), Offset = 1 });
-        return brush;
-    }
-
     private static SolidColorBrush Brush(byte alpha, byte red, byte green, byte blue)
         => new(Windows.UI.Color.FromArgb(alpha, red, green, blue));
 
-    private static SolidColorBrush Canvas => Brush(0xFF, 0x07, 0x08, 0x0D);
-    private static SolidColorBrush Surface => Brush(0xE8, 0x0D, 0x13, 0x21);
-    private static SolidColorBrush Elevated => Brush(0xFF, 0x12, 0x17, 0x24);
-    private static SolidColorBrush Outline => Brush(0xFF, 0x34, 0x40, 0x57);
-    private static SolidColorBrush Strong => Brush(0xFF, 0xF6, 0xF5, 0xFB);
-    private static SolidColorBrush Muted => Brush(0xFF, 0xAE, 0xB5, 0xC6);
-    private static SolidColorBrush Subtle => Brush(0xFF, 0x7D, 0x87, 0x9E);
-    private static SolidColorBrush AccentText => Brush(0xFF, 0xAE, 0x9C, 0xFF);
-    private static SolidColorBrush Success => Brush(0xFF, 0x72, 0xD8, 0xB4);
+    private static SolidColorBrush Canvas => SnapvereBrand.Obsidian;
+    private static SolidColorBrush Surface => SnapvereBrand.Surface;
+    private static SolidColorBrush Elevated => SnapvereBrand.Slate;
+    private static SolidColorBrush Outline => SnapvereBrand.Outline;
+    private static SolidColorBrush Strong => SnapvereBrand.Strong;
+    private static SolidColorBrush Muted => SnapvereBrand.Muted;
+    private static SolidColorBrush Subtle => SnapvereBrand.Subtle;
+    private static SolidColorBrush AccentText => SnapvereBrand.Lavender;
+    private static SolidColorBrush Success => SnapvereBrand.Success;
     private static SolidColorBrush Warning => Brush(0xFF, 0xE2, 0xB5, 0x72);
     private static SolidColorBrush Error => Brush(0xFF, 0xF0, 0x8C, 0x9A);
     private static SolidColorBrush Transparent => Brush(0x00, 0, 0, 0);

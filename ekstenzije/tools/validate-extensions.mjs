@@ -224,6 +224,19 @@ function validateBrandLock(browser, browserDir) {
     fail(`${browser} visible extension surfaces must retain the SNAPVERE wordmark.`);
   }
 
+  const popupCss = fs.readFileSync(path.join(browserDir, "popup.css"), "utf8");
+  const optionsCss = fs.readFileSync(path.join(browserDir, "options.css"), "utf8");
+  for (const [name, text] of [["popup.css", popupCss], ["options.css", optionsCss]]) {
+    for (const token of ["#070912", "#111526", "#161b2e", "#7655f6", "#a48bff", "#80e1e5", "#8e9ab6"]) {
+      if (!text.toLowerCase().includes(token)) {
+        fail(`${browser}/${name} must retain premium SNAPVERE brand token ${token}.`);
+      }
+    }
+  }
+  if (!/id=["']recent["']/.test(popupHtml) || !/data-action=["']CAPTURE_REGION["']/.test(popupHtml)) {
+    fail(`${browser} popup must retain the fast capture + Recent premium layout.`);
+  }
+
   const visibleHtml = `${optionsHtml}\n${popupHtml}`;
   if (/\b(?:dev|debug|todo|placeholder)\b/i.test(visibleHtml)) {
     fail(`${browser} visible extension UI contains development-only wording.`);
