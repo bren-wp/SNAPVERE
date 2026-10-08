@@ -81,76 +81,109 @@ public sealed class RecordingControllerWindow : Window
         var grid = new Grid
         {
             RequestedTheme = ElementTheme.Dark,
-            Padding = new Thickness(12, 10, 10, 10)
+            Padding = new Thickness(14, 12, 12, 12)
         };
         grid.KeyDown += Root_KeyDown;
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-        var indicator = new Border
+        var brand = new Border
         {
-            Width = 24,
-            Height = 24,
-            CornerRadius = new CornerRadius(12),
-            Background = Brush(0x26, 0xEC, 0x5F, 0x74),
-            BorderBrush = Brush(0x90, 0xEC, 0x5F, 0x74),
+            Width = 46,
+            Height = 46,
+            CornerRadius = new CornerRadius(14),
+            Background = SnapvereBrand.Slate,
+            BorderBrush = SnapvereBrand.Outline,
             BorderThickness = new Thickness(1),
-            VerticalAlignment = VerticalAlignment.Center,
-            Child = new Border
-            {
-                Width = 8,
-                Height = 8,
-                CornerRadius = new CornerRadius(4),
-                Background = RecordingRed,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            }
+            Child = SnapvereBrand.CreateMark(38),
+            VerticalAlignment = VerticalAlignment.Center
         };
-        AutomationProperties.SetName(indicator, L("ScreenRecordingActive"));
-        grid.Children.Add(indicator);
+        grid.Children.Add(brand);
 
         var status = new StackPanel
         {
-            Spacing = 0,
-            Margin = new Thickness(10, 0, 12, 0),
+            Spacing = 1,
+            Margin = new Thickness(12, 0, 14, 0),
             VerticalAlignment = VerticalAlignment.Center
         };
         var statusText = new TextBlock
         {
             Text = L("ScreenRecordingActive"),
-            FontSize = 11,
+            FontSize = 10.5,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = Strong
+            Foreground = SnapvereBrand.Muted
         };
         AutomationProperties.SetLiveSetting(statusText, AutomationLiveSetting.Polite);
         status.Children.Add(statusText);
+
+        var timerRow = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 9,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        timerRow.Children.Add(new Border
+        {
+            Width = 12,
+            Height = 12,
+            CornerRadius = new CornerRadius(6),
+            Background = SnapvereBrand.Danger,
+            BorderBrush = Brush(0x55, 0xF0, 0x63, 0x82),
+            BorderThickness = new Thickness(1),
+            VerticalAlignment = VerticalAlignment.Center
+        });
         var elapsed = new TextBlock
         {
             Text = "00:00",
-            FontSize = 16,
-            FontFamily = new FontFamily("Consolas"),
-            Foreground = Muted
+            FontSize = 22,
+            FontFamily = new FontFamily("Segoe UI Semibold"),
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = SnapvereBrand.Strong
         };
-        AutomationProperties.SetName(
-            elapsed,
-            UserText("Recording elapsed time", "Proteklo vrijeme snimanja"));
-        status.Children.Add(elapsed);
+        AutomationProperties.SetName(elapsed, UserText("Recording elapsed time", "Proteklo vrijeme snimanja"));
+        timerRow.Children.Add(elapsed);
+        status.Children.Add(timerRow);
         Grid.SetColumn(status, 1);
         grid.Children.Add(status);
 
+        var stopContent = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 9,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        stopContent.Children.Add(CreateStopGlyph());
+        stopContent.Children.Add(new TextBlock
+        {
+            Text = L("StopScreenRecording"),
+            FontSize = 11,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = SnapvereBrand.Strong,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+
         var stop = new Button
         {
-            Width = 42,
-            Height = 42,
-            Padding = new Thickness(0),
-            CornerRadius = new CornerRadius(21),
-            Background = Brush(0xFF, 0x73, 0x24, 0x3A),
-            BorderBrush = Brush(0xFF, 0xEC, 0x5F, 0x74),
+            MinWidth = 132,
+            Height = 46,
+            Padding = new Thickness(18, 0, 18, 0),
+            CornerRadius = new CornerRadius(14),
+            Background = new LinearGradientBrush
+            {
+                StartPoint = new Windows.Foundation.Point(0, 0),
+                EndPoint = new Windows.Foundation.Point(1, 0),
+                GradientStops =
+                {
+                    new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0xF0, 0x63, 0x82), Offset = 0 },
+                    new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x9B, 0x4E, 0xE8), Offset = 1 }
+                }
+            },
+            BorderBrush = Brush(0xAA, 0xF0, 0x63, 0x82),
             BorderThickness = new Thickness(1),
-            Foreground = Strong,
+            Foreground = SnapvereBrand.Strong,
             VerticalAlignment = VerticalAlignment.Center,
-            Content = CreateStopGlyph()
+            Content = stopContent
         };
         AutomationProperties.SetName(stop, L("StopScreenRecording"));
         ToolTipService.SetToolTip(stop, L("StopScreenRecording"));
@@ -161,10 +194,10 @@ public sealed class RecordingControllerWindow : Window
         var root = new Border
         {
             RequestedTheme = ElementTheme.Dark,
-            Background = Surface,
-            BorderBrush = Outline,
+            Background = SnapvereBrand.Surface,
+            BorderBrush = SnapvereBrand.Outline,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(16),
+            CornerRadius = new CornerRadius(18),
             Child = grid
         };
 
@@ -271,7 +304,7 @@ public sealed class RecordingControllerWindow : Window
         }
 
         _sizeApplied = true;
-        AppWindow.Resize(DpiAwareWindowSizing.ScaleSizeToWorkArea(this, 340, 72));
+        AppWindow.Resize(DpiAwareWindowSizing.ScaleSizeToWorkArea(this, 500, 82));
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
             presenter.SetBorderAndTitleBar(false, false);
@@ -312,9 +345,9 @@ public sealed class RecordingControllerWindow : Window
     private static SolidColorBrush Brush(byte alpha, byte red, byte green, byte blue)
         => new(Windows.UI.Color.FromArgb(alpha, red, green, blue));
 
-    private static SolidColorBrush Surface => Brush(0xFF, 0x0D, 0x13, 0x21);
-    private static SolidColorBrush Strong => Brush(0xFF, 0xF7, 0xF5, 0xFF);
-    private static SolidColorBrush Muted => Brush(0xFF, 0xAF, 0xB6, 0xC8);
-    private static SolidColorBrush Outline => Brush(0xFF, 0x34, 0x40, 0x57);
-    private static SolidColorBrush RecordingRed => Brush(0xFF, 0xEC, 0x5F, 0x74);
+    private static SolidColorBrush Surface => SnapvereBrand.Surface;
+    private static SolidColorBrush Strong => SnapvereBrand.Strong;
+    private static SolidColorBrush Muted => SnapvereBrand.Muted;
+    private static SolidColorBrush Outline => SnapvereBrand.Outline;
+    private static SolidColorBrush RecordingRed => SnapvereBrand.Danger;
 }
