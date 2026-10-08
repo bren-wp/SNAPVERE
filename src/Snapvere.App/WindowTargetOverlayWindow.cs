@@ -103,8 +103,8 @@ public sealed class WindowTargetOverlayWindow : Window
         _targetLabel = new Border
         {
             Padding = new Thickness(11, 7, 11, 7),
-            Background = Brush(0xF4, 0x0C, 0x0E, 0x15),
-            BorderBrush = Brush(0xA0, 0x8D, 0x79, 0xFF),
+            Background = Brush(0xF4, 0x11, 0x15, 0x26),
+            BorderBrush = Brush(0xA0, 0xA4, 0x8B, 0xFF),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(11),
             Child = _targetText,
@@ -189,8 +189,8 @@ public sealed class WindowTargetOverlayWindow : Window
             Width = 30,
             Height = 30,
             CornerRadius = new CornerRadius(9),
-            Background = Brush(0x5A, 0x67, 0x50, 0xD2),
-            BorderBrush = Brush(0x70, 0xA5, 0x8E, 0xFF),
+            Background = Brush(0x55, 0x76, 0x55, 0xF6),
+            BorderBrush = Brush(0x88, 0xA4, 0x8B, 0xFF),
             BorderThickness = new Thickness(1),
             Child = new FontIcon
             {
@@ -225,8 +225,8 @@ public sealed class WindowTargetOverlayWindow : Window
             VerticalAlignment = VerticalAlignment.Top,
             Margin = new Thickness(16),
             Padding = new Thickness(9, 8, 12, 8),
-            Background = Brush(0xF2, 0x09, 0x0B, 0x11),
-            BorderBrush = Brush(0x80, 0x45, 0x3D, 0x72),
+            Background = Brush(0xF2, 0x11, 0x15, 0x26),
+            BorderBrush = Brush(0x80, 0x34, 0x3C, 0x5B),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(14),
             IsHitTestVisible = false,
@@ -499,9 +499,9 @@ public sealed class WindowTargetOverlayWindow : Window
     private static SolidColorBrush Brush(byte alpha, byte red, byte green, byte blue)
         => new(Windows.UI.Color.FromArgb(alpha, red, green, blue));
 
-    private static SolidColorBrush Strong => Brush(0xFF, 0xF7, 0xF5, 0xFF);
-    private static SolidColorBrush Muted => Brush(0xFF, 0xB5, 0xB0, 0xC3);
-    private static SolidColorBrush AccentBrush => Brush(0xFF, 0x8D, 0x79, 0xFF);
+    private static SolidColorBrush Strong => SnapvereBrand.Strong;
+    private static SolidColorBrush Muted => SnapvereBrand.Muted;
+    private static SolidColorBrush AccentBrush => SnapvereBrand.Lavender;
 
     private static async Task<WriteableBitmap> CreateFrozenBitmapAsync(CaptureFrame frame)
     {
