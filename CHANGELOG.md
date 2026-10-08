@@ -9,6 +9,7 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 ### Premium brand system and faster hierarchy
 
 - Replace the legacy shard/feather identity with the supplied viewfinder-plus-lightning mark across Windows UI chrome, the notification-area icon, Setup, README branding assets and browser extension icons.
+- Use the supplied premium 48 px PNG mark directly in Windows chrome instead of a runtime-scaled vector redraw, keeping Windows/browser identity aligned and rendered visual QA deterministic.
 - Add a central `SnapvereBrand` production token layer matching the supplied Obsidian, Surface, Slate, Violet, Lavender, Ice, text and muted colors.
 - Rebuild the Tray surface around four primary capture/recording actions, Recent captures and Settings; keep folder, language, About and Exit available as compact secondary footer actions.
 - Rebuild Settings around a branded left navigation rail and keep local-first state visible without adding extra workflow steps.
