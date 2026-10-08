@@ -248,8 +248,20 @@ function validateBrandLock(browser, browserDir) {
     fail(`${browser} visible extension surfaces must retain the SNAPVERE wordmark.`);
   }
 
+  // The supplied popup reference keeps Settings in the footer and never
+  // adds decorative action chevrons or unimplemented capture buttons.
+  if (!/<footer class="footer">[\s\S]*id="recent"[\s\S]*id="settings"[\s\S]*<\/footer>/.test(popupHtml)) {
+    fail(`${browser} popup must keep actual Recent and Settings actions together in the footer.`);
+  }
+  if ((popupHtml.match(/data-action=/g) || []).length !== 3 || /class="chevron"/.test(popupHtml)) {
+    fail(`${browser} popup must match three real capture actions without decorative chevrons.`);
+  }
+
   const popupCss = fs.readFileSync(path.join(browserDir, "popup.css"), "utf8");
   const optionsCss = fs.readFileSync(path.join(browserDir, "options.css"), "utf8");
+  if (!popupCss.includes("width: min(420px, 100vw)") || !popupCss.includes("background: #2b2345;")) {
+    fail(`${browser} popup must retain the supplied compact premium visual proportions.`);
+  }
   for (const [name, text] of [["popup.css", popupCss], ["options.css", optionsCss]]) {
     for (const token of ["#070912", "#111526", "#161b2e", "#7655f6", "#a48bff", "#80e1e5", "#8e9ab6"]) {
       if (!text.toLowerCase().includes(token)) {

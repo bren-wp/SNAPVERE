@@ -12,9 +12,7 @@
       <img src="icons/icon-48.png" width="48" height="48" alt="">
       <div class="brand-copy">
         <div class="wordmark">SNAPVERE</div>
-        <div class="tagline" data-i18n="tagline"></div>
       </div>
-      <button id="settings" class="icon-button" type="button" data-i18n-aria-label="settings" aria-label="Settings">⚙</button>
     </header>
 
     <h1 data-i18n="captureActions"></h1>
@@ -26,7 +24,6 @@
           <strong data-i18n="captureVisible"></strong>
           <small data-i18n="captureVisibleHint"></small>
         </span>
-        <span class="chevron" aria-hidden="true">›</span>
       </button>
 
       <button class="capture-action" type="button" data-action="CAPTURE_REGION">
@@ -35,7 +32,6 @@
           <strong data-i18n="captureRegion"></strong>
           <small data-i18n="captureRegionHint"></small>
         </span>
-        <span class="chevron" aria-hidden="true">›</span>
       </button>
 
       <button class="capture-action" type="button" data-action="CAPTURE_FULL">
@@ -44,7 +40,6 @@
           <strong data-i18n="captureFull"></strong>
           <small data-i18n="captureFullHint"></small>
         </span>
-        <span class="chevron" aria-hidden="true">›</span>
       </button>
     </section>
 
@@ -55,8 +50,9 @@
         <span aria-hidden="true">◴</span>
         <span data-i18n="recentCaptures"></span>
       </button>
-      <span id="status" class="status" role="status" aria-live="polite"></span>
+      <button id="settings" class="icon-button footer-settings" type="button" data-i18n-aria-label="settings" aria-label="Settings">☼</button>
     </footer>
+    <span id="status" class="status" role="status" aria-live="polite"></span>
 
     <p class="limit-note" data-i18n="fullPageLimitNote"></p>
   </main>
