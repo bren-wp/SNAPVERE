@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.30**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.30
+- Release-preparation target: **v0.1.31**
+- Target release page after publication: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.31
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -27,6 +27,41 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 ---
 
 ## Unreleased
+
+---
+
+## v0.1.31 — 2026-10-08
+
+SNAPVERE 0.1.31 is a premium branding and usability release that transfers the supplied SNAPVERE visual identity into the shipped Windows and browser product while preserving the fast tray-first workflow.
+
+### One production brand system
+
+- The common Windows brand layer now uses the supplied Obsidian `#070912`, Surface `#111526`, Slate `#161B2E`, Violet `#7655F6`, Lavender `#A48BFF`, Ice `#80E1E5`, strong text `#F8F9FF` and muted text `#8E9AB6`.
+- The previous shard/feather identity is replaced by the supplied viewfinder-plus-lightning mark in visible Windows chrome, the notification-area icon, Setup and repository branding assets.
+- Tray, Settings, Region/Window capture chrome, recording controller, About, Language and capture feedback use the same palette, borders, radii and action hierarchy.
+- Setup receives the same mark, palette and FAST / PRIVATE / LOCAL presentation without changing install/uninstall behavior.
+
+### Simpler and faster interaction
+
+- Tray keeps Region, Window, Screen and Start/Stop Recording as the primary actions, followed by Recent captures and Settings.
+- Open folder, Language, About and Exit remain available as compact footer utilities rather than competing with capture actions.
+- Settings moves to a stable left navigation rail so Settings and Recent captures remain predictable without adding extra screens.
+- Recording controller shows only real product state: recording status, elapsed time and one large Stop action. Unsupported microphone/system-audio controls are not presented.
+- Normal application startup remains hidden tray-first; no blocking splash screen or permanent dashboard was introduced.
+
+### Browser parity
+
+- Chrome, Edge, Opera and Firefox use the same supplied 16/32/48/128 PNG icon files.
+- The popup uses one shared premium layout with Visible, Region and Full Page capture plus direct Recent and Settings access.
+- Browser Options uses the same Obsidian/Slate/Violet/Lavender/Ice palette and responsive rail/surface treatment.
+- Permissions and v0.1.30 session/privacy boundaries are unchanged.
+
+### Regression and release evidence
+
+- Windows UI-contract validation locks the premium palette, mark and high-value layout fragments.
+- Browser validation locks the premium CSS tokens, popup hierarchy and existing permission/session contracts.
+- Windows assembly/file/package versions and all four browser manifests advance together to 0.1.31.
+- Setup EXE, MSI, Portable and browser ZIPs still require the normal Windows CI, rendered visual QA, MSI lifecycle, browser runtime/parity, Product Contract, localization, CodeQL and native ARM64 gates before publication.
 
 ---
 

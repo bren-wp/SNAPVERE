@@ -133,7 +133,7 @@ def main() -> int:
             "Color.FromArgb(118, 85, 246)",
             "Color.FromArgb(164, 139, 255)",
             "Color.FromArgb(128, 225, 229)",
-            "Production mark: viewfinder corners + lightning" if False else "new PointF(73, 35)",
+            "new PointF(73, 35)",
         ),
     )
 
