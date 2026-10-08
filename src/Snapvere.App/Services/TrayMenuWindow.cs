@@ -87,7 +87,7 @@ public sealed class TrayMenuWindow : Window
         actions.Children.Add(CreateMenuButton(
             "\uE714",
             L(_screenRecordingActive ? "StopScreenRecording" : "StartScreenRecording"),
-            "Ctrl + Shift + 4",
+            string.Empty,
             _screenRecordingActive
                 ? TrayCommand.StopScreenRecording
                 : TrayCommand.StartScreenRecording,

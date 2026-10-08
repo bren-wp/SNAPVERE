@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -23,6 +24,14 @@ const expectedCommands = Object.freeze({
     mac: "Command+Shift+7",
     description: "__MSG_commandCaptureFullPage__"
   }
+});
+// SHA-256 of the exact 16/32/48/128px exports supplied in the SNAPVERE brand ZIP.
+// Check both the canonical assets and every browser package to prevent visual drift.
+const premiumIconSha256 = Object.freeze({
+  "icon-16.png": "cc5c7df30b7c0372629083adf26e7f56a36556c503fc94027a1764d86971fe65",
+  "icon-32.png": "b4139f4baa33c22921834272d4f62f403af178d9f80364f1035eb3228d29c709",
+  "icon-48.png": "e1836e9f3cf6e0347938d9c014aa50a92304da22a89561676354db1fb6982ca7",
+  "icon-128.png": "e49808dad22d4afb68668b1d85ae7804549ed1a79dd5fe9b802e32be8ba49aad"
 });
 const requiredFiles = [
   "manifest.json",
@@ -58,6 +67,21 @@ function walk(dir) {
     else out.push(absolute);
   }
   return out;
+}
+
+function validatePremiumIcons(browser, browserDir) {
+  for (const [fileName, expectedHash] of Object.entries(premiumIconSha256)) {
+    const targets = [
+      path.join(repoRoot, "assets", "branding", "premium", fileName),
+      path.join(browserDir, "icons", fileName)
+    ];
+    for (const target of targets) {
+      const actual = createHash("sha256").update(fs.readFileSync(target)).digest("hex");
+      if (actual !== expectedHash) {
+        fail(`${browser} premium asset ${path.relative(repoRoot, target)} differs from the supplied branding ZIP.`);
+      }
+    }
+  }
 }
 
 function validateMessages(browserDir) {
@@ -356,6 +380,7 @@ for (const browser of browsers) {
   }
 
   validateManifest(browser, browserDir);
+  validatePremiumIcons(browser, browserDir);
   validateMessages(browserDir);
   validateLocalizationReferences(browser, browserDir);
   validateBrandLock(browser, browserDir);
@@ -363,4 +388,4 @@ for (const browser of browsers) {
   console.log(`Validated ${browser}.`);
 }
 
-console.log("SNAPVERE browser extension validation passed: branding locked, permissions bounded, localization references verified, command shortcuts locked, capture memory lifecycle enforced.");
+console.log("SNAPVERE browser extension validation passed: supplied brand icon hashes locked, permissions bounded, localization references verified, command shortcuts locked, capture memory lifecycle enforced.");

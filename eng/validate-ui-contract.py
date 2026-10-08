@@ -103,6 +103,13 @@ def main() -> int:
         ),
     )
 
+    tray_text = read("src/Snapvere.App/Services/TrayMenuWindow.cs")
+    if '"Ctrl + Shift + 4"' in tray_text:
+        raise RuntimeError("Recording must not advertise an unregistered Ctrl+Shift+4 shortcut.")
+    recording_button = tray_text.split('L(_screenRecordingActive ? "StopScreenRecording" : "StartScreenRecording"),', 1)
+    if len(recording_button) != 2 or not recording_button[1].lstrip().startswith("string.Empty,"):
+        raise RuntimeError("Recording action must retain a blank shortcut hint until a hotkey is implemented.")
+
     require(
         "src/Snapvere.App/SnapvereBrand.cs",
         (
