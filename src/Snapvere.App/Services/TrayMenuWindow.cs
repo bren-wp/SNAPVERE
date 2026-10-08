@@ -17,7 +17,7 @@ namespace Snapvere.App.Services;
 public sealed class TrayMenuWindow : Window
 {
     private const int FlyoutWidth = 420;
-    private const int FlyoutHeight = 548;
+    private const int FlyoutHeight = 488;
     private const int FlyoutEdgeMargin = 4;
     private const int CursorGap = 4;
     private const int CursorHorizontalAnchorOffset = 20;
@@ -91,10 +91,9 @@ public sealed class TrayMenuWindow : Window
             _screenRecordingActive
                 ? TrayCommand.StopScreenRecording
                 : TrayCommand.StartScreenRecording,
-            danger: _screenRecordingActive));
-        actions.Children.Add(CreateSeparator());
-        actions.Children.Add(CreateActionButton("\uE81C", L("RecentCaptures"), string.Empty, _recentCapturesHandler));
-        actions.Children.Add(CreateMenuButton("\uE713", L("Settings"), string.Empty, TrayCommand.Show));
+            danger: _screenRecordingActive,
+            recording: true));
+
         var actionScroller = new ScrollViewer
         {
             Margin = new Thickness(0, 10, 0, 0),
@@ -109,15 +108,45 @@ public sealed class TrayMenuWindow : Window
         Grid.SetRow(actionScroller, 1);
         root.Children.Add(actionScroller);
 
-        var footer = new Grid { Margin = new Thickness(4, 10, 4, 0) };
-        footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        // Match the reference hierarchy: three captures, recording, then
+        // two readable utility actions. Less frequently used commands remain
+        // accessible with keyboard focus and automation labels below.
+        var footer = new Grid { Margin = new Thickness(2, 10, 2, 0) };
+        footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-        var ready = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
+        var quickActions = new Grid();
+        quickActions.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        quickActions.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        var folder = CreateFooterLinkButton("\uE838", L("OpenCaptureFolder"),
+            () => InvokeCommand(TrayCommand.OpenCaptureFolder));
+        quickActions.Children.Add(folder);
+        var settings = CreateFooterLinkButton("\uE713", L("Settings"),
+            () => InvokeCommand(TrayCommand.Show));
+        Grid.SetColumn(settings, 1);
+        quickActions.Children.Add(settings);
+        footer.Children.Add(quickActions);
+
+        var separator = CreateSeparator();
+        separator.Margin = new Thickness(0, 10, 0, 8);
+        Grid.SetRow(separator, 1);
+        footer.Children.Add(separator);
+
+        var footerBottom = new Grid();
+        footerBottom.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        footerBottom.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var ready = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 6,
+            VerticalAlignment = VerticalAlignment.Center
+        };
         ready.Children.Add(new Border
         {
-            Width = 8,
-            Height = 8,
+            Width = 7,
+            Height = 7,
             CornerRadius = new CornerRadius(4),
             Background = _screenRecordingActive ? SnapvereBrand.Danger : SnapvereBrand.Success
         });
@@ -125,7 +154,7 @@ public sealed class TrayMenuWindow : Window
             L(_screenRecordingActive ? "ScreenRecordingActive" : "Ready"),
             10,
             _screenRecordingActive ? SnapvereBrand.Danger : SnapvereBrand.Muted));
-        footer.Children.Add(ready);
+        footerBottom.Children.Add(ready);
 
         var utilities = new StackPanel
         {
@@ -133,12 +162,14 @@ public sealed class TrayMenuWindow : Window
             Spacing = 6,
             VerticalAlignment = VerticalAlignment.Center
         };
-        utilities.Children.Add(CreateFooterIconButton("\uE838", L("OpenCaptureFolder"), () => InvokeCommand(TrayCommand.OpenCaptureFolder)));
+        utilities.Children.Add(CreateFooterIconButton("\uE81C", L("RecentCaptures"), () => InvokeAction(_recentCapturesHandler)));
         utilities.Children.Add(CreateFooterIconButton("\uE774", L("Language"), () => InvokeAction(_languageHandler)));
         utilities.Children.Add(CreateFooterIconButton("\uE946", L("About"), () => InvokeCommand(TrayCommand.About)));
         utilities.Children.Add(CreateFooterIconButton("\uE7E8", L("Exit"), () => InvokeCommand(TrayCommand.Exit), danger: true));
         Grid.SetColumn(utilities, 1);
-        footer.Children.Add(utilities);
+        footerBottom.Children.Add(utilities);
+        Grid.SetRow(footerBottom, 2);
+        footer.Children.Add(footerBottom);
 
         Grid.SetRow(footer, 2);
         root.Children.Add(footer);
@@ -191,6 +222,39 @@ public sealed class TrayMenuWindow : Window
         return header;
     }
 
+    private Button CreateFooterLinkButton(string glyph, string label, Action action)
+    {
+        var contents = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        contents.Children.Add(new FontIcon
+        {
+            Glyph = glyph,
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
+            FontSize = 15,
+            Foreground = SnapvereBrand.Lavender
+        });
+        contents.Children.Add(Text(label, 10.5, SnapvereBrand.Muted, Microsoft.UI.Text.FontWeights.SemiBold));
+        var button = new Button
+        {
+            MinHeight = 38,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            Content = contents,
+            Padding = new Thickness(4),
+            Background = Brush(0x00, 0, 0, 0),
+            BorderBrush = Brush(0x00, 0, 0, 0),
+            BorderThickness = new Thickness(0)
+        };
+        AutomationProperties.SetName(button, label);
+        button.Click += (_, _) => action();
+        return button;
+    }
+
     private Button CreateFooterIconButton(string glyph, string accessibleName, Action action, bool danger = false)
     {
         var button = new Button
@@ -222,11 +286,9 @@ public sealed class TrayMenuWindow : Window
         string shortcut,
         TrayCommand command,
         bool primary = false,
-        bool danger = false)
-        => CreateButton(glyph, title, shortcut, () => InvokeCommand(command), primary, danger);
-
-    private Button CreateActionButton(string glyph, string title, string shortcut, Action action)
-        => CreateButton(glyph, title, shortcut, () => InvokeAction(action), primary: false, danger: false);
+        bool danger = false,
+        bool recording = false)
+        => CreateButton(glyph, title, shortcut, () => InvokeCommand(command), primary, danger, recording);
 
     private Button CreateButton(
         string glyph,
@@ -234,56 +296,71 @@ public sealed class TrayMenuWindow : Window
         string shortcut,
         Action action,
         bool primary,
-        bool danger)
+        bool danger,
+        bool recording)
     {
         var content = new Grid();
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(42) });
         content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        content.Children.Add(new Border
+
+        // Recording has a real status indicator, not a fabricated audio control.
+        var icon = new Border
         {
-            Width = 32,
-            Height = 32,
-            CornerRadius = new CornerRadius(9),
-            Background = primary ? Brush(0x33, 0xF8, 0xF9, 0xFF) : danger ? Brush(0x28, 0xF0, 0x63, 0x82) : SnapvereBrand.Surface,
-            BorderBrush = primary ? Brush(0x66, 0xF8, 0xF9, 0xFF) : danger ? Brush(0x55, 0xF0, 0x63, 0x82) : SnapvereBrand.Outline,
-            BorderThickness = new Thickness(1),
-            Child = new FontIcon
-            {
-                Glyph = glyph,
-                FontFamily = new FontFamily("Segoe MDL2 Assets"),
-                FontSize = 14,
-                Foreground = danger ? Brush(0xFF, 0xFF, 0xAE, 0xB7) : Strong
-            }
-        });
-        var label = Text(title, 11.5, danger ? Brush(0xFF, 0xFF, 0xB6, 0xBF) : Strong, Microsoft.UI.Text.FontWeights.SemiBold);
-        label.VerticalAlignment = VerticalAlignment.Center;
-        label.TextWrapping = TextWrapping.Wrap;
-        label.TextTrimming = TextTrimming.CharacterEllipsis;
-        label.MaxLines = 2;
-        Grid.SetColumn(label, 1);
-        content.Children.Add(label);
+            Width = 30,
+            Height = 30,
+            CornerRadius = new CornerRadius(8),
+            Background = primary ? Brush(0x25, 0xA4, 0x8B, 0xFF) : Brush(0x00, 0, 0, 0),
+            Child = recording
+                ? new TextBlock
+                {
+                    Text = "●",
+                    FontSize = 19,
+                    Foreground = SnapvereBrand.Danger,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                }
+                : new FontIcon
+                {
+                    Glyph = glyph,
+                    FontFamily = new FontFamily("Segoe MDL2 Assets"),
+                    FontSize = 17,
+                    Foreground = SnapvereBrand.Lavender
+                }
+        };
+        content.Children.Add(icon);
+
+        var copy = new StackPanel
+        {
+            Spacing = 2,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var titleText = Text(title, 12, SnapvereBrand.Strong, Microsoft.UI.Text.FontWeights.SemiBold);
+        titleText.TextWrapping = TextWrapping.Wrap;
+        titleText.MaxLines = 2;
+        copy.Children.Add(titleText);
         if (!string.IsNullOrWhiteSpace(shortcut))
         {
-            var hint = Text(shortcut, 9, primary ? Brush(0xFF, 0xDA, 0xD2, 0xFF) : Subtle);
-            hint.VerticalAlignment = VerticalAlignment.Center;
-            hint.HorizontalAlignment = HorizontalAlignment.Right;
-            hint.TextAlignment = TextAlignment.Right;
+            var hint = Text(shortcut, 9.5, SnapvereBrand.Muted);
             hint.TextTrimming = TextTrimming.CharacterEllipsis;
-            hint.MaxWidth = 108;
             _shortcutHints.Add(hint);
-            Grid.SetColumn(hint, 2);
-            content.Children.Add(hint);
+            copy.Children.Add(hint);
         }
+        Grid.SetColumn(copy, 1);
+        content.Children.Add(copy);
+
         var button = new Button
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            MinHeight = primary ? 58 : 52,
-            Padding = new Thickness(12, 7, 12, 7),
-            CornerRadius = new CornerRadius(14),
-            Background = primary ? SnapvereBrand.AccentGradient() : SnapvereBrand.Slate,
-            BorderBrush = primary ? SnapvereBrand.Lavender : SnapvereBrand.Outline,
+            MinHeight = recording ? 54 : primary ? 54 : 50,
+            Padding = new Thickness(12, 5, 12, 5),
+            CornerRadius = new CornerRadius(13),
+            Background = recording
+                ? Brush(0xFF, 0x2A, 0x21, 0x48)
+                : primary ? Brush(0xFF, 0x2F, 0x26, 0x4E) : SnapvereBrand.Slate,
+            BorderBrush = recording
+                ? Brush(0xFF, 0x69, 0x4E, 0xAB)
+                : primary ? Brush(0xFF, 0x77, 0x62, 0xAF) : SnapvereBrand.Outline,
             BorderThickness = new Thickness(1),
             Content = content
         };

@@ -86,8 +86,8 @@ def main() -> int:
     require("src/Snapvere.App/Services/TrayMenuWindow.cs",
             ('L("CaptureRegion"), "Ctrl + Shift + 1"',))
     require("src/Snapvere.App/Services/OptionsWindow.cs",
-            ("var compact = args.NewSize.Width < 400;",
-             "card.Margin = new Thickness(0, row == 1 ? 14 : 8, 0, 0);"))
+            ("AddInlinePreferenceRow(0,",
+             "railStack.Children.Add(_aboutTab);"))
     require_asset_hash(
         "src/Snapvere.App/Assets/SNAPVERE-app-icon-32.png",
         "b4139f4baa33c22921834272d4f62f403af178d9f80364f1035eb3228d29c709",
@@ -184,13 +184,13 @@ def main() -> int:
             'CloseForActionBestEffort("Close tray menu for action")',
             "StartupDiagnostics.Record(operation, exception);",
             "private const int FlyoutWidth = 420;",
-            "private const int FlyoutHeight = 548;",
+            "private const int FlyoutHeight = 488;",
             "private const int FlyoutEdgeMargin = 4;",
             "TrayPopupPlacementPolicy.Place(",
-            "MinHeight = primary ? 58 : 52",
+            "MinHeight = recording ? 54 : primary ? 54 : 50",
             "SnapvereBrand.CreateMark(50)",
             "CreateFooterIconButton",
-            "hint.TextAlignment = TextAlignment.Right",
+            "CreateFooterLinkButton",
         ),
     )
 
@@ -222,10 +222,23 @@ def main() -> int:
         "src/Snapvere.App/Services/OptionsWindow.cs",
         (
             "SnapvereBrand.CreateMark(42)",
-            "new GridLength(196)",
-            "Postavke i snimke ostaju lokalne.",
+            "new GridLength(222)",
+            "Tvoje snimke ostaju lokalne",
+            "railStack.Children.Add(_generalTab)",
+            "railStack.Children.Add(_preferencesTab)",
+            "railStack.Children.Add(_recordingTab)",
+            "railStack.Children.Add(_shortcutsTab)",
+            "railStack.Children.Add(_recentTab)",
+            "railStack.Children.Add(_aboutTab)",
+            "AddInlinePreferenceRow(0,",
+            "_recordingPanel.Children.Add(_recordingActions)",
+            "Ctrl + Shift + {i + 1}",
         ),
     )
+    options_source = read("src/Snapvere.App/Services/OptionsWindow.cs")
+    if "BuildSettingCard(" in options_source or "AddPreferenceCard(" in options_source:
+        raise RuntimeError("Old oversized Settings cards must not remain.")
+
     require(
         "src/Snapvere.Setup/SetupForm.cs",
         (
