@@ -144,7 +144,7 @@ public sealed class AboutWindow : Window
         var root = new Grid
         {
             RequestedTheme = ElementTheme.Dark,
-            Background = Brush(0xFF, 0x07, 0x08, 0x0D),
+            Background = SnapvereBrand.Obsidian,
             Padding = new Thickness(24)
         };
         root.KeyDown += Root_KeyDown;
@@ -176,8 +176,8 @@ public sealed class AboutWindow : Window
             Margin = new Thickness(0, 20, 0, 18),
             Padding = new Thickness(18),
             CornerRadius = new CornerRadius(18),
-            Background = Brush(0xFF, 0x0F, 0x11, 0x19),
-            BorderBrush = Brush(0xFF, 0x28, 0x2C, 0x39),
+            Background = SnapvereBrand.Surface,
+            BorderBrush = SnapvereBrand.Outline,
             BorderThickness = new Thickness(1)
         };
 
@@ -195,8 +195,8 @@ public sealed class AboutWindow : Window
         {
             Padding = new Thickness(9, 5, 9, 5),
             CornerRadius = new CornerRadius(10),
-            Background = Brush(0x55, 0x5D, 0x47, 0xB7),
-            BorderBrush = Brush(0x70, 0x9C, 0x86, 0xFF),
+            Background = Brush(0x44, 0x76, 0x55, 0xF6),
+            BorderBrush = Brush(0x88, 0xA4, 0x8B, 0xFF),
             BorderThickness = new Thickness(1),
             Child = Text(version is null ? "SNAPVERE" : $"v{version}", 9.5, Strong, Microsoft.UI.Text.FontWeights.SemiBold)
         };
@@ -208,8 +208,8 @@ public sealed class AboutWindow : Window
         {
             Padding = new Thickness(13),
             CornerRadius = new CornerRadius(13),
-            Background = Brush(0x35, 0x21, 0x4A, 0x40),
-            BorderBrush = Brush(0x50, 0x45, 0xB9, 0x98),
+            Background = Brush(0x22, 0x80, 0xE1, 0xE5),
+            BorderBrush = Brush(0x55, 0x80, 0xE1, 0xE5),
             BorderThickness = new Thickness(1)
         };
         var privacyCopy = new StackPanel { Spacing = 3 };
@@ -256,8 +256,8 @@ public sealed class AboutWindow : Window
             HorizontalAlignment = HorizontalAlignment.Right,
             Padding = new Thickness(18, 8, 18, 8),
             CornerRadius = new CornerRadius(10),
-            Background = Brush(0xFF, 0x18, 0x1B, 0x25),
-            BorderBrush = Brush(0xFF, 0x32, 0x36, 0x45),
+            Background = SnapvereBrand.Slate,
+            BorderBrush = SnapvereBrand.Outline,
             BorderThickness = new Thickness(1),
             Foreground = Strong
         };
@@ -283,8 +283,8 @@ public sealed class AboutWindow : Window
             HorizontalContentAlignment = HorizontalAlignment.Left,
             Padding = new Thickness(11, 6, 11, 6),
             CornerRadius = new CornerRadius(9),
-            Background = Brush(0xFF, 0x16, 0x18, 0x22),
-            BorderBrush = Brush(0xFF, 0x2E, 0x32, 0x40),
+            Background = SnapvereBrand.Slate,
+            BorderBrush = SnapvereBrand.Outline,
             BorderThickness = new Thickness(1),
             Foreground = Strong
         };
@@ -358,8 +358,8 @@ public sealed class AboutWindow : Window
             HorizontalAlignment = HorizontalAlignment.Left,
             Padding = new Thickness(9, 5, 9, 5),
             CornerRadius = new CornerRadius(9),
-            Background = Brush(0xFF, 0x16, 0x18, 0x22),
-            BorderBrush = Brush(0xFF, 0x2E, 0x32, 0x40),
+            Background = SnapvereBrand.Slate,
+            BorderBrush = SnapvereBrand.Outline,
             BorderThickness = new Thickness(1),
             Child = Text(shortcut, 9.5, Strong, Microsoft.UI.Text.FontWeights.SemiBold)
         };
@@ -385,59 +385,14 @@ public sealed class AboutWindow : Window
     }
 
     private static FrameworkElement BuildBrandMark()
-    {
-        var mark = new Grid { Width = 46, Height = 46 };
-        mark.Children.Add(new Border
-        {
-            CornerRadius = new CornerRadius(14),
-            Background = AccentGradient(),
-            BorderBrush = Brush(0x66, 0xCA, 0xC1, 0xFF),
-            BorderThickness = new Thickness(1)
-        });
-        mark.Children.Add(new FontIcon
-        {
-            Glyph = "\uE722",
-            FontFamily = new FontFamily("Segoe Fluent Icons"),
-            FontSize = 18,
-            Foreground = Strong,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
-        });
-        return mark;
-    }
-
-    private static TextBlock Text(
-        string value,
-        double size,
-        SolidColorBrush foreground,
-        Windows.UI.Text.FontWeight? weight = null)
-        => new()
-        {
-            Text = value,
-            FontSize = size,
-            Foreground = foreground,
-            FontWeight = weight ?? Microsoft.UI.Text.FontWeights.Normal
-        };
-
-    private static LinearGradientBrush AccentGradient()
-    {
-        var brush = new LinearGradientBrush
-        {
-            StartPoint = new Windows.Foundation.Point(0, 0),
-            EndPoint = new Windows.Foundation.Point(1, 1)
-        };
-        brush.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x61, 0x4A, 0xE8), Offset = 0 });
-        brush.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x8C, 0x5A, 0xF4), Offset = 0.62 });
-        brush.GradientStops.Add(new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x36, 0xB6, 0xD5), Offset = 1 });
-        return brush;
-    }
+        => SnapvereBrand.CreateMark(46);
 
     private static SolidColorBrush Brush(byte alpha, byte red, byte green, byte blue)
         => new(Windows.UI.Color.FromArgb(alpha, red, green, blue));
 
-    private static SolidColorBrush Strong => Brush(0xFF, 0xF6, 0xF5, 0xFB);
-    private static SolidColorBrush Muted => Brush(0xFF, 0xAE, 0xAC, 0xBC);
-    private static SolidColorBrush Subtle => Brush(0xFF, 0x7D, 0x7C, 0x8D);
-    private static SolidColorBrush Success => Brush(0xFF, 0x72, 0xD8, 0xB4);
+    private static SolidColorBrush Strong => SnapvereBrand.Strong;
+    private static SolidColorBrush Muted => SnapvereBrand.Muted;
+    private static SolidColorBrush Subtle => SnapvereBrand.Subtle;
+    private static SolidColorBrush Success => SnapvereBrand.Success;
     private static SolidColorBrush Warning => Brush(0xFF, 0xE2, 0xB5, 0x72);
 }
