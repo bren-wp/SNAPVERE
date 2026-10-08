@@ -92,12 +92,48 @@ def main() -> int:
             'CloseForActionBestEffort("Close tray menu for command")',
             'CloseForActionBestEffort("Close tray menu for action")',
             "StartupDiagnostics.Record(operation, exception);",
-            "private const int FlyoutWidth = 392;",
-            "private const int FlyoutHeight = 542;",
+            "private const int FlyoutWidth = 420;",
+            "private const int FlyoutHeight = 548;",
             "private const int FlyoutEdgeMargin = 4;",
             "TrayPopupPlacementPolicy.Place(",
-            "MinHeight = primary ? 46 : 38",
+            "MinHeight = primary ? 58 : 52",
+            "SnapvereBrand.CreateMark(50)",
+            "CreateFooterIconButton",
             "hint.TextAlignment = TextAlignment.Right",
+        ),
+    )
+
+    require(
+        "src/Snapvere.App/SnapvereBrand.cs",
+        (
+            'ObsidianHex = "#070912"',
+            'SurfaceHex = "#111526"',
+            'SlateHex = "#161B2E"',
+            'VioletHex = "#7655F6"',
+            'LavenderHex = "#A48BFF"',
+            'IceHex = "#80E1E5"',
+            'StrongTextHex = "#F8F9FF"',
+            'MutedTextHex = "#8E9AB6"',
+            "CreateMark(double size)",
+            "CreateWordmark(double fontSize",
+        ),
+    )
+    require(
+        "src/Snapvere.App/Services/OptionsWindow.cs",
+        (
+            "SnapvereBrand.CreateMark(42)",
+            "new GridLength(196)",
+            "Postavke i snimke ostaju lokalne.",
+        ),
+    )
+    require(
+        "src/Snapvere.Setup/SetupForm.cs",
+        (
+            "Color.FromArgb(7, 9, 18)",
+            "Color.FromArgb(118, 85, 246)",
+            "Color.FromArgb(164, 139, 255)",
+            "Color.FromArgb(128, 225, 229)",
+            "Production mark: viewfinder corners + lightning" if False else "new PointF(73, 35)",
         ),
     )
 
