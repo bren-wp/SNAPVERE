@@ -208,7 +208,7 @@ public sealed class LanguagePickerWindow : Window
             Margin = new Thickness(0, 18, 0, 0),
             Padding = new Thickness(20, 9, 20, 9),
             CornerRadius = new CornerRadius(11),
-            Background = SnapvereBrand.AccentGradient(),
+            Background = SnapvereBrand.Violet,
             BorderBrush = SnapvereBrand.Lavender,
             BorderThickness = new Thickness(1),
             Foreground = Strong
