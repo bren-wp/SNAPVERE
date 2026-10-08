@@ -555,7 +555,10 @@ public partial class App : Microsoft.UI.Xaml.Application
         {
             if (root.ActualWidth >= 120 && root.ActualHeight >= 100)
             {
-                await Task.Delay(50);
+                // Premium brand marks are shipped as the supplied raster asset.
+                // Give WinUI one short decode/compositor window before external
+                // PrintWindow QA starts demanding three identical frames.
+                await Task.Delay(HasReadyProbeImage(root) ? 180 : 50);
                 return;
             }
 

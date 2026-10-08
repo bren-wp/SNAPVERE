@@ -20,6 +20,9 @@
     <Content Include="Assets\SNAPVERE-app-icon-transparent.svg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Assets\SNAPVERE-app-icon-48.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Snapvere.Application\Snapvere.Application.csproj" />

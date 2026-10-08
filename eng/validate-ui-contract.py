@@ -115,6 +115,8 @@ def main() -> int:
             'StrongTextHex = "#F8F9FF"',
             'MutedTextHex = "#8E9AB6"',
             "CreateMark(double size)",
+            'ProductionMarkFile = "SNAPVERE-app-icon-48.png"',
+            "new BitmapImage(",
             "CreateWordmark(double fontSize",
         ),
     )
