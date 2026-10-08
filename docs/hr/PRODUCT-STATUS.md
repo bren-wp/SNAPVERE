@@ -8,13 +8,13 @@ Produkcijska implementacija uključuje tray-first startup, Region/Window/Screen 
 
 SNAPVERE 0.1.31 je produkcijsko branding i usability izdanje. Zajednički `SnapvereBrand` sloj zaključava dostavljeni premium identitet na svim vidljivim Windows površinama: Obsidian `#070912`, Surface `#111526`, Slate `#161B2E`, Violet `#7655F6`, Lavender `#A48BFF`, Ice `#80E1E5`, viewfinder+munja znak, kompaktni spacing i ujednačenu hijerarhiju akcija. Tray naglašava četiri glavne capture/recording radnje, dok su sekundarni alati prebačeni u kompaktne footer akcije. Postavke koriste brandirani lijevi rail, Region/Window overlayi isti chrome, a recording/sekundarni prozori i Setup isti vizualni sustav.
 
-Normalni startup ostaje tray-first i skriven; v0.1.31 ne uvodi blokirajući splash ekran ni stalni dashboard. Screen recording i dalje snima samo video primarnog zaslona, zato se mikrofon i sistemski audio ne prikazuju kao implementirane funkcije. Diagnostic redaction i local-first privacy granice iz v0.1.30 ostaju aktivne.
+Normalni startup ostaje tray-first i skriven; v0.1.31 ne uvodi blokirajući splash ekran ni stalni dashboard. Screen recording i dalje snima samo video primarnog zaslona, zato se mikrofon i sistemski audio ne prikazuju kao implementirane funkcije. Postojeći diagnostic redaction i local-first privacy mehanizmi ostaju aktivni.
 
 ## Browseri
 
 Chrome, Edge, Opera i Firefox održavaju visible-area, selected-region i bounded full-page capture. Sva četiri browsera sada koriste isti dostavljeni 16/32/48/128 PNG icon set, premium popup hijerarhiju i premium Options raspored. Popup prikazuje samo tri stvarno podržana capture načina te izravan pristup Nedavnim snimkama i Postavkama. Cross-browser source paritet ostaje obavezan.
 
-Validirani permission contract i dalje je `activeTab`, `scripting`, `downloads`, `downloads.open` i `storage`; široki host pristup nije dio održavanog dizajna. Privacy granice iz v0.1.30 ostaju aktivne: session-scoped metadata capture vlasništva koristi se gdje je podržan, trajni local storage ostaje za postavke kada je moguće, Recent dohvat je ograničen na SNAPVERE kandidate, a click-time download revalidacija te sender/tab ownership provjere ostaju obavezne.
+Validirani permission contract i dalje je `activeTab`, `scripting`, `downloads`, `downloads.open` i `storage`; široki host pristup nije dio održavanog dizajna. Postojeće privacy granice ostaju aktivne: session-scoped metadata capture vlasništva koristi se gdje je podržan, trajni local storage ostaje za postavke kada je moguće, Recent dohvat je ograničen na SNAPVERE kandidate, a click-time download revalidacija te sender/tab ownership provjere ostaju obavezne.
 
 GitHub ZIP paketi ne predstavljaju se kao odobreni store listing dok stvarna vanjska objava nije potvrđena.
 

@@ -8,13 +8,13 @@ Production implementation includes tray-first startup, Region/Window/Screen capt
 
 SNAPVERE 0.1.31 is a production branding and usability release. A shared `SnapvereBrand` layer locks the supplied premium identity across the visible Windows product: Obsidian `#070912`, Surface `#111526`, Slate `#161B2E`, Violet `#7655F6`, Lavender `#A48BFF`, Ice `#80E1E5`, the viewfinder-plus-lightning mark, compact spacing and consistent action hierarchy. Tray keeps the four primary capture/recording actions prominent while secondary utilities move to compact footer actions. Settings uses a branded navigation rail, Region/Window overlays share the same chrome, and recording/secondary windows and Setup use the same visual system.
 
-Normal startup remains tray-first and hidden; v0.1.31 does not add a blocking splash screen or a permanent dashboard. Screen recording remains primary-display video only, so microphone/system-audio controls are not presented as implemented features. The diagnostic redaction and local-first privacy boundaries introduced in v0.1.30 remain in force.
+Normal startup remains tray-first and hidden; v0.1.31 does not add a blocking splash screen or a permanent dashboard. Screen recording remains primary-display video only, so microphone/system-audio controls are not presented as implemented features. The existing diagnostic redaction and local-first privacy boundaries remain in force.
 
 ## Browsers
 
 Production source is maintained for Chrome, Edge, Opera and Firefox. Implemented capture modes are visible area, selected region and bounded full page. All four variants now use the same supplied 16/32/48/128 PNG icon set, premium popup hierarchy and premium Options layout. The popup keeps only the three real capture modes plus direct access to Recent captures and Settings. Browser source parity remains enforced.
 
-The validated permission contract remains `activeTab`, `scripting`, `downloads`, `downloads.open` and `storage`; broad host access is not part of the maintained design. v0.1.30 privacy boundaries remain active: session-scoped capture ownership metadata is preferred where supported, persistent local storage is reserved for settings when possible, Recent discovery is bounded to SNAPVERE candidates, and click-time download revalidation plus sender/tab ownership checks remain enforced.
+The validated permission contract remains `activeTab`, `scripting`, `downloads`, `downloads.open` and `storage`; broad host access is not part of the maintained design. Existing privacy boundaries remain active: session-scoped capture ownership metadata is preferred where supported, persistent local storage is reserved for settings when possible, Recent discovery is bounded to SNAPVERE candidates, and click-time download revalidation plus sender/tab ownership checks remain enforced.
 
 GitHub release ZIPs are not represented as externally approved store listings unless that publication has actually happened.
 
