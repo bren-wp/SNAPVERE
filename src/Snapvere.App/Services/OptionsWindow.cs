@@ -389,7 +389,7 @@ public sealed class OptionsWindow : Window
     private void AddPreferenceCard(int row, string eyebrow, string title, string description, string glyph, FrameworkElement trailing)
     {
         var card = BuildSettingCard(eyebrow, title, description, glyph, trailing);
-        card.Margin = new Thickness(0, row == 1 ? 16 : 10, 0, 0);
+        card.Margin = new Thickness(0, row == 1 ? 14 : 8, 0, 0);
         Grid.SetRow(card, row);
         _preferencesPanel.Children.Add(card);
     }
@@ -484,7 +484,7 @@ public sealed class OptionsWindow : Window
 
         grid.SizeChanged += (_, args) =>
         {
-            var compact = args.NewSize.Width < 470;
+            var compact = args.NewSize.Width < 400;
             Grid.SetRow(trailing, compact ? 1 : 0);
             Grid.SetColumn(trailing, compact ? 1 : 2);
             Grid.SetColumnSpan(trailing, compact ? 2 : 1);
@@ -501,7 +501,7 @@ public sealed class OptionsWindow : Window
 
         return new Border
         {
-            Padding = new Thickness(16),
+            Padding = new Thickness(14),
             CornerRadius = new CornerRadius(15),
             Background = Elevated,
             BorderBrush = Outline,

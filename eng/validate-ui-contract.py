@@ -85,6 +85,9 @@ def main() -> int:
 
     require("src/Snapvere.App/Services/TrayMenuWindow.cs",
             ('L("CaptureRegion"), "Ctrl + Shift + 1"',))
+    require("src/Snapvere.App/Services/OptionsWindow.cs",
+            ("var compact = args.NewSize.Width < 400;",
+             "card.Margin = new Thickness(0, row == 1 ? 14 : 8, 0, 0);"))
     require_asset_hash(
         "src/Snapvere.App/Assets/SNAPVERE-app-icon-32.png",
         "b4139f4baa33c22921834272d4f62f403af178d9f80364f1035eb3228d29c709",
