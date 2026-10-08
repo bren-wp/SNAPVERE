@@ -17,6 +17,11 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Assets\SNAPVERE-app-icon-transparent.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Snapvere.Application\Snapvere.Application.csproj" />
     <ProjectReference Include="..\Snapvere.Capture\Snapvere.Capture.csproj" />
     <ProjectReference Include="..\Snapvere.Domain\Snapvere.Domain.csproj" />
