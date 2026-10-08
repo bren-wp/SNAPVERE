@@ -142,7 +142,7 @@ public sealed class CaptureFeedbackWindow : Window
             Child = new FontIcon
             {
                 Glyph = _kind == CaptureFeedbackKind.Busy ? "\uE823" : "\uE7BA",
-                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontFamily = new FontFamily("Segoe MDL2 Assets"),
                 FontSize = 17,
                 Foreground = Strong
             }

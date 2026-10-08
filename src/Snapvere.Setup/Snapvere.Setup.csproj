@@ -4,6 +4,7 @@
     <AssemblyName>SNAPVERE-Setup</AssemblyName>
     <RootNamespace>Snapvere.Setup</RootNamespace>
     <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>Assets\SNAPVERE.ico</ApplicationIcon>
     <Platforms>x86;x64</Platforms>
     <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
     <SelfContained>true</SelfContained>

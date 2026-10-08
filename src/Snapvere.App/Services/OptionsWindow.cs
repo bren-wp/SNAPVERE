@@ -454,7 +454,7 @@ public sealed class OptionsWindow : Window
             Child = new FontIcon
             {
                 Glyph = glyph,
-                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontFamily = new FontFamily("Segoe MDL2 Assets"),
                 FontSize = 15,
                 Foreground = Strong
             }
@@ -654,7 +654,7 @@ public sealed class OptionsWindow : Window
         empty.Children.Add(new FontIcon
         {
             Glyph = "\uE91B",
-            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
             FontSize = 24,
             Foreground = AccentText
         });
@@ -706,7 +706,7 @@ public sealed class OptionsWindow : Window
             Child = new FontIcon
             {
                 Glyph = "\uE91B",
-                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontFamily = new FontFamily("Segoe MDL2 Assets"),
                 FontSize = 14,
                 Foreground = Strong
             }
@@ -729,7 +729,7 @@ public sealed class OptionsWindow : Window
         var arrow = new FontIcon
         {
             Glyph = "\uE72A",
-            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
             FontSize = 11,
             Foreground = Subtle,
             VerticalAlignment = VerticalAlignment.Center
@@ -975,7 +975,7 @@ public sealed class OptionsWindow : Window
         content.Children.Add(new FontIcon
         {
             Glyph = glyph,
-            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
             FontSize = 14
         });
         content.Children.Add(Text(label, 10.5, SnapvereBrand.Strong, Microsoft.UI.Text.FontWeights.SemiBold));
@@ -1010,7 +1010,7 @@ public sealed class OptionsWindow : Window
         stack.Children.Add(new FontIcon
         {
             Glyph = glyph,
-            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
             FontSize = 12
         });
         stack.Children.Add(Text(label, 10, Strong, Microsoft.UI.Text.FontWeights.SemiBold));

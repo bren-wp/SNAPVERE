@@ -10,6 +10,11 @@ Repository assets:
 - `assets/branding/readme/snapvere-logo-light.svg` — README/logo treatment for light backgrounds.
 - `assets/branding/symbol/snapvere-symbol.svg` — standalone product symbol.
 - `ekstenzije/*/icons/` — browser extension application icons.
+- `assets/branding/premium/SNAPVERE.ico` — canonical multiresolution Windows executable icon, containing original 16, 32, 48, and 128 px PNG frames without resampling.
+- `src/Snapvere.App/Assets/SNAPVERE.ico` and `src/Snapvere.Setup/Assets/SNAPVERE.ico` — identical `ApplicationIcon` copies embedded into the main/Portable and Setup executables.
+- The tray uses the supplied 32 px PNG, and the installer UI embeds the supplied 128 px PNG directly (no procedural approximation).
+- `eng/validate-ui-contract.py` checks icon headers, the original PNG bytes of every frame, identical executable copies, and Windows `ApplicationIcon` wiring.
+
 
 The root README uses adaptive dark/light logo markup so GitHub can present the appropriate asset without changing the brand.
 

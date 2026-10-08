@@ -81,7 +81,7 @@ public sealed class TrayMenuWindow : Window
         root.Children.Add(BuildHeader());
 
         var actions = new StackPanel { Spacing = 8, Margin = new Thickness(0, 14, 0, 0) };
-        actions.Children.Add(CreateMenuButton("\uE722", L("CaptureRegion"), "Print Screen", TrayCommand.RegionCapture, primary: true));
+        actions.Children.Add(CreateMenuButton("\uE722", L("CaptureRegion"), "Ctrl + Shift + 1", TrayCommand.RegionCapture, primary: true));
         actions.Children.Add(CreateMenuButton("\uE7F4", L("CaptureWindow"), "Ctrl + Shift + 2", TrayCommand.WindowCapture));
         actions.Children.Add(CreateMenuButton("\uE7F8", L("CaptureScreen"), "Ctrl + Shift + 3", TrayCommand.ScreenCapture));
         actions.Children.Add(CreateMenuButton(
@@ -205,7 +205,7 @@ public sealed class TrayMenuWindow : Window
             Content = new FontIcon
             {
                 Glyph = glyph,
-                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontFamily = new FontFamily("Segoe MDL2 Assets"),
                 FontSize = 13,
                 Foreground = danger ? SnapvereBrand.Danger : SnapvereBrand.Muted
             }
@@ -251,7 +251,7 @@ public sealed class TrayMenuWindow : Window
             Child = new FontIcon
             {
                 Glyph = glyph,
-                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontFamily = new FontFamily("Segoe MDL2 Assets"),
                 FontSize = 14,
                 Foreground = danger ? Brush(0xFF, 0xFF, 0xAE, 0xB7) : Strong
             }

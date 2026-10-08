@@ -1371,7 +1371,7 @@ public sealed class RegionCaptureWindow : Window
         content.Children.Add(new FontIcon
         {
             Glyph = glyph,
-            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
             FontSize = 11,
             Foreground = Strong
         });
@@ -1406,7 +1406,7 @@ public sealed class RegionCaptureWindow : Window
         content.Children.Add(new FontIcon
         {
             Glyph = glyph,
-            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
             FontSize = 11,
             Foreground = Strong
         });

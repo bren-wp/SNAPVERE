@@ -3,6 +3,7 @@
 
 from pathlib import Path
 from hashlib import sha256
+from struct import unpack_from
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -26,7 +27,64 @@ def require_asset_hash(path: str, expected_hash: str) -> None:
         raise RuntimeError(f"SNAPVERE asset differs from the supplied branding ZIP: {path}")
 
 
+def validate_windows_executable_icons() -> None:
+    # Preserve the exact original PNG frames in the actual Windows EXE resources.
+    canonical = ROOT / "assets/branding/premium/SNAPVERE.ico"
+    if not canonical.is_file():
+        raise RuntimeError("Canonical premium Windows EXE icon is missing.")
+    icon = canonical.read_bytes()
+    if sha256(icon).hexdigest() != "2050742ca22fa046a692eea05c20e2eb1456214648157a8f2e865000c1937a87":
+        raise RuntimeError("Canonical premium Windows EXE icon changed unexpectedly.")
+
+    sizes = (16, 32, 48, 128)
+    if len(icon) < 6 or unpack_from("<HHH", icon) != (0, 1, len(sizes)):
+        raise RuntimeError("Windows EXE icon has an invalid multi-resolution ICONDIR header.")
+
+    next_offset = 6 + len(sizes) * 16
+    for index, size in enumerate(sizes):
+        metadata = unpack_from("<BBBBHHII", icon, 6 + index * 16)
+        width, height, color_count, reserved, planes, bit_count, byte_count, offset = metadata
+        if (width, height, color_count, reserved, planes, bit_count) != (size, size, 0, 0, 1, 32):
+            raise RuntimeError(f"Windows EXE icon {size}px frame metadata is invalid.")
+        if offset != next_offset or offset + byte_count > len(icon):
+            raise RuntimeError(f"Windows EXE icon {size}px frame offset is invalid.")
+
+        expected = (ROOT / f"assets/branding/premium/icon-{size}.png").read_bytes()
+        if icon[offset:offset + byte_count] != expected:
+            raise RuntimeError(f"Windows EXE icon {size}px frame differs from the original PNG.")
+        next_offset += byte_count
+
+    if next_offset != len(icon):
+        raise RuntimeError("Windows EXE icon contains an unexpected trailing payload.")
+
+    for target in (
+        "src/Snapvere.App/Assets/SNAPVERE.ico",
+        "src/Snapvere.Setup/Assets/SNAPVERE.ico",
+    ):
+        asset = ROOT / target
+        if not asset.is_file() or asset.read_bytes() != icon:
+            raise RuntimeError(f"{target} must match the canonical Windows EXE icon.")
+
+
 def main() -> int:
+    validate_windows_executable_icons()
+    # CI visual captures exposed missing Segoe Fluent glyphs as empty boxes.
+    # Use the Windows-provided MDL2 glyph font for all active WinUI icon surfaces.
+    for icon_surface in (
+        "src/Snapvere.App/Services/TrayMenuWindow.cs",
+        "src/Snapvere.App/Services/OptionsWindow.cs",
+        "src/Snapvere.App/RegionCaptureWindow.cs",
+        "src/Snapvere.App/WindowTargetOverlayWindow.cs",
+        "src/Snapvere.App/Services/CaptureFeedbackWindow.cs",
+    ):
+        source = read(icon_surface)
+        if 'Segoe Fluent Icons' in source:
+            raise RuntimeError(f"{icon_surface} still uses the unavailable Fluent icon font.")
+        if 'new FontFamily("Segoe MDL2 Assets")' not in source:
+            raise RuntimeError(f"{icon_surface} must use the supported Windows MDL2 glyph font.")
+
+    require("src/Snapvere.App/Services/TrayMenuWindow.cs",
+            ('L("CaptureRegion"), "Ctrl + Shift + 1"',))
     require_asset_hash(
         "src/Snapvere.App/Assets/SNAPVERE-app-icon-32.png",
         "b4139f4baa33c22921834272d4f62f403af178d9f80364f1035eb3228d29c709",
@@ -41,11 +99,11 @@ def main() -> int:
     )
     require(
         "src/Snapvere.App/Snapvere.App.csproj",
-        ('<Content Include="Assets\\SNAPVERE-app-icon-32.png">',),
+        ('<Content Include="Assets\\SNAPVERE-app-icon-32.png">', '<ApplicationIcon>Assets\\SNAPVERE.ico</ApplicationIcon>'),
     )
     require(
         "src/Snapvere.Setup/Snapvere.Setup.csproj",
-        ('LogicalName="Snapvere.Brand.AppIcon"',),
+        ('LogicalName="Snapvere.Brand.AppIcon"', '<ApplicationIcon>Assets\\SNAPVERE.ico</ApplicationIcon>'),
     )
 
     for path in (
