@@ -1,54 +1,158 @@
 {
-  "extensionName": { "message": "SNAPVERE" },
-  "extensionDescription": { "message": "Lokalno snimanje vidljivog područja, cijele stranice i odabranog područja." },
-  "actionTitle": { "message": "SNAPVERE snimanje" },
-  "tagline": { "message": "Snimi. Uredi. Gotovo." },
-  "captureActions": { "message": "Radnje snimanja" },
-  "captureVisible": { "message": "Snimi vidljivo područje" },
-  "captureVisibleHint": { "message": "Spremi trenutačni prikaz kao PNG" },
-  "captureFull": { "message": "Snimi cijelu stranicu" },
-  "captureFullHint": { "message": "Pomakni, spoji i spremi stranicu lokalno" },
-  "captureRegion": { "message": "Odaberi područje" },
-  "captureRegionHint": { "message": "Povuci preko točnog područja koje trebaš" },
-  "commandCaptureRegion": { "message": "Snimi odabrano područje" },
-  "commandCaptureVisible": { "message": "Snimi vidljivo područje" },
-  "commandCaptureFullPage": { "message": "Snimi cijelu stranicu" },
-  "settings": { "message": "Postavke" },
-  "ready": { "message": "Spremno za snimanje" },
-  "capturingVisible": { "message": "Snimam vidljivo područje…" },
-  "capturingFull": { "message": "Snimam cijelu stranicu…" },
-  "selectRegion": { "message": "Povuci za odabir područja na stranici." },
-  "saved": { "message": "Pokrenuto je preuzimanje PNG-a." },
-  "captureBusy": { "message": "Drugo SNAPVERE snimanje već je aktivno." },
-  "captureTabChanged": { "message": "Aktivna kartica promijenjena je tijekom snimanja. Ponovno pokreni snimanje na kartici koju želiš snimiti." },
-  "unsupportedPage": { "message": "Ova stranica preglednika ne dopušta umetanje skripte ili snimanje." },
-  "captureFailed": { "message": "Snimanje nije moguće dovršiti." },
-  "fullPageTooLarge": { "message": "Stranica je prevelika za sigurno snimanje cijele stranice." },
-  "regionTooSmall": { "message": "Odaberi veće područje." },
-  "regionInstruction": { "message": "Povuci za odabir područja. Pritisni Esc za odustajanje." },
-  "fullPageLimitNote": { "message": "Rezultat cijele stranice može varirati kod videa, canvasa, cross-origin frameova i vrlo dinamičnih stranica." },
-  "optionsTitle": { "message": "Postavke snimanja" },
-  "optionsNavigation": { "message": "SNAPVERE opcije" },
-  "fileNamingNote": { "message": "Spremljene snimke uvijek koriste SNAPVERE prefiks naziva datoteke." },
-  "askWhereToSave": { "message": "Pitaj gdje spremiti snimke vidljivog i odabranog područja" },
-  "saveSettings": { "message": "Spremi postavke" },
-  "settingsSaved": { "message": "Postavke su spremljene." },
-  "loadingSettings": { "message": "Učitavam postavke…" },
-  "settingsLoadFailed": { "message": "Postavke nije moguće učitati. Sigurne zadane postavke ostaju aktivne." },
-  "settingsSaveFailed": { "message": "Postavke nije moguće spremiti. Pokušaj ponovno." },
-  "privacyNote": { "message": "Snimke se obrađuju lokalno. SNAPVERE ne šalje snimke u oblak, ne koristi analitiku ni telemetriju." },
-  "recentCaptures": { "message": "Nedavne snimke" },
-  "recentDescription": { "message": "Najnovija dovršena SNAPVERE PNG preuzimanja iz ovog profila preglednika." },
-  "refresh": { "message": "Osvježi" },
-  "openDownloadsFolder": { "message": "Otvori mapu preuzimanja" },
-  "openDownloadsFolderFailed": { "message": "Preglednik ne može otvoriti zadanu mapu preuzimanja." },
-  "loadingRecent": { "message": "Učitavam nedavne snimke…" },
-  "recentReady": { "message": "Nedavne snimke su ažurne." },
-  "noRecentCaptures": { "message": "U preuzimanjima preglednika nema dovršenih SNAPVERE snimki." },
-  "recentCapture": { "message": "SNAPVERE snimka" },
-  "openCapture": { "message": "Otvori" },
-  "recentLoadFailed": { "message": "Nedavne snimke nije moguće učitati iz preuzimanja preglednika." },
-  "openCaptureFailed": { "message": "Snimku nije moguće otvoriti. Možda je premještena ili izbrisana." },
-  "openingSettings": { "message": "Otvaram postavke…" },
-  "openSettingsFailed": { "message": "Postavke nije moguće otvoriti. Pokušaj ponovno iz izbornika ekstenzija preglednika." }
+  "extensionName": {
+    "message": "SNAPVERE"
+  },
+  "extensionDescription": {
+    "message": "Lokalno snimanje vidljivog područja, cijele stranice i odabranog područja."
+  },
+  "actionTitle": {
+    "message": "SNAPVERE snimanje"
+  },
+  "tagline": {
+    "message": "Snimi. Uredi. Gotovo."
+  },
+  "captureActions": {
+    "message": "Što želiš snimiti?"
+  },
+  "captureVisible": {
+    "message": "Snimi vidljivo područje"
+  },
+  "captureVisibleHint": {
+    "message": "Spremi trenutačni prikaz kao PNG"
+  },
+  "captureFull": {
+    "message": "Snimi cijelu stranicu"
+  },
+  "captureFullHint": {
+    "message": "Pomakni, spoji i spremi stranicu lokalno"
+  },
+  "captureRegion": {
+    "message": "Odaberi područje"
+  },
+  "captureRegionHint": {
+    "message": "Povuci preko točnog područja koje trebaš"
+  },
+  "commandCaptureRegion": {
+    "message": "Snimi odabrano područje"
+  },
+  "commandCaptureVisible": {
+    "message": "Snimi vidljivo područje"
+  },
+  "commandCaptureFullPage": {
+    "message": "Snimi cijelu stranicu"
+  },
+  "settings": {
+    "message": "Postavke"
+  },
+  "ready": {
+    "message": "Spremno za snimanje"
+  },
+  "capturingVisible": {
+    "message": "Snimam vidljivo područje…"
+  },
+  "capturingFull": {
+    "message": "Snimam cijelu stranicu…"
+  },
+  "selectRegion": {
+    "message": "Povuci za odabir područja na stranici."
+  },
+  "saved": {
+    "message": "Pokrenuto je preuzimanje PNG-a."
+  },
+  "captureBusy": {
+    "message": "Drugo SNAPVERE snimanje već je aktivno."
+  },
+  "captureTabChanged": {
+    "message": "Aktivna kartica promijenjena je tijekom snimanja. Ponovno pokreni snimanje na kartici koju želiš snimiti."
+  },
+  "unsupportedPage": {
+    "message": "Ova stranica preglednika ne dopušta umetanje skripte ili snimanje."
+  },
+  "captureFailed": {
+    "message": "Snimanje nije moguće dovršiti."
+  },
+  "fullPageTooLarge": {
+    "message": "Stranica je prevelika za sigurno snimanje cijele stranice."
+  },
+  "regionTooSmall": {
+    "message": "Odaberi veće područje."
+  },
+  "regionInstruction": {
+    "message": "Povuci za odabir područja. Pritisni Esc za odustajanje."
+  },
+  "fullPageLimitNote": {
+    "message": "Rezultat cijele stranice može varirati kod videa, canvasa, cross-origin frameova i vrlo dinamičnih stranica."
+  },
+  "optionsTitle": {
+    "message": "Postavke snimanja"
+  },
+  "optionsNavigation": {
+    "message": "SNAPVERE opcije"
+  },
+  "fileNamingNote": {
+    "message": "Spremljene snimke uvijek koriste SNAPVERE prefiks naziva datoteke."
+  },
+  "askWhereToSave": {
+    "message": "Pitaj gdje spremiti snimke vidljivog i odabranog područja"
+  },
+  "saveSettings": {
+    "message": "Spremi postavke"
+  },
+  "settingsSaved": {
+    "message": "Postavke su spremljene."
+  },
+  "loadingSettings": {
+    "message": "Učitavam postavke…"
+  },
+  "settingsLoadFailed": {
+    "message": "Postavke nije moguće učitati. Sigurne zadane postavke ostaju aktivne."
+  },
+  "settingsSaveFailed": {
+    "message": "Postavke nije moguće spremiti. Pokušaj ponovno."
+  },
+  "privacyNote": {
+    "message": "Snimke se obrađuju lokalno. SNAPVERE ne šalje snimke u oblak, ne koristi analitiku ni telemetriju."
+  },
+  "recentCaptures": {
+    "message": "Nedavne snimke"
+  },
+  "recentDescription": {
+    "message": "Najnovija dovršena SNAPVERE PNG preuzimanja iz ovog profila preglednika."
+  },
+  "refresh": {
+    "message": "Osvježi"
+  },
+  "openDownloadsFolder": {
+    "message": "Otvori mapu preuzimanja"
+  },
+  "openDownloadsFolderFailed": {
+    "message": "Preglednik ne može otvoriti zadanu mapu preuzimanja."
+  },
+  "loadingRecent": {
+    "message": "Učitavam nedavne snimke…"
+  },
+  "recentReady": {
+    "message": "Nedavne snimke su ažurne."
+  },
+  "noRecentCaptures": {
+    "message": "U preuzimanjima preglednika nema dovršenih SNAPVERE snimki."
+  },
+  "recentCapture": {
+    "message": "SNAPVERE snimka"
+  },
+  "openCapture": {
+    "message": "Otvori"
+  },
+  "recentLoadFailed": {
+    "message": "Nedavne snimke nije moguće učitati iz preuzimanja preglednika."
+  },
+  "openCaptureFailed": {
+    "message": "Snimku nije moguće otvoriti. Možda je premještena ili izbrisana."
+  },
+  "openingSettings": {
+    "message": "Otvaram postavke…"
+  },
+  "openSettingsFailed": {
+    "message": "Postavke nije moguće otvoriti. Pokušaj ponovno iz izbornika ekstenzija preglednika."
+  }
 }

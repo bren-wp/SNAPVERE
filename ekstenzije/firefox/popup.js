@@ -4,6 +4,7 @@
   const status = document.getElementById("status");
   const buttons = Array.from(document.querySelectorAll("[data-action]"));
   const settingsButton = document.getElementById("settings");
+  const recentButton = document.getElementById("recent");
 
   function t(key, fallback = "") {
     return chrome.i18n.getMessage(key) || fallback || key;
@@ -23,6 +24,7 @@
   function setBusy(busy) {
     for (const button of buttons) button.disabled = busy;
     settingsButton.disabled = busy;
+    recentButton.disabled = busy;
   }
 
   function setStatus(key, kind = "") {
@@ -74,6 +76,21 @@
     });
   }
 
+  function openRecentPage() {
+    return new Promise((resolve, reject) => {
+      const url = chrome.runtime.getURL("options.html#recent");
+      try {
+        chrome.tabs.create({ url }, () => {
+          const error = runtimeError();
+          if (error) reject(error);
+          else resolve();
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
   function progressKey(action) {
     if (action === "CAPTURE_VISIBLE") return "capturingVisible";
     if (action === "CAPTURE_FULL") return "capturingFull";
@@ -112,6 +129,18 @@
       if (action) void runCapture(action);
     });
   }
+
+  recentButton.addEventListener("click", async () => {
+    setBusy(true);
+    setStatus("loadingRecent");
+    try {
+      await openRecentPage();
+      window.close();
+    } catch {
+      setStatus("recentLoadFailed", "error");
+      setBusy(false);
+    }
+  });
 
   settingsButton.addEventListener("click", async () => {
     setBusy(true);
