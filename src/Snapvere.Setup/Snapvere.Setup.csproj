@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\..\LICENSE" LogicalName="Snapvere.License.txt" />
+    <EmbeddedResource Include="Assets\SNAPVERE-app-icon-128.png" LogicalName="Snapvere.Brand.AppIcon" />
   </ItemGroup>
   <ItemGroup Condition="'$(SnapverePayloadX86Path)' != '' and Exists('$(SnapverePayloadX86Path)')">
     <EmbeddedResource Include="$(SnapverePayloadX86Path)" LogicalName="Snapvere.Payload.x86.zip" />

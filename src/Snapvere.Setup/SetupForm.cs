@@ -1051,72 +1051,31 @@ internal sealed class SetupForm : Form
 
     private sealed class BrandMarkControl : Control
     {
+        private readonly Image _brandImage;
+
         internal BrandMarkControl()
         {
             DoubleBuffered = true;
             BackColor = Sidebar;
+            // The original premium PNG is embedded in the single-file installer.
+            using var resource = typeof(SetupForm).Assembly.GetManifestResourceStream("Snapvere.Brand.AppIcon")
+                ?? throw new InvalidOperationException("SNAPVERE premium installer asset was not embedded.");
+            using var decoded = Image.FromStream(resource);
+            _brandImage = new Bitmap(decoded);
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            var scale = Math.Min(Width, Height) / 128F;
-            e.Graphics.ScaleTransform(scale, scale);
+            base.OnPaint(e);
+            e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            e.Graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            e.Graphics.DrawImage(_brandImage, new Rectangle(0, 0, Width, Height));
+        }
 
-            var tile = new Rectangle(1, 1, 126, 126);
-            using (var tilePath = CreateRoundedRectangle(tile, 30))
-            using (var tileBrush = new LinearGradientBrush(
-                tile,
-                Color.FromArgb(33, 25, 66),
-                Color.FromArgb(16, 22, 37),
-                45F))
-            using (var tilePen = new Pen(Color.FromArgb(75, 66, 127), 1.5F))
-            {
-                e.Graphics.FillPath(tileBrush, tilePath);
-                e.Graphics.DrawPath(tilePen, tilePath);
-            }
-
-            var inner = new Rectangle(9, 9, 110, 110);
-            using (var innerPath = CreateRoundedRectangle(inner, 24))
-            using (var innerPen = new Pen(Color.FromArgb(55, 138, 113, 222), .8F))
-            {
-                e.Graphics.DrawPath(innerPen, innerPath);
-            }
-
-            using var finderPen = new Pen(Color.FromArgb(181, 161, 255), 5F)
-            {
-                StartCap = LineCap.Round,
-                EndCap = LineCap.Round,
-                LineJoin = LineJoin.Round
-            };
-            e.Graphics.DrawLines(finderPen, [new PointF(26, 49), new PointF(26, 35), new PointF(34, 27), new PointF(47, 27)]);
-            e.Graphics.DrawLines(finderPen, [new PointF(81, 27), new PointF(94, 27), new PointF(102, 35), new PointF(102, 49)]);
-            e.Graphics.DrawLines(finderPen, [new PointF(102, 79), new PointF(102, 93), new PointF(94, 101), new PointF(81, 101)]);
-            e.Graphics.DrawLines(finderPen, [new PointF(47, 101), new PointF(34, 101), new PointF(26, 93), new PointF(26, 79)]);
-
-            var bolt = new[]
-            {
-                new PointF(73, 35),
-                new PointF(48, 67),
-                new PointF(65, 67),
-                new PointF(55, 93),
-                new PointF(85, 58),
-                new PointF(67, 58)
-            };
-            using var boltPath = new GraphicsPath();
-            boltPath.AddPolygon(bolt);
-            var boltBounds = Rectangle.Round(boltPath.GetBounds());
-            using var boltBrush = new LinearGradientBrush(
-                boltBounds,
-                Color.FromArgb(181, 161, 255),
-                Color.FromArgb(87, 78, 235),
-                45F);
-            using var boltPen = new Pen(Color.FromArgb(227, 217, 255), 1.7F)
-            {
-                LineJoin = LineJoin.Round
-            };
-            e.Graphics.FillPath(boltBrush, boltPath);
-            e.Graphics.DrawPath(boltPen, boltPath);
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) { _brandImage.Dispose(); }
+            base.Dispose(disposing);
         }
     }
 

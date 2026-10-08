@@ -550,199 +550,43 @@ public sealed class Win32TrayIconService : ITrayIconService
 
     private static class TrayIconFactory
     {
-        private const int IconSize = 32;
-        private const uint DibRgbColors = 0;
-        private const uint BiRgb = 0;
-
+        // Exact source asset shared with all four browser extensions.
+        // HICON ownership remains with the tray service (DestroyIcon on shutdown).
         internal static nint CreateSnapvereIcon()
         {
-            var bitmapInfo = new NativeMethods.BitmapInfo
+            var png = Path.Combine(AppContext.BaseDirectory, "Assets", "SNAPVERE-app-icon-32.png");
+            if (!File.Exists(png))
             {
-                Header = new NativeMethods.BitmapInfoHeader
-                {
-                    Size = (uint)Marshal.SizeOf<NativeMethods.BitmapInfoHeader>(),
-                    Width = IconSize,
-                    Height = -IconSize,
-                    Planes = 1,
-                    BitCount = 32,
-                    Compression = BiRgb,
-                    SizeImage = IconSize * IconSize * 4
-                }
-            };
-
-            var colorBitmap = NativeMethods.CreateDIBSection(
-                nint.Zero,
-                ref bitmapInfo,
-                DibRgbColors,
-                out var bits,
-                nint.Zero,
-                0);
-
-            if (colorBitmap == nint.Zero || bits == nint.Zero)
-            {
-                throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not create the SNAPVERE tray icon bitmap.");
+                throw new FileNotFoundException("The SNAPVERE premium tray icon is missing.", png);
             }
 
-            var maskBitmap = nint.Zero;
+            var input = new NativeMethods.GdiplusStartupInput { GdiplusVersion = 1 };
+            var status = NativeMethods.GdiplusStartup(out var token, ref input, nint.Zero);
+            if (status != 0) { throw new InvalidOperationException($"GDI+ initialization failed: {status}."); }
+
+            nint bitmap = nint.Zero;
             try
             {
-                var pixels = BuildIconPixels();
-                Marshal.Copy(pixels, 0, bits, pixels.Length);
-
-                maskBitmap = NativeMethods.CreateBitmap(IconSize, IconSize, 1, 1, nint.Zero);
-                if (maskBitmap == nint.Zero)
+                status = NativeMethods.GdipCreateBitmapFromFile(png, out bitmap);
+                if (status != 0 || bitmap == nint.Zero)
                 {
-                    throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not create the SNAPVERE tray icon mask.");
+                    throw new InvalidOperationException($"Premium PNG decoding failed: {status}.");
                 }
 
-                var iconInfo = new NativeMethods.IconInfo
+                status = NativeMethods.GdipCreateHICONFromBitmap(bitmap, out var icon);
+                if (status != 0 || icon == nint.Zero)
                 {
-                    IsIcon = true,
-                    MaskBitmap = maskBitmap,
-                    ColorBitmap = colorBitmap
-                };
-
-                var icon = NativeMethods.CreateIconIndirect(ref iconInfo);
-                if (icon == nint.Zero)
-                {
-                    throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not create the SNAPVERE tray icon.");
+                    if (icon != nint.Zero) { _ = NativeMethods.DestroyIcon(icon); }
+                    throw new InvalidOperationException($"Premium tray icon creation failed: {status}.");
                 }
 
                 return icon;
             }
             finally
             {
-                if (maskBitmap != nint.Zero)
-                {
-                    _ = NativeMethods.DeleteObject(maskBitmap);
-                }
-
-                _ = NativeMethods.DeleteObject(colorBitmap);
+                if (bitmap != nint.Zero) { _ = NativeMethods.GdipDisposeImage(bitmap); }
+                NativeMethods.GdiplusShutdown(token);
             }
-        }
-
-        private static byte[] BuildIconPixels()
-        {
-            var pixels = new byte[IconSize * IconSize * 4];
-
-            for (var y = 3; y < IconSize - 3; y++)
-            {
-                for (var x = 3; x < IconSize - 3; x++)
-                {
-                    if (IsInsideRoundedSquare(x, y))
-                    {
-                        SetPixel(pixels, x, y, 21, 24, 56, 250);
-                    }
-                }
-            }
-
-            // Production mark: viewfinder corners + lightning, legible at 16-32 px.
-            DrawLine(pixels, 7, 12, 7, 9, 181, 161, 255, 255, 2);
-            DrawLine(pixels, 7, 9, 9, 7, 181, 161, 255, 255, 2);
-            DrawLine(pixels, 9, 7, 12, 7, 181, 161, 255, 255, 2);
-
-            DrawLine(pixels, 20, 7, 23, 7, 181, 161, 255, 255, 2);
-            DrawLine(pixels, 23, 7, 25, 9, 181, 161, 255, 255, 2);
-            DrawLine(pixels, 25, 9, 25, 12, 181, 161, 255, 255, 2);
-
-            DrawLine(pixels, 25, 20, 25, 23, 181, 161, 255, 255, 2);
-            DrawLine(pixels, 25, 23, 23, 25, 181, 161, 255, 255, 2);
-            DrawLine(pixels, 23, 25, 20, 25, 181, 161, 255, 255, 2);
-
-            DrawLine(pixels, 12, 25, 9, 25, 181, 161, 255, 255, 2);
-            DrawLine(pixels, 9, 25, 7, 23, 181, 161, 255, 255, 2);
-            DrawLine(pixels, 7, 23, 7, 20, 181, 161, 255, 255, 2);
-
-            DrawLine(pixels, 19, 8, 13, 17, 181, 161, 255, 255, 3);
-            DrawLine(pixels, 13, 17, 17, 17, 164, 139, 255, 255, 3);
-            DrawLine(pixels, 17, 17, 13, 24, 118, 85, 246, 255, 3);
-            DrawLine(pixels, 13, 24, 22, 14, 118, 85, 246, 255, 3);
-            DrawLine(pixels, 22, 14, 17, 14, 164, 139, 255, 255, 2);
-            DrawLine(pixels, 17, 14, 19, 8, 227, 217, 255, 230, 1);
-            return pixels;
-        }
-
-        private static bool IsInsideRoundedSquare(int x, int y)
-        {
-            const int inset = 3;
-            const int radius = 6;
-            var left = inset + radius;
-            var right = IconSize - inset - radius - 1;
-            var top = inset + radius;
-            var bottom = IconSize - inset - radius - 1;
-
-            if ((x >= left && x <= right) || (y >= top && y <= bottom))
-            {
-                return true;
-            }
-
-            var cornerX = x < left ? left : right;
-            var cornerY = y < top ? top : bottom;
-            var deltaX = x - cornerX;
-            var deltaY = y - cornerY;
-            return (deltaX * deltaX) + (deltaY * deltaY) <= radius * radius;
-        }
-
-        private static void DrawLine(
-            byte[] pixels,
-            int x0,
-            int y0,
-            int x1,
-            int y1,
-            byte red,
-            byte green,
-            byte blue,
-            byte alpha,
-            int thickness)
-        {
-            var dx = Math.Abs(x1 - x0);
-            var sx = x0 < x1 ? 1 : -1;
-            var dy = -Math.Abs(y1 - y0);
-            var sy = y0 < y1 ? 1 : -1;
-            var error = dx + dy;
-
-            while (true)
-            {
-                for (var oy = -(thickness / 2); oy <= thickness / 2; oy++)
-                {
-                    for (var ox = -(thickness / 2); ox <= thickness / 2; ox++)
-                    {
-                        SetPixel(pixels, x0 + ox, y0 + oy, red, green, blue, alpha);
-                    }
-                }
-
-                if (x0 == x1 && y0 == y1)
-                {
-                    break;
-                }
-
-                var twiceError = 2 * error;
-                if (twiceError >= dy)
-                {
-                    error += dy;
-                    x0 += sx;
-                }
-
-                if (twiceError <= dx)
-                {
-                    error += dx;
-                    y0 += sy;
-                }
-            }
-        }
-
-        private static void SetPixel(byte[] pixels, int x, int y, byte red, byte green, byte blue, byte alpha)
-        {
-            if ((uint)x >= IconSize || (uint)y >= IconSize)
-            {
-                return;
-            }
-
-            var offset = ((y * IconSize) + x) * 4;
-            pixels[offset] = blue;
-            pixels[offset + 1] = green;
-            pixels[offset + 2] = red;
-            pixels[offset + 3] = alpha;
         }
     }
 
@@ -811,37 +655,12 @@ public sealed class Win32TrayIconService : ITrayIconService
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct BitmapInfoHeader
+        internal struct GdiplusStartupInput
         {
-            internal uint Size;
-            internal int Width;
-            internal int Height;
-            internal ushort Planes;
-            internal ushort BitCount;
-            internal uint Compression;
-            internal uint SizeImage;
-            internal int XPelsPerMeter;
-            internal int YPelsPerMeter;
-            internal uint ColorsUsed;
-            internal uint ColorsImportant;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        internal struct BitmapInfo
-        {
-            internal BitmapInfoHeader Header;
-            internal uint Colors;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        internal struct IconInfo
-        {
-            [MarshalAs(UnmanagedType.Bool)]
-            internal bool IsIcon;
-            internal uint HotspotX;
-            internal uint HotspotY;
-            internal nint MaskBitmap;
-            internal nint ColorBitmap;
+            internal uint GdiplusVersion;
+            internal nint DebugEventCallback;
+            [MarshalAs(UnmanagedType.Bool)] internal bool SuppressBackgroundThread;
+            [MarshalAs(UnmanagedType.Bool)] internal bool SuppressExternalCodecs;
         }
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -900,27 +719,25 @@ public sealed class Win32TrayIconService : ITrayIconService
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool ShellNotifyIcon(uint message, ref NotifyIconData data);
 
-        [DllImport("gdi32.dll", SetLastError = true)]
-        internal static extern nint CreateDIBSection(
-            nint deviceContext,
-            ref BitmapInfo bitmapInfo,
-            uint usage,
-            out nint bits,
-            nint section,
-            uint offset);
+        [DllImport("gdiplus.dll", ExactSpelling = true)]
+        internal static extern int GdiplusStartup(out nuint token, ref GdiplusStartupInput input, nint output);
 
-        [DllImport("gdi32.dll", SetLastError = true)]
-        internal static extern nint CreateBitmap(int width, int height, uint planes, uint bitsPerPixel, nint bits);
+        [DllImport("gdiplus.dll", ExactSpelling = true)]
+        internal static extern void GdiplusShutdown(nuint token);
 
-        [DllImport("user32.dll", SetLastError = true)]
-        internal static extern nint CreateIconIndirect(ref IconInfo iconInfo);
+        [DllImport("gdiplus.dll", ExactSpelling = true, CharSet = CharSet.Unicode)]
+        internal static extern int GdipCreateBitmapFromFile(
+            [MarshalAs(UnmanagedType.LPWStr)] string filename, out nint bitmap);
+
+        [DllImport("gdiplus.dll", ExactSpelling = true)]
+        internal static extern int GdipCreateHICONFromBitmap(nint bitmap, out nint icon);
+
+        [DllImport("gdiplus.dll", ExactSpelling = true)]
+        internal static extern int GdipDisposeImage(nint bitmap);
 
         [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool DestroyIcon(nint icon);
 
-        [DllImport("gdi32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool DeleteObject(nint graphicsObject);
     }
 }

@@ -2,6 +2,7 @@
 """Validate critical SNAPVERE Windows UI interaction/accessibility contracts."""
 
 from pathlib import Path
+from hashlib import sha256
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -17,7 +18,36 @@ def require(path: str, fragments: tuple[str, ...]) -> None:
             raise RuntimeError(f"{path} is missing UI contract fragment: {fragment}")
 
 
+def require_asset_hash(path: str, expected_hash: str) -> None:
+    asset = ROOT / path
+    if not asset.is_file():
+        raise RuntimeError(f"Required SNAPVERE premium asset is missing: {path}")
+    if sha256(asset.read_bytes()).hexdigest() != expected_hash:
+        raise RuntimeError(f"SNAPVERE asset differs from the supplied branding ZIP: {path}")
+
+
 def main() -> int:
+    require_asset_hash(
+        "src/Snapvere.App/Assets/SNAPVERE-app-icon-32.png",
+        "b4139f4baa33c22921834272d4f62f403af178d9f80364f1035eb3228d29c709",
+    )
+    require_asset_hash(
+        "src/Snapvere.Setup/Assets/SNAPVERE-app-icon-128.png",
+        "e49808dad22d4afb68668b1d85ae7804549ed1a79dd5fe9b802e32be8ba49aad",
+    )
+    require(
+        "src/Snapvere.App/Services/Win32TrayIconService.cs",
+        ("SNAPVERE-app-icon-32.png", "GdipCreateBitmapFromFile", "GdipCreateHICONFromBitmap"),
+    )
+    require(
+        "src/Snapvere.App/Snapvere.App.csproj",
+        ('<Content Include="Assets\\SNAPVERE-app-icon-32.png">',),
+    )
+    require(
+        "src/Snapvere.Setup/Snapvere.Setup.csproj",
+        ('LogicalName="Snapvere.Brand.AppIcon"',),
+    )
+
     for path in (
         "src/Snapvere.App/Services/OptionsWindow.cs",
         "src/Snapvere.App/Services/LanguagePickerWindow.cs",
@@ -142,7 +172,8 @@ def main() -> int:
             "Color.FromArgb(118, 85, 246)",
             "Color.FromArgb(164, 139, 255)",
             "Color.FromArgb(128, 225, 229)",
-            "new PointF(73, 35)",
+            "new Bitmap(decoded)",
+            "e.Graphics.DrawImage(_brandImage, new Rectangle(0, 0, Width, Height))",
         ),
     )
 
