@@ -167,6 +167,11 @@ def main() -> int:
             "Finishing screen recording",
             "ToolTipService.SetToolTip",
             "_stopButton.Focus(FocusState.Programmatic)",
+            "Content = CreateStopContent()",
+            "_stopButton.Content = CreateStopContent()",
+            "Width = 14,",
+            "Height = 14,",
+            "Background = Brush(0xFF, 0x43, 0x2A, 0x3E)",
         ),
     )
 
