@@ -334,6 +334,19 @@ public sealed class LanguagePickerWindow : Window
     private static FrameworkElement BuildBrandMark()
         => SnapvereBrand.CreateMark(46);
 
+    private static TextBlock Text(
+        string value,
+        double size,
+        SolidColorBrush foreground,
+        Windows.UI.Text.FontWeight? weight = null)
+        => new()
+        {
+            Text = value,
+            FontSize = size,
+            Foreground = foreground,
+            FontWeight = weight ?? Microsoft.UI.Text.FontWeights.Normal
+        };
+
     private static SolidColorBrush Brush(byte alpha, byte red, byte green, byte blue)
         => new(Windows.UI.Color.FromArgb(alpha, red, green, blue));
 

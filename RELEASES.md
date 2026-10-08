@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Release-preparation target: **v0.1.31**
-- Target release page after publication: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.31
+- Current public release: **v0.1.31**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.31
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
