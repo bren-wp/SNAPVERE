@@ -176,12 +176,19 @@ function Compare-VisualSurface {
 
         $approvedGeometry = $approvedGeometryTransitions[$FileName]
         if ($null -ne $approvedGeometry) {
-            # Require the old trusted main baseline AND the new premium size.
-            # A size change in either direction or an unrelated future PR
-            # therefore cannot silently gain a dimension exception.
-            if ($baselineBitmap.Width -ne $approvedGeometry.BaselineWidth -or
-                $baselineBitmap.Height -ne $approvedGeometry.BaselineHeight) {
-                $failures.Add("approved $FileName transition baseline mismatch: expected $($approvedGeometry.BaselineWidth)x$($approvedGeometry.BaselineHeight), got $($baselineBitmap.Width)x$($baselineBitmap.Height)")
+            # Two strictly approved baselines are possible: the historic
+            # v0.1.31 geometry during the v0.1.32 migration, or the
+            # already-shipped v0.1.32 premium geometry after that release.
+            # In BOTH cases a new PR must retain the exact premium target size.
+            # Never allow arbitrary old/new sizes or bypass pixel regressions.
+            $historicBaseline =
+                $baselineBitmap.Width -eq $approvedGeometry.BaselineWidth -and
+                $baselineBitmap.Height -eq $approvedGeometry.BaselineHeight
+            $premiumBaseline =
+                $baselineBitmap.Width -eq $approvedGeometry.TargetWidth -and
+                $baselineBitmap.Height -eq $approvedGeometry.TargetHeight
+            if (-not $historicBaseline -and -not $premiumBaseline) {
+                $failures.Add("approved $FileName baseline geometry mismatch: expected historic $($approvedGeometry.BaselineWidth)x$($approvedGeometry.BaselineHeight) or premium $($approvedGeometry.TargetWidth)x$($approvedGeometry.TargetHeight), got $($baselineBitmap.Width)x$($baselineBitmap.Height)")
             }
             if ($currentBitmap.Width -ne $approvedGeometry.TargetWidth -or
                 $currentBitmap.Height -ne $approvedGeometry.TargetHeight) {
