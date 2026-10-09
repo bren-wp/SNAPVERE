@@ -820,7 +820,7 @@ public sealed class OptionsWindow : Window
     {
         try
         {
-            if (!File.Exists(capture.FilePath))
+            if (!_history.IsCurrentCaptureFile(capture))
             {
                 RefreshRecentCaptures();
                 SetStatus(L("CaptureUnavailable"), Warning);
@@ -837,7 +837,7 @@ public sealed class OptionsWindow : Window
 
     private void CopyCapturePath(CaptureHistoryItem capture)
     {
-        if (!File.Exists(capture.FilePath))
+        if (!_history.IsCurrentCaptureFile(capture))
         {
             RefreshRecentCaptures();
             SetStatus(L("CaptureUnavailable"), Warning);

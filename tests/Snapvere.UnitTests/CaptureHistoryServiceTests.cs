@@ -111,6 +111,33 @@ public sealed class CaptureHistoryServiceTests
     }
 
     [Fact]
+    public void IsCurrentCaptureFile_RejectsMissingExternalAndReplacedFiles()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"snapvere-history-open-{Guid.NewGuid():N}");
+        var outside = Path.Combine(Path.GetTempPath(), $"snapvere-other-{Guid.NewGuid():N}.png");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var current = CreateCapture(directory, "SNAPVERE_2026-09-19_230000.png", 12, DateTime.UtcNow);
+            File.WriteAllText(outside, "not inside SNAPVERE");
+            var history = new CaptureHistoryService(new CapturePathProvider(directory));
+            var item = Assert.Single(history.GetRecentCaptures());
+
+            Assert.True(history.IsCurrentCaptureFile(item));
+            Assert.False(history.IsCurrentCaptureFile(item with { FilePath = outside }));
+            Assert.False(history.IsCurrentCaptureFile(item with { FileName = "../escape.png" }));
+
+            File.Delete(current);
+            Assert.False(history.IsCurrentCaptureFile(item));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+            File.Delete(outside);
+        }
+    }
+
+    [Fact]
     public void GetRecentCaptures_DoesNotFollowSymlinksOutsideCaptureFolder()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"snapvere-history-link-{Guid.NewGuid():N}");

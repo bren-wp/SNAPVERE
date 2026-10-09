@@ -36,6 +36,8 @@ assert "MaximumSettingsFileBytes" in preferences
 assert "stream.ReadExactly(json)" in preferences
 assert "File.ReadAllText(_settingsPath)" not in preferences
 assert "FileAttributes.ReparsePoint" in history
+assert "IsCurrentCaptureFile(CaptureHistoryItem item)" in history
+assert options.count("_history.IsCurrentCaptureFile(capture)") == 2
 picker = "LanguagePickerWindow.ShowStandalone(_preferences);"
 assert picker in options and "Close();" in options[options.index(picker):options.index(picker) + 110]
 assert "OversizedSettings_FallBackSafely" in (ROOT / "tests/Snapvere.UnitTests/CapturePreferencesServiceTests.cs").read_text(encoding="utf-8")
