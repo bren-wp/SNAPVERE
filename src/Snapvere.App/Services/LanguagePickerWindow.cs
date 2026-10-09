@@ -62,6 +62,7 @@ public sealed class LanguagePickerWindow : Window
         var content = BuildContent();
         content.KeyDown += Root_KeyDown;
         Content = content;
+        SnapvereTitleBar.Apply(this);
         SelectCurrentLanguage();
         _initializing = false;
         Activated += LanguagePickerWindow_Activated;

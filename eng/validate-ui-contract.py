@@ -219,6 +219,23 @@ def main() -> int:
     )
 
     require(
+        "src/Snapvere.App/Services/SnapvereTitleBar.cs",
+        (
+            "AppWindowTitleBar.IsCustomizationSupported()",
+            "titleBar.BackgroundColor = SnapvereBrand.Obsidian.Color",
+            "titleBar.ButtonHoverBackgroundColor = SnapvereBrand.Slate.Color",
+            "titleBar.InactiveBackgroundColor = SnapvereBrand.Obsidian.Color",
+            "StartupDiagnostics.Record",
+        ),
+    )
+    for window in (
+        "src/Snapvere.App/Services/OptionsWindow.cs",
+        "src/Snapvere.App/Services/AboutWindow.cs",
+        "src/Snapvere.App/Services/LanguagePickerWindow.cs",
+    ):
+        require(window, ("SnapvereTitleBar.Apply(this);",))
+
+    require(
         "src/Snapvere.App/Services/AboutWindow.cs",
         (
             "if (!_dispatcherQueue.TryEnqueue(RefreshLanguageSafely))",
