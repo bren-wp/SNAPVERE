@@ -132,6 +132,15 @@
     ) {
       return false;
     }
+    // Some browsers disclose the extension that initiated a download.
+    // Reject a foreign extension's matching filename, including at Open
+    // revalidation. Keep historical captures visible on browser variants
+    // where this optional download metadata is unavailable.
+    if (typeof item.byExtensionId === "string" &&
+        item.byExtensionId.length > 0 &&
+        item.byExtensionId !== chrome.runtime.id) {
+      return false;
+    }
     const fileName = item.filename.split(/[\\/]/).pop() || "";
     return /^SNAPVERE-(?:visible|region|full-page)-.+\.png$/i.test(fileName);
   }

@@ -78,7 +78,7 @@ let openCalls = 0;
 let folderCalls = 0;
 
 const chrome = {
-  runtime: { lastError: null },
+  runtime: { id: "snapvere-test-extension", lastError: null },
   i18n: {
     getMessage: (key) => key,
     getUILanguage: () => "en-US"
@@ -213,6 +213,35 @@ assert.equal(elements["recent-list"].children[0].textContent, "noRecentCaptures"
 assert.equal(elements["recent-status"].textContent, "openCaptureFailed");
 assert.equal(elements["recent-status"].className, "status error");
 assert.equal(staleOpenButton.disabled, false);
+
+// An unrelated extension can download a file named SNAPVERE-visible-*.png.
+// When the browser supplies provenance, neither Recent nor Open may expose it.
+elements["refresh-recent"].dispatch("click");
+assert.equal(searchCallbacks.length, 7);
+searchCallbacks[6]([
+  { ...makeItem(4, "SNAPVERE-visible-foreign.png"), byExtensionId: "foreign-extension" },
+  { ...makeItem(5, "SNAPVERE-visible-owned.png"), byExtensionId: chrome.runtime.id }
+]);
+await flush();
+assert.equal(elements["recent-list"].children.length, 1, "Recent must hide foreign extension captures");
+assert.equal(
+  elements["recent-list"].children[0].children[0].children[0].textContent,
+  "SNAPVERE-visible-owned.png"
+);
+
+const ownedOpenButton = elements["recent-list"].children[0].children[1];
+ownedOpenButton.dispatch("click");
+assert.equal(searchCallbacks.length, 8);
+searchCallbacks[7]([
+  { ...makeItem(5, "SNAPVERE-visible-owned.png"), byExtensionId: "foreign-extension" }
+]);
+await flush();
+assert.equal(openCalls, 1, "Open must refuse download provenance changed to a foreign extension");
+assert.equal(searchCallbacks.length, 9, "Invalid ownership must refresh Recent before reporting failure");
+searchCallbacks[8]([]);
+await flush();
+await flush();
+assert.equal(elements["recent-status"].textContent, "openCaptureFailed");
 
 elements["open-downloads-folder"].dispatch("click");
 elements["open-downloads-folder"].dispatch("click");

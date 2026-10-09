@@ -522,8 +522,6 @@ public sealed class TrayMenuWindow : Window
     private static SolidColorBrush Strong => SnapvereBrand.Strong;
     private static SolidColorBrush Muted => SnapvereBrand.Muted;
     private static SolidColorBrush Subtle => SnapvereBrand.Subtle;
-    private static SolidColorBrush Accent => SnapvereBrand.Lavender;
-    private static SolidColorBrush Transparent => Brush(0x00, 0, 0, 0);
 
     private static class NativeMethods
     {

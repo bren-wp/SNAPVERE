@@ -91,6 +91,37 @@ public sealed class CaptureHistoryService
     public string GetCaptureDirectory()
         => _pathProvider.GetDefaultCaptureDirectory();
 
+    /// <summary>
+    /// Revalidate a recent item at click time, because files in Pictures can
+    /// disappear or be replaced after the history list was generated.
+    /// Only actual top-level capture files are eligible for Open/Copy Path.
+    /// </summary>
+    public bool IsCurrentCaptureFile(CaptureHistoryItem item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+
+        try
+        {
+            var captureDirectory = Path.GetFullPath(_pathProvider.GetDefaultCaptureDirectory());
+            var filePath = Path.GetFullPath(item.FilePath);
+            if (!string.Equals(Path.GetDirectoryName(filePath), captureDirectory, StringComparison.OrdinalIgnoreCase) ||
+                !string.Equals(Path.GetFileName(filePath), item.FileName, StringComparison.OrdinalIgnoreCase) ||
+                !item.FileName.StartsWith("SNAPVERE_", StringComparison.OrdinalIgnoreCase) ||
+                !IsSupportedCaptureFile(item.FileName))
+            {
+                return false;
+            }
+
+            return TryReadCapture(new FileInfo(filePath), out _);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException or
+            System.Security.SecurityException or ArgumentException or NotSupportedException)
+        {
+            return false;
+        }
+    }
+
     private static bool IsSupportedCaptureFile(string fileName)
     {
         var extension = Path.GetExtension(fileName);
@@ -102,8 +133,10 @@ public sealed class CaptureHistoryService
     {
         try
         {
-            if (!file.Exists)
+            if (!file.Exists || (file.Attributes & FileAttributes.ReparsePoint) != 0)
             {
+                // Do not expose files outside the capture folder through
+                // links named like SNAPVERE screenshots or videos.
                 item = null!;
                 return false;
             }

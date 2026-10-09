@@ -15,6 +15,9 @@ public sealed record CapturePreferences(
 public sealed class CapturePreferencesService
 {
     private const string SettingsFileName = "settings.json";
+    // The persisted cursor/language preferences are tiny. Reject oversized,
+    // externally modified JSON before decoding to bound startup allocations.
+    private const int MaximumSettingsFileBytes = 16 * 1024;
 
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
@@ -101,7 +104,18 @@ public sealed class CapturePreferencesService
 
         try
         {
-            var json = File.ReadAllText(_settingsPath);
+            using var stream = new FileStream(
+                _settingsPath, FileMode.Open, FileAccess.Read,
+                FileShare.ReadWrite | FileShare.Delete);
+            if (stream.Length is <= 0 or > MaximumSettingsFileBytes)
+            {
+                return new CapturePreferences();
+            }
+
+            // Bounded to the measured byte count even if another process
+            // changes the file while it is being read.
+            var json = new byte[checked((int)stream.Length)];
+            stream.ReadExactly(json);
             var parsed = JsonSerializer.Deserialize<CapturePreferences>(json, SerializerOptions)
                 ?? new CapturePreferences();
             return parsed with

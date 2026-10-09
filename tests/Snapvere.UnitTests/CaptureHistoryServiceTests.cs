@@ -110,6 +110,69 @@ public sealed class CaptureHistoryServiceTests
         }
     }
 
+    [Fact]
+    public void IsCurrentCaptureFile_RejectsMissingExternalAndReplacedFiles()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"snapvere-history-open-{Guid.NewGuid():N}");
+        var outside = Path.Combine(Path.GetTempPath(), $"snapvere-other-{Guid.NewGuid():N}.png");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var current = CreateCapture(directory, "SNAPVERE_2026-09-19_230000.png", 12, DateTime.UtcNow);
+            File.WriteAllText(outside, "not inside SNAPVERE");
+            var history = new CaptureHistoryService(new CapturePathProvider(directory));
+            var item = Assert.Single(history.GetRecentCaptures());
+
+            Assert.True(history.IsCurrentCaptureFile(item));
+            Assert.False(history.IsCurrentCaptureFile(item with { FilePath = outside }));
+            Assert.False(history.IsCurrentCaptureFile(item with { FileName = "../escape.png" }));
+
+            File.Delete(current);
+            Assert.False(history.IsCurrentCaptureFile(item));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+            File.Delete(outside);
+        }
+    }
+
+    [Fact]
+    public void GetRecentCaptures_DoesNotFollowSymlinksOutsideCaptureFolder()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"snapvere-history-link-{Guid.NewGuid():N}");
+        var outside = Path.Combine(Path.GetTempPath(), $"snapvere-private-{Guid.NewGuid():N}.png");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            File.WriteAllText(outside, "outside capture directory");
+            var link = Path.Combine(directory, "SNAPVERE_2026-09-19_222000.png");
+            try
+            {
+                File.CreateSymbolicLink(link, outside);
+            }
+            catch (Exception exception) when (
+                exception is UnauthorizedAccessException or IOException or NotSupportedException)
+            {
+                // Some Windows configurations deny non-admin symlink creation.
+                return;
+            }
+
+            var real = CreateCapture(
+                directory, "SNAPVERE_2026-09-19_222001.png", 12, DateTime.UtcNow);
+            var recent = new CaptureHistoryService(new CapturePathProvider(directory)).GetRecentCaptures();
+
+            Assert.Single(recent);
+            Assert.Equal(real, recent[0].FilePath);
+            Assert.DoesNotContain(recent, item => item.FilePath == link);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+            File.Delete(outside);
+        }
+    }
+
     private static string CreateCapture(
         string directory,
         string fileName,
