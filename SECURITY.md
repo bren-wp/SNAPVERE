@@ -1,10 +1,10 @@
 # SNAPVERE Security Policy
 
-Current public line: **SNAPVERE 0.1.32** — https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.32
+Current public line: **SNAPVERE 0.1.33** — https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.33
 
 SNAPVERE currently maintains the **Windows application** plus **Chrome, Edge, Opera and Firefox extensions**. Security reports affecting capture behavior, local screenshot data, settings/history, package extraction, Setup/Portable lifecycle, extension permissions/runtime, release integrity, CI or dependency supply chain are in scope.
 
-`main` may contain later unreleased security/reliability fixes that are not retroactively part of the immutable v0.1.32 binaries. Historical release tags and assets are not rewritten in place.
+`main` may contain later unreleased security/reliability fixes that are not retroactively part of the immutable v0.1.33 binaries. Historical release tags and assets are not rewritten in place.
 
 ## Report a vulnerability privately
 
