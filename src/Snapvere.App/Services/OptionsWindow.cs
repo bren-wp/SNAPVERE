@@ -111,6 +111,7 @@ public sealed class OptionsWindow : Window
         var content = BuildContent();
         content.KeyDown += Root_KeyDown;
         Content = content;
+        SnapvereTitleBar.Apply(this);
         ShowSection(OptionsSection.Preferences);
         Activated += OptionsWindow_Activated;
     }
