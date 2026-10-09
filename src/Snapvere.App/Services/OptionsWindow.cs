@@ -323,14 +323,22 @@ public sealed class OptionsWindow : Window
             UserText("SNAPVERE is ready in the notification area.", "SNAPVERE je spreman u sistemskoj traci."),
             _startupToggle);
 
+        // The reference shows the currently selected language, not a generic
+        // "Choose language" command. Keep the existing fully functional,
+        // localized picker when the user activates this compact selector.
+        var currentLanguage = SnapvereLocalization.SupportedLanguages.First(language =>
+            string.Equals(language.Code, _preferences.Current.LanguageCode, StringComparison.OrdinalIgnoreCase));
         var languageButton = CreateSecondaryAction(
-            L("ChooseLanguage"),
-            "\uE774",
+            currentLanguage.NativeName,
+            "\uE70D",
             () =>
             {
                 Close();
                 LanguagePickerWindow.ShowStandalone(_preferences);
             });
+        languageButton.MinWidth = 154;
+        AutomationProperties.SetName(languageButton, L("ChooseLanguage"));
+        ToolTipService.SetToolTip(languageButton, L("ChooseLanguage"));
         AddInlinePreferenceRow(2,
             UserText("Interface language", "Jezik sučelja"),
             CurrentLanguageDescription(),
@@ -345,6 +353,20 @@ public sealed class OptionsWindow : Window
             BorderBrush = Brush(0x77, 0x57, 0x94, 0xB0),
             BorderThickness = new Thickness(1)
         };
+        // The cyan lock is part of the supplied Settings reference. Render it
+        // from the installed Windows glyph set, never from a missing web font.
+        var privacyLayout = new Grid { ColumnSpacing = 14 };
+        privacyLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        privacyLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        var privacyLock = new FontIcon
+        {
+            Glyph = "\uE72E",
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
+            FontSize = 20,
+            Foreground = SnapvereBrand.Ice,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        privacyLayout.Children.Add(privacyLock);
         var info = new StackPanel { Spacing = 7 };
         info.Children.Add(Text(UserText("Your captures stay local", "Tvoje snimke ostaju lokalne"),
             14, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
@@ -354,7 +376,9 @@ public sealed class OptionsWindow : Window
             10.5, Muted);
         note.TextWrapping = TextWrapping.Wrap;
         info.Children.Add(note);
-        privacy.Child = info;
+        Grid.SetColumn(info, 1);
+        privacyLayout.Children.Add(info);
+        privacy.Child = privacyLayout;
         Grid.SetRow(privacy, 3);
         _preferencesPanel.Children.Add(privacy);
     }
@@ -990,7 +1014,7 @@ public sealed class OptionsWindow : Window
             FontFamily = new FontFamily("Segoe MDL2 Assets"),
             FontSize = 14
         });
-        content.Children.Add(Text(label, 10.5, SnapvereBrand.Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        content.Children.Add(Text(label, 12, SnapvereBrand.Muted, Microsoft.UI.Text.FontWeights.SemiBold));
 
         var button = new Button
         {
@@ -1013,7 +1037,26 @@ public sealed class OptionsWindow : Window
     {
         button.Background = active ? Brush(0x66, 0x76, 0x55, 0xF6) : Transparent;
         button.BorderBrush = active ? Brush(0x99, 0xA4, 0x8B, 0xFF) : Transparent;
-        button.Foreground = active ? SnapvereBrand.Strong : SnapvereBrand.Muted;
+        var labelBrush = active ? SnapvereBrand.Strong : SnapvereBrand.Muted;
+        button.Foreground = labelBrush;
+
+        // The visible label and icon are children of the button's content
+        // StackPanel. Setting only Button.Foreground leaves their explicit
+        // brushes unchanged, making selected/inactive tabs look identical.
+        if (button.Content is StackPanel contents)
+        {
+            foreach (var child in contents.Children)
+            {
+                if (child is TextBlock label)
+                {
+                    label.Foreground = labelBrush;
+                }
+                else if (child is FontIcon icon)
+                {
+                    icon.Foreground = active ? SnapvereBrand.Lavender : SnapvereBrand.Muted;
+                }
+            }
+        }
     }
 
     private static Button CreateSecondaryAction(string label, string glyph, Action action)

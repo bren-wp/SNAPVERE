@@ -62,8 +62,8 @@ public sealed class TrayMenuWindow : Window
 
     private string Tagline()
         => string.Equals(_languageCode, "hr", StringComparison.OrdinalIgnoreCase)
-            ? "Snimi. Uredi. Gotovo."
-            : "Capture. Edit. Done.";
+            ? (_screenRecordingActive ? "Videosnimanje je u tijeku" : "Spreman za snimanje")
+            : (_screenRecordingActive ? "Screen recording in progress" : "Ready to capture");
 
     private FrameworkElement BuildContent()
     {
@@ -137,24 +137,17 @@ public sealed class TrayMenuWindow : Window
         footerBottom.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footerBottom.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-        var ready = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 6,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        ready.Children.Add(new Border
-        {
-            Width = 7,
-            Height = 7,
-            CornerRadius = new CornerRadius(4),
-            Background = _screenRecordingActive ? SnapvereBrand.Danger : SnapvereBrand.Success
-        });
-        ready.Children.Add(Text(
-            L(_screenRecordingActive ? "ScreenRecordingActive" : "Ready"),
-            10,
-            _screenRecordingActive ? SnapvereBrand.Danger : SnapvereBrand.Muted));
-        footerBottom.Children.Add(ready);
+        // The header already communicates readiness/recording status. Use the
+        // lower utility area for the reference's truthful privacy assurance.
+        var privacyCaption = Text(
+            string.Equals(_languageCode, "hr", StringComparison.OrdinalIgnoreCase)
+                ? "PRIVATNO. NA TVOM UREĐAJU."
+                : "PRIVATE. ON YOUR DEVICE.",
+            9,
+            SnapvereBrand.Subtle,
+            Microsoft.UI.Text.FontWeights.SemiBold);
+        privacyCaption.VerticalAlignment = VerticalAlignment.Center;
+        footerBottom.Children.Add(privacyCaption);
 
         var utilities = new StackPanel
         {
@@ -190,7 +183,6 @@ public sealed class TrayMenuWindow : Window
         _header = header;
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         _brandMark = SnapvereBrand.CreateMark(50);
         header.Children.Add(_brandMark);
 
@@ -203,22 +195,11 @@ public sealed class TrayMenuWindow : Window
         var product = SnapvereBrand.CreateWordmark(24);
         _productText = product;
         identity.Children.Add(product);
-        identity.Children.Add(Text(Tagline(), 10.5, Muted));
+        identity.Children.Add(Text(Tagline(), 10.5,
+            _screenRecordingActive ? SnapvereBrand.Danger : SnapvereBrand.Ice));
         Grid.SetColumn(identity, 1);
         header.Children.Add(identity);
 
-        var readyBadge = new Border
-        {
-            Padding = new Thickness(10, 6, 10, 6),
-            CornerRadius = new CornerRadius(12),
-            Background = Brush(0x22, 0x80, 0xE1, 0xE5),
-            BorderBrush = Brush(0x66, 0x80, 0xE1, 0xE5),
-            BorderThickness = new Thickness(1),
-            VerticalAlignment = VerticalAlignment.Center,
-            Child = Text(L(_screenRecordingActive ? "ScreenRecordingActive" : "Ready"), 9.5, _screenRecordingActive ? SnapvereBrand.Danger : SnapvereBrand.Ice, Microsoft.UI.Text.FontWeights.SemiBold)
-        };
-        Grid.SetColumn(readyBadge, 2);
-        header.Children.Add(readyBadge);
         return header;
     }
 

@@ -88,17 +88,25 @@ public sealed class RecordingControllerWindow : Window
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-        // Match the floating recorder reference: a small actual recording
-        // indicator rather than an unrelated application tile.
-        var brand = new Border
+        // The reference's pink live indicator sits inside a soft circular
+        // halo. Both are rendered UI state, not simulated recording features.
+        var dot = new Border
         {
             Width = 14,
             Height = 14,
             CornerRadius = new CornerRadius(7),
             Background = SnapvereBrand.Danger,
-            BorderBrush = Brush(0x88, 0xF0, 0x63, 0x82),
-            BorderThickness = new Thickness(1),
+            HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
+        };
+        var brand = new Border
+        {
+            Width = 32,
+            Height = 32,
+            CornerRadius = new CornerRadius(16),
+            Background = Brush(0x46, 0xF0, 0x63, 0x82),
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = dot
         };
         grid.Children.Add(brand);
 
@@ -126,8 +134,8 @@ public sealed class RecordingControllerWindow : Window
         };
         var elapsed = new TextBlock
         {
-            Text = "00:00",
-            FontSize = 26,
+            Text = "00:00:00",
+            FontSize = 28,
             FontFamily = new FontFamily("Segoe UI Semibold"),
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = SnapvereBrand.Strong
@@ -249,7 +257,7 @@ public sealed class RecordingControllerWindow : Window
             Text = "■",
             FontFamily = new FontFamily("Segoe UI Symbol"),
             FontSize = 13,
-            Foreground = Strong,
+            Foreground = SnapvereBrand.Danger,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -264,10 +272,11 @@ public sealed class RecordingControllerWindow : Window
 
     internal static string FormatElapsed(TimeSpan elapsed)
     {
+        // The floating reference uses a fixed hours:minutes:seconds clock.
+        // Keep its width stable from the first frame to the final hour.
         var totalHours = (int)Math.Floor(Math.Max(0, elapsed.TotalHours));
-        return totalHours > 0
-            ? string.Create(CultureInfo.InvariantCulture, $"{totalHours:00}:{elapsed.Minutes:00}:{elapsed.Seconds:00}")
-            : string.Create(CultureInfo.InvariantCulture, $"{(int)Math.Max(0, elapsed.TotalMinutes):00}:{elapsed.Seconds:00}");
+        return string.Create(CultureInfo.InvariantCulture,
+            $"{totalHours:00}:{elapsed.Minutes:00}:{elapsed.Seconds:00}");
     }
 
     private void Root_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -291,7 +300,7 @@ public sealed class RecordingControllerWindow : Window
         }
 
         _sizeApplied = true;
-        AppWindow.Resize(DpiAwareWindowSizing.ScaleSizeToWorkArea(this, 500, 82));
+        AppWindow.Resize(DpiAwareWindowSizing.ScaleSizeToWorkArea(this, 500, 100));
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
             presenter.SetBorderAndTitleBar(false, false);
