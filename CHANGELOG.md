@@ -4,6 +4,24 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.32] - 2026-10-09
+
+### Windows usability and styling
+
+- Finalize the compact premium Tray and six-section Settings navigation with fully wired screenshot, recording and utility actions.
+- Polish recording timer/stop feedback; restore focus and localized label after a failed Stop request, without misleading audio recording controls.
+
+### Browser parity and QA hardening
+
+- Align the Chrome, Edge, Opera and Firefox capture popups, settings links and compact footer with the supplied premium design.
+- Improve stable HWND-owned WinUI screenshot capture, preserving original rendered pixels and explicit content validation.
+- Keep strict visual QA against the trusted main baseline, allowing only the exact two intentional premium Tray and Settings geometry migrations.
+
+### Release packaging
+
+- Align Windows and four browser versions, package contracts, store preparation, release notes and EN/HR current documentation to v0.1.32.
+- Require a successful end-to-end release workflow for Setup EXE, MSI, Portable, four browser ZIPs, SPDX SBOM, SHA-256 manifest and provenance attestations.
+
 ## [0.1.31] - 2026-10-08
 
 ### Premium brand system and faster hierarchy

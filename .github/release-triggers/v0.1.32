@@ -1,0 +1,1 @@
+SNAPVERE v0.1.32 production release. Ships PR #199 premium Windows/browser UI and strict rendered visual QA fixes. The seven production assets must pass release build, lifecycle, signing-status, hash, SBOM and attestation gates.

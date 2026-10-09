@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.31 Status proizvoda
+# SNAPVERE 0.1.32 Status proizvoda
 
 Aktualne održavane površine proizvoda su **Windows** i **browser ekstenzije**.
 
@@ -6,9 +6,9 @@ Aktualne održavane površine proizvoda su **Windows** i **browser ekstenzije**.
 
 Produkcijska implementacija uključuje tray-first startup, Region/Window/Screen capture, lokalno snimanje primarnog zaslona kao video, frozen-frame odabir, lokalne anotacije, clipboard, PNG i MP4 persistence workflow, lokalne postavke, nedavne snimke, dijagnostiku te x86/x64/ARM64 aplikacijske payloade u universal Setup i Portable paketima te standardnu x64 MSI distribuciju.
 
-SNAPVERE 0.1.31 je produkcijsko branding i usability izdanje. Zajednički `SnapvereBrand` sloj zaključava dostavljeni premium identitet na svim vidljivim Windows površinama: Obsidian `#070912`, Surface `#111526`, Slate `#161B2E`, Violet `#7655F6`, Lavender `#A48BFF`, Ice `#80E1E5`, viewfinder+munja znak, kompaktni spacing i ujednačenu hijerarhiju akcija. Tray naglašava četiri glavne capture/recording radnje, dok su sekundarni alati prebačeni u kompaktne footer akcije. Postavke koriste brandirani lijevi rail, Region/Window overlayi isti chrome, a recording/sekundarni prozori i Setup isti vizualni sustav.
+SNAPVERE 0.1.32 je produkcijsko branding i usability izdanje. Zajednički `SnapvereBrand` sloj zaključava dostavljeni premium identitet na svim vidljivim Windows površinama: Obsidian `#070912`, Surface `#111526`, Slate `#161B2E`, Violet `#7655F6`, Lavender `#A48BFF`, Ice `#80E1E5`, viewfinder+munja znak, kompaktni spacing i ujednačenu hijerarhiju akcija. Tray naglašava četiri glavne capture/recording radnje, dok su sekundarni alati prebačeni u kompaktne footer akcije. Postavke koriste brandirani lijevi rail, Region/Window overlayi isti chrome, a recording/sekundarni prozori i Setup isti vizualni sustav.
 
-Normalni startup ostaje tray-first i skriven; v0.1.31 ne uvodi blokirajući splash ekran ni stalni dashboard. Screen recording i dalje snima samo video primarnog zaslona, zato se mikrofon i sistemski audio ne prikazuju kao implementirane funkcije. Postojeći diagnostic redaction i local-first privacy mehanizmi ostaju aktivni.
+Normalni startup ostaje tray-first i skriven; v0.1.32 ne uvodi blokirajući splash ekran ni stalni dashboard. Screen recording i dalje snima samo video primarnog zaslona, zato se mikrofon i sistemski audio ne prikazuju kao implementirane funkcije. Postojeći diagnostic redaction i local-first privacy mehanizmi ostaju aktivni.
 
 ## Browseri
 
@@ -20,7 +20,7 @@ GitHub ZIP paketi ne predstavljaju se kao odobreni store listing dok stvarna van
 
 ## Paketi
 
-Aktualni 0.1.31 ugovor sadrži `SNAPVERE-Setup.exe`, `SNAPVERE-Setup.msi`, `SNAPVERE-Portable.exe`, `SNAPVERE-Chrome.zip`, `SNAPVERE-Edge.zip`, `SNAPVERE-Opera.zip` i `SNAPVERE-Firefox.zip`.
+Aktualni 0.1.32 ugovor sadrži `SNAPVERE-Setup.exe`, `SNAPVERE-Setup.msi`, `SNAPVERE-Portable.exe`, `SNAPVERE-Chrome.zip`, `SNAPVERE-Edge.zip`, `SNAPVERE-Opera.zip` i `SNAPVERE-Firefox.zip`.
 
 ## Kvaliteta
 
@@ -28,6 +28,6 @@ CI provjerava Windows buildove/testove, renderirani WinUI visual QA, package-siz
 
 To je regresijska evidencija, ali nije obećanje da svaka platforma, driver ili preglednik nikada ne može imati specifičan problem.
 
-Release-prep cilj je **v0.1.31**. Verzija se ne smatra objavljenom dok nakon zelenog mergea ne završi GitHub release workflow.
+Release-prep cilj je **v0.1.32**. Verzija se ne smatra objavljenom dok nakon zelenog mergea ne završi GitHub release workflow.
 
 Povezano: [Performanse i stabilnost](PERFORMANCE.md), [QA matrica](QA-MATRIX.md) i [Povijest izdanja](../../RELEASES.md).

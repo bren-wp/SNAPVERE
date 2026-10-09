@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.31**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.31
+- Current public release: **v0.1.32**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.32
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -27,6 +27,31 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 ---
 
 ## Unreleased
+
+---
+
+## v0.1.32 — 2026-10-09
+
+SNAPVERE 0.1.32 ships the premium Windows and browser usability refinements merged in PR #199 after v0.1.31. This release includes functional code changes, not only an updated version number.
+
+### Premium Windows UI and interaction
+
+- Rebuild the compact notification-area tray with the implemented screenshot and recording actions in the primary hierarchy, plus Recent, Settings, folder, language, About and Exit access.
+- Introduce clear left-rail navigation for General, Screen capture, Video recording, Shortcuts, Storage and About, while preserving actual available controls and keyboard operation.
+- Polish the recording controller with a red active-recording indicator, elapsed time, focused Stop action and recovery of the localized Stop label and focus after a failed stop request.
+- Retain the true capability boundary: local screenshots and primary-display video capture; microphone and system-audio recording are not presented as implemented.
+
+### Consistent browser popups
+
+- Refine Chrome, Edge, Opera and Firefox popup layout, action grouping, dark premium colors and Recent/Settings footer.
+- Preserve working Visible, Region and Full Page capture paths, local storage behavior, privacy boundaries and current browser permissions.
+
+### QA, reliability and supply chain
+
+- Stabilize HWND-owned rendered Windows screenshots by waiting for WinUI layout, sampling real visual content independently from image stability and retaining original PNG pixels.
+- Approve only the exact intentional premium geometry transitions: Tray 420×548 to 420×488 and Settings 760×700 to 980×680. Other UI dimension, pixel and asset regression checks remain enabled.
+- All seven existing pull-request quality gates passed on the feature head before merging: Windows CI and rendered visual QA, MSI lifecycle, native ARM64 Runtime, browser extensions, localization, CodeQL and Product Contract.
+- Production release remains gated on building and validating seven distribution assets, MSI upgrade testing, package hashes, SPDX SBOM and attestations.
 
 ---
 
