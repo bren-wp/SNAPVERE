@@ -534,7 +534,9 @@ public partial class App : Microsoft.UI.Xaml.Application
             "SNAPVERE",
             scopedCapturedMarkerFileName);
         var stopwatch = Stopwatch.StartNew();
-        while (stopwatch.ElapsedMilliseconds < 5000)
+        // Allow the strict HWND-owned rendered-frame QA to observe three
+        // settled frames on slower WinUI/DirectComposition runners.
+        while (stopwatch.ElapsedMilliseconds < 12000)
         {
             if (File.Exists(acknowledgementPath))
             {
@@ -545,24 +547,44 @@ public partial class App : Microsoft.UI.Xaml.Application
         }
 
         throw new TimeoutException(
-            $"Visual QA did not acknowledge the rendered {surface} surface within 5 seconds.");
+            $"Visual QA did not acknowledge the rendered {surface} surface within 12 seconds.");
     }
 
     private static async Task WaitForSecondarySurfaceReadyAsync(FrameworkElement root, string surface)
     {
         var stopwatch = Stopwatch.StartNew();
+        var lastWidth = 0d;
+        var lastHeight = 0d;
+        var stableLayoutSamples = 0;
         while (stopwatch.ElapsedMilliseconds < 5000)
         {
-            if (root.ActualWidth >= 120 && root.ActualHeight >= 100)
+            var width = root.ActualWidth;
+            var height = root.ActualHeight;
+            if (width >= 120 && height >= 100)
             {
-                // Premium brand marks are shipped as the supplied raster asset.
-                // Give WinUI one short decode/compositor window before external
-                // PrintWindow QA starts demanding three identical frames.
-                await Task.Delay(HasReadyProbeImage(root) ? 180 : 50);
-                return;
+                // Options can resize on Activated *after* Loaded. Wait for
+                // three consecutive equal layout sizes before handing its
+                // HWND to the external stable-frame visual QA.
+                stableLayoutSamples = Math.Abs(width - lastWidth) < 0.5 &&
+                                      Math.Abs(height - lastHeight) < 0.5
+                    ? stableLayoutSamples + 1
+                    : 1;
+                lastWidth = width;
+                lastHeight = height;
+                if (stableLayoutSamples >= 3)
+                {
+                    // The original raster icon and DirectComposition frame
+                    // must settle before HWND-owned PrintWindow capture.
+                    await Task.Delay(HasReadyProbeImage(root) ? 250 : 120);
+                    return;
+                }
+            }
+            else
+            {
+                stableLayoutSamples = 0;
             }
 
-            await Task.Delay(20);
+            await Task.Delay(70);
         }
 
         throw new TimeoutException(

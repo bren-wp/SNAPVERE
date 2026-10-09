@@ -147,7 +147,11 @@ function Get-BitmapSampleFingerprint {
 
     for ($y = 0; $y -lt $Bitmap.Height; $y += $stepY) {
         for ($x = 0; $x -lt $Bitmap.Width; $x += $stepX) {
-            [void]$builder.Append($Bitmap.GetPixel($x, $y).ToArgb())
+            # Only the comparison fingerprint is quantized. Store and
+            # review untouched HWND-owned PNG pixels. DirectComposition
+            # antialiasing can perturb lower RGB bits between stable frames.
+            $argb = $Bitmap.GetPixel($x, $y).ToArgb()
+            [void]$builder.Append(($argb -band 0x00F0F0F0))
             [void]$builder.Append('|')
         }
     }
@@ -157,23 +161,28 @@ function Get-BitmapSampleFingerprint {
     [Convert]::ToHexString($hash)
 }
 
-function Test-BitmapHasVisualContent {
+function Get-BitmapVisualColorCount {
     param([Parameter(Mandatory = $true)][System.Drawing.Bitmap]$Bitmap)
 
-    $unique = [System.Collections.Generic.HashSet[int]]::new()
-    $stepX = [Math]::Max(1, [int][Math]::Floor($Bitmap.Width / 18.0))
-    $stepY = [Math]::Max(1, [int][Math]::Floor($Bitmap.Height / 18.0))
+    # The 18x18 fingerprint grid intentionally ignores most text pixels to
+    # compare settled frames quickly. It is NOT a reliable content detector
+    # for the reference's flat dark Settings design: a sparse grid can miss
+    # all text and thin separators. Use a denser independent sample to check
+    # that this is an actual rendered surface and not a blank HWND.
+    $colors = [System.Collections.Generic.HashSet[int]]::new()
+    $stepX = [Math]::Max(1, [int][Math]::Floor($Bitmap.Width / 64.0))
+    $stepY = [Math]::Max(1, [int][Math]::Floor($Bitmap.Height / 64.0))
 
     for ($y = 0; $y -lt $Bitmap.Height; $y += $stepY) {
         for ($x = 0; $x -lt $Bitmap.Width; $x += $stepX) {
-            [void]$unique.Add($Bitmap.GetPixel($x, $y).ToArgb())
-            if ($unique.Count -ge 12) {
-                return $true
+            [void]$colors.Add($Bitmap.GetPixel($x, $y).ToArgb())
+            if ($colors.Count -ge 12) {
+                return 12
             }
         }
     }
 
-    return $false
+    return $colors.Count
 }
 
 function Save-WindowSnapshot {
@@ -189,6 +198,11 @@ function Save-WindowSnapshot {
     $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
     $captureMethod = $null
     $hasStableVisualContent = $false
+    $renderedFrameCount = 0
+    $printedFrameCount = 0
+    $maxVisualColors = 0
+    $bestStableCount = 0
+    $distinctFingerprints = [System.Collections.Generic.HashSet[string]]::new()
 
     try {
         # Use HWND-owned PrintWindow pixels only. A rendered frame is accepted only
@@ -198,7 +212,7 @@ function Save-WindowSnapshot {
         foreach ($flag in @(2, 0)) {
             $previousFingerprint = $null
             $stableCount = 0
-            $maxAttempts = if ($flag -eq 2) { 6 } else { 4 }
+            $maxAttempts = if ($flag -eq 2) { 12 } else { 8 }
 
             for ($attempt = 0; $attempt -lt $maxAttempts; $attempt++) {
                 $graphics.Clear([System.Drawing.Color]::Black)
@@ -210,8 +224,20 @@ function Save-WindowSnapshot {
                     $graphics.ReleaseHdc($hdc)
                 }
 
-                if ($printed -and (Test-BitmapHasVisualContent -Bitmap $bitmap)) {
+                # Count successful HWND PrintWindow calls separately from
+                # detected visual content; a failure can now identify a
+                # blank renderer vs sparse sampling in diagnostic logs.
+                $visualColors = 0
+                if ($printed) {
+                    $printedFrameCount++
+                    $visualColors = Get-BitmapVisualColorCount -Bitmap $bitmap
+                    $maxVisualColors = [Math]::Max($maxVisualColors, $visualColors)
+                }
+
+                if ($printed -and $visualColors -ge 12) {
+                    $renderedFrameCount++
                     $fingerprint = Get-BitmapSampleFingerprint -Bitmap $bitmap
+                    [void]$distinctFingerprints.Add($fingerprint)
                     if ($fingerprint -eq $previousFingerprint) {
                         $stableCount++
                     }
@@ -220,6 +246,7 @@ function Save-WindowSnapshot {
                         $stableCount = 1
                     }
 
+                    $bestStableCount = [Math]::Max($bestStableCount, $stableCount)
                     if ($stableCount -ge 3) {
                         $hasStableVisualContent = $true
                         $captureMethod = if ($flag -eq 2) { 'StablePrintWindowFullContent' } else { 'StablePrintWindow' }
@@ -231,7 +258,9 @@ function Save-WindowSnapshot {
                     $stableCount = 0
                 }
 
-                Start-Sleep -Milliseconds 20
+                # Allow the Windows compositor multiple full display
+                # frames to settle instead of probing at 20ms intervals.
+                Start-Sleep -Milliseconds 70
             }
 
             if ($hasStableVisualContent) {
@@ -240,7 +269,7 @@ function Save-WindowSnapshot {
         }
 
         if (-not $hasStableVisualContent) {
-            throw "Rendered SNAPVERE window '$($Window.Title)' did not produce three consecutive stable target-owned PrintWindow frames. Target HWND=$($Window.Handle.ToInt64())."
+            throw "Rendered SNAPVERE window '$($Window.Title)' did not produce three consecutive stable target-owned PrintWindow frames. Target HWND=$($Window.Handle.ToInt64()). Successful PrintWindow calls=$printedFrameCount; max distinct rendered colors=$maxVisualColors; content frames=$renderedFrameCount; distinct sampled fingerprints=$($distinctFingerprints.Count); longest stable run=$bestStableCount."
         }
 
         $bitmap.Save($DestinationPath, [System.Drawing.Imaging.ImageFormat]::Png)
@@ -429,7 +458,7 @@ function Invoke-SecondarySurfaceProbe {
             $snapshot = $null
             $lastCaptureError = $null
             $captureWait = [System.Diagnostics.Stopwatch]::StartNew()
-            while (-not $process.HasExited -and $captureWait.ElapsedMilliseconds -lt 5000 -and $null -eq $snapshot) {
+            while (-not $process.HasExited -and $captureWait.ElapsedMilliseconds -lt 10000 -and $null -eq $snapshot) {
                 $windows = @(Get-CapturableWindows -Process $process | Sort-Object { $_.Width * $_.Height } -Descending)
                 foreach ($window in $windows) {
                     $current = Get-CapturableWindows -Process $process |

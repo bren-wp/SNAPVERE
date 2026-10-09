@@ -88,15 +88,16 @@ public sealed class RecordingControllerWindow : Window
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
+        // Match the floating recorder reference: a small actual recording
+        // indicator rather than an unrelated application tile.
         var brand = new Border
         {
-            Width = 46,
-            Height = 46,
-            CornerRadius = new CornerRadius(14),
-            Background = SnapvereBrand.Slate,
-            BorderBrush = SnapvereBrand.Outline,
+            Width = 14,
+            Height = 14,
+            CornerRadius = new CornerRadius(7),
+            Background = SnapvereBrand.Danger,
+            BorderBrush = Brush(0x88, 0xF0, 0x63, 0x82),
             BorderThickness = new Thickness(1),
-            Child = SnapvereBrand.CreateMark(38),
             VerticalAlignment = VerticalAlignment.Center
         };
         grid.Children.Add(brand);
@@ -104,7 +105,7 @@ public sealed class RecordingControllerWindow : Window
         var status = new StackPanel
         {
             Spacing = 1,
-            Margin = new Thickness(12, 0, 14, 0),
+            Margin = new Thickness(14, 0, 22, 0),
             VerticalAlignment = VerticalAlignment.Center
         };
         var statusText = new TextBlock
@@ -123,20 +124,10 @@ public sealed class RecordingControllerWindow : Window
             Spacing = 9,
             VerticalAlignment = VerticalAlignment.Center
         };
-        timerRow.Children.Add(new Border
-        {
-            Width = 12,
-            Height = 12,
-            CornerRadius = new CornerRadius(6),
-            Background = SnapvereBrand.Danger,
-            BorderBrush = Brush(0x55, 0xF0, 0x63, 0x82),
-            BorderThickness = new Thickness(1),
-            VerticalAlignment = VerticalAlignment.Center
-        });
         var elapsed = new TextBlock
         {
             Text = "00:00",
-            FontSize = 22,
+            FontSize = 26,
             FontFamily = new FontFamily("Segoe UI Semibold"),
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = SnapvereBrand.Strong
@@ -147,43 +138,18 @@ public sealed class RecordingControllerWindow : Window
         Grid.SetColumn(status, 1);
         grid.Children.Add(status);
 
-        var stopContent = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 9,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        stopContent.Children.Add(CreateStopGlyph());
-        stopContent.Children.Add(new TextBlock
-        {
-            Text = L("StopScreenRecording"),
-            FontSize = 11,
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = SnapvereBrand.Strong,
-            VerticalAlignment = VerticalAlignment.Center
-        });
-
         var stop = new Button
         {
             MinWidth = 132,
             Height = 46,
             Padding = new Thickness(18, 0, 18, 0),
             CornerRadius = new CornerRadius(14),
-            Background = new LinearGradientBrush
-            {
-                StartPoint = new Windows.Foundation.Point(0, 0),
-                EndPoint = new Windows.Foundation.Point(1, 0),
-                GradientStops =
-                {
-                    new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0xF0, 0x63, 0x82), Offset = 0 },
-                    new GradientStop { Color = Windows.UI.Color.FromArgb(0xFF, 0x9B, 0x4E, 0xE8), Offset = 1 }
-                }
-            },
+            Background = Brush(0xFF, 0x43, 0x2A, 0x3E),
             BorderBrush = Brush(0xAA, 0xF0, 0x63, 0x82),
             BorderThickness = new Thickness(1),
             Foreground = SnapvereBrand.Strong,
             VerticalAlignment = VerticalAlignment.Center,
-            Content = stopContent
+            Content = CreateStopContent()
         };
         AutomationProperties.SetName(stop, L("StopScreenRecording"));
         ToolTipService.SetToolTip(stop, L("StopScreenRecording"));
@@ -245,7 +211,7 @@ public sealed class RecordingControllerWindow : Window
             _statusText.Text = UserText(
                 "Recording is still active. Try Stop again.",
                 "Snimanje je još aktivno. Pokušajte ponovno zaustaviti.");
-            _stopButton.Content = CreateStopGlyph();
+            _stopButton.Content = CreateStopContent();
             var stopText = L("StopScreenRecording");
             AutomationProperties.SetName(_stopButton, stopText);
             AutomationProperties.SetHelpText(_stopButton, stopText);
@@ -253,7 +219,28 @@ public sealed class RecordingControllerWindow : Window
             _stopButton.IsEnabled = true;
             _elapsed.Start();
             _timer.Start();
+            _ = _stopButton.Focus(FocusState.Programmatic);
         }
+    }
+
+    private StackPanel CreateStopContent()
+    {
+        var content = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 9,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        content.Children.Add(CreateStopGlyph());
+        content.Children.Add(new TextBlock
+        {
+            Text = L("StopScreenRecording"),
+            FontSize = 12,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = SnapvereBrand.Strong,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        return content;
     }
 
     private static TextBlock CreateStopGlyph()

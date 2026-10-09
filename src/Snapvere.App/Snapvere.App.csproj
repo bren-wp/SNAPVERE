@@ -9,6 +9,7 @@
     <Platforms>x86;x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\SNAPVERE.ico</ApplicationIcon>
     <PublishTrimmed>false</PublishTrimmed>
     <SatelliteResourceLanguages>en;hr</SatelliteResourceLanguages>
   </PropertyGroup>
@@ -19,6 +20,10 @@
   <ItemGroup>
     <Content Include="Assets\SNAPVERE-app-icon-transparent.svg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\SNAPVERE-app-icon-32.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
     <Content Include="Assets\SNAPVERE-app-icon-48.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

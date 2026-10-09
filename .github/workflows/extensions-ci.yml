@@ -1,22 +1,12 @@
 name: Browser Extensions CI
 
+# Browser parity and permission locks are mandatory on every relevant branch
+# head, even when a change touches only Windows assets or shared branding.
 on:
   push:
-    branches: [main]
-    paths:
-      - 'ekstenzije/**'
-      - 'product-version.json'
-      - 'eng/validate-product-contract.py'
-      - '.github/workflows/extensions-ci.yml'
-      - '.github/workflows/release-*.yml'
+    branches: [main, 'release/**']
   pull_request:
     branches: [main]
-    paths:
-      - 'ekstenzije/**'
-      - 'product-version.json'
-      - 'eng/validate-product-contract.py'
-      - '.github/workflows/extensions-ci.yml'
-      - '.github/workflows/release-*.yml'
 
 concurrency:
   group: snapvere-extensions-${{ github.ref }}

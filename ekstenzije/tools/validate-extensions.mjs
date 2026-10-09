@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -23,6 +24,14 @@ const expectedCommands = Object.freeze({
     mac: "Command+Shift+7",
     description: "__MSG_commandCaptureFullPage__"
   }
+});
+// SHA-256 of the exact 16/32/48/128px exports supplied in the SNAPVERE brand ZIP.
+// Check both the canonical assets and every browser package to prevent visual drift.
+const premiumIconSha256 = Object.freeze({
+  "icon-16.png": "cc5c7df30b7c0372629083adf26e7f56a36556c503fc94027a1764d86971fe65",
+  "icon-32.png": "b4139f4baa33c22921834272d4f62f403af178d9f80364f1035eb3228d29c709",
+  "icon-48.png": "e1836e9f3cf6e0347938d9c014aa50a92304da22a89561676354db1fb6982ca7",
+  "icon-128.png": "e49808dad22d4afb68668b1d85ae7804549ed1a79dd5fe9b802e32be8ba49aad"
 });
 const requiredFiles = [
   "manifest.json",
@@ -58,6 +67,21 @@ function walk(dir) {
     else out.push(absolute);
   }
   return out;
+}
+
+function validatePremiumIcons(browser, browserDir) {
+  for (const [fileName, expectedHash] of Object.entries(premiumIconSha256)) {
+    const targets = [
+      path.join(repoRoot, "assets", "branding", "premium", fileName),
+      path.join(browserDir, "icons", fileName)
+    ];
+    for (const target of targets) {
+      const actual = createHash("sha256").update(fs.readFileSync(target)).digest("hex");
+      if (actual !== expectedHash) {
+        fail(`${browser} premium asset ${path.relative(repoRoot, target)} differs from the supplied branding ZIP.`);
+      }
+    }
+  }
 }
 
 function validateMessages(browserDir) {
@@ -224,8 +248,20 @@ function validateBrandLock(browser, browserDir) {
     fail(`${browser} visible extension surfaces must retain the SNAPVERE wordmark.`);
   }
 
+  // The supplied popup reference keeps Settings in the footer and never
+  // adds decorative action chevrons or unimplemented capture buttons.
+  if (!/<footer class="footer">[\s\S]*id="recent"[\s\S]*id="settings"[\s\S]*<\/footer>/.test(popupHtml)) {
+    fail(`${browser} popup must keep actual Recent and Settings actions together in the footer.`);
+  }
+  if ((popupHtml.match(/data-action=/g) || []).length !== 3 || /class="chevron"/.test(popupHtml)) {
+    fail(`${browser} popup must match three real capture actions without decorative chevrons.`);
+  }
+
   const popupCss = fs.readFileSync(path.join(browserDir, "popup.css"), "utf8");
   const optionsCss = fs.readFileSync(path.join(browserDir, "options.css"), "utf8");
+  if (!popupCss.includes("width: min(420px, 100vw)") || !popupCss.includes("background: #2b2345;")) {
+    fail(`${browser} popup must retain the supplied compact premium visual proportions.`);
+  }
   for (const [name, text] of [["popup.css", popupCss], ["options.css", optionsCss]]) {
     for (const token of ["#070912", "#111526", "#161b2e", "#7655f6", "#a48bff", "#80e1e5", "#8e9ab6"]) {
       if (!text.toLowerCase().includes(token)) {
@@ -356,6 +392,7 @@ for (const browser of browsers) {
   }
 
   validateManifest(browser, browserDir);
+  validatePremiumIcons(browser, browserDir);
   validateMessages(browserDir);
   validateLocalizationReferences(browser, browserDir);
   validateBrandLock(browser, browserDir);
@@ -363,4 +400,4 @@ for (const browser of browsers) {
   console.log(`Validated ${browser}.`);
 }
 
-console.log("SNAPVERE browser extension validation passed: branding locked, permissions bounded, localization references verified, command shortcuts locked, capture memory lifecycle enforced.");
+console.log("SNAPVERE browser extension validation passed: supplied brand icon hashes locked, permissions bounded, localization references verified, command shortcuts locked, capture memory lifecycle enforced.");

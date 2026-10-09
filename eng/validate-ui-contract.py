@@ -2,6 +2,8 @@
 """Validate critical SNAPVERE Windows UI interaction/accessibility contracts."""
 
 from pathlib import Path
+from hashlib import sha256
+from struct import unpack_from
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -17,7 +19,134 @@ def require(path: str, fragments: tuple[str, ...]) -> None:
             raise RuntimeError(f"{path} is missing UI contract fragment: {fragment}")
 
 
+def require_asset_hash(path: str, expected_hash: str) -> None:
+    asset = ROOT / path
+    if not asset.is_file():
+        raise RuntimeError(f"Required SNAPVERE premium asset is missing: {path}")
+    if sha256(asset.read_bytes()).hexdigest() != expected_hash:
+        raise RuntimeError(f"SNAPVERE asset differs from the supplied branding ZIP: {path}")
+
+
+def validate_windows_executable_icons() -> None:
+    # Preserve the exact original PNG frames in the actual Windows EXE resources.
+    canonical = ROOT / "assets/branding/premium/SNAPVERE.ico"
+    if not canonical.is_file():
+        raise RuntimeError("Canonical premium Windows EXE icon is missing.")
+    icon = canonical.read_bytes()
+    if sha256(icon).hexdigest() != "2050742ca22fa046a692eea05c20e2eb1456214648157a8f2e865000c1937a87":
+        raise RuntimeError("Canonical premium Windows EXE icon changed unexpectedly.")
+
+    sizes = (16, 32, 48, 128)
+    if len(icon) < 6 or unpack_from("<HHH", icon) != (0, 1, len(sizes)):
+        raise RuntimeError("Windows EXE icon has an invalid multi-resolution ICONDIR header.")
+
+    next_offset = 6 + len(sizes) * 16
+    for index, size in enumerate(sizes):
+        metadata = unpack_from("<BBBBHHII", icon, 6 + index * 16)
+        width, height, color_count, reserved, planes, bit_count, byte_count, offset = metadata
+        if (width, height, color_count, reserved, planes, bit_count) != (size, size, 0, 0, 1, 32):
+            raise RuntimeError(f"Windows EXE icon {size}px frame metadata is invalid.")
+        if offset != next_offset or offset + byte_count > len(icon):
+            raise RuntimeError(f"Windows EXE icon {size}px frame offset is invalid.")
+
+        expected = (ROOT / f"assets/branding/premium/icon-{size}.png").read_bytes()
+        if icon[offset:offset + byte_count] != expected:
+            raise RuntimeError(f"Windows EXE icon {size}px frame differs from the original PNG.")
+        next_offset += byte_count
+
+    if next_offset != len(icon):
+        raise RuntimeError("Windows EXE icon contains an unexpected trailing payload.")
+
+    for target in (
+        "src/Snapvere.App/Assets/SNAPVERE.ico",
+        "src/Snapvere.Setup/Assets/SNAPVERE.ico",
+    ):
+        asset = ROOT / target
+        if not asset.is_file() or asset.read_bytes() != icon:
+            raise RuntimeError(f"{target} must match the canonical Windows EXE icon.")
+
+
 def main() -> int:
+    validate_windows_executable_icons()
+    # Preserve strict screenshot regression thresholds while recording exactly
+    # the two deliberate reference-branding geometry migrations.
+    require(
+        "eng/Compare-SnapvereVisualQa.ps1",
+        (
+            "[double]$MaxDimensionDeltaRatio = 0.08",
+            "'tray-menu.png' = @{",
+            "BaselineWidth = 420",
+            "BaselineHeight = 548",
+            "TargetWidth = 420",
+            "TargetHeight = 488",
+            "'options.png' = @{",
+            "BaselineWidth = 760",
+            "BaselineHeight = 700",
+            "TargetWidth = 980",
+            "TargetHeight = 680",
+            "approved $FileName transition baseline mismatch",
+            "approved $FileName premium geometry mismatch",
+            "$meanRgbDifference -gt $MaxMeanRgbDifference",
+            "$significantPixelRatio -gt $MaxSignificantPixelRatio",
+            "$byteSizeRatio -lt $MinByteSizeRatio",
+        ),
+    )
+    # Validate both HWND ownership and rendered-content detection. Do not
+    # accept blank compositor frames or bypass three stable frames.
+    require(
+        "eng/Capture-SnapvereVisualQa.ps1",
+        (
+            "function Get-BitmapVisualColorCount",
+            "$Bitmap.Width / 64.0",
+            "$Bitmap.Height / 64.0",
+            "if ($printed -and $visualColors -ge 12)",
+            "if ($stableCount -ge 3)",
+            "$bitmap.Save($DestinationPath",
+            "Successful PrintWindow calls=$printedFrameCount",
+            "max distinct rendered colors=$maxVisualColors",
+        ),
+    )
+    # CI visual captures exposed missing Segoe Fluent glyphs as empty boxes.
+    # Use the Windows-provided MDL2 glyph font for all active WinUI icon surfaces.
+    for icon_surface in (
+        "src/Snapvere.App/Services/TrayMenuWindow.cs",
+        "src/Snapvere.App/Services/OptionsWindow.cs",
+        "src/Snapvere.App/RegionCaptureWindow.cs",
+        "src/Snapvere.App/WindowTargetOverlayWindow.cs",
+        "src/Snapvere.App/Services/CaptureFeedbackWindow.cs",
+    ):
+        source = read(icon_surface)
+        if 'Segoe Fluent Icons' in source:
+            raise RuntimeError(f"{icon_surface} still uses the unavailable Fluent icon font.")
+        if 'new FontFamily("Segoe MDL2 Assets")' not in source:
+            raise RuntimeError(f"{icon_surface} must use the supported Windows MDL2 glyph font.")
+
+    require("src/Snapvere.App/Services/TrayMenuWindow.cs",
+            ('L("CaptureRegion"), "Ctrl + Shift + 1"',))
+    require("src/Snapvere.App/Services/OptionsWindow.cs",
+            ("AddInlinePreferenceRow(0,",
+             "railStack.Children.Add(_aboutTab);"))
+    require_asset_hash(
+        "src/Snapvere.App/Assets/SNAPVERE-app-icon-32.png",
+        "b4139f4baa33c22921834272d4f62f403af178d9f80364f1035eb3228d29c709",
+    )
+    require_asset_hash(
+        "src/Snapvere.Setup/Assets/SNAPVERE-app-icon-128.png",
+        "e49808dad22d4afb68668b1d85ae7804549ed1a79dd5fe9b802e32be8ba49aad",
+    )
+    require(
+        "src/Snapvere.App/Services/Win32TrayIconService.cs",
+        ("SNAPVERE-app-icon-32.png", "GdipCreateBitmapFromFile", "GdipCreateHICONFromBitmap"),
+    )
+    require(
+        "src/Snapvere.App/Snapvere.App.csproj",
+        ('<Content Include="Assets\\SNAPVERE-app-icon-32.png">', '<ApplicationIcon>Assets\\SNAPVERE.ico</ApplicationIcon>'),
+    )
+    require(
+        "src/Snapvere.Setup/Snapvere.Setup.csproj",
+        ('LogicalName="Snapvere.Brand.AppIcon"', '<ApplicationIcon>Assets\\SNAPVERE.ico</ApplicationIcon>'),
+    )
+
     for path in (
         "src/Snapvere.App/Services/OptionsWindow.cs",
         "src/Snapvere.App/Services/LanguagePickerWindow.cs",
@@ -76,6 +205,11 @@ def main() -> int:
             "Finishing screen recording",
             "ToolTipService.SetToolTip",
             "_stopButton.Focus(FocusState.Programmatic)",
+            "Content = CreateStopContent()",
+            "_stopButton.Content = CreateStopContent()",
+            "Width = 14,",
+            "Height = 14,",
+            "Background = Brush(0xFF, 0x43, 0x2A, 0x3E)",
         ),
     )
 
@@ -93,15 +227,22 @@ def main() -> int:
             'CloseForActionBestEffort("Close tray menu for action")',
             "StartupDiagnostics.Record(operation, exception);",
             "private const int FlyoutWidth = 420;",
-            "private const int FlyoutHeight = 548;",
+            "private const int FlyoutHeight = 488;",
             "private const int FlyoutEdgeMargin = 4;",
             "TrayPopupPlacementPolicy.Place(",
-            "MinHeight = primary ? 58 : 52",
+            "MinHeight = recording ? 54 : primary ? 54 : 50",
             "SnapvereBrand.CreateMark(50)",
             "CreateFooterIconButton",
-            "hint.TextAlignment = TextAlignment.Right",
+            "CreateFooterLinkButton",
         ),
     )
+
+    tray_text = read("src/Snapvere.App/Services/TrayMenuWindow.cs")
+    if '"Ctrl + Shift + 4"' in tray_text:
+        raise RuntimeError("Recording must not advertise an unregistered Ctrl+Shift+4 shortcut.")
+    recording_button = tray_text.split('L(_screenRecordingActive ? "StopScreenRecording" : "StartScreenRecording"),', 1)
+    if len(recording_button) != 2 or not recording_button[1].lstrip().startswith("string.Empty,"):
+        raise RuntimeError("Recording action must retain a blank shortcut hint until a hotkey is implemented.")
 
     require(
         "src/Snapvere.App/SnapvereBrand.cs",
@@ -124,10 +265,23 @@ def main() -> int:
         "src/Snapvere.App/Services/OptionsWindow.cs",
         (
             "SnapvereBrand.CreateMark(42)",
-            "new GridLength(196)",
-            "Postavke i snimke ostaju lokalne.",
+            "new GridLength(222)",
+            "Tvoje snimke ostaju lokalne",
+            "railStack.Children.Add(_generalTab)",
+            "railStack.Children.Add(_preferencesTab)",
+            "railStack.Children.Add(_recordingTab)",
+            "railStack.Children.Add(_shortcutsTab)",
+            "railStack.Children.Add(_recentTab)",
+            "railStack.Children.Add(_aboutTab)",
+            "AddInlinePreferenceRow(0,",
+            "_recordingPanel.Children.Add(_recordingActions)",
+            "Ctrl + Shift + {i + 1}",
         ),
     )
+    options_source = read("src/Snapvere.App/Services/OptionsWindow.cs")
+    if "BuildSettingCard(" in options_source or "AddPreferenceCard(" in options_source:
+        raise RuntimeError("Old oversized Settings cards must not remain.")
+
     require(
         "src/Snapvere.Setup/SetupForm.cs",
         (
@@ -135,7 +289,8 @@ def main() -> int:
             "Color.FromArgb(118, 85, 246)",
             "Color.FromArgb(164, 139, 255)",
             "Color.FromArgb(128, 225, 229)",
-            "new PointF(73, 35)",
+            "new Bitmap(decoded)",
+            "e.Graphics.DrawImage(_brandImage, new Rectangle(0, 0, Width, Height))",
         ),
     )
 

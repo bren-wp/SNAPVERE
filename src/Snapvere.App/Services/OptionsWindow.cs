@@ -15,8 +15,12 @@ namespace Snapvere.App.Services;
 
 public enum OptionsSection
 {
-    Preferences,
-    RecentCaptures
+    Preferences, // Real screen-capture preferences; remains the external default.
+    RecentCaptures,
+    General,
+    Recording,
+    Shortcuts,
+    About
 }
 
 /// <summary>
@@ -32,6 +36,12 @@ public sealed class OptionsWindow : Window
     private readonly StartupRegistrationService _startupRegistration;
     private readonly string _languageCode;
     private readonly Grid _preferencesPanel = new();
+    private readonly Grid _generalPanel = new();
+    private readonly Grid _recordingPanel = new();
+    private readonly Grid _shortcutsPanel = new();
+    private readonly Grid _aboutPanel = new();
+    private TextBlock? _sectionTitle;
+    private TextBlock? _sectionDescription;
     private readonly ScrollViewer _preferencesScroller = new()
     {
         VerticalScrollMode = ScrollMode.Auto,
@@ -51,6 +61,10 @@ public sealed class OptionsWindow : Window
     private readonly Button _recordingStopButton;
     private readonly Button _preferencesTab;
     private readonly Button _recentTab;
+    private readonly Button _generalTab;
+    private readonly Button _recordingTab;
+    private readonly Button _shortcutsTab;
+    private readonly Button _aboutTab;
     private bool _sizeApplied;
     private bool _updatingControls;
     private Action? _startScreenRecording;
@@ -81,10 +95,18 @@ public sealed class OptionsWindow : Window
         _startupToggle.Toggled += StartupToggle_Toggled;
         _cursorToggle.Toggled += CursorToggle_Toggled;
 
-        _preferencesTab = CreateTabButton(L("Settings"), "\uE713", () => ShowSection(OptionsSection.Preferences));
-        _recentTab = CreateTabButton(L("RecentCaptures"), "\uE81C", () => ShowSection(OptionsSection.RecentCaptures));
+        _generalTab = CreateTabButton(UserText("General", "Općenito"), "\uE713", () => ShowSection(OptionsSection.General));
+        _preferencesTab = CreateTabButton(UserText("Screen capture", "Snimanje zaslona"), "\uE722", () => ShowSection(OptionsSection.Preferences));
+        _recordingTab = CreateTabButton(UserText("Video recording", "Video snimanje"), "\uE714", () => ShowSection(OptionsSection.Recording));
+        _shortcutsTab = CreateTabButton(UserText("Shortcuts", "Prečaci"), "\uE765", () => ShowSection(OptionsSection.Shortcuts));
+        _recentTab = CreateTabButton(UserText("Storage", "Pohrana"), "\uE838", () => ShowSection(OptionsSection.RecentCaptures));
+        _aboutTab = CreateTabButton(L("About"), "\uE946", () => ShowSection(OptionsSection.About));
 
         BuildPreferencesPanel();
+        BuildGeneralPanel();
+        BuildRecordingPanel();
+        BuildShortcutsPanel();
+        BuildAboutPanel();
         BuildRecentPanel();
         var content = BuildContent();
         content.KeyDown += Root_KeyDown;
@@ -128,14 +150,46 @@ public sealed class OptionsWindow : Window
     {
         _preferencesScroller.Visibility = section == OptionsSection.Preferences ? Visibility.Visible : Visibility.Collapsed;
         _recentPanel.Visibility = section == OptionsSection.RecentCaptures ? Visibility.Visible : Visibility.Collapsed;
+        _generalPanel.Visibility = section == OptionsSection.General ? Visibility.Visible : Visibility.Collapsed;
+        _recordingPanel.Visibility = section == OptionsSection.Recording ? Visibility.Visible : Visibility.Collapsed;
+        _shortcutsPanel.Visibility = section == OptionsSection.Shortcuts ? Visibility.Visible : Visibility.Collapsed;
+        _aboutPanel.Visibility = section == OptionsSection.About ? Visibility.Visible : Visibility.Collapsed;
+
+        ApplyTabVisual(_generalTab, section == OptionsSection.General);
         ApplyTabVisual(_preferencesTab, section == OptionsSection.Preferences);
+        ApplyTabVisual(_recordingTab, section == OptionsSection.Recording);
+        ApplyTabVisual(_shortcutsTab, section == OptionsSection.Shortcuts);
         ApplyTabVisual(_recentTab, section == OptionsSection.RecentCaptures);
+        ApplyTabVisual(_aboutTab, section == OptionsSection.About);
+
+        if (_sectionTitle is not null && _sectionDescription is not null)
+        {
+            (_sectionTitle.Text, _sectionDescription.Text) = section switch
+            {
+                OptionsSection.General =>
+                    (UserText("General", "Općenito"),
+                     UserText("Local-first application preferences.", "Postavke aplikacije s lokalnom pohranom.")),
+                OptionsSection.Recording =>
+                    (UserText("Video recording", "Video snimanje"),
+                     UserText("Control the implemented primary-display recorder.", "Upravljajte snimanjem primarnog zaslona.")),
+                OptionsSection.Shortcuts =>
+                    (UserText("Shortcuts", "Prečaci"),
+                     UserText("Current registered capture shortcuts.", "Trenutačno registrirani prečaci za snimanje.")),
+                OptionsSection.RecentCaptures =>
+                    (UserText("Storage", "Pohrana"),
+                     UserText("Review and open captures stored on this PC.", "Pregledajte snimke spremljene na ovom računalu.")),
+                OptionsSection.About =>
+                    (L("About"), UserText("Application and support information.", "Informacije o aplikaciji i podršci.")),
+                _ => (UserText("Screen capture", "Snimanje zaslona"),
+                      UserText("Capture behavior adjusted to your workflow.", "Ponašanje snimanja prilagođeno vašem načinu rada."))
+            };
+        }
 
         if (section == OptionsSection.RecentCaptures)
         {
             RefreshRecentCaptures();
         }
-        else
+        else if (section == OptionsSection.Preferences)
         {
             LoadPreferences();
         }
@@ -159,70 +213,46 @@ public sealed class OptionsWindow : Window
         {
             RequestedTheme = ElementTheme.Dark,
             Background = SnapvereBrand.Obsidian,
-            Padding = new Thickness(18)
+            Padding = new Thickness(12)
         };
-        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(196) });
+        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(222) });
         root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        var railStack = new StackPanel { Spacing = 10 };
-        var brandRow = new Grid { Margin = new Thickness(2, 2, 2, 10) };
+        var railStack = new StackPanel { Spacing = 6 };
+        var brandRow = new Grid { Margin = new Thickness(2, 2, 2, 14) };
         brandRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         brandRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         brandRow.Children.Add(SnapvereBrand.CreateMark(42));
-        var brandCopy = new StackPanel
-        {
-            Spacing = 1,
-            Margin = new Thickness(10, 0, 0, 0),
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        brandCopy.Children.Add(SnapvereBrand.CreateWordmark(17));
-        brandCopy.Children.Add(Text(
-            UserText("Capture. Edit. Done.", "Snimi. Uredi. Gotovo."),
-            8.5,
-            SnapvereBrand.Muted));
+        var brandCopy = SnapvereBrand.CreateWordmark(19);
+        brandCopy.VerticalAlignment = VerticalAlignment.Center;
+        brandCopy.Margin = new Thickness(10, 0, 0, 0);
         Grid.SetColumn(brandCopy, 1);
         brandRow.Children.Add(brandCopy);
         railStack.Children.Add(brandRow);
 
         var navLabel = Text(L("Settings").ToUpperInvariant(), 9, SnapvereBrand.Subtle, Microsoft.UI.Text.FontWeights.SemiBold);
-        navLabel.CharacterSpacing = 120;
-        navLabel.Margin = new Thickness(6, 4, 0, 4);
+        navLabel.CharacterSpacing = 100;
+        navLabel.Margin = new Thickness(8, 2, 0, 6);
         railStack.Children.Add(navLabel);
+        railStack.Children.Add(_generalTab);
         railStack.Children.Add(_preferencesTab);
+        railStack.Children.Add(_recordingTab);
+        railStack.Children.Add(_shortcutsTab);
         railStack.Children.Add(_recentTab);
-
-        var local = new Border
-        {
-            Margin = new Thickness(0, 14, 0, 0),
-            Padding = new Thickness(12),
-            CornerRadius = new CornerRadius(14),
-            Background = Brush(0x20, 0x80, 0xE1, 0xE5),
-            BorderBrush = Brush(0x55, 0x80, 0xE1, 0xE5),
-            BorderThickness = new Thickness(1)
-        };
-        var localCopy = new StackPanel { Spacing = 3 };
-        localCopy.Children.Add(Text(L("LocalFirst").ToUpperInvariant(), 8.5, SnapvereBrand.Ice, Microsoft.UI.Text.FontWeights.Bold));
-        var localDetail = Text(
-            UserText("Settings and captures stay local.", "Postavke i snimke ostaju lokalne."),
-            9,
-            SnapvereBrand.Muted);
-        localDetail.TextWrapping = TextWrapping.Wrap;
-        localCopy.Children.Add(localDetail);
-        local.Child = localCopy;
-        railStack.Children.Add(local);
+        railStack.Children.Add(_aboutTab);
 
         var rail = new Border
         {
             Background = SnapvereBrand.Surface,
             BorderBrush = SnapvereBrand.Outline,
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(18),
-            Padding = new Thickness(14),
+            CornerRadius = new CornerRadius(20),
+            Padding = new Thickness(12),
             Child = railStack
         };
         root.Children.Add(rail);
 
-        var main = new Grid { Margin = new Thickness(18, 0, 0, 0) };
+        var main = new Grid { Margin = new Thickness(30, 12, 12, 0) };
         main.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         main.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         main.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -231,21 +261,22 @@ public sealed class OptionsWindow : Window
         _preferencesScroller.Content = _preferencesPanel;
         var host = new Grid();
         host.Children.Add(_preferencesScroller);
+        host.Children.Add(_generalPanel);
+        host.Children.Add(_recordingPanel);
+        host.Children.Add(_shortcutsPanel);
         host.Children.Add(_recentPanel);
+        host.Children.Add(_aboutPanel);
         var contentFrame = new Border
         {
-            Margin = new Thickness(0, 16, 0, 0),
-            Padding = new Thickness(20),
-            CornerRadius = new CornerRadius(18),
-            Background = SnapvereBrand.Surface,
-            BorderBrush = SnapvereBrand.Outline,
-            BorderThickness = new Thickness(1),
+            Margin = new Thickness(0, 14, 0, 0),
+            Padding = new Thickness(2, 0, 4, 0),
+            Background = Brush(0x00, 0, 0, 0),
             Child = host
         };
         Grid.SetRow(contentFrame, 1);
         main.Children.Add(contentFrame);
 
-        var footer = new Grid { Margin = new Thickness(2, 12, 2, 0) };
+        var footer = new Grid { Margin = new Thickness(0, 10, 0, 0) };
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         _statusText.VerticalAlignment = VerticalAlignment.Center;
@@ -255,7 +286,6 @@ public sealed class OptionsWindow : Window
         footer.Children.Add(close);
         Grid.SetRow(footer, 2);
         main.Children.Add(footer);
-
         Grid.SetColumn(main, 1);
         root.Children.Add(main);
         return root;
@@ -263,79 +293,35 @@ public sealed class OptionsWindow : Window
 
     private FrameworkElement BuildHeader()
     {
-        var header = new Grid();
-        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        var identity = new StackPanel { Spacing = 3 };
-        identity.Children.Add(Text(L("Settings"), 27, SnapvereBrand.Strong, Microsoft.UI.Text.FontWeights.SemiBold));
-        var subtitle = Text(
-            UserText(
-                "Fast access to capture behavior, local storage and recent files.",
-                "Brz pristup ponašanju snimanja, lokalnoj pohrani i nedavnim datotekama."),
-            11,
-            SnapvereBrand.Muted);
-        subtitle.TextWrapping = TextWrapping.Wrap;
-        identity.Children.Add(subtitle);
-        header.Children.Add(identity);
-
-        var version = typeof(OptionsWindow).Assembly.GetName().Version?.ToString(3);
-        var versionBadge = new Border
-        {
-            Padding = new Thickness(10, 6, 10, 6),
-            CornerRadius = new CornerRadius(12),
-            Background = SnapvereBrand.Slate,
-            BorderBrush = SnapvereBrand.Outline,
-            BorderThickness = new Thickness(1),
-            VerticalAlignment = VerticalAlignment.Top,
-            Child = Text(version is null ? "SNAPVERE" : $"v{version}", 9.5, SnapvereBrand.Muted, Microsoft.UI.Text.FontWeights.SemiBold)
-        };
-        Grid.SetColumn(versionBadge, 1);
-        header.Children.Add(versionBadge);
-        return header;
+        var identity = new StackPanel { Spacing = 5 };
+        _sectionTitle = Text(UserText("Screen capture", "Snimanje zaslona"),
+            26, SnapvereBrand.Strong, Microsoft.UI.Text.FontWeights.SemiBold);
+        _sectionDescription = Text(
+            UserText("Capture behavior adjusted to your workflow.",
+                     "Ponašanje snimanja prilagođeno vašem načinu rada."),
+            11, SnapvereBrand.Muted);
+        _sectionDescription.TextWrapping = TextWrapping.Wrap;
+        identity.Children.Add(_sectionTitle);
+        identity.Children.Add(_sectionDescription);
+        return identity;
     }
 
     private void BuildPreferencesPanel()
     {
-        for (var index = 0; index < 6; index++)
+        for (var i = 0; i < 5; i++)
         {
             _preferencesPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         }
 
-        var intro = new StackPanel { Spacing = 4 };
-        intro.Children.Add(Text(L("Settings"), 19, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
-        var description = Text(L("PreferencesStoredLocally"), 11, Muted);
-        description.TextWrapping = TextWrapping.Wrap;
-        intro.Children.Add(description);
-        _preferencesPanel.Children.Add(intro);
+        AddInlinePreferenceRow(0,
+            L("IncludeCursor"),
+            UserText("Include the pointer in supported screenshots.", "Uključi pokazivač miša na podržanim snimkama."),
+            _cursorToggle);
 
-        AddPreferenceCard(
-            row: 1,
-            eyebrow: L("Startup").ToUpperInvariant(),
-            title: L("StartWithWindows"),
-            description: L("StartupDescription"),
-            glyph: "\uE7E7",
-            trailing: _startupToggle);
-
-        AddPreferenceCard(
-            row: 2,
-            eyebrow: L("Capture").ToUpperInvariant(),
-            title: L("IncludeCursor"),
-            description: UserText(
-                "Include the mouse pointer when the selected capture mode can include it.",
-                "Uključi pokazivač miša kada ga odabrani način snimanja može prikazati."),
-            glyph: "\uE7C9",
-            trailing: _cursorToggle);
-
-        AddPreferenceCard(
-            row: 3,
-            eyebrow: L("Capture").ToUpperInvariant(),
-            title: UserText("Screen recording", "Snimanje zaslona"),
-            description: UserText(
-                "Start or stop local primary-display recording without returning to the tray menu.",
-                "Pokrenite ili zaustavite lokalno snimanje primarnog zaslona bez povratka u tray izbornik."),
-            glyph: "\uE714",
-            trailing: _recordingActions);
+        AddInlinePreferenceRow(1,
+            L("StartWithWindows"),
+            UserText("SNAPVERE is ready in the notification area.", "SNAPVERE je spreman u sistemskoj traci."),
+            _startupToggle);
 
         var languageButton = CreateSecondaryAction(
             L("ChooseLanguage"),
@@ -345,36 +331,151 @@ public sealed class OptionsWindow : Window
                 Close();
                 LanguagePickerWindow.ShowStandalone(_preferences);
             });
-        AddPreferenceCard(
-            row: 4,
-            eyebrow: L("Language").ToUpperInvariant(),
-            title: L("Language"),
-            description: CurrentLanguageDescription(),
-            glyph: "\uE774",
-            trailing: languageButton);
+        AddInlinePreferenceRow(2,
+            UserText("Interface language", "Jezik sučelja"),
+            CurrentLanguageDescription(),
+            languageButton);
 
-        var local = new Border
+        var privacy = new Border
         {
-            Margin = new Thickness(0, 14, 0, 0),
-            Padding = new Thickness(14),
-            CornerRadius = new CornerRadius(14),
-            Background = Brush(0x38, 0x24, 0x4B, 0x42),
-            BorderBrush = Brush(0x55, 0x4A, 0xB8, 0x98),
+            Margin = new Thickness(0, 22, 0, 0),
+            Padding = new Thickness(20),
+            CornerRadius = new CornerRadius(16),
+            Background = Brush(0xFF, 0x17, 0x29, 0x43),
+            BorderBrush = Brush(0x77, 0x57, 0x94, 0xB0),
             BorderThickness = new Thickness(1)
         };
-        var localCopy = new StackPanel { Spacing = 3 };
-        localCopy.Children.Add(Text(L("LocalFirst").ToUpperInvariant(), 9, Success, Microsoft.UI.Text.FontWeights.Bold));
-        var localDetail = Text(
-            UserText(
-                "Your preferences stay on this PC and are not uploaded by SNAPVERE.",
-                "Vaše postavke ostaju na ovom računalu i SNAPVERE ih ne prenosi u oblak."),
-            10,
-            Muted);
-        localDetail.TextWrapping = TextWrapping.Wrap;
-        localCopy.Children.Add(localDetail);
-        local.Child = localCopy;
-        Grid.SetRow(local, 5);
-        _preferencesPanel.Children.Add(local);
+        var info = new StackPanel { Spacing = 7 };
+        info.Children.Add(Text(UserText("Your captures stay local", "Tvoje snimke ostaju lokalne"),
+            14, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        var note = Text(UserText(
+            "No automatic upload and no required user account.",
+            "Bez automatskog prijenosa u oblak i bez obveznog korisničkog računa."),
+            10.5, Muted);
+        note.TextWrapping = TextWrapping.Wrap;
+        info.Children.Add(note);
+        privacy.Child = info;
+        Grid.SetRow(privacy, 3);
+        _preferencesPanel.Children.Add(privacy);
+    }
+
+    private void AddInlinePreferenceRow(int index, string title, string description, FrameworkElement trailing)
+    {
+        var grid = new Grid
+        {
+            MinHeight = 91,
+            Padding = new Thickness(2, 13, 0, 13)
+        };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var copy = new StackPanel { Spacing = 5, VerticalAlignment = VerticalAlignment.Center };
+        copy.Children.Add(Text(title, 14, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        var detail = Text(description, 11, Muted);
+        detail.TextWrapping = TextWrapping.Wrap;
+        copy.Children.Add(detail);
+        grid.Children.Add(copy);
+        trailing.VerticalAlignment = VerticalAlignment.Center;
+        Grid.SetColumn(trailing, 1);
+        grid.Children.Add(trailing);
+        var row = new Border
+        {
+            BorderBrush = SnapvereBrand.Outline,
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Child = grid
+        };
+        Grid.SetRow(row, index);
+        _preferencesPanel.Children.Add(row);
+    }
+
+    private void BuildGeneralPanel()
+    {
+        _generalPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        _generalPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        var intro = Text(UserText("Local-first by design", "Lokalna pohrana po dizajnu"),
+            19, Strong, Microsoft.UI.Text.FontWeights.SemiBold);
+        _generalPanel.Children.Add(intro);
+        var message = Text(UserText(
+            "Preferences and screenshots are saved on this computer. Capture startup, cursor and language settings are available under Screen capture.",
+            "Postavke i snimke spremaju se na ovo računalo. Opcije pokretanja, pokazivača i jezika nalaze se pod Snimanje zaslona."),
+            12, Muted);
+        message.TextWrapping = TextWrapping.Wrap;
+        message.Margin = new Thickness(0, 15, 0, 0);
+        Grid.SetRow(message, 1);
+        _generalPanel.Children.Add(message);
+    }
+
+    private void BuildRecordingPanel()
+    {
+        _recordingPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        _recordingPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        _recordingPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        _recordingPanel.Children.Add(Text(
+            UserText("Record the primary display", "Snimanje primarnog zaslona"),
+            19, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        var description = Text(UserText(
+            "Start or stop the implemented screen recorder. Microphone and system audio are not recorded.",
+            "Pokrenite ili zaustavite snimanje zaslona. Mikrofon i zvuk sustava ne snimaju se."),
+            12, Muted);
+        description.TextWrapping = TextWrapping.Wrap;
+        description.Margin = new Thickness(0, 12, 0, 24);
+        Grid.SetRow(description, 1);
+        _recordingPanel.Children.Add(description);
+        _recordingActions.HorizontalAlignment = HorizontalAlignment.Left;
+        Grid.SetRow(_recordingActions, 2);
+        _recordingPanel.Children.Add(_recordingActions);
+    }
+
+    private void BuildShortcutsPanel()
+    {
+        for (var i = 0; i < 4; i++)
+        {
+            _shortcutsPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        }
+        var title = Text(UserText("Registered capture shortcuts", "Registrirani prečaci snimanja"),
+            18, Strong, Microsoft.UI.Text.FontWeights.SemiBold);
+        _shortcutsPanel.Children.Add(title);
+        var names = new[]
+        {
+            UserText("Capture region", "Odabir regije"),
+            UserText("Capture window", "Snimka prozora"),
+            UserText("Capture screen", "Cijeli zaslon")
+        };
+        for (var i = 0; i < names.Length; i++)
+        {
+            var line = new Grid
+            {
+                MinHeight = 70,
+                Margin = new Thickness(0, 8, 0, 0)
+            };
+            line.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            line.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var name = Text(names[i], 13, Strong, Microsoft.UI.Text.FontWeights.SemiBold);
+            name.VerticalAlignment = VerticalAlignment.Center;
+            line.Children.Add(name);
+            var hotkey = Text($"Ctrl + Shift + {i + 1}", 11, SnapvereBrand.Lavender);
+            hotkey.VerticalAlignment = VerticalAlignment.Center;
+            Grid.SetColumn(hotkey, 1);
+            line.Children.Add(hotkey);
+            Grid.SetRow(line, i + 1);
+            _shortcutsPanel.Children.Add(line);
+        }
+    }
+
+    private void BuildAboutPanel()
+    {
+        _aboutPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        _aboutPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        var version = typeof(OptionsWindow).Assembly.GetName().Version?.ToString(3);
+        _aboutPanel.Children.Add(Text(version is null ? "SNAPVERE" : $"SNAPVERE v{version}", 18, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
+        var button = CreateSecondaryAction(L("About"), "\uE946", () =>
+        {
+            var about = new AboutWindow();
+            about.Activate();
+        });
+        button.HorizontalAlignment = HorizontalAlignment.Left;
+        button.Margin = new Thickness(0, 18, 0, 0);
+        Grid.SetRow(button, 1);
+        _aboutPanel.Children.Add(button);
     }
 
     private string CurrentLanguageDescription()
@@ -384,14 +485,6 @@ public sealed class OptionsWindow : Window
         return UserText(
             $"Selected language: {selected.NativeName}.",
             $"Odabrani jezik: {selected.NativeName}.");
-    }
-
-    private void AddPreferenceCard(int row, string eyebrow, string title, string description, string glyph, FrameworkElement trailing)
-    {
-        var card = BuildSettingCard(eyebrow, title, description, glyph, trailing);
-        card.Margin = new Thickness(0, row == 1 ? 16 : 10, 0, 0);
-        Grid.SetRow(card, row);
-        _preferencesPanel.Children.Add(card);
     }
 
     private void BuildRecentPanel()
@@ -427,87 +520,6 @@ public sealed class OptionsWindow : Window
         folder.Margin = new Thickness(0, 14, 0, 0);
         Grid.SetRow(folder, 2);
         _recentPanel.Children.Add(folder);
-    }
-
-    private static Border BuildSettingCard(
-        string eyebrow,
-        string title,
-        string description,
-        string glyph,
-        FrameworkElement trailing)
-    {
-        var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(46) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-        grid.Children.Add(new Border
-        {
-            Width = 36,
-            Height = 36,
-            CornerRadius = new CornerRadius(11),
-            Background = Brush(0x55, 0x61, 0x49, 0xC8),
-            BorderBrush = Brush(0x66, 0x91, 0x7A, 0xF4),
-            BorderThickness = new Thickness(1),
-            Child = new FontIcon
-            {
-                Glyph = glyph,
-                FontFamily = new FontFamily("Segoe Fluent Icons"),
-                FontSize = 15,
-                Foreground = Strong
-            }
-        });
-
-        var copy = new StackPanel
-        {
-            Spacing = 3,
-            Margin = new Thickness(8, 0, 20, 0),
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        copy.Children.Add(Text(eyebrow, 9, AccentText, Microsoft.UI.Text.FontWeights.Bold));
-        copy.Children.Add(Text(title, 12, Strong, Microsoft.UI.Text.FontWeights.SemiBold));
-        var detail = Text(description, 10, Muted);
-        detail.TextWrapping = TextWrapping.Wrap;
-        copy.Children.Add(detail);
-        Grid.SetColumn(copy, 1);
-        grid.Children.Add(copy);
-
-        if (trailing is ToggleSwitch toggle)
-        {
-            toggle.Header = null;
-        }
-        trailing.VerticalAlignment = VerticalAlignment.Center;
-        Grid.SetColumn(trailing, 2);
-        grid.Children.Add(trailing);
-
-        grid.SizeChanged += (_, args) =>
-        {
-            var compact = args.NewSize.Width < 470;
-            Grid.SetRow(trailing, compact ? 1 : 0);
-            Grid.SetColumn(trailing, compact ? 1 : 2);
-            Grid.SetColumnSpan(trailing, compact ? 2 : 1);
-            trailing.HorizontalAlignment = compact
-                ? HorizontalAlignment.Left
-                : HorizontalAlignment.Stretch;
-            trailing.Margin = compact
-                ? new Thickness(8, 12, 0, 0)
-                : new Thickness(0);
-            copy.Margin = compact
-                ? new Thickness(8, 0, 0, 0)
-                : new Thickness(8, 0, 20, 0);
-        };
-
-        return new Border
-        {
-            Padding = new Thickness(16),
-            CornerRadius = new CornerRadius(15),
-            Background = Elevated,
-            BorderBrush = Outline,
-            BorderThickness = new Thickness(1),
-            Child = grid
-        };
     }
 
     private void LoadPreferences()
@@ -654,7 +666,7 @@ public sealed class OptionsWindow : Window
         empty.Children.Add(new FontIcon
         {
             Glyph = "\uE91B",
-            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
             FontSize = 24,
             Foreground = AccentText
         });
@@ -706,7 +718,7 @@ public sealed class OptionsWindow : Window
             Child = new FontIcon
             {
                 Glyph = "\uE91B",
-                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontFamily = new FontFamily("Segoe MDL2 Assets"),
                 FontSize = 14,
                 Foreground = Strong
             }
@@ -729,7 +741,7 @@ public sealed class OptionsWindow : Window
         var arrow = new FontIcon
         {
             Glyph = "\uE72A",
-            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
             FontSize = 11,
             Foreground = Subtle,
             VerticalAlignment = VerticalAlignment.Center
@@ -858,7 +870,7 @@ public sealed class OptionsWindow : Window
             return;
         }
         _sizeApplied = true;
-        AppWindow.Resize(DpiAwareWindowSizing.ScaleSizeToWorkArea(this, 760, 700));
+        AppWindow.Resize(DpiAwareWindowSizing.ScaleSizeToWorkArea(this, 980, 680));
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
             presenter.IsMaximizable = false;
@@ -956,8 +968,8 @@ public sealed class OptionsWindow : Window
     {
         var toggle = new ToggleSwitch
         {
-            OffContent = L("Off"),
-            OnContent = L("On"),
+            OffContent = string.Empty,
+            OnContent = string.Empty,
             VerticalAlignment = VerticalAlignment.Center
         };
         AutomationProperties.SetName(toggle, accessibleName);
@@ -975,7 +987,7 @@ public sealed class OptionsWindow : Window
         content.Children.Add(new FontIcon
         {
             Glyph = glyph,
-            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
             FontSize = 14
         });
         content.Children.Add(Text(label, 10.5, SnapvereBrand.Strong, Microsoft.UI.Text.FontWeights.SemiBold));
@@ -1010,7 +1022,7 @@ public sealed class OptionsWindow : Window
         stack.Children.Add(new FontIcon
         {
             Glyph = glyph,
-            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
             FontSize = 12
         });
         stack.Children.Add(Text(label, 10, Strong, Microsoft.UI.Text.FontWeights.SemiBold));

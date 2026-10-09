@@ -195,7 +195,7 @@ public sealed class WindowTargetOverlayWindow : Window
             Child = new FontIcon
             {
                 Glyph = "\uE7F4",
-                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontFamily = new FontFamily("Segoe MDL2 Assets"),
                 FontSize = 13,
                 Foreground = Strong
             }
