@@ -161,23 +161,28 @@ function Get-BitmapSampleFingerprint {
     [Convert]::ToHexString($hash)
 }
 
-function Test-BitmapHasVisualContent {
+function Get-BitmapVisualColorCount {
     param([Parameter(Mandatory = $true)][System.Drawing.Bitmap]$Bitmap)
 
-    $unique = [System.Collections.Generic.HashSet[int]]::new()
-    $stepX = [Math]::Max(1, [int][Math]::Floor($Bitmap.Width / 18.0))
-    $stepY = [Math]::Max(1, [int][Math]::Floor($Bitmap.Height / 18.0))
+    # The 18x18 fingerprint grid intentionally ignores most text pixels to
+    # compare settled frames quickly. It is NOT a reliable content detector
+    # for the reference's flat dark Settings design: a sparse grid can miss
+    # all text and thin separators. Use a denser independent sample to check
+    # that this is an actual rendered surface and not a blank HWND.
+    $colors = [System.Collections.Generic.HashSet[int]]::new()
+    $stepX = [Math]::Max(1, [int][Math]::Floor($Bitmap.Width / 64.0))
+    $stepY = [Math]::Max(1, [int][Math]::Floor($Bitmap.Height / 64.0))
 
     for ($y = 0; $y -lt $Bitmap.Height; $y += $stepY) {
         for ($x = 0; $x -lt $Bitmap.Width; $x += $stepX) {
-            [void]$unique.Add($Bitmap.GetPixel($x, $y).ToArgb())
-            if ($unique.Count -ge 12) {
-                return $true
+            [void]$colors.Add($Bitmap.GetPixel($x, $y).ToArgb())
+            if ($colors.Count -ge 12) {
+                return 12
             }
         }
     }
 
-    return $false
+    return $colors.Count
 }
 
 function Save-WindowSnapshot {
@@ -194,6 +199,8 @@ function Save-WindowSnapshot {
     $captureMethod = $null
     $hasStableVisualContent = $false
     $renderedFrameCount = 0
+    $printedFrameCount = 0
+    $maxVisualColors = 0
     $bestStableCount = 0
     $distinctFingerprints = [System.Collections.Generic.HashSet[string]]::new()
 
@@ -217,7 +224,17 @@ function Save-WindowSnapshot {
                     $graphics.ReleaseHdc($hdc)
                 }
 
-                if ($printed -and (Test-BitmapHasVisualContent -Bitmap $bitmap)) {
+                # Count successful HWND PrintWindow calls separately from
+                # detected visual content; a failure can now identify a
+                # blank renderer vs sparse sampling in diagnostic logs.
+                $visualColors = 0
+                if ($printed) {
+                    $printedFrameCount++
+                    $visualColors = Get-BitmapVisualColorCount -Bitmap $bitmap
+                    $maxVisualColors = [Math]::Max($maxVisualColors, $visualColors)
+                }
+
+                if ($printed -and $visualColors -ge 12) {
                     $renderedFrameCount++
                     $fingerprint = Get-BitmapSampleFingerprint -Bitmap $bitmap
                     [void]$distinctFingerprints.Add($fingerprint)
@@ -252,7 +269,7 @@ function Save-WindowSnapshot {
         }
 
         if (-not $hasStableVisualContent) {
-            throw "Rendered SNAPVERE window '$($Window.Title)' did not produce three consecutive stable target-owned PrintWindow frames. Target HWND=$($Window.Handle.ToInt64()). Content frames=$renderedFrameCount; distinct sampled fingerprints=$($distinctFingerprints.Count); longest stable run=$bestStableCount."
+            throw "Rendered SNAPVERE window '$($Window.Title)' did not produce three consecutive stable target-owned PrintWindow frames. Target HWND=$($Window.Handle.ToInt64()). Successful PrintWindow calls=$printedFrameCount; max distinct rendered colors=$maxVisualColors; content frames=$renderedFrameCount; distinct sampled fingerprints=$($distinctFingerprints.Count); longest stable run=$bestStableCount."
         }
 
         $bitmap.Save($DestinationPath, [System.Drawing.Imaging.ImageFormat]::Png)

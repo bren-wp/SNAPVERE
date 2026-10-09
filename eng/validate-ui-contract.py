@@ -68,6 +68,21 @@ def validate_windows_executable_icons() -> None:
 
 def main() -> int:
     validate_windows_executable_icons()
+    # Validate both HWND ownership and rendered-content detection. Do not
+    # accept blank compositor frames or bypass three stable frames.
+    require(
+        "eng/Capture-SnapvereVisualQa.ps1",
+        (
+            "function Get-BitmapVisualColorCount",
+            "$Bitmap.Width / 64.0",
+            "$Bitmap.Height / 64.0",
+            "if ($printed -and $visualColors -ge 12)",
+            "if ($stableCount -ge 3)",
+            "$bitmap.Save($DestinationPath",
+            "Successful PrintWindow calls=$printedFrameCount",
+            "max distinct rendered colors=$maxVisualColors",
+        ),
+    )
     # CI visual captures exposed missing Segoe Fluent glyphs as empty boxes.
     # Use the Windows-provided MDL2 glyph font for all active WinUI icon surfaces.
     for icon_surface in (
