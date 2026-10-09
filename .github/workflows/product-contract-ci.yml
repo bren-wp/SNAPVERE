@@ -28,6 +28,9 @@ jobs:
         shell: pwsh
         run: ./eng/Test-SnapvereMsiIdentityNormalization.ps1
 
+      - name: Audit source inventory and privacy/dead-code guards
+        run: python3 eng/audit-dead-code.py
+
       - name: Validate Windows UI interaction and accessibility contract
         run: python3 eng/validate-ui-contract.py
 

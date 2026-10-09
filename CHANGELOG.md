@@ -4,24 +4,6 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
-## [0.1.33] - 2026-10-09
-
-### Premium Windows UX refinement
-
-- Simplify Tray status and localized on-device privacy message while retaining all existing capture, recording, Settings and utility commands.
-- Improve Settings active-section affordances, selected-language action and cyan local-privacy icon.
-- Improve floating recording-controller focus and visual hierarchy with live-dot halo, rose Stop icon and fixed HH:mm:ss elapsed time.
-
-### Visual regression assurance
-
-- Require real rendered Windows screenshots, preserve pixel/color thresholds and accept only exact previously approved Tray/Settings dimensions against both historic and already-premium main baselines.
-- Update UI-contract assertions for the revised navigation colors, privacy content and recording timer.
-
-### Production package release
-
-- Synchronize Windows package/assembly/file versions, four browser manifests, store preparation metadata, active EN/HR documentation and all seven distribution assets under version v0.1.33.
-- Publish only through the production release workflow after installer lifecycle, checksum, SBOM and provenance checks.
-
 ## [0.1.32] - 2026-10-09
 
 ### Windows usability and styling

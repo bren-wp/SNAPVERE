@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.33**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.33
+- Current public release: **v0.1.32**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.32
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -27,32 +27,6 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 ---
 
 ## Unreleased
-
----
-
-## v0.1.33 — 2026-10-09
-
-SNAPVERE 0.1.33 ships the post-v0.1.32 Windows premium reference-fidelity and accessibility improvements merged through PR #200, while preserving working screenshot, recording and browser workflows.
-
-### Tray and Settings refinements
-
-- Use a single live readiness/recording state under the premium SNAPVERE wordmark instead of duplicate state badges, with truthful English/Croatian on-device privacy reassurance in the compact footer.
-- Show the currently selected language in the actual working Settings language action rather than a generic picker caption.
-- Add the cyan local-privacy lock, and update both navigation labels and glyphs when a Settings section becomes active or inactive.
-- Keep existing screenshot, recording, capture-history, local preferences, language and utility actions fully wired to their implemented services.
-
-### Floating video controller
-
-- Match the premium reference hierarchy more closely with a soft red live indicator, legible Stop glyph and a stable hours:minutes:seconds time display from the first second.
-- Refine controller height while retaining keyboard Escape stop, accessible status announcements, error-state recovery and the existing video-only primary-display recording implementation.
-
-### Windows release quality and regression policy
-
-- Preserve strict source UI-contract checks for the new visible UI details.
-- Fix the Visual QA baseline policy after publishing the v0.1.32 premium geometry: allow either the verified historic or already-premium baseline but require exact shipped premium dimensions for Tray (420 × 488) and Settings (980 × 680).
-- Keep target-owned PrintWindow screenshot capture, unchanged PNG pixels, and the normal mean-RGB, significant-pixel and byte-size regression gates in place.
-- Windows x86/x64/ARM64 build/tests, actual rendered Visual QA, MSI lifecycle, native ARM64 runtime, browser extensions, localization, CodeQL and product contracts passed for the merged changes.
-- The release workflow must independently rebuild and verify Setup EXE, MSI, Portable, Chrome, Edge, Opera, Firefox, SHA-256 manifest, SPDX SBOM and provenance attestations before publication.
 
 ---
 

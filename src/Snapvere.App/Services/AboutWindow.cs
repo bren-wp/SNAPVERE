@@ -37,7 +37,6 @@ public sealed class AboutWindow : Window
 
         Title = SnapvereLocalization.T("About", _languageCode);
         Content = BuildContent();
-        SnapvereTitleBar.Apply(this);
         SnapvereLanguageState.CurrentLanguageChanged += OnCurrentLanguageChanged;
         Activated += AboutWindow_Activated;
         Closed += AboutWindow_Closed;

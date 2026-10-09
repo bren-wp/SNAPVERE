@@ -345,5 +345,4 @@ public sealed class RecordingControllerWindow : Window
     private static SolidColorBrush Strong => SnapvereBrand.Strong;
     private static SolidColorBrush Muted => SnapvereBrand.Muted;
     private static SolidColorBrush Outline => SnapvereBrand.Outline;
-    private static SolidColorBrush RecordingRed => SnapvereBrand.Danger;
 }

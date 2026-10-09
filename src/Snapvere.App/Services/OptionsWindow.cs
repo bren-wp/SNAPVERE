@@ -334,8 +334,9 @@ public sealed class OptionsWindow : Window
             "\uE70D",
             () =>
             {
-                Close();
+                // Keep Settings available if opening Language fails.
                 LanguagePickerWindow.ShowStandalone(_preferences);
+                Close();
             });
         languageButton.MinWidth = 154;
         AutomationProperties.SetName(languageButton, L("ChooseLanguage"));
@@ -1109,7 +1110,6 @@ public sealed class OptionsWindow : Window
     private static SolidColorBrush Brush(byte alpha, byte red, byte green, byte blue)
         => new(Windows.UI.Color.FromArgb(alpha, red, green, blue));
 
-    private static SolidColorBrush Canvas => SnapvereBrand.Obsidian;
     private static SolidColorBrush Surface => SnapvereBrand.Surface;
     private static SolidColorBrush Elevated => SnapvereBrand.Slate;
     private static SolidColorBrush Outline => SnapvereBrand.Outline;

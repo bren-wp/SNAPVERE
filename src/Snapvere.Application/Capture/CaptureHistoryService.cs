@@ -102,8 +102,10 @@ public sealed class CaptureHistoryService
     {
         try
         {
-            if (!file.Exists)
+            if (!file.Exists || (file.Attributes & FileAttributes.ReparsePoint) != 0)
             {
+                // Do not expose files outside the capture folder through
+                // links named like SNAPVERE screenshots or videos.
                 item = null!;
                 return false;
             }

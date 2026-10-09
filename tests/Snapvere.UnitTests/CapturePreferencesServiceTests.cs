@@ -139,6 +139,33 @@ public sealed class CapturePreferencesServiceTests
     }
 
     [Fact]
+    public void OversizedSettings_FallBackSafelyWithoutOverwritingUserData()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"snapvere-settings-large-{Guid.NewGuid():N}");
+        var settingsPath = Path.Combine(directory, "settings.json");
+        var previousLanguage = SnapvereLanguageState.CurrentLanguageCode;
+        try
+        {
+            Directory.CreateDirectory(directory);
+            var original = "{\"IncludeCursorOnCapture\":true,\"LanguageCode\":\"hr\",\"ignored\":\"" +
+                new string('x', 17 * 1024) + "\"}";
+            File.WriteAllText(settingsPath, original);
+
+            var service = new CapturePreferencesService(settingsPath);
+            Assert.False(service.Current.IncludeCursorOnCapture);
+            Assert.Equal("en", service.Current.LanguageCode);
+            Assert.Equal("en", SnapvereLanguageState.CurrentLanguageCode);
+            Assert.Equal(original, File.ReadAllText(settingsPath));
+            Assert.Empty(Directory.EnumerateFiles(directory, "*.tmp"));
+        }
+        finally
+        {
+            SnapvereLanguageState.SetCurrentLanguage(previousLanguage);
+            if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void UnsupportedLanguageInSettings_IsNormalizedToEnglish()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"snapvere-settings-language-invalid-{Guid.NewGuid():N}");
