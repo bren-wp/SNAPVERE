@@ -58,6 +58,25 @@ $expectedFiles = @(
     'about.png'
 )
 
+# Intentional, reviewed premium-brand geometry changes. These exceptions are
+# exact baseline->target pairs, NOT relaxed tolerances. If the layout drifts
+# from the approved design in a later PR, fail this regression gate again.
+# The remaining surfaces retain the standard 8% dimension drift limit.
+$approvedGeometryTransitions = @{
+    'tray-menu.png' = @{
+        BaselineWidth = 420
+        BaselineHeight = 548
+        TargetWidth = 420
+        TargetHeight = 488
+    }
+    'options.png' = @{
+        BaselineWidth = 760
+        BaselineHeight = 700
+        TargetWidth = 980
+        TargetHeight = 680
+    }
+}
+
 function Assert-VisualQaArtifactContract {
     param(
         [Parameter(Mandatory = $true)][string]$Directory,
@@ -155,11 +174,27 @@ function Compare-VisualSurface {
         $significantPixelRatio = $significantPixels / [double]$samplePixels
         $failures = [System.Collections.Generic.List[string]]::new()
 
-        if ($widthDeltaRatio -gt $MaxDimensionDeltaRatio) {
-            $failures.Add("width delta $([Math]::Round($widthDeltaRatio * 100, 2))% exceeds $([Math]::Round($MaxDimensionDeltaRatio * 100, 2))%")
+        $approvedGeometry = $approvedGeometryTransitions[$FileName]
+        if ($null -ne $approvedGeometry) {
+            # Require the old trusted main baseline AND the new premium size.
+            # A size change in either direction or an unrelated future PR
+            # therefore cannot silently gain a dimension exception.
+            if ($baselineBitmap.Width -ne $approvedGeometry.BaselineWidth -or
+                $baselineBitmap.Height -ne $approvedGeometry.BaselineHeight) {
+                $failures.Add("approved $FileName transition baseline mismatch: expected $($approvedGeometry.BaselineWidth)x$($approvedGeometry.BaselineHeight), got $($baselineBitmap.Width)x$($baselineBitmap.Height)")
+            }
+            if ($currentBitmap.Width -ne $approvedGeometry.TargetWidth -or
+                $currentBitmap.Height -ne $approvedGeometry.TargetHeight) {
+                $failures.Add("approved $FileName premium geometry mismatch: expected $($approvedGeometry.TargetWidth)x$($approvedGeometry.TargetHeight), got $($currentBitmap.Width)x$($currentBitmap.Height)")
+            }
         }
-        if ($heightDeltaRatio -gt $MaxDimensionDeltaRatio) {
-            $failures.Add("height delta $([Math]::Round($heightDeltaRatio * 100, 2))% exceeds $([Math]::Round($MaxDimensionDeltaRatio * 100, 2))%")
+        else {
+            if ($widthDeltaRatio -gt $MaxDimensionDeltaRatio) {
+                $failures.Add("width delta $([Math]::Round($widthDeltaRatio * 100, 2))% exceeds $([Math]::Round($MaxDimensionDeltaRatio * 100, 2))%")
+            }
+            if ($heightDeltaRatio -gt $MaxDimensionDeltaRatio) {
+                $failures.Add("height delta $([Math]::Round($heightDeltaRatio * 100, 2))% exceeds $([Math]::Round($MaxDimensionDeltaRatio * 100, 2))%")
+            }
         }
         if ($meanRgbDifference -gt $MaxMeanRgbDifference) {
             $failures.Add("mean RGB difference $([Math]::Round($meanRgbDifference, 4)) exceeds $MaxMeanRgbDifference")
@@ -179,6 +214,7 @@ function Compare-VisualSurface {
             CurrentHeight = $currentBitmap.Height
             WidthDeltaRatio = [Math]::Round($widthDeltaRatio, 6)
             HeightDeltaRatio = [Math]::Round($heightDeltaRatio, 6)
+            ApprovedGeometry = $null -ne $approvedGeometry
             BaselineBytes = $baselineFile.Length
             CurrentBytes = $currentFile.Length
             ByteSizeRatio = [Math]::Round($byteSizeRatio, 6)
@@ -214,6 +250,7 @@ $report = [pscustomobject]@{
     Policy = [pscustomobject]@{
         SampleSize = $SampleSize
         MaxDimensionDeltaRatio = $MaxDimensionDeltaRatio
+        ApprovedGeometryTransitions = $approvedGeometryTransitions
         MaxMeanRgbDifference = $MaxMeanRgbDifference
         SignificantPixelThreshold = $SignificantPixelThreshold
         MaxSignificantPixelRatio = $MaxSignificantPixelRatio

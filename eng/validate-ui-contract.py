@@ -68,6 +68,29 @@ def validate_windows_executable_icons() -> None:
 
 def main() -> int:
     validate_windows_executable_icons()
+    # Preserve strict screenshot regression thresholds while recording exactly
+    # the two deliberate reference-branding geometry migrations.
+    require(
+        "eng/Compare-SnapvereVisualQa.ps1",
+        (
+            "[double]$MaxDimensionDeltaRatio = 0.08",
+            "'tray-menu.png' = @{",
+            "BaselineWidth = 420",
+            "BaselineHeight = 548",
+            "TargetWidth = 420",
+            "TargetHeight = 488",
+            "'options.png' = @{",
+            "BaselineWidth = 760",
+            "BaselineHeight = 700",
+            "TargetWidth = 980",
+            "TargetHeight = 680",
+            "approved $FileName transition baseline mismatch",
+            "approved $FileName premium geometry mismatch",
+            "$meanRgbDifference -gt $MaxMeanRgbDifference",
+            "$significantPixelRatio -gt $MaxSignificantPixelRatio",
+            "$byteSizeRatio -lt $MinByteSizeRatio",
+        ),
+    )
     # Validate both HWND ownership and rendered-content detection. Do not
     # accept blank compositor frames or bypass three stable frames.
     require(
