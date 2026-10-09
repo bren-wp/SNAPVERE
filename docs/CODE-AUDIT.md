@@ -8,6 +8,7 @@ This audit is performed against the current maintained Windows and browser sourc
 - **Capture history:** ignores Windows reparse-point/symbolic-link entries so a file named like a capture cannot expose metadata and open actions for a target outside the designated local capture directory. A unit test covers links when platform permissions allow their creation.
 - **Language picker:** the Settings window closes only after the real picker successfully activates. If activation fails, the original Settings window remains.
 - **Proven dead code:** removed four declaration-only private aliases: OptionsWindow.Canvas, TrayMenuWindow.Accent, TrayMenuWindow.Transparent and RecordingControllerWindow.RecordingRed.
+- **Browser recent-download ownership:** when the browser provides `byExtensionId` metadata, ignore captures initiated by other extensions even when their filenames match SNAPVERE's convention. Revalidate identity immediately before Open, and preserve compatibility for older browser records without provenance metadata. Runtime tests cover listing and click-time revalidation.
 - **Browser parity:** the existing browser CI checks that shared files in Chrome, Edge, Opera and Firefox remain byte-identical (except supported manifest differences), rejects remote executable runtime resources and runs capture/options race tests.
 
 ## Repeatable inventory and limitations
