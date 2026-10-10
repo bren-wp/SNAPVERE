@@ -4,6 +4,11 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Windows ARM64 package lifecycle QA
+
+- Wait for deferred Setup uninstall to remove both the application and its Installed apps registration before checking shortcuts and startup state, rather than racing against background cleanup after the executable disappears.
+- Keep the full removal contract strict: lingering desktop/Start menu shortcuts, startup entries or registry registration still fail the native ARM64 lifecycle test.
+
 ### Premium browser-popup icon fidelity
 
 - Replace platform-dependent action/utility text glyphs with consistent inline vector icons across Chrome, Edge, Opera and Firefox; preserve local-only capture, accessible labels, keyboard activation and responsive layout.
