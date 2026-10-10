@@ -34,3 +34,13 @@ Official site: https://snapvere.com
 Support: info@snapvere.com  
 Publisher: https://brendigo.com  
 Current release: https://github.com/bren-wp/SNAPVERE/releases/latest
+
+## Premium concept alignment (October 2026)
+
+The supplied `SNAPVERE-Premium-Branding-Concept(3).zip` is a **design reference**, not an application build or a QA screenshot. It defines the capture/viewfinder mark, compact tray-first capture actions, region annotation flow, six-section Settings rail, matching Chrome/Edge/Opera/Firefox browser popup, unobtrusive video controller and two-column Setup surface.
+
+The production palette is locked in `SnapvereBrand.cs`, the four browser CSS files and the Setup form: Obsidian `#070912`, Surface `#111526`, Slate `#161B2E`, Violet `#7655F6`, Lavender `#A48BFF`, Ice `#80E1E5`, primary text `#F8F9FF` and muted text `#8E9AB6`. The supplied 16/32/48/128 px extension icon PNGs are already byte-identical to the active product assets; existing executable `.ico` files use the same original artwork in the validated Windows frame set.
+
+The popup uses crisp inline vector pictograms for Visible Area, Region, Full Page, Recent and Settings rather than operating-system-dependent Unicode symbols. Every browser receives the same markup, styling and local-only behavior. Keep these pictograms decorative for assistive technology; buttons retain localized accessible labels and keyboard focus states.
+
+**Acceptance criteria for additional 1:1 UI work:** compare *rendered* Windows/browser surfaces against the appropriate reference at actual DPI and in EN/HR, check compact and narrow viewports, keep all buttons functional, and pass visual/behavior-regression gates. Reference boards, installer concept screens and splash artwork must never be substituted for genuine captured app screenshots. The visual concept does not introduce a splash-screen requirement: production launch remains tray-first.
