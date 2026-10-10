@@ -1,51 +1,113 @@
+using System.Runtime.InteropServices;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 
 namespace Snapvere.App.Services;
 
 /// <summary>
-/// Applies the premium Obsidian window chrome to ordinary Windows settings
-/// surfaces. Retains the system title bar, drag area and window commands;
-/// fullscreen capture overlays and borderless recording chrome are excluded.
+/// Applies dark, brand-aligned system chrome to ordinary SNAPVERE windows.
+/// Windows 11 gets a DWM caption-color fallback where WinAppSDK title-bar
+/// colors are not honored; older Windows versions keep their supported chrome.
+/// Fullscreen capture and borderless recording overlays are excluded.
 /// </summary>
 internal static class SnapvereTitleBar
 {
+    private const int DwmwaUseImmersiveDarkMode = 20;
+    private const int DwmwaUseImmersiveDarkModeLegacy = 19;
+    private const int DwmwaCaptionColor = 35;
+    private const int DwmwaTextColor = 36;
+
+    [DllImport("dwmapi.dll", ExactSpelling = true)]
+    private static extern int DwmSetWindowAttribute(
+        nint windowHandle,
+        int attribute,
+        ref int value,
+        int valueSize);
+
     public static void Apply(Window window)
     {
         ArgumentNullException.ThrowIfNull(window);
 
-        // WinAppSDK supports only partial title-bar customization on Windows 10;
-        // leave system chrome untouched when the platform reports unsupported.
-        if (!AppWindowTitleBar.IsCustomizationSupported())
+        // WinUI may create its HWND or finalize the title bar at activation.
+        // Reapply after activation so early constructor-only calls cannot
+        // silently leave a bright system caption on a dark application.
+        window.Activated += (_, _) => ApplyChrome(window);
+        ApplyChrome(window);
+    }
+
+    private static void ApplyChrome(Window window)
+    {
+        if (AppWindowTitleBar.IsCustomizationSupported())
         {
-            return;
+            try
+            {
+                var titleBar = window.AppWindow.TitleBar;
+                titleBar.BackgroundColor = SnapvereBrand.Obsidian.Color;
+                titleBar.ForegroundColor = SnapvereBrand.Strong.Color;
+                titleBar.InactiveBackgroundColor = SnapvereBrand.Obsidian.Color;
+                titleBar.InactiveForegroundColor = SnapvereBrand.Muted.Color;
+
+                titleBar.ButtonBackgroundColor = SnapvereBrand.Obsidian.Color;
+                titleBar.ButtonForegroundColor = SnapvereBrand.Strong.Color;
+                titleBar.ButtonHoverBackgroundColor = SnapvereBrand.Slate.Color;
+                titleBar.ButtonHoverForegroundColor = SnapvereBrand.Strong.Color;
+                titleBar.ButtonPressedBackgroundColor = SnapvereBrand.Violet.Color;
+                titleBar.ButtonPressedForegroundColor = SnapvereBrand.Strong.Color;
+                titleBar.ButtonInactiveBackgroundColor = SnapvereBrand.Obsidian.Color;
+                titleBar.ButtonInactiveForegroundColor = SnapvereBrand.Muted.Color;
+            }
+            catch (Exception exception) when (
+                exception is InvalidOperationException or
+                NotSupportedException or
+                COMException)
+            {
+                StartupDiagnostics.Record("Apply premium Windows title bar", exception);
+            }
         }
 
+        ApplyDwmCaption(window);
+    }
+
+    private static void ApplyDwmCaption(Window window)
+    {
         try
         {
-            var titleBar = window.AppWindow.TitleBar;
-            titleBar.BackgroundColor = SnapvereBrand.Obsidian.Color;
-            titleBar.ForegroundColor = SnapvereBrand.Strong.Color;
-            titleBar.InactiveBackgroundColor = SnapvereBrand.Obsidian.Color;
-            titleBar.InactiveForegroundColor = SnapvereBrand.Muted.Color;
+            var windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(window);
+            if (windowHandle == nint.Zero)
+            {
+                return;
+            }
 
-            titleBar.ButtonBackgroundColor = SnapvereBrand.Obsidian.Color;
-            titleBar.ButtonForegroundColor = SnapvereBrand.Strong.Color;
-            titleBar.ButtonHoverBackgroundColor = SnapvereBrand.Slate.Color;
-            titleBar.ButtonHoverForegroundColor = SnapvereBrand.Strong.Color;
-            titleBar.ButtonPressedBackgroundColor = SnapvereBrand.Violet.Color;
-            titleBar.ButtonPressedForegroundColor = SnapvereBrand.Strong.Color;
-            titleBar.ButtonInactiveBackgroundColor = SnapvereBrand.Obsidian.Color;
-            titleBar.ButtonInactiveForegroundColor = SnapvereBrand.Muted.Color;
+            var enabled = 1;
+            if (DwmSetWindowAttribute(
+                    windowHandle, DwmwaUseImmersiveDarkMode, ref enabled, sizeof(int)) < 0)
+            {
+                // Earlier Windows 10 builds used attribute 19. Failures are
+                // expected on unsupported builds and should not block the UI.
+                _ = DwmSetWindowAttribute(
+                    windowHandle, DwmwaUseImmersiveDarkModeLegacy, ref enabled, sizeof(int));
+            }
+
+            // Available on Windows 11; ignored when Windows 10 reports an
+            // unsupported attribute. COLORREF stores RGB bytes in BGR order.
+            var background = SnapvereBrand.Obsidian.Color;
+            var captionColor = background.R | (background.G << 8) | (background.B << 16);
+            _ = DwmSetWindowAttribute(
+                windowHandle, DwmwaCaptionColor, ref captionColor, sizeof(int));
+
+            var foreground = SnapvereBrand.Strong.Color;
+            var textColor = foreground.R | (foreground.G << 8) | (foreground.B << 16);
+            _ = DwmSetWindowAttribute(
+                windowHandle, DwmwaTextColor, ref textColor, sizeof(int));
         }
         catch (Exception exception) when (
             exception is InvalidOperationException or
             NotSupportedException or
-            System.Runtime.InteropServices.COMException)
+            COMException or
+            DllNotFoundException or
+            EntryPointNotFoundException)
         {
-            // Decorative system chrome must never prevent the actual settings,
-            // language or support window from opening on an older host.
-            StartupDiagnostics.Record("Apply premium Windows title bar", exception);
+            StartupDiagnostics.Record("Apply system dark caption", exception);
         }
     }
 }
