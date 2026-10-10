@@ -4,6 +4,23 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.34] - 2026-10-10
+
+### Privacy and safe capture history
+
+- Bound local settings JSON reads, guard recent capture history against reparse-point links and validate capture paths again before opening or copying.
+- Respect browser extension ownership metadata for recent downloads, improve language-picker activation recovery, and remove four confirmed-unused UI aliases.
+
+### Recording integrity and dark system chrome
+
+- Reject recordings with malformed or truncated MP4 file-type box headers before publishing files into the capture folder; add focused regression cases.
+- Reapply dark, brand-aligned title-bar colors after WinUI window activation and request supported DWM caption attributes for Windows 10/11.
+- Keep existing capture, video-only recording, annotations and browser functionality and permissions unchanged.
+
+### Production quality requirements
+
+- Maintain seven independent CI workflows, Windows Visual QA, multi-architecture builds, MSI/Setup/Portable lifecycle checks, immutable tags and nine release assets with checksums and SPDX SBOM.
+
 ## [0.1.33] - 2026-10-09
 
 ### Premium Windows UX refinement
