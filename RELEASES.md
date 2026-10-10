@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.33**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.33
+- Current public release: **v0.1.34**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.34
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -27,6 +27,31 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 ---
 
 ## Unreleased
+
+---
+
+## v0.1.34 — 2026-10-10
+
+SNAPVERE 0.1.34 strengthens local capture privacy, recording publication integrity and Windows title-bar consistency without replacing the established tray-first application or adding unsupported recording features.
+
+### Security and privacy hardening
+
+- Limit local settings JSON input to 16 KiB, preserving safe defaults on unreadable, malformed or oversized configuration data.
+- Exclude symbolic-link and reparse-point capture entries from recent history; revalidate capture names, locations and current attributes immediately before opening or copying a path.
+- When browser download metadata provides extension provenance, ignore recent files that belong to other extensions. Preserve safe fallback behavior on older browser APIs.
+- Improve language-picker recovery if activation fails, remove confirmed unused UI aliases and retain regression and repository-wide code-audit checks.
+
+### Recording and Windows visual reliability
+
+- Validate a completed recording's MP4 `ftyp` container box before publishing the temporary recording file. Reject missing, malformed or length-inconsistent headers, retaining the existing failure cleanup behavior. This bounded check is not full video playback validation.
+- Apply branded title-bar colors again when normal Windows settings and information windows activate, with a DWM dark-caption fallback on supported Windows versions.
+- Preserve the existing region/window capture, annotations, recording controls, local history, browser permissions, and audio-free recording capability boundaries.
+
+### Verification boundaries
+
+- Keep all seven CI workflows and rendered Windows Visual QA mandatory; retain MSI, ARM64 runtime, Setup/Portable lifecycle and release-asset digest checks in the production release process.
+- Title-bar improvements are verified against rendered Windows QA screenshots, but pixel-identical fidelity to an unavailable external design-reference archive is not claimed.
+- The production workflow must independently produce, validate and publish Setup EXE, MSI, Portable, four browser ZIP files, SPDX SBOM and the SHA-256 manifest. Publication is not assumed from this documentation alone.
 
 ---
 

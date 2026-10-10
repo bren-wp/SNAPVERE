@@ -19,7 +19,7 @@ Capture regions, windows, full screens and web pages, annotate quickly, record t
 [![MSI CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/msi-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/msi-ci.yml)
 [![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
 
-[Website](https://snapvere.com) · [Download v0.1.33](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.33) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
+[Website](https://snapvere.com) · [Download v0.1.34](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.34) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
 
 </div>
 
@@ -41,7 +41,9 @@ SNAPVERE is built for fast everyday capture without turning screenshots into a c
 | 📦 **Three Windows delivery models** | Guided Setup EXE, standard x64 Windows Installer (MSI), and Universal Portable. Setup/Portable carry x86, x64 and ARM64 application payloads. |
 | 🌐 **Browser coverage** | Chrome, Edge, Opera and Firefox share the same locked SNAPVERE brand and bounded capture behavior. |
 
-SNAPVERE 0.1.33 transfers the premium SNAPVERE identity into the shipped product while keeping the workflow tray-first, local-first and fast. Windows Tray, Region/Window capture chrome, Settings, the recording controller, About/Language/feedback surfaces, Setup and all four browser variants now share the same Obsidian/Slate/Violet/Lavender/Ice design tokens, viewfinder-plus-lightning mark and compact action hierarchy. Secondary actions remain available without crowding the primary capture flow, and the v0.1.30 privacy/security hardening remains in force.
+SNAPVERE 0.1.34 builds on the existing premium SNAPVERE identity while keeping the workflow tray-first, local-first and fast. Windows Tray, Region/Window capture chrome, Settings, the recording controller, About/Language/feedback surfaces, Setup and all four browser variants now share the same Obsidian/Slate/Violet/Lavender/Ice design tokens, viewfinder-plus-lightning mark and compact action hierarchy. Secondary actions remain available without crowding the primary capture flow, and the v0.1.30 privacy/security hardening remains in force.
+
+This update hardens local settings and capture-history privacy, checks MP4 file-type headers before publishing completed recordings, and improves dark Windows caption consistency. The MP4 header check is not a complete video decoder. 
 
 Recording keeps separate compact Start and Stop controls in Settings and a small always-on-top elapsed-time controller while active. Setup remains a guided License → Installation → Finish flow. Recording is primary-display H.264 MP4 and video-only; microphone and system audio are not claimed as supported.
 
@@ -98,8 +100,8 @@ The images below are **real rendered Windows surfaces captured by SNAPVERE's vis
 
 ## Downloads
 
-Current release: **SNAPVERE 0.1.33**<br>
-Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.33
+Current release: **SNAPVERE 0.1.34**<br>
+Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.34
 
 | Platform | Package |
 | --- | --- |
