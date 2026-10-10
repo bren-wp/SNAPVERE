@@ -4,6 +4,12 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Capture history stability and readability
+
+- Keep the newest capture selection deterministic when screenshots and recordings share identical modification timestamps, including when the recent-history limit is reached.
+- Display large local recordings in GB or TB instead of increasingly large MB values; retain existing B, KB and MB behavior.
+- Cover both cases with regression tests without changing the screenshot/recording payload formats or local-only privacy model.
+
 ## [0.1.34] - 2026-10-10
 
 ### Privacy and safe capture history
