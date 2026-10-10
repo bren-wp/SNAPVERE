@@ -23,7 +23,17 @@ public sealed record CaptureHistoryItem(
             return $"{bytes / 1024d:F1} KB";
         }
 
-        return $"{bytes / (1024d * 1024d):F1} MB";
+        if (bytes < 1024L * 1024L * 1024L)
+        {
+            return $"{bytes / (1024d * 1024d):F1} MB";
+        }
+
+        if (bytes < 1024L * 1024L * 1024L * 1024L)
+        {
+            return $"{bytes / (1024d * 1024d * 1024d):F1} GB";
+        }
+
+        return $"{bytes / (1024d * 1024d * 1024d * 1024d):F1} TB";
     }
 }
 
@@ -33,6 +43,18 @@ public sealed record CaptureHistoryItem(
 /// </summary>
 public sealed class CaptureHistoryService
 {
+    // The newest capture list is bounded, but files can share the exact same
+    // timestamp (especially after copy or restore). Match the final display
+    // ordering at the queue boundary so equal-time items are deterministic.
+    private static readonly IComparer<(long ModifiedUtcTicks, string FileName)> RecentCapturePriorityComparer =
+        Comparer<(long ModifiedUtcTicks, string FileName)>.Create((left, right) =>
+        {
+            var timestampOrder = left.ModifiedUtcTicks.CompareTo(right.ModifiedUtcTicks);
+            return timestampOrder != 0
+                ? timestampOrder
+                : StringComparer.OrdinalIgnoreCase.Compare(left.FileName, right.FileName);
+        });
+
     private readonly CapturePathProvider _pathProvider;
 
     public CaptureHistoryService(CapturePathProvider pathProvider)
@@ -53,7 +75,8 @@ public sealed class CaptureHistoryService
             return [];
         }
 
-        var newest = new PriorityQueue<CaptureHistoryItem, long>();
+        var newest = new PriorityQueue<CaptureHistoryItem, (long ModifiedUtcTicks, string FileName)>(
+            RecentCapturePriorityComparer);
 
         try
         {
@@ -66,7 +89,7 @@ public sealed class CaptureHistoryService
                     continue;
                 }
 
-                newest.Enqueue(item, item.ModifiedAt.UtcTicks);
+                newest.Enqueue(item, (item.ModifiedAt.UtcTicks, item.FileName));
                 if (newest.Count > limit)
                 {
                     _ = newest.Dequeue();
