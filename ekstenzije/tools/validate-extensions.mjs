@@ -257,6 +257,13 @@ function validateBrandLock(browser, browserDir) {
     fail(`${browser} popup must match three real capture actions without decorative chevrons.`);
   }
 
+  // Lock vector icons to avoid platform-dependent Unicode glyph drift.
+  const actionIconCount = (popupHtml.match(/class="action-svg"/g) || []).length;
+  const footerIconCount = (popupHtml.match(/class="footer-icon"/g) || []).length;
+  if (actionIconCount !== 3 || footerIconCount !== 2 || /[▣⌗◎◴☼]/u.test(popupHtml)) {
+    fail(`${browser}/popup.html must retain all five SVG pictograms from the premium reference.`);
+  }
+
   const popupCss = fs.readFileSync(path.join(browserDir, "popup.css"), "utf8");
   const optionsCss = fs.readFileSync(path.join(browserDir, "options.css"), "utf8");
   if (!popupCss.includes("width: min(420px, 100vw)") || !popupCss.includes("background: #2b2345;")) {

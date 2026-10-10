@@ -68,6 +68,8 @@ button { font: inherit; }
 }
 
 .icon-button {
+  display: grid;
+  place-items: center;
   width: 36px;
   height: 36px;
   padding: 0;
@@ -141,6 +143,19 @@ h1 {
   background: rgba(118,85,246,.12);
   color: var(--lavender);
   font-size: 20px;
+}
+
+.action-svg,
+.footer-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
+.footer-icon {
+  width: 17px;
+  height: 17px;
 }
 
 .action-copy {
@@ -224,6 +239,7 @@ h1 {
   .wordmark { font-size: 18px; }
   .capture-action { min-height: 62px; padding: 9px; grid-template-columns: 32px minmax(0, 1fr); }
   .action-icon { width: 30px; height: 30px; font-size: 17px; }
+  .action-svg { width: 18px; height: 18px; }
   .footer { grid-template-columns: minmax(0, 1fr) auto; gap: 4px; }
   .status { text-align: left; }
 }
@@ -234,4 +250,5 @@ h1 {
   .icon-button { width: 34px; height: 32px; }
   .capture-action { grid-template-columns: 26px minmax(0, 1fr); }
   .action-icon { width: 26px; height: 26px; font-size: 15px; border-radius: 8px; }
+  .action-svg { width: 15px; height: 15px; }
 }
