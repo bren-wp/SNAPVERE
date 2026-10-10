@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using Snapvere.Capture;
 using Snapvere.Domain.Capture;
 
@@ -84,7 +85,6 @@ public sealed class ScreenRecordingFileWriter
             // the destination stream it wraps. Reopen the completed staging
             // file under writer ownership so durability validation never
             // depends on recorder stream-lifetime behavior.
-            long outputBytes;
             using (var durabilityStream = new FileStream(
                 temporaryPath,
                 FileMode.Open,
@@ -94,10 +94,9 @@ public sealed class ScreenRecordingFileWriter
                 FileOptions.None))
             {
                 durabilityStream.Flush(flushToDisk: true);
-                outputBytes = durabilityStream.Length;
+                ValidateCompletedRecording(session, durabilityStream.Length);
+                ValidateMp4Header(durabilityStream);
             }
-
-            ValidateCompletedRecording(session, outputBytes);
 
             var finalPath = PublishTemporaryFile(temporaryPath, directory, timestamp);
             return new ScreenRecordingSaveResult(
@@ -146,6 +145,32 @@ public sealed class ScreenRecordingFileWriter
         {
             throw new InvalidDataException(
                 "Screen recording returned an invalid completion timestamp.");
+        }
+    }
+
+    /// <summary>
+    /// Reject clearly truncated or misidentified recorder output before
+    /// publishing it as an MP4. This is a container-header sanity check,
+    /// not a full codec or media-stream validation.
+    /// </summary>
+    private static void ValidateMp4Header(Stream stream)
+    {
+        const int MinimumFileTypeBoxLength = 16;
+        if (stream.Length < MinimumFileTypeBoxLength)
+        {
+            throw new InvalidDataException("Screen recording did not produce an MP4 file-type box.");
+        }
+
+        Span<byte> header = stackalloc byte[MinimumFileTypeBoxLength];
+        stream.Position = 0;
+        stream.ReadExactly(header);
+
+        var fileTypeBoxLength = BinaryPrimitives.ReadUInt32BigEndian(header[..4]);
+        if (!header.Slice(4, 4).SequenceEqual("ftyp"u8) ||
+            fileTypeBoxLength < MinimumFileTypeBoxLength ||
+            fileTypeBoxLength > stream.Length)
+        {
+            throw new InvalidDataException("Screen recording produced an invalid MP4 file-type box.");
         }
     }
 
