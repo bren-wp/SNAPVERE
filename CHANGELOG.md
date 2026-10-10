@@ -4,6 +4,11 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Browser accessibility polish
+
+- Honor user-selected Windows forced-colors themes in all four browser popups and Settings pages with system-color controls, readable wordmarks and visible keyboard focus rings.
+- Keep default Obsidian/Violet/Lavender/Ice premium styling unchanged and enforce high-contrast support in cross-browser source validation.
+
 ## [0.1.35] - 2026-10-10
 
 ### Windows ARM64 package lifecycle QA
