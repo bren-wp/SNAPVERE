@@ -186,6 +186,39 @@ public sealed class CaptureHistoryServiceTests
     }
 
     [Fact]
+    public void IsCurrentCaptureFile_RejectsChangesToSizeOrTimestampSinceListing()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"snapvere-history-stale-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            var path = CreateCapture(
+                directory,
+                "SNAPVERE_2026-10-10_120000.png",
+                12,
+                new DateTime(2026, 10, 10, 12, 0, 0, DateTimeKind.Utc));
+            var history = new CaptureHistoryService(new CapturePathProvider(directory));
+            var item = Assert.Single(history.GetRecentCaptures());
+            Assert.True(history.IsCurrentCaptureFile(item));
+
+            // A replacement can keep its original timestamp but differ in size.
+            File.WriteAllBytes(path, new byte[13]);
+            File.SetLastWriteTimeUtc(path, item.ModifiedAt.UtcDateTime);
+            Assert.False(history.IsCurrentCaptureFile(item));
+
+            // A same-size replacement must also be rejected when its timestamp differs.
+            File.WriteAllBytes(path, new byte[12]);
+            File.SetLastWriteTimeUtc(path, item.ModifiedAt.UtcDateTime.AddMinutes(1));
+            Assert.False(history.IsCurrentCaptureFile(item));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void GetRecentCaptures_DoesNotFollowSymlinksOutsideCaptureFolder()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"snapvere-history-link-{Guid.NewGuid():N}");

@@ -135,7 +135,12 @@ public sealed class CaptureHistoryService
                 return false;
             }
 
-            return TryReadCapture(new FileInfo(filePath), out _);
+            // A file can be overwritten at the same path after the Recent list
+            // was built. Reject stale entries instead of opening or copying
+            // a different file behind a previously displayed history item.
+            return TryReadCapture(new FileInfo(filePath), out var current) &&
+                   current.FileSizeBytes == item.FileSizeBytes &&
+                   current.ModifiedAt == item.ModifiedAt;
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or
