@@ -267,3 +267,67 @@ button:disabled {
   .actions, .section-actions { display:grid; grid-template-columns:1fr; }
   .primary, .secondary { width:100%; }
 }
+
+/* Respect user-selected Windows high-contrast colors without changing the
+   normal SNAPVERE premium theme or removing keyboard focus indicators. */
+@media (forced-colors: active) {
+  html,
+  body,
+  .tabs,
+  .surface,
+  .privacy,
+  .check,
+  .recent-item {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+  }
+
+  .wordmark {
+    background: none;
+    color: CanvasText;
+    -webkit-text-fill-color: CanvasText;
+  }
+
+  .brand h1,
+  .section-heading p,
+  .privacy,
+  .status,
+  .recent-meta,
+  .recent-name {
+    color: CanvasText;
+  }
+
+  .tab,
+  .secondary,
+  .recent-item button {
+    background: ButtonFace;
+    border: 1px solid ButtonText;
+    color: ButtonText;
+  }
+
+  .tab.active,
+  .primary {
+    background: Highlight;
+    border: 1px solid Highlight;
+    color: HighlightText;
+  }
+
+  .tab:focus-visible,
+  .primary:focus-visible,
+  .secondary:focus-visible,
+  .recent-item button:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  .check input {
+    accent-color: Highlight;
+  }
+
+  button:disabled {
+    opacity: 1;
+    border-color: GrayText;
+    color: GrayText;
+  }
+}

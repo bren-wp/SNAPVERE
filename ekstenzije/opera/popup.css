@@ -252,3 +252,59 @@ h1 {
   .action-icon { width: 26px; height: 26px; font-size: 15px; border-radius: 8px; }
   .action-svg { width: 15px; height: 15px; }
 }
+
+/* Preserve readable text, focus rings and brand icon contours when Windows
+   explicitly requests a high-contrast theme. Normal premium colors stay intact. */
+@media (forced-colors: active) {
+  html,
+  body,
+  .popup-shell {
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .wordmark {
+    background: none;
+    color: CanvasText;
+    -webkit-text-fill-color: CanvasText;
+  }
+
+  .capture-action,
+  .capture-action.primary,
+  .footer-action,
+  .icon-button {
+    background: ButtonFace;
+    border: 1px solid ButtonText;
+    color: ButtonText;
+  }
+
+  .capture-action:focus-visible,
+  .footer-action:focus-visible,
+  .icon-button:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  .action-icon {
+    background: transparent;
+    color: ButtonText;
+  }
+
+  .action-copy small,
+  .status,
+  .limit-note {
+    color: CanvasText;
+  }
+
+  .capture-action:disabled,
+  .footer-action:disabled,
+  .icon-button:disabled {
+    opacity: 1;
+    border-color: GrayText;
+    color: GrayText;
+  }
+
+  .divider {
+    background: CanvasText;
+  }
+}

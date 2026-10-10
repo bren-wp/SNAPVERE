@@ -266,6 +266,16 @@ function validateBrandLock(browser, browserDir) {
 
   const popupCss = fs.readFileSync(path.join(browserDir, "popup.css"), "utf8");
   const optionsCss = fs.readFileSync(path.join(browserDir, "options.css"), "utf8");
+  for (const [name, stylesheet] of [["popup.css", popupCss], ["options.css", optionsCss]]) {
+    if (!/@media\s*\(forced-colors:\s*active\)/.test(stylesheet) ||
+        !stylesheet.includes("-webkit-text-fill-color: CanvasText;") ||
+        !stylesheet.includes("outline: 2px solid Highlight;") ||
+        !stylesheet.includes("background: Canvas;") ||
+        !stylesheet.includes("color: HighlightText;") && name === "options.css") {
+      fail(`${browser}/${name} must preserve system high-contrast focus and text visibility.`);
+    }
+  }
+
   if (!popupCss.includes("width: min(420px, 100vw)") || !popupCss.includes("background: #2b2345;")) {
     fail(`${browser} popup must retain the supplied compact premium visual proportions.`);
   }
