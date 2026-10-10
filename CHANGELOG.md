@@ -4,6 +4,8 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.35] - 2026-10-10
+
 ### Windows ARM64 package lifecycle QA
 
 - Wait for deferred Setup uninstall to remove both the application and its Installed apps registration before checking shortcuts and startup state, rather than racing against background cleanup after the executable disappears.
