@@ -4,6 +4,11 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Windows ARM64 package lifecycle QA
+
+- Wait for deferred Setup uninstall to remove both the application and its Installed apps registration before checking shortcuts and startup state, rather than racing against background cleanup after the executable disappears.
+- Keep the full removal contract strict: lingering desktop/Start menu shortcuts, startup entries or registry registration still fail the native ARM64 lifecycle test.
+
 ### Capture history stability and readability
 
 - Keep the newest capture selection deterministic when screenshots and recordings share identical modification timestamps, including when the recent-history limit is reached.

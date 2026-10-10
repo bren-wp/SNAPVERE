@@ -482,8 +482,20 @@ if ($uninstallProcess.ExitCode -ne 0) {
     throw "$Arch Setup failed to uninstall with code $($uninstallProcess.ExitCode)."
 }
 
-$deadline = (Get-Date).AddSeconds(15)
-while ((Test-Path -LiteralPath $installedApp) -and (Get-Date) -lt $deadline) {
+# Installed Setup may hand off uninstall to a background maintenance process.
+# Deleting Snapvere.exe is not the commit boundary: that process still has to
+# remove shortcuts, startup registration and the Installed apps registry key.
+# Wait for the last registration to disappear before asserting the complete
+# removal contract, without masking genuinely incomplete cleanup.
+$uninstallRegistration = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\SNAPVERE'
+$deadline = (Get-Date).AddSeconds(30)
+while ((Get-Date) -lt $deadline) {
+    $applicationRemoved = -not (Test-Path -LiteralPath $installedApp -PathType Leaf)
+    $registrationRemoved = -not (Test-Path -LiteralPath $uninstallRegistration)
+    if ($applicationRemoved -and $registrationRemoved) {
+        break
+    }
+
     Start-Sleep -Milliseconds 250
 }
 
