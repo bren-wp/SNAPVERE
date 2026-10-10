@@ -198,6 +198,40 @@ public sealed class ScreenRecordingFileWriterTests
         }
     }
 
+    [Theory]
+    [InlineData("short")]
+    [InlineData("wrong-type")]
+    [InlineData("oversized-box")]
+    public async Task RecordAsync_InvalidMp4HeaderDoesNotPublishRecording(string invalidHeader)
+    {
+        var directory = CreateTemporaryDirectory();
+        var timestamp = new DateTimeOffset(2026, 10, 10, 18, 0, 0, TimeSpan.Zero);
+        try
+        {
+            var invalidPayload = invalidHeader switch
+            {
+                "short" => new byte[] { 0, 0, 0, 24, (byte)'f', (byte)'t', (byte)'y', (byte)'p', 0, 0, 0, 0 },
+                "wrong-type" => new byte[] { 0, 0, 0, 16, (byte)'j', (byte)'u', (byte)'n', (byte)'k', 0, 0, 0, 0, 0, 0, 0, 0 },
+                "oversized-box" => new byte[] { 0, 0, 0, 64, (byte)'f', (byte)'t', (byte)'y', (byte)'p', 0, 0, 0, 0, 0, 0, 0, 0 },
+                _ => throw new ArgumentOutOfRangeException(nameof(invalidHeader))
+            };
+
+            var writer = new ScreenRecordingFileWriter(
+                new FakeScreenRecordingService(timestamp, invalidPayload),
+                new CapturePathProvider(directory),
+                new FixedTimeProvider(timestamp));
+
+            await Assert.ThrowsAsync<InvalidDataException>(
+                () => writer.RecordAsync(CreateDisplay(), false, CancellationToken.None));
+
+            Assert.Empty(Directory.EnumerateFileSystemEntries(directory));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     [Fact]
     public void BuildFileName_UsesRecordingPrefixAndCounter()
     {
@@ -237,11 +271,12 @@ public sealed class ScreenRecordingFileWriterTests
         public override DateTimeOffset GetUtcNow() => utcNow.ToUniversalTime();
     }
 
-    private sealed class FakeScreenRecordingService(DateTimeOffset timestamp)
+    private sealed class FakeScreenRecordingService(DateTimeOffset timestamp, byte[]? payload = null)
         : IScreenRecordingService
     {
         internal static readonly byte[] Payload =
-            [0, 0, 0, 24, 0x66, 0x74, 0x79, 0x70, 0x6D, 0x70, 0x34, 0x32];
+            [0, 0, 0, 24, 0x66, 0x74, 0x79, 0x70, 0x6D, 0x70, 0x34, 0x32,
+             0, 0, 0, 0, 0x69, 0x73, 0x6F, 0x6D, 0x6D, 0x70, 0x34, 0x32];
 
         public bool IncludeCursor { get; private set; }
 
@@ -252,7 +287,7 @@ public sealed class ScreenRecordingFileWriterTests
             CancellationToken stopToken = default)
         {
             IncludeCursor = includeCursor;
-            await destination.WriteAsync(Payload, CancellationToken.None);
+            await destination.WriteAsync(payload ?? Payload, CancellationToken.None);
             return new ScreenRecordingSessionResult(
                 new PixelSize(display.Bounds.Width, display.Bounds.Height),
                 new PixelSize(display.Bounds.Width, display.Bounds.Height),
