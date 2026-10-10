@@ -111,6 +111,54 @@ public sealed class CaptureHistoryServiceTests
     }
 
     [Fact]
+    public void GetRecentCaptures_UsesFileNameAsDeterministicTieBreakerAtLimit()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"snapvere-history-ties-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            var timestamp = new DateTime(2026, 10, 10, 18, 0, 0, DateTimeKind.Utc);
+            foreach (var suffix in new[] { "001", "004", "002", "003" })
+            {
+                _ = CreateCapture(
+                    directory,
+                    $"SNAPVERE_2026-10-10_180000_{suffix}.png",
+                    8,
+                    timestamp);
+            }
+
+            var history = new CaptureHistoryService(new CapturePathProvider(directory));
+            var recent = history.GetRecentCaptures(limit: 2).Select(item => item.FileName).ToArray();
+
+            Assert.Equal(new[]
+            {
+                "SNAPVERE_2026-10-10_180000_004.png",
+                "SNAPVERE_2026-10-10_180000_003.png"
+            }, recent);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void CaptureHistoryItem_DisplaysLargeRecordingsInGbAndTb()
+    {
+        var timestamp = new DateTimeOffset(2026, 10, 10, 18, 0, 0, TimeSpan.Zero);
+        var recording = new CaptureHistoryItem(
+            "SNAPVERE_Record_2026-10-10_180000.mp4",
+            "SNAPVERE_Record_2026-10-10_180000.mp4",
+            timestamp,
+            1536L * 1024L * 1024L);
+        var archive = recording with { FileSizeBytes = 2L * 1024L * 1024L * 1024L * 1024L };
+
+        Assert.EndsWith(" GB", recording.MetadataText, StringComparison.Ordinal);
+        Assert.EndsWith(" TB", archive.MetadataText, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void IsCurrentCaptureFile_RejectsMissingExternalAndReplacedFiles()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"snapvere-history-open-{Guid.NewGuid():N}");
