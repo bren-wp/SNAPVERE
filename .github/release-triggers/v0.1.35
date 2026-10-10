@@ -1,0 +1,1 @@
+SNAPVERE v0.1.35 production release trigger. Source v0.1.35 is green in all seven mandatory GitHub Actions workflows on the exact main branch; the immutable release, packages, digests, SBOM, and provenance are built and validated by the production release workflow.
