@@ -1,4 +1,4 @@
-# SNAPVERE 0.1.34 Product Status
+# SNAPVERE 0.1.35 Product Status
 
 Active maintained product surfaces are **Windows** and **browser extensions**.
 
@@ -6,9 +6,9 @@ Active maintained product surfaces are **Windows** and **browser extensions**.
 
 Production implementation includes tray-first startup, Region/Window/Screen capture, local primary-display screen recording, frozen-frame selection, local annotation, clipboard, PNG and MP4 persistence workflows, local settings, recent captures, diagnostics and x86/x64/ARM64 application payloads inside universal Setup and Portable packages, plus a standard x64 MSI distribution.
 
-SNAPVERE 0.1.34 is a production branding and usability release. A shared `SnapvereBrand` layer locks the supplied premium identity across the visible Windows product: Obsidian `#070912`, Surface `#111526`, Slate `#161B2E`, Violet `#7655F6`, Lavender `#A48BFF`, Ice `#80E1E5`, the viewfinder-plus-lightning mark, compact spacing and consistent action hierarchy. Tray keeps the four primary capture/recording actions prominent while secondary utilities move to compact footer actions. Settings uses a branded navigation rail, Region/Window overlays share the same chrome, and recording/secondary windows and Setup use the same visual system.
+SNAPVERE 0.1.35 extends the premium production identity with deterministic local capture history, stale-file checks, consistent browser popup vectors and ARM64 package lifecycle QA. A shared `SnapvereBrand` layer locks the supplied premium identity across the visible Windows product: Obsidian `#070912`, Surface `#111526`, Slate `#161B2E`, Violet `#7655F6`, Lavender `#A48BFF`, Ice `#80E1E5`, the viewfinder-plus-lightning mark, compact spacing and consistent action hierarchy. Tray keeps the four primary capture/recording actions prominent while secondary utilities move to compact footer actions. Settings uses a branded navigation rail, Region/Window overlays share the same chrome, and recording/secondary windows and Setup use the same visual system.
 
-Normal startup remains tray-first and hidden; v0.1.34 does not add a blocking splash screen or a permanent dashboard. Screen recording remains primary-display video only, so microphone/system-audio controls are not presented as implemented features. The existing diagnostic redaction and local-first privacy boundaries remain in force.
+Normal startup remains tray-first and hidden; v0.1.35 does not add a blocking splash screen or a permanent dashboard. Screen recording remains primary-display video only, so microphone/system-audio controls are not presented as implemented features. The existing diagnostic redaction and local-first privacy boundaries remain in force.
 
 ## Browsers
 
@@ -20,7 +20,7 @@ GitHub release ZIPs are not represented as externally approved store listings un
 
 ## Packaging
 
-The active 0.1.34 package contract contains:
+The active 0.1.35 package contract contains:
 
 - `SNAPVERE-Setup.exe`
 - `SNAPVERE-Setup.msi`
@@ -36,6 +36,6 @@ CI covers Windows builds/tests, rendered WinUI visual QA, package construction, 
 
 These gates provide regression evidence; they are not a guarantee that every operating-system, driver or browser environment can never produce a platform-specific defect.
 
-The release-preparation target is **v0.1.34**. It must not be treated as published until the GitHub release workflow completes after a green merge.
+The v0.1.35 release target is accepted only after the production GitHub release workflow publishes and verifies its exact assets following green CI.
 
 See [Performance & Stability](PERFORMANCE.md), [QA Matrix](QA-MATRIX.md) and [Release history](../RELEASES.md).

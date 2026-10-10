@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.34**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.34
+- Current public release: **v0.1.35**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.35
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -27,6 +27,35 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 ---
 
 ## Unreleased
+
+---
+
+## v0.1.35 — 2026-10-10
+
+SNAPVERE 0.1.35 packages new post-v0.1.34 capture-history correctness, ARM64 Setup lifecycle QA and premium browser icon parity into a versioned Windows and browser release. It preserves the existing local-first workflow and platform capability boundaries.
+
+### Capture history correctness
+
+- Make the newest capture selection deterministic even when screenshots/recordings share modification timestamps and the history list has a strict limit.
+- Present large video files in GB and TB instead of growing MB quantities.
+- Before opening or copying a recent file path, revalidate the file's modified timestamp and size alongside existing directory, filename, file-type and reparse-point safeguards. This is a metadata check, not a cryptographic proof of file identity.
+
+### Premium browser design and accessibility
+
+- Replace operating-system-dependent Unicode characters with consistent lightweight SVG pictograms for Visible Area, Region, Full Page, Recent and Settings, synchronized across Chrome, Edge, Opera and Firefox.
+- Keep the reference premium Obsidian, Surface, Slate, Violet, Lavender and Ice palette, the original pixel-identical 16/32/48/128 px product icons, local-only capture behavior, EN/HR localization and responsive popup widths.
+- Retain existing Windows Tray, Settings, Region/Window overlay, video controller and Setup branding. Do not present design-concept boards as actual QA screenshots; complete 1:1 pixel fidelity beyond the validated surfaces is not claimed.
+
+### ARM64 reliability and production QA
+
+- Resolve the ARM64 lifecycle false failure by waiting until deferred installer maintenance removes both the application and its Installed apps registration before asserting cleanup of shortcuts and startup metadata. Remaining artifacts still fail the strict check.
+- Require all seven mandatory workflows, actual x64 and ARM64 package lifecycle validation, rendered Windows visual QA and browser contract/parity checks.
+- Align Windows assembly/file/product versions, four browser manifests, review-kit metadata and EN/HR download/documentation references with v0.1.35.
+
+### Publication boundaries
+
+- Publish a new immutable release tag via the production GitHub Actions workflow only after QA. Require Setup EXE, MSI, Portable, four browser ZIPs, SHA256SUMS and SPDX SBOM, with final digest validation and supply-chain attestations.
+- A compiled package is not evidence of accepted browser-store publication or verified code-signing status; those require independent external confirmation.
 
 ---
 
