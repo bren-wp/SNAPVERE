@@ -4,6 +4,11 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### CodeQL dependency maintenance and quality gates
+
+- Upgrade CodeQL initialization and analysis to the same reviewed v4.38.3 commit to resolve the mismatched-version CI failures in separate Dependabot PRs.
+- Group future CodeQL Action dependency bumps and enforce matching immutable SHAs in Product Contract CI; keep all four language analyses enabled.
+
 ### Browser accessibility polish
 
 - Honor user-selected Windows forced-colors themes in all four browser popups and Settings pages with system-color controls, readable wordmarks and visible keyboard focus rings.

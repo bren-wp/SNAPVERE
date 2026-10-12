@@ -97,6 +97,23 @@ def main() -> int:
     if "java-kotlin" in codeql:
         fail("Java/Kotlin CodeQL target must not remain after mobile removal")
 
+    # The CodeQL Action shares runtime configuration between init and analyze.
+    # Dependabot previously upgraded them in separate PRs, causing all four
+    # CodeQL language jobs to fail despite no source-analysis regression.
+    codeql_steps = re.findall(
+        r"(?m)^\s*uses:\s*github/codeql-action/(init|analyze)@([0-9a-f]{40})(?:\s|$)",
+        codeql,
+    )
+    if sorted(name for name, _ in codeql_steps) != ["analyze", "init"]:
+        fail("CodeQL workflow must use exactly one SHA-pinned init and analyze action")
+    if len({sha for _, sha in codeql_steps}) != 1:
+        fail("CodeQL init and analyze must use the same SHA-pinned action version")
+    if not re.search(
+        r"(?m)^\s*codeql-actions:\s*$[\s\S]*?^\s*- [\\"']github/codeql-action/\*[\\"']\s*$",
+        dependabot,
+    ):
+        fail("Dependabot must group CodeQL init/analyze action updates in one PR")
+
     ci = read_text(ROOT / ".github" / "workflows" / "ci.yml")
     if re.search(r"(?m)^\s*SNAPVERE_VERSION:\s*\d+\.\d+\.\d+\s*$", ci):
         fail("standard CI must derive SNAPVERE_VERSION from product-version.json instead of hardcoding a release")
