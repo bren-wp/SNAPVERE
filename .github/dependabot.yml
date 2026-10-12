@@ -17,3 +17,9 @@ updates:
       time: "04:20"
       timezone: "Etc/UTC"
     open-pull-requests-limit: 3
+    # CodeQL init and analyze must always resolve to the same pinned commit.
+    # Separate Dependabot PRs break all four CodeQL language jobs.
+    groups:
+      codeql-actions:
+        patterns:
+          - "github/codeql-action/*"
