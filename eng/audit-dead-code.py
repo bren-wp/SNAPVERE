@@ -39,7 +39,15 @@ assert "FileAttributes.ReparsePoint" in history
 assert "IsCurrentCaptureFile(CaptureHistoryItem item)" in history
 assert options.count("_history.IsCurrentCaptureFile(capture)") == 2
 picker = "LanguagePickerWindow.ShowStandalone(_preferences);"
-assert picker in options and "Close();" in options[options.index(picker):options.index(picker) + 110]
+assert "OpenLanguagePickerSafely);" in options
+picker_start = options.index("private void OpenLanguagePickerSafely()")
+picker_end = options.index("private void AddInlinePreferenceRow", picker_start)
+picker_handler = options[picker_start:picker_end]
+assert picker in picker_handler
+assert picker_handler.count("catch (Exception exception)") == 2
+assert 'StartupDiagnostics.Record("Open Language picker from Settings", exception);' in picker_handler
+assert "SetStatus(" in picker_handler and "return;" in picker_handler
+assert picker_handler.index(picker) < picker_handler.index("Close();")
 assert "OversizedSettings_FallBackSafely" in (ROOT / "tests/Snapvere.UnitTests/CapturePreferencesServiceTests.cs").read_text(encoding="utf-8")
 assert "DoesNotFollowSymlinks" in (ROOT / "tests/Snapvere.UnitTests/CaptureHistoryServiceTests.cs").read_text(encoding="utf-8")
 
