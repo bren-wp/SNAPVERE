@@ -101,7 +101,7 @@ def main() -> int:
     # Dependabot previously upgraded them in separate PRs, causing all four
     # CodeQL language jobs to fail despite no source-analysis regression.
     codeql_steps = re.findall(
-        r'(?m)^\s*codeql-actions:\s*$[\s\S]*?^\s*-\s+"github/codeql-action/\*"\s*
+        r"(?m)^\s*uses:\s*github/codeql-action/(init|analyze)@([0-9a-f]{40})(?:\s|$)",
         codeql,
     )
     if sorted(name for name, _ in codeql_steps) != ["analyze", "init"]:
@@ -109,7 +109,7 @@ def main() -> int:
     if len({sha for _, sha in codeql_steps}) != 1:
         fail("CodeQL init and analyze must use the same SHA-pinned action version")
     if not re.search(
-        r"(?m)^\s*codeql-actions:\s*$[\s\S]*?^\s*- [\\"']github/codeql-action/\*[\\"']\s*$",
+        r'(?m)^\s*codeql-actions:\s*$[\s\S]*?^\s*-\s+"github/codeql-action/\*"\s*$',
         dependabot,
     ):
         fail("Dependabot must group CodeQL init/analyze action updates in one PR")
