@@ -4,6 +4,11 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Settings activation reliability
+
+- Keep the Settings window open and display an English/Croatian error if Language Picker activation fails; record the failure without crashing the UI click handler.
+- Contain errors when closing Settings after successfully opening Language Picker; validate both recovery paths in the Windows UI contract gate.
+
 ### Browser accessibility polish
 
 - Honor user-selected Windows forced-colors themes in all four browser popups and Settings pages with system-color controls, readable wordmarks and visible keyboard focus rings.

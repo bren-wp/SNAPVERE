@@ -332,12 +332,7 @@ public sealed class OptionsWindow : Window
         var languageButton = CreateSecondaryAction(
             currentLanguage.NativeName,
             "\uE70D",
-            () =>
-            {
-                // Keep Settings available if opening Language fails.
-                LanguagePickerWindow.ShowStandalone(_preferences);
-                Close();
-            });
+            OpenLanguagePickerSafely);
         languageButton.MinWidth = 154;
         AutomationProperties.SetName(languageButton, L("ChooseLanguage"));
         ToolTipService.SetToolTip(languageButton, L("ChooseLanguage"));
@@ -383,6 +378,33 @@ public sealed class OptionsWindow : Window
         privacy.Child = privacyLayout;
         Grid.SetRow(privacy, 3);
         _preferencesPanel.Children.Add(privacy);
+    }
+
+    private void OpenLanguagePickerSafely()
+    {
+        try
+        {
+            LanguagePickerWindow.ShowStandalone(_preferences);
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Record("Open Language picker from Settings", exception);
+            SetStatus(
+                UserText(
+                    "Language settings could not be opened. Try again.",
+                    "Postavke jezika nije moguće otvoriti. Pokušajte ponovno."),
+                Error);
+            return;
+        }
+
+        try
+        {
+            Close();
+        }
+        catch (Exception exception)
+        {
+            StartupDiagnostics.Record("Close Settings after opening Language picker", exception);
+        }
     }
 
     private void AddInlinePreferenceRow(int index, string title, string description, FrameworkElement trailing)

@@ -321,6 +321,21 @@ def main() -> int:
         ),
     )
 
+    # Language picker activation is a WinUI boundary and may fail. Settings
+    # must remain open and report the error instead of crashing on button click.
+    require(
+        "src/Snapvere.App/Services/OptionsWindow.cs",
+        (
+            "OpenLanguagePickerSafely);",
+            "private void OpenLanguagePickerSafely()",
+            "LanguagePickerWindow.ShowStandalone(_preferences);",
+            'StartupDiagnostics.Record("Open Language picker from Settings", exception);',
+            "Language settings could not be opened. Try again.",
+            "Postavke jezika nije moguće otvoriti. Pokušajte ponovno.",
+            'StartupDiagnostics.Record("Close Settings after opening Language picker", exception);',
+        ),
+    )
+
     require(
         "src/Snapvere.App/Services/CaptureFeedbackWindow.cs",
         (
