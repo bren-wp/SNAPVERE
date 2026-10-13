@@ -49,7 +49,7 @@ catch {
     Add-Type -AssemblyName System.Drawing -ErrorAction Stop
 }
 
-$expectedFiles = @(
+$legacyExpectedFiles = @(
     'region-capture.png',
     'window-capture.png',
     'tray-menu.png',
@@ -57,6 +57,7 @@ $expectedFiles = @(
     'language.png',
     'about.png'
 )
+$expectedFiles = @($legacyExpectedFiles + 'region-selection.png')
 
 # Intentional, reviewed premium-brand geometry changes. These exceptions are
 # exact baseline->target pairs, NOT relaxed tolerances. If the layout drifts
@@ -80,7 +81,8 @@ $approvedGeometryTransitions = @{
 function Assert-VisualQaArtifactContract {
     param(
         [Parameter(Mandatory = $true)][string]$Directory,
-        [Parameter(Mandatory = $true)][string]$Label
+        [Parameter(Mandatory = $true)][string]$Label,
+        [switch]$AllowLegacySixSurfaceBaseline
     )
 
     $manifestPath = Join-Path $Directory 'manifest.json'
@@ -92,14 +94,22 @@ function Assert-VisualQaArtifactContract {
         Select-Object -ExpandProperty Name |
         Sort-Object)
     $expected = @($expectedFiles | Sort-Object)
+    # One-time compatibility for the previously published six-surface main baseline.
+    # Current CI artifacts MUST include the real, rendered active selection.
+    $legacy = @($legacyExpectedFiles | Sort-Object)
+    if ($AllowLegacySixSurfaceBaseline -and
+        $actual.Count -eq $legacy.Count -and
+        @(Compare-Object $legacy $actual).Count -eq 0) {
+        $expected = $legacy
+    }
     if ($actual.Count -ne $expected.Count -or @(Compare-Object $expected $actual).Count -ne 0) {
-        throw "$Label visual-QA artifact must contain exactly the six expected PNG files. Actual: $($actual -join ', ')"
+        throw "$Label visual-QA artifact does not match the required PNG surface set. Actual: $($actual -join ', ')"
     }
 
     $manifest = Get-Content -Raw -LiteralPath $manifestPath | ConvertFrom-Json
     $manifestFiles = @($manifest.Surfaces | ForEach-Object { $_.File } | Sort-Object)
     if ($manifestFiles.Count -ne $expected.Count -or @(Compare-Object $expected $manifestFiles).Count -ne 0) {
-        throw "$Label visual-QA manifest does not describe exactly the six expected surfaces."
+        throw "$Label visual-QA manifest does not match the captured PNG surface set."
     }
 
     return $manifest
@@ -239,9 +249,37 @@ function Compare-VisualSurface {
     }
 }
 
-$baselineManifest = Assert-VisualQaArtifactContract -Directory $baselineRoot -Label 'Baseline'
+$baselineManifest = Assert-VisualQaArtifactContract -Directory $baselineRoot -Label 'Baseline' -AllowLegacySixSurfaceBaseline
 $currentManifest = Assert-VisualQaArtifactContract -Directory $currentRoot -Label 'Current'
-$comparisons = @($expectedFiles | ForEach-Object { Compare-VisualSurface -FileName $_ })
+
+# Ensure the active selection is not merely a renamed idle-overlay screenshot.
+$selectionPath = Join-Path $currentRoot 'region-selection.png'
+$idlePath = Join-Path $currentRoot 'region-capture.png'
+if ((Get-FileHash -LiteralPath $selectionPath -Algorithm SHA256).Hash -eq
+    (Get-FileHash -LiteralPath $idlePath -Algorithm SHA256).Hash) {
+    throw 'Active selection and idle region screenshots have identical pixels.'
+}
+$selectionBitmap = [System.Drawing.Bitmap]::new($selectionPath)
+$idleBitmap = [System.Drawing.Bitmap]::new($idlePath)
+try {
+    if ($selectionBitmap.Width -ne $idleBitmap.Width -or
+        $selectionBitmap.Height -ne $idleBitmap.Height) {
+        throw 'Active selection and idle region screenshots must share the same viewport geometry.'
+    }
+}
+finally {
+    $selectionBitmap.Dispose()
+    $idleBitmap.Dispose()
+}
+
+$baselineSurfaceFiles = @($baselineManifest.Surfaces | ForEach-Object { $_.File })
+$missingFromBaseline = @($expectedFiles | Where-Object { $_ -notin $baselineSurfaceFiles })
+if ($missingFromBaseline.Count -gt 1 -or
+    ($missingFromBaseline.Count -eq 1 -and $missingFromBaseline[0] -ne 'region-selection.png')) {
+    throw "Only the new active region screenshot may lack a historic baseline: $($missingFromBaseline -join ', ')"
+}
+$comparedFiles = @($expectedFiles | Where-Object { $_ -in $baselineSurfaceFiles })
+$comparisons = @($comparedFiles | ForEach-Object { Compare-VisualSurface -FileName $_ })
 $failed = @($comparisons | Where-Object { -not $_.Passed })
 
 $report = [pscustomobject]@{
@@ -265,10 +303,15 @@ $report = [pscustomobject]@{
         MaxByteSizeRatio = $MaxByteSizeRatio
     }
     Passed = $failed.Count -eq 0
+    ActiveSelectionCaptured = $true
+    ActiveSelectionBaselinePending = $missingFromBaseline.Count -eq 1
     Surfaces = $comparisons
 }
 $report | ConvertTo-Json -Depth 7 | Set-Content -LiteralPath $outputFullPath -Encoding utf8
 
+if ($missingFromBaseline.Count -eq 1) {
+    Write-Host 'First active-selection baseline: verified rendered current HWND screenshot and geometry; pixel regression baseline begins with the next main run.'
+}
 Write-Host 'SNAPVERE rendered UI regression comparison:'
 foreach ($comparison in $comparisons) {
     $state = if ($comparison.Passed) { 'PASS' } else { 'FAIL' }
