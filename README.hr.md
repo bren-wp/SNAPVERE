@@ -1,144 +1,95 @@
 <div align="center">
-
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/branding/readme/snapvere-logo-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="assets/branding/readme/snapvere-logo-light.svg">
-  <img alt="SNAPVERE" src="assets/branding/readme/snapvere-logo-light.svg" width="420">
+  <img src="assets/branding/readme/snapvere-logo-light.svg" width="430" alt="SNAPVERE">
 </picture>
 
-### Snimi. Uredi. Gotovo.
+### Snimi što je važno. Zadrži na svom uređaju.
 
-**Jedan local-first capture workflow za Windows i preglednike koje već koristite.**  
-Snimite regiju, prozor, cijeli zaslon ili web-stranicu, brzo označite rezultat, snimite primarni zaslon i zadržite datoteku na svom uređaju.
+**Snimke zaslona, označavanje i videosnimanje za Windows — uz jednostavno snimanje web-stranica u Chromeu, Edgeu, Operi i Firefoxu.**
 
-**Bez računa · Bez automatskog cloud uploada · Bez first-party capture telemetrije**
+Odaberi, označi i spremi. Bez korisničkog računa, automatskog slanja snimki u oblak i reklama.
 
-[![Windows CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/ci.yml)
-[![Extensions CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/extensions-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/extensions-ci.yml)
-[![Product Contract](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml)
-[![MSI CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/msi-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/msi-ci.yml)
-[![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
-
-[Web stranica](https://snapvere.com) · [Preuzmi v0.1.36](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.36) · [Dokumentacija](docs/hr/README.md) · [English](README.md)
-
+[**Preuzmi SNAPVERE 0.1.36**](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.36) · [**Službena stranica**](https://snapvere.com) · [**English**](README.md)
 </div>
 
 ---
 
-## Zašto SNAPVERE
+## Tvoj zaslon. Tvoj način rada.
 
-SNAPVERE je napravljen za brzo svakodnevno snimanje bez pretvaranja screenshota u cloud workflow. Sučelje ostaje kompaktno, radnje su blizu Windowsa i preglednika, a svaki način snimanja ima jasnu i predvidljivu svrhu.
-
-**Od screenshota u nekoliko sekundi do duljeg lokalnog snimanja, tijek ostaje isti: odaberite što želite snimiti, dovršite rezultat, spremite ga lokalno i nastavite raditi.**
-
-| | Što dobivate |
+| | |
 | --- | --- |
-| ⚡ **Brzo snimanje** | Region, window i screen capture na Windowsu te visible-area, region i ograničeni full-page capture u preglednicima. |
-| 🎥 **Lokalno video snimanje** | Start/Stop snimanja primarnog Windows zaslona iz Traya ili Postavki, uz vidljivu kontrolu proteklog vremena i lokalni H.264 MP4 bez cloud uploada. |
-| ✏️ **Ugrađene anotacije** | Pen, Line, Arrow, Box i Highlight izravno u Windows region workflowu. |
-| 🖥️ **Nativni Windows workflow** | Tray-first rad, globalni prečaci, nedavne snimke, lokalne postavke i DPI-aware multi-monitor podrška. |
-| 🔒 **Local-first pristup** | Osnovna obrada snimki ostaje lokalna; račun nije potreban i capture runtime nema first-party telemetriju snimki. |
-| 📦 **Tri Windows načina distribucije** | Vođeni Setup EXE, standardni x64 Windows Installer (MSI) i Universal Portable; Setup/Portable nose x86, x64 i ARM64 payloade. |
-| 🌐 **Četiri preglednika** | Chrome, Edge, Opera i Firefox dijele isti zaključani SNAPVERE brand i ograničeno capture ponašanje. |
+| 📸 **Snimanje detalja** | Odaberi regiju, prozor ili zaslon na Windowsu. U pregledniku snimi vidljivo područje, označenu regiju ili ograničenu cijelu stranicu. |
+| ✏️ **Uredi snimku** | Koristi olovku, linije, strelice, pravokutnike i označavanje tijekom snimanja regije na Windowsu. |
+| 🎥 **Videosnimanje bez ometanja** | Snimi primarni Windows zaslon kao lokalni H.264 MP4 uz pregledan gumb za zaustavljanje i proteklo vrijeme. Snima se video, bez zvuka. |
+| ⚡ **Brzo do rezultata** | Pokreni radnju iz Windows tray izbornika, koristi tipkovne prečace i pronađi nedavne lokalne snimke. |
+| 🔒 **Privatnost na prvom mjestu** | Obrada snimki ostaje na uređaju. Bez SNAPVERE računa, analitike snimki i automatskog prijenosa snimki. |
+| 🌐 **Ujednačeno sučelje** | Premium tamni izgled u Windows aplikaciji i četiri ekstenzije, na hrvatskom i engleskom jeziku. |
 
-SNAPVERE 0.1.36 proširuje stvarni Windows Visual QA za aktivni odabir regije i unapređuje audit izvornog koda, uz zadržavanje ujednačenih ikona preglednika, pouzdanije povijesti snimki i ARM64 provjera prethodnog izdanja. Izdanje nadograđuje postojeći premium SNAPVERE identitet uz zadržan tray-first, local-first i brz način rada. Windows Tray, Region/Window capture chrome, Postavke, recording kontroler, About/jezik/feedback površine, Setup i sva četiri browsera sada dijele isti Obsidian/Slate/Violet/Lavender/Ice sustav boja, viewfinder+munja znak i kompaktnu hijerarhiju radnji. Sekundarne opcije ostaju dostupne bez zatrpavanja glavnog capture tijeka, a privacy/security hardening iz v0.1.30 ostaje aktivan.
+## Pogledaj SNAPVERE u radu
 
-Recording zadržava odvojene kompaktne Start i Stop kontrole u Postavkama te mali always-on-top kontroler s proteklim vremenom dok je snimanje aktivno. Setup ostaje vođeni License → Installation → Finish tijek. Recording je primary-display H.264 MP4 samo s videom; mikrofon i sistemski zvuk nisu navedeni kao podržani.
-
-## Windows workflow
-
-SNAPVERE radi prvenstveno iz područja obavijesti, bez stalno otvorenog dashboarda.
-
-| Radnja | Prečac | Rezultat |
-| --- | --- | --- |
-| **Region Capture** | `Print Screen` ili `Ctrl+Shift+1` | Zamrzni prikaz, odaberi regiju, promijeni veličinu, označi, kopiraj ili spremi. |
-| **Window Capture** | `Ctrl+Shift+2` | Odaberi vidljivi prozor sa zamrznutog prikaza i snimi ga. |
-| **Screen Capture** | `Ctrl+Shift+3` | Brzo pokreni snimku zaslona. |
-| **Screen Recording** | Tray ili Postavke | Lokalno snimi primarni Windows zaslon kao H.264 MP4 uz vidljivu Stop kontrolu i proteklo vrijeme. |
-
-Snimke se zadano spremaju u `Pictures\SNAPVERE`. PNG zapis koristi staging prije završnog premještanja kako prekinuti encode ne bi izgledao kao gotova snimka.
-
-## Multi-monitor i memorija
-
-SNAPVERE koristi nativnu geometriju zaslona i DPI pretvorbu umjesto pretpostavke da svi monitori imaju isti scaling. Aktualni memory hardening uklanja redundantne full-frame staging alokacije iz Region i Window Capture putova te ranije oslobađa zamrznute monitor buffere čim je UI bitmap spreman.
-
-Detalji su u [Performanse i stabilnost](docs/hr/PERFORMANCE.md), [Window Capture](docs/hr/WINDOW-CAPTURE.md) i [Architecture](docs/ARCHITECTURE.md).
-
-## Browser ekstenzije
-
-<img src="ekstenzije/chrome/icons/icon-128.png" alt="SNAPVERE ikona browser ekstenzije" width="96" align="right">
-
-Chrome, Edge, Opera i Firefox nude visible-area, selected-region i bounded full-page capture, lokalno PNG spremanje te EN/HR sučelje. Naziv proizvoda, wordmark i prefiks spremljene datoteke ostaju fiksno **SNAPVERE**.
-
-Dozvole su točno `activeTab`, `scripting`, `downloads`, `downloads.open` i `storage`, bez širokog host pristupa. Kratkotrajni metadata podaci vlasništva capture sesije čuvaju se u `storage.session` kada ga preglednik podržava, uz kompatibilni fallback samo gdje session storage nije dostupan; trajni `storage.local` ostaje za korisničke postavke. Nedavne snimke dohvaćaju samo ograničeni skup SNAPVERE kandidata, a `downloads.open` se koristi tek nakon izričitog klika i ponovne provjere odabranog zapisa po ID-u. Full-page capture ostaje memorijski ograničen i oslobađa dekodirane tile resurse nakon crtanja.
-
-Browser ZIP paketi namijenjeni su ručnoj instalaciji. Vanjsko store odobrenje ne tvrdi se dok stvarni listing nije objavljen.
-
-## Stvarni screenshotovi aplikacije
-
-Slike ispod su **stvarne renderirane Windows površine koje je snimio SNAPVERE visual-QA pipeline iz validiranog builda aplikacije**. Nisu generirani koncepti niti dizajnerski mockupovi.
+U nastavku su **stvarne snimke pokrenute Windows aplikacije** iz provjerenog builda, a ne konceptualne slike.
 
 <table>
-<tr>
-<td width="38%" valign="top"><img src="assets/branding/readme/screenshots/tray-menu.png" alt="SNAPVERE tray izbornik"><br><strong>Tray-first workflow</strong><br>Region, window i screen capture bez stalno otvorenog dashboarda.</td>
-<td width="62%" valign="top"><img src="assets/branding/readme/screenshots/options.png" alt="SNAPVERE postavke"><br><strong>Lokalne postavke</strong><br>Startup, cursor i jezične postavke ostaju fokusirane i lokalne za Windows račun.</td>
-</tr>
+  <tr>
+    <td width="38%" valign="top">
+      <img src="assets/branding/readme/screenshots/tray-menu.png" alt="Stvarni SNAPVERE tray izbornik" width="370">
+      <p><strong>Jedan klik do snimke</strong><br>Regija, prozor, zaslon i videosnimanje nadohvat ruke.</p>
+    </td>
+    <td width="62%" valign="top">
+      <img src="assets/branding/readme/screenshots/options.png" alt="Stvarne SNAPVERE postavke" width="600">
+      <p><strong>Pregledne postavke</strong><br>Prilagodi snimanje, jezik, prečace i pristup nedavnim snimkama.</p>
+    </td>
+  </tr>
 </table>
 
-<img src="assets/branding/readme/screenshots/window-capture.png" alt="SNAPVERE Window Capture overlay" width="760">
+<p align="center">
+  <img src="assets/branding/readme/screenshots/window-capture.png" alt="Stvarni SNAPVERE odabir prozora" width="800">
+</p>
+<p align="center"><strong>Odaberi pravi prozor.</strong> Pregledan prikaz omogućuje precizan odabir prije snimanja.</p>
 
-**Window Capture** — zamrznuta površina za jasan odabir ciljnog prozora prije snimanja.
+## Stvoren za Windows
 
-## Preuzimanja
+<img src="assets/branding/premium/icon-128.png" alt="SNAPVERE ikona aplikacije" width="88" align="right">
 
-Aktualno izdanje: **SNAPVERE 0.1.36**<br>
-Izdanje: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.36
+SNAPVERE se pokreće iz područja obavijesti sustava Windows, bez stalno otvorene naslovne ploče. Odaberi način snimanja u izborniku ili tipkovnim prečacem:
+
+| Radnja | Prečac |
+| --- | --- |
+| **Snimanje regije** | `Print Screen` ili `Ctrl+Shift+1` |
+| **Snimanje prozora** | `Ctrl+Shift+2` |
+| **Snimanje zaslona** | `Ctrl+Shift+3` |
+| **Videosnimanje** | Pokretanje i zaustavljanje iz tray izbornika ili Postavki |
+
+Snimke se zadano spremaju u `Pictures\SNAPVERE`. Ostale prilagodbe dostupne su u lokalnim Postavkama.
+
+## Snimanje u pregledniku
+
+SNAPVERE omogućuje spremanje PNG snimki vidljivog dijela, odabrane regije i ograničene cijele stranice u **Chromeu, Edgeu, Operi i Firefoxu**. Datoteke ostaju na uređaju, a račun nije potreban.
+
+Paketi ekstenzija dostupni su za ručnu instalaciju; to ne znači da su već objavljeni u trgovinama proširenja.
+
+## Preuzmi SNAPVERE
+
+Odaberi paket za svoj način rada. Windows Setup i Portable uključuju x86, x64 i ARM64 aplikacijske pakete; MSI je namijenjen x64 Windowsu.
 
 | Platforma | Paket |
 | --- | --- |
-| Windows Setup EXE | `SNAPVERE-Setup.exe` |
-| Windows Installer (MSI) | `SNAPVERE-Setup.msi` |
-| Windows Portable | `SNAPVERE-Portable.exe` |
-| Chrome | `SNAPVERE-Chrome.zip` |
-| Edge | `SNAPVERE-Edge.zip` |
+| Windows — instalacija | `SNAPVERE-Setup.exe` |
+| Windows — MSI instalacija | `SNAPVERE-Setup.msi` |
+| Windows — prijenosna verzija | `SNAPVERE-Portable.exe` |
+| Google Chrome | `SNAPVERE-Chrome.zip` |
+| Microsoft Edge | `SNAPVERE-Edge.zip` |
 | Opera | `SNAPVERE-Opera.zip` |
-| Firefox | `SNAPVERE-Firefox.zip` |
+| Mozilla Firefox | `SNAPVERE-Firefox.zip` |
 
-Aktualni ugovor proizvoda sadrži ovih sedam glavnih održavanih paketa. Release dodatno objavljuje SHA-256 provjere i SPDX SBOM.
+**[Otvori izdanje SNAPVERE v0.1.36 i preuzimanja](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.36)**
 
-## Kvaliteta koju možete provjeriti
+## Korisni linkovi
 
-CI ne provjerava samo kompilaciju. Trenutno obuhvaća x64 build i unit testove, x86 i ARM64 buildove, stvarne renderirane WinUI snapshotove, usporedbu s `main` baselineom, universal Setup/Portable pakiranje, pravi x64 MSI, MSI clean-install/repair/major-upgrade/uninstall QA, package-size budget, x64/x86 lifecycle provjeru, browser runtime i permission validaciju, brand lock, EN/HR paritet, reproducibilno pakiranje, Product Contract CI i CodeQL.
+[Korisnički vodič](docs/hr/USER-GUIDE.md) · [Instalacija](docs/hr/INSTALLATION.md) · [Ekstenzije](docs/hr/BROWSER-EXTENSIONS.md) · [Privatnost](docs/hr/PRIVACY.md) · [Sigurnost](SECURITY.md) · [Rješavanje problema](docs/hr/TROUBLESHOOTING.md) · [Povijest izdanja](RELEASES.md)
 
-Ti gateovi smanjuju rizik regresija; nisu tvrdnja da Windows, driver ili preglednik nikada ne može pogriješiti.
+---
 
-## Privatnost i sigurnost
-
-Osnovna obrada snimki zaslona i videosnimki je lokalna. SNAPVERE ne zahtijeva korisnički račun za capture ili recording, runtime nema first-party capture analitiku i sadržaj se ne šalje automatski u cloud.
-
-Pročitajte [Privatnost](docs/hr/PRIVACY.md), [Security Policy](SECURITY.md), [Status proizvoda](docs/hr/PRODUCT-STATUS.md) i [QA matricu](docs/hr/QA-MATRIX.md).
-
-## Dokumentacija
-
-- [Korisnički vodič](docs/hr/USER-GUIDE.md)
-- [Instalacija](docs/hr/INSTALLATION.md)
-- [Performanse i stabilnost](docs/hr/PERFORMANCE.md)
-- [Window Capture](docs/hr/WINDOW-CAPTURE.md)
-- [Image Pipeline](docs/hr/IMAGE-PIPELINE.md)
-- [Tray i lifecycle](docs/hr/TRAY-LIFECYCLE.md)
-- [Browser ekstenzije](docs/hr/BROWSER-EXTENSIONS.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Rješavanje problema](docs/hr/TROUBLESHOOTING.md)
-- [Status proizvoda](docs/hr/PRODUCT-STATUS.md)
-- [QA matrica](docs/hr/QA-MATRIX.md)
-- [Branding](docs/BRANDING.md)
-
-## Brand i izdavač
-
-**SNAPVERE** je brand proizvoda. **Brendigo** je developer i izdavač.
-
-Službena stranica: https://snapvere.com  
-Podrška: info@snapvere.com  
-Izdavač: https://brendigo.com
-
-Povijesne činjenice o izdanjima ostaju u [RELEASES.md](RELEASES.md); aktualna dokumentacija opisuje održavani Windows/browser proizvod.
+<p align="center"><strong>SNAPVERE</strong> by <a href="https://brendigo.com">Brendigo</a> · <a href="https://snapvere.com">snapvere.com</a> · <a href="mailto:info@snapvere.com">info@snapvere.com</a></p>
