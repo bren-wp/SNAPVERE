@@ -9,7 +9,8 @@ This matrix documents automated regression evidence for the actively maintained 
 - x86 build and ARM64 cross-build.
 - native Windows ARM64 runtime CI on `windows-11-vs2026-arm`, covering direct ARM64 app startup, Universal Setup/Portable ARM64 lifecycle probes and ARM64 MSI clean/repair/major-upgrade/uninstall.
 - native payload-structure validation.
-- real rendered WinUI snapshot capture for Region, Window, Tray, Options, Language and About surfaces.
+- real rendered WinUI snapshot capture for idle Region, active Region selection (all eight resize handles, dimension badge, annotation/action palettes), Window, Tray, Options, Language and About surfaces. The active-selection probe configures the production editor, verifies visible controls and captures stable pixels from its actual Windows HWND; it does not fabricate an output image or exercise pointer gestures.
+- the first PR with the additional active-selection screenshot validates its HWND rendering and viewport against the idle Region image, retaining six-surface pixel regressions against the latest successful main artifact. Once a seven-surface main baseline exists, the active selection is included in the same pixel regression gate.
 - PR visual comparison against the last successful `main` baseline.
 - universal Setup/Portable construction.
 - exact seven-main-asset release contract, including a mandatory real `SNAPVERE-Setup.msi`.
