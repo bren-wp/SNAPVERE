@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.35**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.35
+- Current public release: **v0.1.36**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.36
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -27,6 +27,32 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 ---
 
 ## Unreleased
+
+---
+
+## v0.1.36 — 2026-10-13
+
+SNAPVERE 0.1.36 publishes the previously unreleased Language Picker activation recovery, enhanced accessibility and dependency quality gates, and real rendered Region selection QA. This is an incremental maintenance release of the existing Windows and four-browser product, not a claim of full pixel-perfect equivalence to concept renders.
+
+### Windows capture and premium UI validation
+
+- Capture a seventh real HWND-owned WinUI QA surface showing the active Region selection, eight resize handles, selection dimensions and annotation/action palettes.
+- Keep pixel regressions for the original six Windows surfaces during the transition to seven-surface main baselines, and reject identical active/idle capture screenshots or inconsistent viewport geometry.
+- Preserve the Obsidian/Violet premium identity and existing tray, Settings, recording, Setup and browser designs; retain separate DPI, pointer interaction and multi-monitor evidence requirements.
+- Keep Settings visible on Language Picker activation failure with localized user feedback and sanitized diagnostics.
+
+### Dead code, privacy and product integrity
+
+- Remove the confirmed overwritten tray command-stack margin initialization without modifying its effective layout.
+- Expand read-only dead-code inventory to C# private methods, browser JavaScript functions, browser HTML/CSS/manifests and shared runtime parity. Candidates are review-only; no speculative code removal.
+- Keep EN/HR localization, local-only capture, minimal extension permissions, recent-file revalidation and existing recording/persistence safeguards.
+- Retain reviewed CodeQL action consistency and browser high-contrast/keyboard-accessibility improvements.
+
+### Packaging and QA policy
+
+- Align .NET assembly/file/product versions, four browser manifest versions, store metadata and EN/HR documentation at 0.1.36.
+- Require all seven CI workflows on the exact release source, plus MSI/ARM64 lifecycle tests, rendered Windows UI, browser runtime checks, SHA-256, SPDX SBOM and release attestation.
+- Keep older tags and their binaries immutable. Browser store approval and external signing are not implied by the GitHub release.
 
 ---
 
