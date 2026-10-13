@@ -51,6 +51,82 @@ assert picker_handler.index(picker) < picker_handler.index("Close();")
 assert "OversizedSettings_FallBackSafely" in (ROOT / "tests/Snapvere.UnitTests/CapturePreferencesServiceTests.cs").read_text(encoding="utf-8")
 assert "DoesNotFollowSymlinks" in (ROOT / "tests/Snapvere.UnitTests/CaptureHistoryServiceTests.cs").read_text(encoding="utf-8")
 
+# A full-repository text inventory catches potential declaration-only code in
+# all production C# files, JavaScript runtime files, and tests. It does not
+# attempt to decide whether reflection, WinUI events, COM or generated code
+# can reach a symbol. The audit never removes candidates automatically.
+all_csharp = {
+    path: path.read_text(encoding="utf-8") for path in (*source_files, *test_files)
+}
+all_browser_js = {
+    path: path.read_text(encoding="utf-8") for path in javascript_files
+}
+browser_html = sorted(path for root in extension_roots for path in root.glob("*.html"))
+browser_css = sorted(path for root in extension_roots for path in root.glob("*.css"))
+browser_manifests = sorted(root / "manifest.json" for root in extension_roots)
+assert len(browser_html) == 8 and len(browser_css) == 8 and all(
+    path.is_file() for path in browser_manifests
+), "Incomplete browser HTML/CSS/manifest inventory"
+
+# The authoring sources of the four browser variants are intentionally
+# duplicated for direct extension packaging. Report parity in the dead-code
+# audit rather than misclassifying copies as removable runtime code.
+shared_browser_assets = (
+    "background.js", "capture.js", "options.js", "popup.js",
+    "options.html", "popup.html", "options.css", "popup.css",
+)
+divergent_browser_assets = []
+for name in shared_browser_assets:
+    contents = [(root / name).read_bytes() for root in extension_roots]
+    if any(content != contents[0] for content in contents[1:]):
+        divergent_browser_assets.append(name)
+if divergent_browser_assets:
+    raise RuntimeError(
+        "Shared browser runtime source parity changed: "
+        + ", ".join(divergent_browser_assets)
+    )
+
+# Reject an already-confirmed no-op Windows tray style assignment. The
+# original action-stack margin was immediately overwritten to zero before
+# rendering, so it did not affect the UI and should not be reintroduced.
+tray_source = (ROOT / "src/Snapvere.App/Services/TrayMenuWindow.cs").read_text(encoding="utf-8")
+if "actions.Margin = new Thickness(0);" in tray_source or (
+    "var actions = new StackPanel { Spacing = 8, Margin =" in tray_source
+):
+    raise RuntimeError("Dead tray action-stack margin assignment was reintroduced.")
+
+private_method_declaration = re.compile(
+    r"(?m)^\\s*private\\s+(?:(?:static|async|sealed|override|new)\\s+)*"
+    r"[A-Za-z_][\\w<>,.?\\[\\]]*(?:\\s+[A-Za-z_][\\w<>,.?\\[\\]]*)*"
+    r"\\s+([A-Za-z_]\\w*)\\s*\\("
+)
+javascript_function_declaration = re.compile(
+    r"(?m)^\\s*(?:async\\s+)?function\\s+([A-Za-z_$][\\w$]*)\\s*\\("
+)
+candidate_private_methods = set()
+for path, source in all_csharp.items():
+    if path not in source_files:
+        continue
+    for name in private_method_declaration.findall(source):
+        # A reference in the same file is enough to exclude the candidate.
+        # For names without a local reference, scan *all* production and tests
+        # before listing. This is an informational, conservative heuristic.
+        total = sum(
+            len(re.findall(r"\\b" + re.escape(name) + r"\\b", text))
+            for text in all_csharp.values()
+        )
+        if total == 1:
+            candidate_private_methods.add(f"{path.relative_to(ROOT).as_posix()}::{name}")
+
+candidate_javascript_functions = set()
+for path, source in all_browser_js.items():
+    for name in javascript_function_declaration.findall(source):
+        total = len(re.findall(r"(?<![\\w$])" + re.escape(name) + r"(?![\\w$])", source))
+        if total == 1:
+            candidate_javascript_functions.add(
+                f"{path.relative_to(ROOT).as_posix()}::{name}"
+            )
+
 # Enumerate the entire C# source tree. Single-file textual liveness analysis
 # can be wrong, so the following output is informational and non-destructive.
 candidates = set()
@@ -68,4 +144,15 @@ print("Confirmed: 4 dead UI aliases removed; bounded local settings; capture-his
 print(f"Additional private static alias review candidates (heuristic only): {len(candidates)}")
 for candidate in sorted(candidates):
     print(f"  review: {candidate}")
+print(
+    f"Browser source inventory: {len(browser_html)} HTML, {len(browser_css)} CSS, "
+    f"{len(browser_manifests)} manifests; {len(shared_browser_assets)} shared asset groups byte-identical."
+)
+print(f"Declaration-only private method review candidates (heuristic only): {len(candidate_private_methods)}")
+for candidate in sorted(candidate_private_methods):
+    print(f"  review-method: {candidate}")
+print(f"Declaration-only browser JavaScript function review candidates (heuristic only): {len(candidate_javascript_functions)}")
+for candidate in sorted(candidate_javascript_functions):
+    print(f"  review-js: {candidate}")
+print("Confirmed unused tray-stack margin initialization and overwrite removed.")
 print("Cross-browser source parity and runtime tests are independently enforced by Extensions CI.")
