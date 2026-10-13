@@ -108,6 +108,51 @@ def main() -> int:
             "max distinct rendered colors=$maxVisualColors",
         ),
     )
+    # Active Region selection must be rendered by the production WinUI editor
+    # (including its real eight handles), captured from a target-owned HWND,
+    # and regression-tested after the six-surface baseline migration.
+    require(
+        "src/Snapvere.App/RegionCaptureWindow.cs",
+        (
+            "internal void PrepareVisualQaSelection()",
+            "RegionSelectionGeometry.CreateFromDrag(start, end, bounds)",
+            "_selectionBorder.Visibility != Visibility.Visible",
+            "_selectionBadge.Visibility != Visibility.Visible",
+            "_toolPalette.Visibility != Visibility.Visible",
+            "_actionPalette.Visibility != Visibility.Visible",
+            "handles.Any(handle => handle.Visibility != Visibility.Visible)",
+        ),
+    )
+    require(
+        "src/Snapvere.App/App.xaml.cs",
+        (
+            'RegionSelectionProbeEnvironmentVariable = "SNAPVERE_REGION_SELECTION_PROBE"',
+            "IsRegionOverlayProbeRequested() || IsRegionSelectionProbeRequested()",
+            ".PrepareVisualQaSelection();",
+            '"REGION_SELECTION_READY"',
+        ),
+    )
+    require(
+        "eng/Capture-SnapvereVisualQa.ps1",
+        (
+            "-EnvironmentVariable 'SNAPVERE_REGION_SELECTION_PROBE'",
+            "-ExpectedMarkerState 'REGION_SELECTION_READY'",
+            "-SnapshotFileName 'region-selection.png'",
+            "CaptureContractVersion = 3",
+            "exactly seven PNG files",
+        ),
+    )
+    require(
+        "eng/Compare-SnapvereVisualQa.ps1",
+        (
+            "AllowLegacySixSurfaceBaseline",
+            "$expectedFiles = @($legacyExpectedFiles + 'region-selection.png')",
+            "Active selection and idle region screenshots have identical pixels.",
+            "Active selection and idle region screenshots must share the same viewport geometry.",
+            "$comparisons = @($comparedFiles | ForEach-Object { Compare-VisualSurface -FileName $_ })",
+        ),
+    )
+
     # CI visual captures exposed missing Segoe Fluent glyphs as empty boxes.
     # Use the Windows-provided MDL2 glyph font for all active WinUI icon surfaces.
     for icon_surface in (
