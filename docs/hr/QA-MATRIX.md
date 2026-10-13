@@ -9,7 +9,8 @@ Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani 
 - x86 build i ARM64 cross-build.
 - nativni Windows ARM64 runtime CI na `windows-11-vs2026-arm`, uključujući direktni ARM64 startup aplikacije, Universal Setup/Portable ARM64 lifecycle probeove i ARM64 MSI clean/repair/major-upgrade/uninstall.
 - provjera native payload strukture.
-- stvarni renderirani WinUI snapshotovi za Region, Window, Tray, Options, Language i About.
+- stvarni renderirani WinUI snapshotovi za početni Region, aktivnu selekciju regije (svih osam ručki, oznaku dimenzija, alatnu i akcijsku paletu), Window, Tray, Options, Language i About. QA način konfigurira produkcijski WinUI uređivač, provjerava vidljivost kontrola i snima stabilne piksele iz stvarnog Windows HWND prozora; ne izrađuje lažnu izlaznu sliku niti simulira pomake miša.
+- pri prvom dodavanju aktivne selekcije provjeravaju se renderiranje HWND-a i dimenzije u odnosu na početni Region, dok šest postojećih slika ostaje pod pixel-regression provjerom. Nakon što glavni branch dobije baseline sa sedam slika, i aktivna selekcija ulazi u istu regresijsku usporedbu.
 - PR visual usporedba s posljednjim uspješnim `main` baselineom.
 - universal Setup/Portable build.
 - točan ugovor od sedam glavnih release asseta, uključujući obavezni pravi `SNAPVERE-Setup.msi`.
