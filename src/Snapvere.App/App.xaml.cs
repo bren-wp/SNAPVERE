@@ -22,6 +22,8 @@ public partial class App : Microsoft.UI.Xaml.Application
     private const string TrayStartupProbeMarkerFileName = "tray-startup-probe.ready";
     private const string RegionOverlayProbeEnvironmentVariable = "SNAPVERE_REGION_OVERLAY_PROBE";
     private const string RegionOverlayProbeMarkerFileName = "region-overlay-probe.ready";
+    private const string RegionSelectionProbeEnvironmentVariable = "SNAPVERE_REGION_SELECTION_PROBE";
+    private const string RegionSelectionProbeMarkerFileName = "region-selection-probe.ready";
     private const string WindowOverlayProbeEnvironmentVariable = "SNAPVERE_WINDOW_OVERLAY_PROBE";
     private const string WindowOverlayProbeMarkerFileName = "window-overlay-probe.ready";
     private const string SecondaryUiProbeEnvironmentVariable = "SNAPVERE_SECONDARY_UI_PROBE";
@@ -102,7 +104,7 @@ public partial class App : Microsoft.UI.Xaml.Application
             _dispatcherQueue = DispatcherQueue.GetForCurrentThread()
                 ?? throw new InvalidOperationException("SNAPVERE could not acquire the WinUI dispatcher queue.");
 
-            if (IsRegionOverlayProbeRequested())
+            if (IsRegionOverlayProbeRequested() || IsRegionSelectionProbeRequested())
             {
                 StartRegionOverlayProbe();
                 return;
@@ -186,6 +188,10 @@ public partial class App : Microsoft.UI.Xaml.Application
         return Environment.GetCommandLineArgs().Any(
             argument => string.Equals(argument, "--region-overlay-probe", StringComparison.OrdinalIgnoreCase));
     }
+
+    private static bool IsRegionSelectionProbeRequested()
+        => string.Equals(Environment.GetEnvironmentVariable(RegionSelectionProbeEnvironmentVariable),
+            "1", StringComparison.Ordinal);
 
     private static bool IsWindowOverlayProbeRequested()
     {
@@ -664,10 +670,21 @@ public partial class App : Microsoft.UI.Xaml.Application
             }
 
             await WaitForProbeVisualReadyAsync(root);
+            var selectionProbe = IsRegionSelectionProbeRequested();
+            if (selectionProbe)
+            {
+                (_regionProbeWindow ?? throw new InvalidOperationException("Region editor probe window is missing."))
+                    .PrepareVisualQaSelection();
+                // Let the compositor observe the actual selection, handles and palettes.
+                await Task.Delay(100);
+            }
+
             WriteProbeMarker(
-                RegionOverlayProbeMarkerFileName,
-                "REGION_OVERLAY_READY",
-                "Region overlay probe rendered frozen editor surface.",
+                selectionProbe ? RegionSelectionProbeMarkerFileName : RegionOverlayProbeMarkerFileName,
+                selectionProbe ? "REGION_SELECTION_READY" : "REGION_OVERLAY_READY",
+                selectionProbe
+                    ? "Region editor rendered an active selection with eight handles and palettes."
+                    : "Region overlay probe rendered frozen editor surface.",
                 exitProcess: false);
             await Task.Delay(1200);
             Environment.Exit(0);

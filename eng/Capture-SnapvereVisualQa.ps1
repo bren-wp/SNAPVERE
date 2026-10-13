@@ -526,6 +526,11 @@ $results.Add((Invoke-SingleSurfaceProbe `
     -ExpectedMarkerState 'REGION_OVERLAY_READY' `
     -SnapshotFileName 'region-capture.png'))
 $results.Add((Invoke-SingleSurfaceProbe `
+    -EnvironmentVariable 'SNAPVERE_REGION_SELECTION_PROBE' `
+    -MarkerFileName 'region-selection-probe.ready' `
+    -ExpectedMarkerState 'REGION_SELECTION_READY' `
+    -SnapshotFileName 'region-selection.png'))
+$results.Add((Invoke-SingleSurfaceProbe `
     -EnvironmentVariable 'SNAPVERE_WINDOW_OVERLAY_PROBE' `
     -MarkerFileName 'window-overlay-probe.ready' `
     -ExpectedMarkerState 'WINDOW_OVERLAY_READY' `
@@ -536,6 +541,7 @@ foreach ($snapshot in (Invoke-SecondarySurfaceProbe)) {
 
 $expectedFiles = @(
     'region-capture.png',
+    'region-selection.png',
     'window-capture.png',
     'tray-menu.png',
     'options.png',
@@ -544,20 +550,20 @@ $expectedFiles = @(
 )
 $actualFiles = @(Get-ChildItem -LiteralPath $resolvedOutputDirectory -Filter '*.png' -File | Select-Object -ExpandProperty Name | Sort-Object)
 if ($actualFiles.Count -ne $expectedFiles.Count -or @(Compare-Object ($expectedFiles | Sort-Object) $actualFiles).Count -ne 0) {
-    throw "Visual QA must produce exactly six PNG files. Actual: $($actualFiles -join ', ')"
+    throw "Visual QA must produce exactly seven PNG files. Actual: $($actualFiles -join ', ')"
 }
 
 $manifest = [pscustomobject]@{
     GeneratedAtUtc = [DateTimeOffset]::UtcNow.ToString('O')
     App = $resolvedAppPath
     ProcessArchitecture = 'x64'
-    CaptureContractVersion = 2
+    CaptureContractVersion = 3
     Surfaces = @($results)
 }
 $manifestPath = Join-Path $resolvedOutputDirectory 'manifest.json'
 $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $manifestPath -Encoding utf8
 
-Write-Host "SNAPVERE visual QA captured six stable target-owned rendered Windows surfaces:"
+Write-Host "SNAPVERE visual QA captured seven stable target-owned rendered Windows surfaces:"
 foreach ($snapshot in $results) {
     Write-Host "  $($snapshot.File) $($snapshot.Width)x$($snapshot.Height) $([Math]::Round($snapshot.Bytes / 1KB, 1)) KB $($snapshot.CaptureMethod) sha256:$($snapshot.Sha256)"
 }

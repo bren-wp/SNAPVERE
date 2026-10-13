@@ -199,6 +199,42 @@ public sealed class RegionCaptureWindow : Window
         return _completion.Task;
     }
 
+    // CI-only state setup on the real editor instance, rendered by WinUI and
+    // captured from its HWND. This does not synthesize a screenshot or save.
+    internal void PrepareVisualQaSelection()
+    {
+        if (!string.Equals(Environment.GetEnvironmentVariable("SNAPVERE_REGION_SELECTION_PROBE"),
+                "1", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Region selection QA is only available in the explicit probe.");
+        }
+
+        var bounds = _session.Display.Bounds.Normalize();
+        var start = new PixelPoint(bounds.X + bounds.Width / 4, bounds.Y + bounds.Height / 4);
+        var end = new PixelPoint(bounds.X + bounds.Width * 3 / 4, bounds.Y + bounds.Height * 3 / 4);
+        _selection = RegionSelectionGeometry.CreateFromDrag(start, end, bounds);
+        if (_selection.IsEmpty)
+        {
+            throw new InvalidOperationException("Region selection QA could not create a nonempty selection.");
+        }
+
+        UpdateSelectionVisuals();
+        var handles = new[]
+        {
+            _topLeftHandle, _topHandle, _topRightHandle, _rightHandle,
+            _bottomRightHandle, _bottomHandle, _bottomLeftHandle, _leftHandle
+        };
+        if (handles.Any(handle => handle.Visibility != Visibility.Visible) ||
+            _selectionBorder.Visibility != Visibility.Visible ||
+            _selectionBadge.Visibility != Visibility.Visible ||
+            _toolPalette.Visibility != Visibility.Visible ||
+            _actionPalette.Visibility != Visibility.Visible ||
+            _selectionSizeText.Text != $"{_selection.Width} × {_selection.Height}")
+        {
+            throw new InvalidOperationException("Region selection QA did not expose all editor controls.");
+        }
+    }
+
     private Grid BuildRoot()
     {
         var root = new Grid

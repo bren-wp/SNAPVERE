@@ -3,6 +3,12 @@
 All notable SNAPVERE changes are documented here. Published release tags and assets are immutable; later documentation may clarify evidence boundaries but does not rewrite historical binaries.
 
 ## [Unreleased]
+### Region Capture rendered visual QA
+
+- Capture a seventh real Windows HWND screenshot showing the active selection, all eight resize handles, the dimension badge and the editing palettes. The probe uses the production WinUI editor and does not publish or fabricate a capture file.
+- Preserve pixel regression checks for the six existing Windows surfaces during the baseline transition, verify that active and idle Region snapshots differ and share the same viewport, then compare all seven surfaces against subsequent main baselines.
+- Lock the new behavior in the Windows UI contract gate and document the limits of the probe separately from manual pointer, DPI and multi-monitor tests.
+
 ### Settings activation reliability
 
 - Keep the Settings window open and display an English/Croatian error if Language Picker activation fails; record the failure without crashing the UI click handler.
