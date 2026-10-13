@@ -1,166 +1,95 @@
 <div align="center">
-
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/branding/readme/snapvere-logo-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="assets/branding/readme/snapvere-logo-light.svg">
-  <img alt="SNAPVERE" src="assets/branding/readme/snapvere-logo-light.svg" width="420">
+  <img src="assets/branding/readme/snapvere-logo-light.svg" width="430" alt="SNAPVERE">
 </picture>
 
-### Capture. Edit. Done.
+### Capture what matters. Keep it yours.
 
-**One local-first capture workflow for Windows and the browsers you already use.**  
-Capture regions, windows, full screens and web pages, annotate quickly, record the primary display, and keep the result on your device.
+**Screenshots, annotations and screen recording for Windows — plus effortless web captures in Chrome, Edge, Opera and Firefox.**
 
-**No account · No automatic cloud upload · No first-party capture telemetry**
+Capture the moment, make your point, save it on your device. No account, no automatic cloud uploads, no ads.
 
-[![Windows CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/ci.yml)
-[![Extensions CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/extensions-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/extensions-ci.yml)
-[![Product Contract](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/product-contract-ci.yml)
-[![MSI CI](https://github.com/bren-wp/SNAPVERE/actions/workflows/msi-ci.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/msi-ci.yml)
-[![CodeQL](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml/badge.svg)](https://github.com/bren-wp/SNAPVERE/actions/workflows/codeql.yml)
-
-[Website](https://snapvere.com) · [Download v0.1.36](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.36) · [Documentation](docs/README.md) · [Croatian](README.hr.md)
-
+[**Download SNAPVERE 0.1.36**](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.36) · [**Explore the website**](https://snapvere.com) · [**Hrvatski**](README.hr.md)
 </div>
 
 ---
 
-## Why SNAPVERE
+## Your screen. Your workflow.
 
-SNAPVERE is built for fast everyday capture without turning screenshots into a cloud workflow. It stays close to the operating system and browser, keeps the interface compact, and gives each capture mode one clear job.
-
-**From a two-second screenshot to a longer local recording, the workflow stays consistent: choose what to capture, finish the result, save it locally, continue working.**
-
-| | What you get |
+| | |
 | --- | --- |
-| ⚡ **Fast capture** | Region, window and screen capture on Windows, plus visible-area, region and bounded full-page capture in browsers. |
-| 🎥 **Local screen recording** | Start/Stop primary-display recording from Tray or Settings, with a visible elapsed-time Stop controller and local H.264 MP4 output. |
-| ✏️ **Built-in annotation** | Pen, Line, Arrow, Box and Highlight tools directly in the Windows region workflow. |
-| 🖥️ **Native Windows workflow** | Tray-first operation, global shortcuts, recent captures, local settings and DPI-aware multi-monitor handling. |
-| 🔒 **Local-first by design** | Core capture processing stays local; no account is required for capture and no first-party screenshot telemetry is built into the capture runtime. |
-| 📦 **Three Windows delivery models** | Guided Setup EXE, standard x64 Windows Installer (MSI), and Universal Portable. Setup/Portable carry x86, x64 and ARM64 application payloads. |
-| 🌐 **Browser coverage** | Chrome, Edge, Opera and Firefox share the same locked SNAPVERE brand and bounded capture behavior. |
+| 📸 **Capture any detail** | Choose a region, a window or a screen on Windows. Capture a visible area, selected region or bounded full page in your browser. |
+| ✏️ **Mark it up** | Draw with a pen, add lines and arrows, highlight an area or frame a detail before saving your Windows region capture. |
+| 🎥 **Record without distractions** | Record the primary Windows display as a local H.264 MP4, with a compact Stop button and elapsed-time indicator. Video only; audio recording isn't included. |
+| ⚡ **Stay in your flow** | Work directly from the Windows system tray, use global shortcuts and revisit your latest local captures. |
+| 🔒 **Private by design** | Capture processing stays on your device. No SNAPVERE account, capture analytics or automatic capture uploads. |
+| 🌐 **One familiar look** | Enjoy a consistent premium dark interface in the Windows app and all four browser extensions, with English and Croatian language support. |
 
-SNAPVERE 0.1.36 extends production Windows visual QA to the real rendered active Region selection, strengthens cross-platform source/dead-code auditing, and retains the previous release's stable browser popup vectors, capture history and ARM64 lifecycle safeguards. This release builds on the existing premium SNAPVERE identity while keeping the workflow tray-first, local-first and fast. Windows Tray, Region/Window capture chrome, Settings, the recording controller, About/Language/feedback surfaces, Setup and all four browser variants now share the same Obsidian/Slate/Violet/Lavender/Ice design tokens, viewfinder-plus-lightning mark and compact action hierarchy. Secondary actions remain available without crowding the primary capture flow, and the v0.1.30 privacy/security hardening remains in force.
+## See SNAPVERE in action
 
-This update hardens local settings and capture-history privacy, checks MP4 file-type headers before publishing completed recordings, and improves dark Windows caption consistency. The MP4 header check is not a complete video decoder. 
-
-Recording keeps separate compact Start and Stop controls in Settings and a small always-on-top elapsed-time controller while active. Setup remains a guided License → Installation → Finish flow. Recording is primary-display H.264 MP4 and video-only; microphone and system audio are not claimed as supported.
-
-## Windows capture workflow
-
-SNAPVERE runs tray-first instead of keeping a permanent dashboard open.
-
-| Action | Shortcut | Result |
-| --- | --- | --- |
-| **Region Capture** | `Print Screen` or `Ctrl+Shift+1` | Freeze the desktop, select a region, resize it, annotate, copy or save. |
-| **Window Capture** | `Ctrl+Shift+2` | Pick a visible window from the frozen desktop and capture it cleanly. |
-| **Screen Capture** | `Ctrl+Shift+3` | Capture the active display workflow immediately. |
-| **Screen Recording** | Tray Start/Stop | Record the primary Windows display locally as H.264 MP4. |
-
-Windows captures are stored by default in `Pictures\SNAPVERE`. PNG saving uses staging before the final move so an interrupted encode is not intentionally exposed as a completed capture.
-
-## Built for real multi-monitor desktops
-
-SNAPVERE uses native display geometry and DPI conversion instead of assuming every monitor has the same scale. Current memory hardening removes redundant full-frame staging allocations from Region and Window Capture paths and releases frozen monitor buffers as soon as their UI bitmap is ready.
-
-Read the implementation-focused notes in [Performance & Stability](docs/PERFORMANCE.md), [Window Capture](docs/WINDOW-CAPTURE.md) and [Architecture](docs/ARCHITECTURE.md).
-
-## Browser extensions
-
-<img src="ekstenzije/chrome/icons/icon-128.png" alt="SNAPVERE browser extension icon" width="96" align="right">
-
-The Chrome, Edge, Opera and Firefox variants provide:
-
-- visible-area capture;
-- selected-region capture;
-- bounded full-page capture;
-- local PNG download;
-- English and Croatian UI;
-- fixed SNAPVERE product name, wordmark and saved-file prefix.
-
-The permission contract is exactly `activeTab`, `scripting`, `downloads`, `downloads.open` and `storage`, without broad host access. Short-lived capture ownership metadata is kept in `storage.session` when the browser supports it, with a compatibility fallback only where session storage is unavailable; persistent `storage.local` remains reserved for user settings. Recent captures queries only a bounded SNAPVERE candidate set, and `downloads.open` is used only after the user explicitly chooses **Open** and the selected item is revalidated by ID. Full-page capture remains bounded and releases decoded tile resources after drawing.
-
-Browser ZIP packages are release packages for manual installation. External store approval is not claimed unless an actual store listing exists.
-
-## Real application screenshots
-
-The images below are **real rendered Windows surfaces captured by SNAPVERE's visual-QA pipeline from the validated application build**. They are not generated concepts or design mockups.
+These are **genuine screenshots of the running Windows application**, captured from a validated Windows build — not concept renders.
 
 <table>
-<tr>
-<td width="38%" valign="top"><img src="assets/branding/readme/screenshots/tray-menu.png" alt="SNAPVERE tray menu"><br><strong>Tray-first workflow</strong><br>Capture region, window or screen without keeping a permanent dashboard open.</td>
-<td width="62%" valign="top"><img src="assets/branding/readme/screenshots/options.png" alt="SNAPVERE Settings window"><br><strong>Local settings</strong><br>Startup, cursor and language preferences remain focused and local to the Windows account.</td>
-</tr>
+  <tr>
+    <td width="38%" valign="top">
+      <img src="assets/branding/readme/screenshots/tray-menu.png" alt="Real SNAPVERE tray capture menu" width="370">
+      <p><strong>Capture in a click</strong><br>Region, window, screen and recording controls right where you need them.</p>
+    </td>
+    <td width="62%" valign="top">
+      <img src="assets/branding/readme/screenshots/options.png" alt="Real SNAPVERE Settings window" width="600">
+      <p><strong>Settings without clutter</strong><br>Your capture preferences, language, shortcuts and recent work in one place.</p>
+    </td>
+  </tr>
 </table>
 
-<img src="assets/branding/readme/screenshots/window-capture.png" alt="SNAPVERE Window Capture overlay" width="760">
+<p align="center">
+  <img src="assets/branding/readme/screenshots/window-capture.png" alt="Real SNAPVERE Window Capture selection overlay" width="800">
+</p>
+<p align="center"><strong>Pick the right window.</strong> A clear selection overlay helps you choose exactly what to capture.</p>
 
-**Window Capture** — a frozen desktop target-selection surface with clear visual focus before capture.
+## Made for Windows
 
-## Downloads
+<img src="assets/branding/premium/icon-128.png" alt="SNAPVERE premium app icon" width="88" align="right">
 
-Current release: **SNAPVERE 0.1.36**<br>
-Release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.36
+Launch SNAPVERE from the system tray; it doesn't require an always-open dashboard. Choose a capture mode using the menu or a keyboard shortcut:
 
-| Platform | Package |
+| Action | Shortcut |
 | --- | --- |
-| Windows Setup EXE | `SNAPVERE-Setup.exe` |
-| Windows Installer (MSI) | `SNAPVERE-Setup.msi` |
-| Windows Portable | `SNAPVERE-Portable.exe` |
-| Chrome | `SNAPVERE-Chrome.zip` |
-| Edge | `SNAPVERE-Edge.zip` |
+| **Region capture** | `Print Screen` or `Ctrl+Shift+1` |
+| **Window capture** | `Ctrl+Shift+2` |
+| **Screen capture** | `Ctrl+Shift+3` |
+| **Screen recording** | Start and stop from the tray or Settings |
+
+By default, finished screenshots and recordings are saved to `Pictures\SNAPVERE`. Adjust your workflow using the local Settings interface.
+
+## Capture from your browser
+
+SNAPVERE brings visible-area, selected-region and bounded full-page PNG capture to **Chrome, Edge, Opera and Firefox**. Files are saved locally. No browser account or SNAPVERE account is needed for captures.
+
+The browser packages are available for manual installation; publication in a browser extension store is not implied.
+
+## Get SNAPVERE
+
+Choose the package that fits your workflow. The Windows Setup and Portable distributions include x86, x64 and ARM64 application payloads; the MSI package targets x64 Windows.
+
+| Platform | Download package |
+| --- | --- |
+| Windows — guided installer | `SNAPVERE-Setup.exe` |
+| Windows — MSI installer | `SNAPVERE-Setup.msi` |
+| Windows — portable | `SNAPVERE-Portable.exe` |
+| Google Chrome | `SNAPVERE-Chrome.zip` |
+| Microsoft Edge | `SNAPVERE-Edge.zip` |
 | Opera | `SNAPVERE-Opera.zip` |
-| Firefox | `SNAPVERE-Firefox.zip` |
+| Mozilla Firefox | `SNAPVERE-Firefox.zip` |
 
-The active product contract contains these seven maintained main packages. Release metadata also includes SHA-256 checksums and an SPDX SBOM.
+**[View the SNAPVERE v0.1.36 release and downloads](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.36)**
 
-## Quality you can inspect
+## Helpful links
 
-SNAPVERE does not treat a successful compile as sufficient evidence. CI currently validates:
+[User guide](docs/USER-GUIDE.md) · [Installation](docs/INSTALLATION.md) · [Browser extensions](docs/BROWSER-EXTENSIONS.md) · [Privacy](docs/PRIVACY.md) · [Security](SECURITY.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Release history](RELEASES.md)
 
-- x64 build plus the unit-test suite;
-- x86 build and ARM64 cross-build;
-- real rendered WinUI screenshots for Region, Window, Tray, Options, Language and About surfaces;
-- visual comparison against the last successful `main` baseline;
-- universal Setup/Portable construction plus a real x64 Windows Installer package;
-- exact seven-package public contract and package-size regression budgets;
-- real x64/x86 Setup/Portable lifecycle completion;
-- MSI database validation plus silent clean-install, repair, synthetic previous-version major-upgrade and uninstall lifecycle QA;
-- browser manifest, permission, runtime, brand-lock, locale and cross-browser parity rules;
-- bounded browser full-page memory design and deterministic extension packages;
-- Product Contract CI and CodeQL for C#, JavaScript/TypeScript, Python and GitHub Actions.
+---
 
-These gates reduce regression risk; they are not a claim that Windows, drivers or browsers can never fail.
-
-## Privacy & security posture
-
-Core screenshot and recording processing is local. SNAPVERE does not require a user account for capture or recording, does not add first-party capture analytics to the runtime and does not automatically upload screenshots or recordings to a cloud service.
-
-For the exact boundaries and security model, read [Privacy](docs/PRIVACY.md), [Security Policy](SECURITY.md), [Architecture](docs/ARCHITECTURE.md) and [QA Matrix](docs/QA-MATRIX.md).
-
-## Documentation
-
-| Guide | Purpose |
-| --- | --- |
-| [User Guide](docs/USER-GUIDE.md) | Everyday Windows and browser usage. |
-| [Installation](docs/INSTALLATION.md) | MSI, Setup EXE, Portable and browser package installation. |
-| [Performance & Stability](docs/PERFORMANCE.md) | Memory, lifecycle and regression-hardening notes. |
-| [Window Capture](docs/WINDOW-CAPTURE.md) | Native window discovery, frozen picker and WGC acquisition. |
-| [Image Pipeline](docs/IMAGE-PIPELINE.md) | Frame validation, crop/annotation, PNG encode and atomic publication. |
-| [Tray & Lifecycle](docs/TRAY-LIFECYCLE.md) | Singleton, native tray, Explorer recovery and package lifecycle. |
-| [Browser Extensions](docs/BROWSER-EXTENSIONS.md) | Browser architecture, permissions and behavior. |
-| [Architecture](docs/ARCHITECTURE.md) | Capture engine, persistence, multi-monitor/DPI and system boundaries. |
-| [Troubleshooting](docs/TROUBLESHOOTING.md) | Recovery guidance and diagnostics. |
-| [Product Status](docs/PRODUCT-STATUS.md) | Maintained product surfaces and evidence boundaries. |
-| [Branding](docs/BRANDING.md) | Product identity and asset usage. |
-
-## Brand & publisher
-
-**SNAPVERE** is the product brand. **Brendigo** is the developer and publisher.
-
-Official site: https://snapvere.com  
-Support: info@snapvere.com  
-Publisher: https://brendigo.com
-
-Historical release facts remain in [RELEASES.md](RELEASES.md); active documentation describes the currently maintained Windows/browser product surface.
+<p align="center"><strong>SNAPVERE</strong> by <a href="https://brendigo.com">Brendigo</a> · <a href="https://snapvere.com">snapvere.com</a> · <a href="mailto:info@snapvere.com">info@snapvere.com</a></p>
