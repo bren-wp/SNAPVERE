@@ -3,6 +3,14 @@
 All notable SNAPVERE changes are documented here. Published release tags and assets are immutable; later documentation may clarify evidence boundaries but does not rewrite historical binaries.
 
 ## [Unreleased]
+
+## [0.1.36] - 2026-10-13
+### Source hygiene and platform consistency
+
+- Remove the confirmed overwritten tray action-list margin assignment without altering the rendered layout.
+- Extend read-only C# / JavaScript dead-code candidate inventory and shared browser runtime parity checks; do not auto-delete unproven candidates.
+- Align the Windows product, all four browser extensions, store-kit metadata and English/Croatian documentation for the 0.1.36 release.
+
 ### Region Capture rendered visual QA
 
 - Capture a seventh real Windows HWND screenshot showing the active selection, all eight resize handles, the dimension badge and the editing palettes. The probe uses the production WinUI editor and does not publish or fabricate a capture file.

@@ -80,7 +80,7 @@ public sealed class TrayMenuWindow : Window
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.Children.Add(BuildHeader());
 
-        var actions = new StackPanel { Spacing = 8, Margin = new Thickness(0, 14, 0, 0) };
+        var actions = new StackPanel { Spacing = 8 };
         actions.Children.Add(CreateMenuButton("\uE722", L("CaptureRegion"), "Ctrl + Shift + 1", TrayCommand.RegionCapture, primary: true));
         actions.Children.Add(CreateMenuButton("\uE7F4", L("CaptureWindow"), "Ctrl + Shift + 2", TrayCommand.WindowCapture));
         actions.Children.Add(CreateMenuButton("\uE7F8", L("CaptureScreen"), "Ctrl + Shift + 3", TrayCommand.ScreenCapture));
@@ -104,7 +104,6 @@ public sealed class TrayMenuWindow : Window
             Content = actions,
             IsTabStop = false
         };
-        actions.Margin = new Thickness(0);
         Grid.SetRow(actionScroller, 1);
         root.Children.Add(actionScroller);
 
