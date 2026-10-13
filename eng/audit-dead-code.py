@@ -96,12 +96,12 @@ if "actions.Margin = new Thickness(0);" in tray_source or (
     raise RuntimeError("Dead tray action-stack margin assignment was reintroduced.")
 
 private_method_declaration = re.compile(
-    r"(?m)^\\s*private\\s+(?:(?:static|async|sealed|override|new)\\s+)*"
-    r"[A-Za-z_][\\w<>,.?\\[\\]]*(?:\\s+[A-Za-z_][\\w<>,.?\\[\\]]*)*"
-    r"\\s+([A-Za-z_]\\w*)\\s*\\("
+    r"(?m)^\s*private\s+(?:(?:static|async|sealed|override|new)\s+)*"
+    r"[A-Za-z_][\w<>,.?\[\]]*(?:\s+[A-Za-z_][\w<>,.?\[\]]*)*"
+    r"\s+([A-Za-z_]\w*)\s*\("
 )
 javascript_function_declaration = re.compile(
-    r"(?m)^\\s*(?:async\\s+)?function\\s+([A-Za-z_$][\\w$]*)\\s*\\("
+    r"(?m)^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\("
 )
 candidate_private_methods = set()
 for path, source in all_csharp.items():
@@ -112,7 +112,7 @@ for path, source in all_csharp.items():
         # For names without a local reference, scan *all* production and tests
         # before listing. This is an informational, conservative heuristic.
         total = sum(
-            len(re.findall(r"\\b" + re.escape(name) + r"\\b", text))
+            len(re.findall(r"\b" + re.escape(name) + r"\b", text))
             for text in all_csharp.values()
         )
         if total == 1:
@@ -121,7 +121,7 @@ for path, source in all_csharp.items():
 candidate_javascript_functions = set()
 for path, source in all_browser_js.items():
     for name in javascript_function_declaration.findall(source):
-        total = len(re.findall(r"(?<![\\w$])" + re.escape(name) + r"(?![\\w$])", source))
+        total = len(re.findall(r"(?<![\w$])" + re.escape(name) + r"(?![\w$])", source))
         if total == 1:
             candidate_javascript_functions.add(
                 f"{path.relative_to(ROOT).as_posix()}::{name}"
