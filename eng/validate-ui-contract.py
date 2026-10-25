@@ -190,6 +190,10 @@ def main() -> int:
         ('<Content Include="Assets\\SNAPVERE-app-icon-32.png">', '<ApplicationIcon>Assets\\SNAPVERE.ico</ApplicationIcon>'),
     )
     require(
+        "src/Snapvere.App/Snapvere.App.csproj",
+        ('<Content Include="Assets\\\\SNAPVERE.ico">', "<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>"),
+    )
+    require(
         "src/Snapvere.Setup/Snapvere.Setup.csproj",
         ('LogicalName="Snapvere.Brand.AppIcon"', '<ApplicationIcon>Assets\\SNAPVERE.ico</ApplicationIcon>'),
     )
@@ -270,6 +274,9 @@ def main() -> int:
             "titleBar.BackgroundColor = SnapvereBrand.Obsidian.Color",
             "titleBar.ButtonHoverBackgroundColor = SnapvereBrand.Slate.Color",
             "titleBar.InactiveBackgroundColor = SnapvereBrand.Obsidian.Color",
+            "TryApplyBrandIcon(Window window)",
+            'Path.Combine(AppContext.BaseDirectory, "Assets", "SNAPVERE.ico")',
+            "window.AppWindow.SetIcon(iconPath);",
             "StartupDiagnostics.Record",
         ),
     )
@@ -294,7 +301,7 @@ def main() -> int:
             'CloseForActionBestEffort("Close tray menu for action")',
             "StartupDiagnostics.Record(operation, exception);",
             "private const int FlyoutWidth = 420;",
-            "private const int FlyoutHeight = 488;",
+            "private const int FlyoutHeight = 464;",
             "private const int FlyoutEdgeMargin = 4;",
             "TrayPopupPlacementPolicy.Place(",
             "MinHeight = recording ? 54 : primary ? 54 : 50",
@@ -302,6 +309,11 @@ def main() -> int:
             "PRIVATE. ON YOUR DEVICE.",
             "Ready to capture",
             "CreateFooterIconButton",
+            "MinHeight = 44,",
+            "Width = 44,",
+            "Height = 44,",
+            "ToolTipService.SetToolTip(button, label);",
+            "string.IsNullOrWhiteSpace(shortcut) ? title",
             "CreateFooterLinkButton",
         ),
     )
