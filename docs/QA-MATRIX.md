@@ -2,6 +2,16 @@
 
 This matrix documents automated regression evidence for the actively maintained Windows/browser product. The active release version comes from `product-version.json`. A green gate means the tested contract passed on that commit; it does not convert platform behavior into an absolute guarantee.
 
+## Current premium UI regression scope
+
+The Windows UI source contract verifies that the native Settings, Language and
+About title bars load the canonical SNAPVERE ICO shipped with each unpackaged
+Windows build instead of the generic WinUI system glyph. The tray flyout is now
+420 × 464 logical pixels, with 44-pixel minimum utility button targets and
+localized tooltips. The real rendered Windows snapshot gate must pass before
+merging. Actual English/Croatian UI interaction at multiple DPI settings still
+requires manual verification; these automated checks do not certify all pixels.
+
 ## Windows build and runtime gates
 
 - .NET restore with vulnerability auditing.
