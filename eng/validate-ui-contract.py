@@ -68,17 +68,18 @@ def validate_windows_executable_icons() -> None:
 
 def main() -> int:
     validate_windows_executable_icons()
-    # Preserve strict screenshot regression thresholds while recording exactly
-    # the two deliberate reference-branding geometry migrations.
+    # Preserve strict pixel-difference thresholds and the exact reviewed
+    # tray-menu transition from the shipped 420x488 baseline to 420x464.
+    # The separate historical options migration stays unchanged.
     require(
         "eng/Compare-SnapvereVisualQa.ps1",
         (
             "[double]$MaxDimensionDeltaRatio = 0.08",
             "'tray-menu.png' = @{",
             "BaselineWidth = 420",
-            "BaselineHeight = 548",
+            "BaselineHeight = 488",
             "TargetWidth = 420",
-            "TargetHeight = 488",
+            "TargetHeight = 464",
             "'options.png' = @{",
             "BaselineWidth = 760",
             "BaselineHeight = 700",
