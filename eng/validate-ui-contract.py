@@ -191,7 +191,7 @@ def main() -> int:
     )
     require(
         "src/Snapvere.App/Snapvere.App.csproj",
-        ('<Content Include="Assets\\\\SNAPVERE.ico">', "<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>"),
+        (r'<Content Include="Assets\SNAPVERE.ico">', "<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>"),
     )
     require(
         "src/Snapvere.Setup/Snapvere.Setup.csproj",
