@@ -68,17 +68,18 @@ def validate_windows_executable_icons() -> None:
 
 def main() -> int:
     validate_windows_executable_icons()
-    # Preserve strict screenshot regression thresholds while recording exactly
-    # the two deliberate reference-branding geometry migrations.
+    # Preserve strict pixel-difference thresholds and the exact reviewed
+    # tray-menu transition from the shipped 420x488 baseline to 420x464.
+    # The separate historical options migration stays unchanged.
     require(
         "eng/Compare-SnapvereVisualQa.ps1",
         (
             "[double]$MaxDimensionDeltaRatio = 0.08",
             "'tray-menu.png' = @{",
             "BaselineWidth = 420",
-            "BaselineHeight = 548",
+            "BaselineHeight = 488",
             "TargetWidth = 420",
-            "TargetHeight = 488",
+            "TargetHeight = 464",
             "'options.png' = @{",
             "BaselineWidth = 760",
             "BaselineHeight = 700",
@@ -190,6 +191,10 @@ def main() -> int:
         ('<Content Include="Assets\\SNAPVERE-app-icon-32.png">', '<ApplicationIcon>Assets\\SNAPVERE.ico</ApplicationIcon>'),
     )
     require(
+        "src/Snapvere.App/Snapvere.App.csproj",
+        (r'<Content Include="Assets\SNAPVERE.ico">', "<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>"),
+    )
+    require(
         "src/Snapvere.Setup/Snapvere.Setup.csproj",
         ('LogicalName="Snapvere.Brand.AppIcon"', '<ApplicationIcon>Assets\\SNAPVERE.ico</ApplicationIcon>'),
     )
@@ -270,6 +275,9 @@ def main() -> int:
             "titleBar.BackgroundColor = SnapvereBrand.Obsidian.Color",
             "titleBar.ButtonHoverBackgroundColor = SnapvereBrand.Slate.Color",
             "titleBar.InactiveBackgroundColor = SnapvereBrand.Obsidian.Color",
+            "TryApplyBrandIcon(Window window)",
+            'Path.Combine(AppContext.BaseDirectory, "Assets", "SNAPVERE.ico")',
+            "window.AppWindow.SetIcon(iconPath);",
             "StartupDiagnostics.Record",
         ),
     )
@@ -294,7 +302,7 @@ def main() -> int:
             'CloseForActionBestEffort("Close tray menu for action")',
             "StartupDiagnostics.Record(operation, exception);",
             "private const int FlyoutWidth = 420;",
-            "private const int FlyoutHeight = 488;",
+            "private const int FlyoutHeight = 464;",
             "private const int FlyoutEdgeMargin = 4;",
             "TrayPopupPlacementPolicy.Place(",
             "MinHeight = recording ? 54 : primary ? 54 : 50",
@@ -302,6 +310,11 @@ def main() -> int:
             "PRIVATE. ON YOUR DEVICE.",
             "Ready to capture",
             "CreateFooterIconButton",
+            "MinHeight = 44,",
+            "Width = 44,",
+            "Height = 44,",
+            "ToolTipService.SetToolTip(button, label);",
+            "string.IsNullOrWhiteSpace(shortcut) ? title",
             "CreateFooterLinkButton",
         ),
     )

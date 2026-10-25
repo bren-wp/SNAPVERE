@@ -17,7 +17,7 @@ namespace Snapvere.App.Services;
 public sealed class TrayMenuWindow : Window
 {
     private const int FlyoutWidth = 420;
-    private const int FlyoutHeight = 488;
+    private const int FlyoutHeight = 464;
     private const int FlyoutEdgeMargin = 4;
     private const int CursorGap = 4;
     private const int CursorHorizontalAnchorOffset = 20;
@@ -221,7 +221,7 @@ public sealed class TrayMenuWindow : Window
         contents.Children.Add(Text(label, 10.5, SnapvereBrand.Muted, Microsoft.UI.Text.FontWeights.SemiBold));
         var button = new Button
         {
-            MinHeight = 38,
+            MinHeight = 44,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Center,
             Content = contents,
@@ -231,6 +231,7 @@ public sealed class TrayMenuWindow : Window
             BorderThickness = new Thickness(0)
         };
         AutomationProperties.SetName(button, label);
+        ToolTipService.SetToolTip(button, label);
         button.Click += (_, _) => action();
         return button;
     }
@@ -239,8 +240,8 @@ public sealed class TrayMenuWindow : Window
     {
         var button = new Button
         {
-            Width = 34,
-            Height = 34,
+            Width = 44,
+            Height = 44,
             Padding = new Thickness(0),
             CornerRadius = new CornerRadius(10),
             Background = SnapvereBrand.Slate,
@@ -345,6 +346,8 @@ public sealed class TrayMenuWindow : Window
             Content = content
         };
         AutomationProperties.SetName(button, title);
+        ToolTipService.SetToolTip(button,
+            string.IsNullOrWhiteSpace(shortcut) ? title : $"{title} ({shortcut})");
         button.Click += (_, _) => action();
         return button;
     }

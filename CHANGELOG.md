@@ -4,6 +4,14 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+### Windows premium chrome and tray usability
+
+- Apply the original multiresolution SNAPVERE ICO to native Settings, Language and About window captions instead of the generic unpackaged WinUI icon. Include the exact ICO in build/publish payloads and retry on activation when the window is not ready.
+- Tighten the main tray menu from 420 × 488 to 420 × 464 logical pixels to remove excess blank space while preserving all capture/recording actions and secondary navigation.
+- Increase tray utility icon targets from 34 × 34 to 44 × 44 and footer link minimum height from 38 to 44; add localized tooltips to the menu actions.
+- Require rendered Windows visual QA and exact source/product contract checks before merging. Manual multi-DPI and EN/HR inspection still remains separate from automated coverage.
+
+
 ## [0.1.36] - 2026-10-13
 ### Source hygiene and platform consistency
 

@@ -65,10 +65,13 @@ $expectedFiles = @($legacyExpectedFiles + 'region-selection.png')
 # The remaining surfaces retain the standard 8% dimension drift limit.
 $approvedGeometryTransitions = @{
     'tray-menu.png' = @{
+        # v0.1.36 main renders the shipped 420x488 tray menu. The new
+        # 420x464 height intentionally removes unused vertical space.
+        # Only this exact transition (or the new stable size) is approved.
         BaselineWidth = 420
-        BaselineHeight = 548
+        BaselineHeight = 488
         TargetWidth = 420
-        TargetHeight = 488
+        TargetHeight = 464
     }
     'options.png' = @{
         BaselineWidth = 760
@@ -186,11 +189,10 @@ function Compare-VisualSurface {
 
         $approvedGeometry = $approvedGeometryTransitions[$FileName]
         if ($null -ne $approvedGeometry) {
-            # Two strictly approved baselines are possible: the historic
-            # v0.1.31 geometry during the v0.1.32 migration, or the
-            # already-shipped v0.1.32 premium geometry after that release.
-            # In BOTH cases a new PR must retain the exact premium target size.
-            # Never allow arbitrary old/new sizes or bypass pixel regressions.
+            # Accept only the pinned old-to-new geometry transition or the
+            # already established new geometry on subsequent main baselines.
+            # Keep the same RGB, significant-pixel and byte-size thresholds;
+            # never accept arbitrary dimensions or skip rendered comparison.
             $historicBaseline =
                 $baselineBitmap.Width -eq $approvedGeometry.BaselineWidth -and
                 $baselineBitmap.Height -eq $approvedGeometry.BaselineHeight
