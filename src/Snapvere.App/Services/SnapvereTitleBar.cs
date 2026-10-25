@@ -1,3 +1,4 @@
+using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -31,8 +32,45 @@ internal static class SnapvereTitleBar
         // WinUI may create its HWND or finalize the title bar at activation.
         // Reapply after activation so early constructor-only calls cannot
         // silently leave a bright system caption on a dark application.
-        window.Activated += (_, _) => ApplyChrome(window);
+        // An unpackaged WinUI window otherwise uses a generic system glyph.
+        // Retry icon setup after activation only if HWND creation was too early.
+        var iconApplied = TryApplyBrandIcon(window);
+        window.Activated += (_, _) =>
+        {
+            if (!iconApplied)
+            {
+                iconApplied = TryApplyBrandIcon(window);
+            }
+
+            ApplyChrome(window);
+        };
         ApplyChrome(window);
+    }
+
+    private static bool TryApplyBrandIcon(Window window)
+    {
+        var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "SNAPVERE.ico");
+        if (!File.Exists(iconPath))
+        {
+            // Preserve a functional system window for incomplete old installs.
+            return false;
+        }
+
+        try
+        {
+            window.AppWindow.SetIcon(iconPath);
+            return true;
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException or
+            NotSupportedException or
+            COMException or
+            IOException or
+            ArgumentException)
+        {
+            StartupDiagnostics.Record("Apply SNAPVERE window icon", exception);
+            return false;
+        }
     }
 
     private static void ApplyChrome(Window window)
