@@ -2,6 +2,16 @@
 
 Ova matrica opisuje automatiziranu regresijsku evidenciju za aktivno održavani Windows/browser proizvod. Aktivna verzija izdanja čita se iz `product-version.json`. Zeleni gate znači da je provjereni ugovor prošao na tom commitu; ne predstavlja apsolutno jamstvo platformskog ponašanja.
 
+## Regresijske provjere premium Windows sučelja
+
+Windows UI ugovor provjerava da naslovne trake Postavki, Jezičnog izbornika i
+O programu koriste izvornu SNAPVERE ICO ikonu iz isporučenog paketa, a ne
+generičku ikonu WinUI aplikacije. Tray prozor koristi dimenzije 420 × 464
+logička piksela, minimalne pomoćne gumbe od 44 piksela i lokalizirane opise.
+Obavezna je stvarna Windows vizualna regresijska provjera. Prikaz na
+hrvatskom i engleskom pri različitim DPI postavkama treba dodatno ručno
+provjeriti; automatizacija nije potvrda apsolutnog 1:1 izgleda.
+
 ## Windows gateovi
 
 - .NET restore s vulnerability auditom.
