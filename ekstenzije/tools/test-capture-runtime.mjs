@@ -34,9 +34,12 @@ function createRuntime() {
     }
   }
 
+  const overlays = [];
   const documentElement = {
     style: {},
-    appendChild() {}
+    appendChild(node) {
+      if (node.id === "snapvere-region-overlay") overlays.push(node);
+    }
   };
 
   const document = {
@@ -45,14 +48,23 @@ function createRuntime() {
     getElementById() { return null; },
     createElement(tag) {
       if (tag !== "canvas") {
+        const listeners = new Map();
         return {
           id: "",
           style: {},
           setAttribute() {},
           append() {},
-          remove() {},
-          addEventListener() {},
-          removeEventListener() {},
+          remove() { this.isConnected = false; },
+          addEventListener(type, handler) { listeners.set(type, handler); },
+          removeEventListener(type, handler) {
+            if (listeners.get(type) === handler) listeners.delete(type);
+          },
+          dispatch(type, properties = {}) {
+            const handler = listeners.get(type);
+            if (handler) handler({ preventDefault() {}, stopPropagation() {}, ...properties });
+          },
+          setPointerCapture() {},
+          releasePointerCapture() {},
           isConnected: true
         };
       }
@@ -131,6 +143,7 @@ function createRuntime() {
     pendingImages,
     drawCalls,
     runtimeMessages,
+    overlays,
     timers,
     get listener() {
       assert.equal(typeof listener, "function");
@@ -205,6 +218,27 @@ for (const browser of browsers) {
     true,
     `${browser}: expired region overlay must notify background cancellation`
   );
+
+  // Browsers can interrupt a touch drag with pointercancel. The overlay must
+  // release the capture session immediately rather than waiting for its watchdog.
+  const cancelledBefore = runtime.runtimeMessages.filter(
+    (message) => message.type === "REGION_CANCELLED" && message.token === TOKEN
+  ).length;
+  const restarted = await send(runtime.listener, { type: "REGION_START", token: TOKEN });
+  assert.equal(restarted.ok, true);
+  const overlay = runtime.overlays.at(-1);
+  assert.ok(overlay, `${browser}: region overlay must exist`);
+  overlay.dispatch("pointerdown", { button: 0, pointerId: 17, clientX: 12, clientY: 6 });
+  overlay.dispatch("pointercancel", { pointerId: 23 });
+  assert.equal(runtime.runtimeMessages.filter(
+    (message) => message.type === "REGION_CANCELLED" && message.token === TOKEN
+  ).length, cancelledBefore, `${browser}: foreign pointer cancellation must be ignored`);
+  overlay.dispatch("pointercancel", { pointerId: 17 });
+  await Promise.resolve();
+  assert.equal(runtime.runtimeMessages.filter(
+    (message) => message.type === "REGION_CANCELLED" && message.token === TOKEN
+  ).length, cancelledBefore + 1, `${browser}: cancelled drag must notify background`);
+  assert.equal(overlay.isConnected, false, `${browser}: cancelled drag must remove the overlay`);
 
   runtime.window.innerWidth = 100;
   runtime.window.innerHeight = 50;
