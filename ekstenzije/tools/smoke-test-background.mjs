@@ -304,6 +304,36 @@ async function runVariant(browser) {
   }
 
   {
+    // A browser/session clock rollback must not lock out new captures indefinitely.
+    const runtime = createRuntime({
+      snapvereActiveCapture: {
+        token: 'future-stale', kind: 'region', tabId: 7, windowId: 3,
+        startedAt: Date.now() + (6 * 60 * 1000)
+      }
+    });
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    const response = await send(runtime.listener, { type: 'CAPTURE_VISIBLE' });
+    assert.equal(response.ok, true, `${browser}: future-dated stale lock must be recovered`);
+    assert.equal(runtime.downloads.length, 1);
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined);
+  }
+
+  {
+    // Small clock adjustments must not steal an active capture lock.
+    const runtime = createRuntime({
+      snapvereActiveCapture: {
+        token: 'future-recent', kind: 'region', tabId: 7, windowId: 3,
+        startedAt: Date.now() + (60 * 1000)
+      }
+    });
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    const response = await send(runtime.listener, { type: 'CAPTURE_VISIBLE' });
+    assert.equal(response.ok, false);
+    assert.equal(response.errorKey, 'captureBusy');
+    assert.equal(runtime.downloads.length, 0);
+  }
+
+  {
     const runtime = createRuntime({}, { activeTabSequence: [7, 9] });
     vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
     const response = await send(runtime.listener, { type: 'CAPTURE_FULL' });

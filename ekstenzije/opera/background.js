@@ -192,7 +192,10 @@
   }
 
   function isStaleLock(lock) {
-    return !Number.isFinite(lock?.startedAt) || Date.now() - lock.startedAt > LOCK_TTL_MS;
+    if (!Number.isFinite(lock?.startedAt)) return true;
+    // A system clock rollback can leave a previously stored lock timestamp
+    // in the future. Bound both directions so captures can recover safely.
+    return Math.abs(Date.now() - lock.startedAt) > LOCK_TTL_MS;
   }
 
   async function getLock() {
