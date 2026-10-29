@@ -174,11 +174,12 @@
       return;
     }
 
-    const { root, onPointerDown, onPointerMove, onPointerUp, onKeyDown, watchdog } = regionState;
+    const { root, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onKeyDown, watchdog } = regionState;
     if (watchdog) clearTimeout(watchdog);
     root.removeEventListener("pointerdown", onPointerDown, true);
     root.removeEventListener("pointermove", onPointerMove, true);
     root.removeEventListener("pointerup", onPointerUp, true);
+    root.removeEventListener("pointercancel", onPointerCancel, true);
     window.removeEventListener("keydown", onKeyDown, true);
     if (root.isConnected) root.remove();
     regionState = null;
@@ -299,6 +300,16 @@
         .catch(() => showRegionError("captureFailed"));
     };
 
+    const onPointerCancel = (event) => {
+      if (!dragging || (pointerId !== null && event.pointerId !== pointerId)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      dragging = false;
+      pointerId = null;
+      cleanupRegion();
+      void notifyRegionCancelled(token);
+    };
+
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
@@ -307,10 +318,11 @@
       void notifyRegionCancelled(token);
     };
 
-    regionState = { token, root, onPointerDown, onPointerMove, onPointerUp, onKeyDown, watchdog: null };
+    regionState = { token, root, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onKeyDown, watchdog: null };
     root.addEventListener("pointerdown", onPointerDown, true);
     root.addEventListener("pointermove", onPointerMove, true);
     root.addEventListener("pointerup", onPointerUp, true);
+    root.addEventListener("pointercancel", onPointerCancel, true);
     window.addEventListener("keydown", onKeyDown, true);
     regionState.watchdog = setTimeout(() => {
       if (!regionState || regionState.token !== token) return;
