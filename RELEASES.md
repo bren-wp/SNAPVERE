@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.36**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.36
+- Current public release: **v0.1.37**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.37
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -27,6 +27,29 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 ---
 
 ## Unreleased
+
+---
+
+## v0.1.37 — 2026-10-29
+
+SNAPVERE 0.1.37 incorporates the previously unreleased branded Windows title bars and refined tray layout from PR #224, alongside two focused browser capture reliability fixes. This maintenance release preserves the existing premium design, Windows capture functions and local-first privacy model. It does not claim that every screen has been manually verified at all supported DPI scales.
+
+### Browser capture reliability
+
+- Handle interrupted region selection via `pointercancel` in Chrome, Edge, Opera and Firefox, clearing the overlay and notifying the background capture session immediately instead of relying on the region watchdog (PR #227).
+- Ignore cancellation events from a different pointer to preserve the ongoing selection.
+- Recover stale browser capture locks after a large backward system-clock adjustment, while retaining active locks across small clock adjustments (PR #228).
+- Extend the actual browser runtime test suite to exercise pointer cancellation, token/session release and timestamp recovery across all four browser variants.
+
+### Windows premium UI
+
+- Preserve the original SNAPVERE ICO on native WinUI title bars (Settings, Language and About), including retry after delayed activation (PR #224).
+- Refine the tray menu to 420 × 464 logical pixels, increase utility button hit targets to 44 × 44 and retain localized tooltips, keyboard focus and existing capture controls (PR #224).
+
+### Validation and distribution
+
+- Require the existing seven mandatory GitHub Actions workflows and the release workflow to validate Windows x86/x64/ARM64 payloads, MSI installation lifecycle, browser package parity, localization, CodeQL and reproducibility.
+- Package Setup EXE, MSI, Portable EXE, four browser ZIPs, SHA256SUMS and SPDX SBOM. Final publication and artifact integrity are verified by the release workflow; store listings remain separate from GitHub distribution.
 
 ---
 

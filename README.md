@@ -11,7 +11,7 @@
 
 Capture the moment, make your point, save it on your device. No account, no automatic cloud uploads, no ads.
 
-[**Download SNAPVERE 0.1.36**](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.36) · [**Explore the website**](https://snapvere.com) · [**Hrvatski**](README.hr.md)
+[**Download SNAPVERE 0.1.37**](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.37) · [**Explore the website**](https://snapvere.com) · [**Hrvatski**](README.hr.md)
 </div>
 
 ---
@@ -84,7 +84,7 @@ Choose the package that fits your workflow. The Windows Setup and Portable distr
 | Opera | `SNAPVERE-Opera.zip` |
 | Mozilla Firefox | `SNAPVERE-Firefox.zip` |
 
-**[View the SNAPVERE v0.1.36 release and downloads](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.36)**
+**[View the SNAPVERE v0.1.37 release and downloads](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.37)**
 
 ## Helpful links
 

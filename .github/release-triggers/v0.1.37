@@ -1,0 +1,1 @@
+SNAPVERE v0.1.37 release trigger. Publish only from merged main after all seven mandatory quality gates pass. Release workflow must build and verify Windows Setup EXE, MSI, Portable EXE, Chrome/Edge/Opera/Firefox ZIPs, SHA256SUMS, SPDX SBOM and provenance. A failed or incomplete release must not be published.

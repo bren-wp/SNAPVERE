@@ -11,7 +11,7 @@
 
 Odaberi, označi i spremi. Bez korisničkog računa, automatskog slanja snimki u oblak i reklama.
 
-[**Preuzmi SNAPVERE 0.1.36**](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.36) · [**Službena stranica**](https://snapvere.com) · [**English**](README.md)
+[**Preuzmi SNAPVERE 0.1.37**](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.37) · [**Službena stranica**](https://snapvere.com) · [**English**](README.md)
 </div>
 
 ---
@@ -84,7 +84,7 @@ Odaberi paket za svoj način rada. Windows Setup i Portable uključuju x86, x64 
 | Opera | `SNAPVERE-Opera.zip` |
 | Mozilla Firefox | `SNAPVERE-Firefox.zip` |
 
-**[Otvori izdanje SNAPVERE v0.1.36 i preuzimanja](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.36)**
+**[Otvori izdanje SNAPVERE v0.1.37 i preuzimanja](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.37)**
 
 ## Korisni linkovi
 

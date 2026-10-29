@@ -4,6 +4,14 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.37] - 2026-10-29
+
+### Browser capture interruption and clock recovery
+
+- Release browser region selection promptly after `pointercancel`, including the background session lock and overlay, while ignoring non-owning pointers.
+- Recover browser capture sessions whose timestamps are far in the future following a system clock rollback; retain normal active locks within the tolerated time window.
+- Add cross-browser regression coverage for pointer interruption and clock-skew cases in all four extension variants.
+
 ### Windows premium chrome and tray usability
 
 - Apply the original multiresolution SNAPVERE ICO to native Settings, Language and About window captions instead of the generic unpackaged WinUI icon. Include the exact ICO in build/publish payloads and retry on activation when the window is not ready.
