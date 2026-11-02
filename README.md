@@ -76,13 +76,13 @@ Choose the package that fits your workflow. The Windows Setup and Portable distr
 
 | Platform | Download package |
 | --- | --- |
-| Windows — guided installer | `SNAPVERE-Setup.exe` |
-| Windows — MSI installer | `SNAPVERE-Setup.msi` |
-| Windows — portable | `SNAPVERE-Portable.exe` |
-| Google Chrome | `SNAPVERE-Chrome.zip` |
-| Microsoft Edge | `SNAPVERE-Edge.zip` |
-| Opera | `SNAPVERE-Opera.zip` |
-| Mozilla Firefox | `SNAPVERE-Firefox.zip` |
+| Windows — guided installer | [`SNAPVERE-Setup.exe`](https://github.com/bren-wp/SNAPVERE/releases/latest/download/SNAPVERE-Setup.exe) |
+| Windows — MSI installer | [`SNAPVERE-Setup.msi`](https://github.com/bren-wp/SNAPVERE/releases/latest/download/SNAPVERE-Setup.msi) |
+| Windows — portable | [`SNAPVERE-Portable.exe`](https://github.com/bren-wp/SNAPVERE/releases/latest/download/SNAPVERE-Portable.exe) |
+| Google Chrome | [`SNAPVERE-Chrome.zip`](https://github.com/bren-wp/SNAPVERE/releases/latest/download/SNAPVERE-Chrome.zip) |
+| Microsoft Edge | [`SNAPVERE-Edge.zip`](https://github.com/bren-wp/SNAPVERE/releases/latest/download/SNAPVERE-Edge.zip) |
+| Opera | [`SNAPVERE-Opera.zip`](https://github.com/bren-wp/SNAPVERE/releases/latest/download/SNAPVERE-Opera.zip) |
+| Mozilla Firefox | [`SNAPVERE-Firefox.zip`](https://github.com/bren-wp/SNAPVERE/releases/latest/download/SNAPVERE-Firefox.zip) |
 
 **[View the SNAPVERE v0.1.37 release and downloads](https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.37)**
 

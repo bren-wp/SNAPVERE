@@ -340,6 +340,11 @@
         viewportWidth <= 0 || viewportHeight <= 0) {
       throw new Error("Invalid region viewport snapshot.");
     }
+    if (rect.width < MIN_REGION_SIZE || rect.height < MIN_REGION_SIZE ||
+        rect.x < 0 || rect.y < 0 ||
+        rect.x + rect.width > viewportWidth || rect.y + rect.height > viewportHeight) {
+      throw new Error("Selected region lies outside the captured viewport or is too small.");
+    }
     if (window.innerWidth !== viewportWidth || window.innerHeight !== viewportHeight) {
       throw new Error("Browser viewport changed during region capture.");
     }
