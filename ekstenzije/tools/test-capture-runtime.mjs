@@ -171,6 +171,23 @@ for (const browser of browsers) {
   const source = fs.readFileSync(path.join("ekstenzije", browser, "capture.js"), "utf8");
   vm.runInContext(source, runtime.context, { filename: `${browser}/capture.js` });
 
+  // Malformed crop geometry must never cause an image to be decoded.
+  for (const [label, rect] of [
+    ['negative origin', { x: -1, y: 5, width: 20, height: 10 }],
+    ['right overflow', { x: 90, y: 5, width: 20, height: 10 }],
+    ['bottom overflow', { x: 5, y: 45, width: 20, height: 10 }],
+    ['small selection', { x: 5, y: 5, width: 7, height: 10 }],
+    ['numeric overflow', { x: Number.MAX_VALUE, y: 5, width: Number.MAX_VALUE, height: 10 }]
+  ]) {
+    const response = await send(runtime.listener, {
+      type: 'REGION_CROP', token: TOKEN, rect, dataUrl: PNG,
+      viewportWidth: 100, viewportHeight: 50
+    });
+    assert.equal(response.ok, false, `${browser}: reject ${label}`);
+    assert.equal(response.errorKey, 'captureFailed');
+    assert.equal(runtime.pendingImages.length, 0, `${browser}: ${label} must not decode pixels`);
+  }
+
   const validPromise = send(runtime.listener, {
     type: "REGION_CROP",
     token: TOKEN,

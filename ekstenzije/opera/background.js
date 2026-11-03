@@ -490,6 +490,11 @@
         throw new SnapvereError("captureFailed", "Region viewport snapshot is invalid.");
       }
 
+      if (rect.x < 0 || rect.y < 0 ||
+          rect.x + rect.width > viewportWidth || rect.y + rect.height > viewportHeight) {
+        throw new SnapvereError("captureFailed", "Selected region lies outside the captured viewport.");
+      }
+
       await ensureCaptureTabActive(tabId, windowId);
       const dataUrl = await captureExpectedVisible(tabId, windowId);
       const cropped = await sendTab(tabId, {

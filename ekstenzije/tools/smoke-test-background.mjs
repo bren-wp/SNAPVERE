@@ -390,6 +390,30 @@ async function runVariant(browser) {
     assert.equal(runtime.storage.snapvereActiveCapture, undefined);
   }
 
+  // Invalid selection geometry must be rejected before pixel capture and
+  // must not strand the capture-session lock.
+  for (const [label, rect] of [
+    ['negative x', { x: -1, y: 5, width: 20, height: 10 }],
+    ['negative y', { x: 5, y: -1, width: 20, height: 10 }],
+    ['right overflow', { x: 1270, y: 5, width: 20, height: 10 }],
+    ['bottom overflow', { x: 5, y: 715, width: 20, height: 10 }],
+    ['numeric overflow', { x: Number.MAX_VALUE, y: 5, width: Number.MAX_VALUE, height: 10 }]
+  ]) {
+    const runtime = createRuntime();
+    vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
+    const pending = await send(runtime.listener, { type: 'CAPTURE_REGION' });
+    assert.equal(pending.ok, true);
+    const token = runtime.storage.snapvereActiveCapture?.token;
+    const response = await send(runtime.listener, {
+      type: 'REGION_SELECTED', token, rect, viewportWidth: 1280, viewportHeight: 720
+    }, { id: 'snapvere-test-extension', tab: { id: 7, windowId: 3 } });
+    assert.equal(response.ok, false, `${browser}: reject ${label}`);
+    assert.equal(response.errorKey, 'captureFailed');
+    assert.equal(runtime.captures.length, 0, `${browser}: ${label} must not capture pixels`);
+    assert.equal(runtime.downloads.length, 0, `${browser}: ${label} must not download`);
+    assert.equal(runtime.storage.snapvereActiveCapture, undefined, `${browser}: ${label} must release lock`);
+  }
+
   {
     const runtime = createRuntime({}, { activeTabSequence: [7, 7, 7, 7, 9] });
     vm.runInContext(source, runtime.context, { filename: `${browser}/background.js` });
