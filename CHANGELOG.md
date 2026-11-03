@@ -4,6 +4,18 @@ All notable SNAPVERE changes are documented here. Published release tags and ass
 
 ## [Unreleased]
 
+## [0.1.38] - 2026-11-03
+
+### Browser capture bounds and hardening
+
+- Reject region selections outside the viewport before screen pixel capture, PNG decoding or download across Chrome, Edge, Opera and Firefox (PR #230).
+- Add regression cases for negative and overflowing coordinates, and for capture-session lock cleanup after invalid selections.
+
+### Documentation and security review
+
+- Make all seven release packages individually downloadable from the English and Croatian READMEs.
+- Publish a dated evidence-based *scoped* audit. Full reference-based visual certification and full-repository security/dead-code auditing are not claimed as complete.
+
 ## [0.1.37] - 2026-10-29
 
 ### Browser capture interruption and clock recovery

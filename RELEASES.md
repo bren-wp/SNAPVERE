@@ -2,8 +2,8 @@
 
 This file is the **canonical detailed release history and release-notes source for SNAPVERE**.
 
-- Current public release: **v0.1.37**
-- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.37
+- Current public release: **v0.1.38**
+- Current release page: https://github.com/bren-wp/SNAPVERE/releases/tag/v0.1.38
 - Machine-readable active version contract: [`product-version.json`](product-version.json)
 - Concise engineering change history: [`CHANGELOG.md`](CHANGELOG.md)
 
@@ -27,6 +27,26 @@ Published GitHub tags, release descriptions and binary assets remain immutable h
 ---
 
 ## Unreleased
+
+---
+
+## v0.1.38 — 2026-11-03
+
+SNAPVERE 0.1.38 is a security and reliability maintenance release of the existing Windows-and-browser product. Its source change is restricted to stricter browser region selection validation; it does not replace the premium Windows design or add unimplemented features.
+
+### Browser capture safety
+- Reject negative origins, off-viewport extents and overflowing finite-number coordinates in the extension background before requesting screen pixels.
+- Apply independent bounds and minimum size validation in the content script before decoding PNG image data.
+- Add runtime regression tests for Chrome, Edge, Opera and Firefox, including zero-download and no-stranded-lock assertions.
+
+### README and audit
+- Add direct package download links to README.md and README.hr.md.
+- Add an evidence-limited audit under `docs/audits/`, documenting observed risks, limitations and release gates.
+- Preserve existing real Windows screenshots; no synthetic screenshots are presented as runtime evidence.
+
+### Distribution and boundaries
+- Require all seven CI workflows, validated package artifacts, hashes, SBOM and available provenance and signing checks before considering publication successful.
+- Windows UI reference ZIPs have not been recovered, so pixel-perfect 1:1 visual parity and full security/dead-code audit completion remain unverified.
 
 ---
 
