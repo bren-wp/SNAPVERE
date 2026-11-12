@@ -25,9 +25,8 @@ import {
 } from "lucide-react";
 import { load as loadStore } from "@tauri-apps/plugin-store";
 import { save as saveDialog } from "@tauri-apps/plugin-dialog";
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { convertFileSrc } from "@tauri-apps/api/core";
 import { ipc } from "../lib/ipc";
 import { renderAnnotations } from "../lib/canvas";
 import type {
@@ -131,27 +130,55 @@ export default function Overlay() {
   const ratio = () =>
     frozenRef.current && frozenRef.current.width ? frozenRef.current.width / window.innerWidth : 1;
 
-  // Povuci zamrznuti frame (monitora `id`) kao sirove RGBA bajtove i ubaci ga u frozen canvas.
-  // Učitaj zamrznuti frame preko asset protokola (nativno, brzo) i iscrtaj u frozen canvas.
-  const loadFrozen = useCallback((path: string, token: number) => {
-    return new Promise<void>((resolve) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous"; // asset protokol šalje CORS → canvas ostaje čist (export radi)
-      img.onload = () => {
-        const c = frozenRef.current;
-        if (c) {
-          c.width = img.naturalWidth;
-          c.height = img.naturalHeight;
-          const ctx = c.getContext("2d", { willReadFrequently: true })!;
-          ctx.drawImage(img, 0, 0);
-          frozenCtxRef.current = ctx;
-          setImgReady(true);
-        }
-        resolve();
-      };
-      img.onerror = () => resolve();
-      img.src = `${convertFileSrc(path)}?t=${token}`;
-    });
+  // Display the real frozen desktop from Rust memory, not an asset:// file.
+  // The asset protocol is intentionally scoped to gallery media, and an
+  // inaccessible frozen.png used to silently render a completely black overlay.
+  const loadFrozen = useCallback(async (monitorId: number, token: number) => {
+    const canvas = frozenRef.current;
+    if (!canvas) throw new Error("Capture canvas is unavailable");
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) throw new Error("Could not initialize capture canvas");
+
+    try {
+      const packet = await ipc.getFrozenRgba(monitorId);
+      if (latestToken.current !== token) return;
+      const bytes = new Uint8Array(packet);
+      if (bytes.byteLength < 8) throw new Error("Capture pixels are missing");
+      const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      const width = view.getUint32(0, true);
+      const height = view.getUint32(4, true);
+      // Both arithmetic and frame dimensions are checked before allocating
+      // ImageData, so malformed data never creates a huge or blank canvas.
+      if (!width || !height || width > 32768 || height > 32768 ||
+          !Number.isSafeInteger(width * height * 4) ||
+          width * height * 4 !== bytes.byteLength - 8) {
+        throw new Error("Invalid screenshot dimensions or incomplete image data");
+      }
+      const pixels = new Uint8ClampedArray(bytes.buffer, bytes.byteOffset + 8, bytes.byteLength - 8);
+      const image = new ImageData(pixels, width, height);
+      canvas.width = width;
+      canvas.height = height;
+      context.putImageData(image, 0, 0);
+    } catch (rgbaError) {
+      // Fallback keeps older WebView2/native IPC combinations operational.
+      // A PNG data URL comes directly from Rust memory: no filesystem or
+      // asset-protocol permissions are needed, and the canvas is CORS-clean.
+      console.warn("Raw capture transfer unavailable; using in-memory PNG", rgbaError);
+      const dataUrl = await ipc.getFrozenFrame(monitorId);
+      if (latestToken.current !== token) return;
+      const image = new Image();
+      image.src = dataUrl;
+      await image.decode();
+      if (!image.naturalWidth || !image.naturalHeight) {
+        throw new Error("The desktop screenshot could not be decoded");
+      }
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      context.drawImage(image, 0, 0);
+    }
+    if (latestToken.current !== token) return;
+    frozenCtxRef.current = context;
+    setImgReady(true);
   }, []);
 
   // Event iz Rusta: novi capture (payload = monitor id) → reset + povuci svjež frame.
@@ -196,7 +223,18 @@ export default function Overlay() {
         frozenCtxRef.current = null;
       } else {
         document.body.classList.remove("rec-live");
-        await loadFrozen(e.payload.path, e.payload.token);
+        try {
+          await loadFrozen(e.payload.id, token);
+        } catch (error) {
+          // Never display an opaque black window as if it were a valid capture.
+          if (latestToken.current === token) {
+            console.error("Could not display frozen desktop frame", error);
+            const message = "Unable to display the desktop capture. Please try again.";
+            await emit("snapvere:toast", message).catch(() => undefined);
+            await ipc.cancelCapture().catch(() => undefined);
+          }
+          return;
+        }
       }
       if (latestToken.current !== token) return; // u međuvremenu je stigao noviji capture
       // Rust je prozor cloakao: show() pusti Chromium da iscrta NOVI frame dok ga DWM
