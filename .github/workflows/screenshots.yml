@@ -2,7 +2,7 @@ name: Capture real Snapvere frontend previews
 on:
   push:
     branches:
-      - feature/snapvere-hardening-v0.2.5
+      - feature/snapvere-v0.2.6-capture-brand-polish
     paths:
       - 'tools/capture_ui.py'
       - '.github/workflows/screenshots.yml'
