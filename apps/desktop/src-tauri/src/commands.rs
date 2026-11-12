@@ -8,6 +8,7 @@
 //! što je uz `panic = "abort"` značilo trenutni nestanak aplikacije.
 
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -105,8 +106,11 @@ fn save_to_gallery(
 
     let id = Uuid::new_v4().to_string();
     let name = format!("Snapvere {}", Local::now().format("%Y-%m-%d %H.%M.%S"));
-    let path = dir.join(format!("{name}.{}", format.ext()));
-    fs::write(&path, &bytes).map_err(estr)?;
+    // Stable display name, unique on-disk filename: never overwrite captures in the same second.
+    let path = dir.join(format!("{name}-{id}.{}", format.ext()));
+    let mut file = fs::OpenOptions::new()
+        .write(true).create_new(true).open(&path).map_err(estr)?;
+    file.write_all(&bytes).map_err(estr)?;
 
     let thumb_path = write_thumbnail(app, &id, img);
 
@@ -126,6 +130,7 @@ fn save_to_gallery(
     };
 
     lock(&state.db).insert(&shot).map_err(estr)?;
+    allow_media_dirs(app, std::slice::from_ref(&shot));
     Ok(shot)
 }
 
@@ -166,6 +171,7 @@ pub(crate) fn register_media(
 
     let state = app.state::<AppState>();
     lock(&state.db).insert(&shot).map_err(estr)?;
+    allow_media_dirs(app, std::slice::from_ref(&shot));
     Ok(shot)
 }
 
@@ -576,7 +582,7 @@ pub fn finish_region_capture(
             .get(&region.monitor_id)
             .or_else(|| frozen.frames.values().next())
             .ok_or("frozen frame missing")?;
-        capture::crop(frame, &region)
+        capture::crop(frame, &region).map_err(estr)?
     };
 
     hide_overlays(&app);
@@ -1041,14 +1047,13 @@ pub fn search_screenshots(
 /// pokazala prazan okvir — pa dopustimo upravo mape u kojima su naši zapisi.
 fn allow_media_dirs(app: &AppHandle, items: &[Screenshot]) {
     let scope = app.asset_protocol_scope();
-    for s in items {
-        let path = Path::new(&s.file_path);
-        if scope.is_allowed(path) {
-            continue;
-        }
-        if let Some(dir) = path.parent() {
-            if let Err(e) = scope.allow_directory(dir, false) {
-                log(&format!("asset scope {}: {e}", dir.display()));
+    for shot in items {
+        for path_str in std::iter::once(shot.file_path.as_str()).chain(shot.thumb_path.as_deref()) {
+            let path = Path::new(path_str);
+            if !scope.is_allowed(path) {
+                if let Err(e) = scope.allow_file(path) {
+                    log(&format!("asset scope {}: {e}", path.display()));
+                }
             }
         }
     }
@@ -1101,9 +1106,24 @@ pub async fn copy_media_image(app: AppHandle, id: String) -> Result<(), String> 
 }
 
 #[tauri::command]
-pub fn delete_screenshot(state: State<AppState>, id: String, file_path: String) -> Result<(), String> {
+pub fn delete_screenshot(state: State<AppState>, id: String) -> Result<(), String> {
+    // Only delete the path from an existing gallery record, never an arbitrary webview argument.
+    let shot = lock(&state.db)
+        .get(&id).map_err(estr)?
+        .ok_or("This capture is no longer in the gallery")?;
+    match fs::remove_file(&shot.file_path) {
+        Ok(()) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => return Err(format!("Could not delete capture file: {e}")),
+    }
     lock(&state.db).delete(&id).map_err(estr)?;
-    let _ = fs::remove_file(&file_path); // best-effort
+    if let Some(thumb) = shot.thumb_path {
+        if let Err(e) = fs::remove_file(&thumb) {
+            if e.kind() != std::io::ErrorKind::NotFound {
+                log(&format!("Could not delete thumbnail {}: {e}", thumb));
+            }
+        }
+    }
     Ok(())
 }
 

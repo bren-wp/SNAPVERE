@@ -79,12 +79,18 @@ pub fn capture_primary() -> Result<RgbaImage> {
 }
 
 /// Izreži pravokutnik iz slike (clamp na granice slike).
-pub fn crop(img: &RgbaImage, region: &Region) -> RgbaImage {
+pub fn crop(img: &RgbaImage, region: &Region) -> Result<RgbaImage> {
     let x = region.x.max(0) as u32;
     let y = region.y.max(0) as u32;
-    let w = region.width.min(img.width().saturating_sub(x)).max(1);
-    let h = region.height.min(img.height().saturating_sub(y)).max(1);
-    image::imageops::crop_imm(img, x, y, w, h).to_image()
+    if region.width == 0 || region.height == 0 {
+        return Err(anyhow!("Cannot capture an empty region"));
+    }
+    if x >= img.width() || y >= img.height() {
+        return Err(anyhow!("Capture region is outside the screen"));
+    }
+    let w = region.width.min(img.width() - x);
+    let h = region.height.min(img.height() - y);
+    Ok(image::imageops::crop_imm(img, x, y, w, h).to_image())
 }
 
 /// Encode slike u traženi format. `quality` 1..=100 (ignorira se za PNG).
@@ -149,4 +155,26 @@ pub fn to_png_data_url(img: &RgbaImage) -> Result<String> {
     let png = encode_png_fast(img)?;
     let b64 = base64::engine::general_purpose::STANDARD.encode(png);
     Ok(format!("data:image/png;base64,{b64}"))
+}
+
+#[cfg(test)]
+mod crop_tests {
+    use super::*;
+    fn region(x: i32, y: i32, w: u32, h: u32) -> Region {
+        Region { monitor_id: 0, x, y, width: w, height: h }
+    }
+    #[test]
+    fn crop_clamps_outside_edges() {
+        let img = RgbaImage::new(10, 6);
+        let res = crop(&img, &region(8, 4, 100, 100)).expect("valid crop");
+        assert_eq!((res.width(), res.height()), (2, 2));
+    }
+    #[test]
+    fn invalid_region_is_an_error_not_a_panic() {
+        let img = RgbaImage::new(10, 6);
+        assert!(crop(&img, &region(0, 0, 0, 1)).is_err());
+        assert!(crop(&img, &region(0, 0, 1, 0)).is_err());
+        assert!(crop(&img, &region(10, 0, 1, 1)).is_err());
+        assert!(crop(&img, &region(0, 6, 1, 1)).is_err());
+    }
 }
