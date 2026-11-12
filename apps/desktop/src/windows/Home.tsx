@@ -164,8 +164,8 @@ export default function Home() {
   return (
     <WindowFrame title="Snapvere">
       {/* toolbar */}
-      <header className="flex shrink-0 items-center gap-3 px-5 py-3">
-        <div className="relative flex-1 max-w-md">
+      <header className="snapvere-app-toolbar flex shrink-0 flex-wrap items-center gap-3 px-5 py-3">
+        <div className="relative min-w-[200px] flex-1 max-w-lg">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
           <input
             value={query}
@@ -175,24 +175,33 @@ export default function Home() {
             className="w-full rounded-full bg-elevated/80 py-2 pl-10 pr-4 text-sm outline-none ring-1 ring-white/10 transition focus:ring-2 focus:ring-accent"
           />
         </div>
-        <div className="ml-auto flex items-center gap-2">
-          <button onClick={captureRegion} className="flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white shadow-glow transition hover:brightness-110 active:scale-95">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <button onClick={captureRegion} className="snapvere-btn-primary flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 active:scale-95">
             <Crop size={16} /> Capture region
           </button>
-          <button onClick={recordArea} className="flex items-center gap-2 rounded-full px-3.5 py-2 text-sm ring-1 ring-white/10 transition hover:bg-elevated active:scale-95">
+          <button onClick={recordArea} className="snapvere-btn-secondary flex items-center gap-2 rounded-full px-3.5 py-2 text-sm transition hover:bg-elevated active:scale-95">
             <Video size={16} /> Record
           </button>
-          <button onClick={captureFull} className="flex items-center gap-2 rounded-full px-3.5 py-2 text-sm ring-1 ring-white/10 transition hover:bg-elevated active:scale-95">
+          <button onClick={captureFull} className="snapvere-btn-secondary flex items-center gap-2 rounded-full px-3.5 py-2 text-sm transition hover:bg-elevated active:scale-95">
             <Monitor size={16} /> Full screen
           </button>
-          <button onClick={openSettings} title="Settings" className="grid h-9 w-9 place-items-center rounded-full ring-1 ring-white/10 transition hover:bg-elevated active:scale-95">
+          <button onClick={openSettings} title="Settings" aria-label="Open settings" className="snapvere-btn-secondary grid h-9 w-9 place-items-center rounded-full transition hover:bg-elevated active:scale-95">
             <SettingsIcon size={18} />
           </button>
         </div>
       </header>
 
+      <div className="flex shrink-0 flex-wrap items-end justify-between gap-3 px-5 pb-3 pt-4">
+        <div>
+          <p className="snapvere-section-eyebrow">LOCAL GALLERY</p>
+          <h1 className="snapvere-gallery-title">Your captures</h1>
+        </div>
+        <p className="text-xs text-muted" aria-live="polite">
+          {loading ? "Updating…" : `${visible.length} ${visible.length === 1 ? "item" : "items"}`}
+        </p>
+      </div>
       {/* filter */}
-      <div className="flex shrink-0 items-center gap-1 px-5 pb-2">
+      <div className="flex shrink-0 items-center gap-1 px-5 pb-3">
         {(["all", "images", "videos"] as Filter[]).map((f) => (
           <button
             key={f}
@@ -274,7 +283,7 @@ function Card({
         }
       }}
       title={video ? "Play" : "View"}
-      className="group relative cursor-pointer overflow-hidden rounded-2xl bg-elevated/60 outline-none ring-1 ring-white/10 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card hover:ring-white/20 focus-visible:ring-2 focus-visible:ring-accent"
+      className="snapvere-gallery-card group relative cursor-pointer overflow-hidden outline-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card focus-visible:ring-2 focus-visible:ring-accent"
     >
       <div className="relative aspect-video w-full bg-black/30">
         {src ? (
@@ -351,7 +360,7 @@ function EmptyState({ onCapture, hasQuery }: { onCapture: () => void; hasQuery: 
           {hasQuery ? "Try a different term." : "Press the hotkey or button to capture your first screenshot."}
         </p>
         {!hasQuery && (
-          <button onClick={onCapture} className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white shadow-glow transition hover:brightness-110 active:scale-95">
+          <button onClick={onCapture} className="snapvere-btn-primary rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 active:scale-95">
             Capture region
           </button>
         )}

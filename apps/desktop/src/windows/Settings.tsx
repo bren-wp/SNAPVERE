@@ -122,8 +122,8 @@ export default function Settings() {
     <WindowFrame title="Settings">
       <div className="flex min-h-0 flex-1">
         {/* tabovi */}
-        <nav aria-label="Settings sections" className="flex w-48 shrink-0 flex-col gap-1 overflow-y-auto border-r border-white/10 bg-elevated/20 p-3">
-        <div className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted">Settings</div>
+        <nav aria-label="Settings sections" className="snapvere-settings-sidebar flex w-48 shrink-0 flex-col gap-1 overflow-y-auto border-r border-white/10 bg-elevated/20 p-3">
+        <div className="snapvere-section-eyebrow px-2 pb-2 pt-2">PREFERENCES</div>
         {TABS.map((t) => (
           <button
             key={t.id}
