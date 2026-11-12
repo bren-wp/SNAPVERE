@@ -33,6 +33,8 @@ jobs:
         run: npm run build
       - name: Verify first-party downloads, HTML links and checksums
         run: python tools/check_website.py
+      - name: Verify matching public and desktop design tokens
+        run: python tools/check_brand_tokens.py
       - name: Parse site and app config
         run: |
           node --check site/app.js
