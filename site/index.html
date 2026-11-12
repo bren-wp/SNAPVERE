@@ -1,0 +1,937 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a0a0b" />
+
+    <title>Snapvere — Free Screenshot &amp; Screen Recorder for Windows</title>
+    <meta
+      name="description"
+      content="Free screenshot and screen recording tool for Windows. Capture any area, annotate and blur it in place, record to MP4 or GIF, and play everything back in a private local gallery. No account, no ads."
+    />
+    <meta name="author" content="Brendigo" />
+    <link rel="author" href="https://brendigo.com" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://snapvere.com/" />
+
+    <!-- Open Graph / social -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Snapvere" />
+    <meta property="og:url" content="https://snapvere.com/" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content="Snapvere — Free Screenshot &amp; Screen Recorder for Windows" />
+    <meta
+      property="og:description"
+      content="Capture the screen, mark it up, record it to MP4 or GIF. Free for Windows — no account, no cloud, no ads."
+    />
+    <meta property="og:image" content="https://snapvere.com/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Snapvere — private screenshot and screen recording tool" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Snapvere — Free Screenshot &amp; Screen Recorder" />
+    <meta
+      name="twitter:description"
+      content="Capture, annotate and record your screen. Free for Windows — no account, no cloud, no ads."
+    />
+    <meta name="twitter:image" content="https://snapvere.com/og.png" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icon.png" />
+
+    <!-- Structured data — Google može prikazati app kao rich-rezultat -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Snapvere",
+        "author": {"@type":"Organization","name":"Brendigo","url":"https://brendigo.com"},
+        "operatingSystem": "Windows 10, Windows 11",
+        "applicationCategory": "UtilitiesApplication",
+        "url": "https://snapvere.com/",
+        "downloadUrl": "https://snapvere.com/download/",
+        "description": "Free screenshot and screen recording tool for Windows. Capture any area of the screen, annotate and blur it in place, record to MP4 or GIF, and play everything back in a private local gallery. No account, no ads.",
+        "softwareVersion": "0.2.3",
+        "fileSize": "4.6MB",
+        "inLanguage": "en",
+        "image": "https://snapvere.com/og.png",
+        "featureList": [
+          "Region and full-screen capture with a magnifier loupe",
+          "Annotate in place: arrows, shapes, pen, marker, numbered steps, text",
+          "Blur / redact sensitive information",
+          "Screen recording to MP4 (H.264) or GIF, up to 60 fps",
+          "Microphone and system audio recording",
+          "Draw live while recording",
+          "Local searchable gallery with a built-in video player and image viewer",
+          "Works offline, no account, no telemetry"
+        ],
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is Snapvere free?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Snapvere is completely free: no account, no ads and no trial. It runs on Windows 10 and 11; a macOS build is in testing."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I take a screenshot with Snapvere?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Press Print Screen, drag over the area you want and draw on it if you like. Then press Ctrl+C to copy it, Ctrl+S to save it to your gallery, or choose Save as to export it as a file."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can Snapvere record my screen?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Press Ctrl+Shift+R, drag out an area or pick the whole screen, and press Enter. Snapvere records to MP4 (H.264) or GIF at up to 60 fps, with the mouse cursor, your microphone and system audio if you want them, and a pause button."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I draw on a recording while it runs?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. You get the same tools as on a screenshot - arrows, shapes, pen, marker, numbered steps, text and blur - drawn live over the area you are recording and baked into the video. The toolbar itself never appears in the recording."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I play my recordings inside Snapvere?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Since version 0.2.2, clicking a recording in the gallery plays it right there, with seeking, volume, playback speed and full screen. Screenshots open in a viewer where you can zoom up to 800% and pan, and the arrow keys move between captures."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does Windows warn me when I install Snapvere?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Snapvere is not code-signed yet, so Windows SmartScreen may show 'Windows protected your PC'. Click 'More info' and then 'Run anyway'. The installer is built automatically from the public source code on GitHub."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Snapvere work on both Windows and Mac?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Snapvere runs on Windows 10 and 11 (64-bit) today. The macOS build for Apple Silicon and Intel is in testing and will be available on the download page as soon as it is ready."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What makes Snapvere more private than other screenshot tools?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Nothing leaves your computer. There is no account and no telemetry, the app works fully offline, and blur / redact is a first-class tool. Private share links with unguessable addresses, an optional password and an expiry are planned, and will never be indexed by search engines."
+            }
+          }
+        ]
+      }
+    </script>
+
+    <script>
+      document.documentElement.classList.add("js");
+    </script>
+    <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/styles.css?v=7" />
+    <script src="/config.js?v=7" defer></script>
+    <script src="/analytics.js?v=7" defer></script>
+    <script src="/app.js?v=7" defer></script>
+  </head>
+
+  <body>
+    <svg class="sprite" aria-hidden="true">
+      <defs>
+        <linearGradient id="brandg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#5AC8FA" />
+          <stop offset=".5" stop-color="#0A84FF" />
+          <stop offset="1" stop-color="#7A5BFF" />
+        </linearGradient>
+        <symbol id="logo" viewBox="0 0 128 128"><rect width="128" height="128" rx="28" fill="#081b30"/><g fill="none" stroke="#55e0e5" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M44 27H27V44 M84 27H101V44 M27 84V101H44 M101 84V101H84"/></g><path d="M79 36C51 20 38 49 61 62C84 75 72 108 43 93" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round"/><circle cx="96" cy="94" r="5" fill="#55e0e5"/></symbol>
+        <symbol id="os-windows" viewBox="0 0 24 24">
+          <path d="M3 5.6 10.3 4.6v6.9H3V5.6Zm0 12.8 7.3 1V12.5H3v5.9Zm8.2 1.1L21 21V12.5h-9.8v7Zm0-15.2v7h9.8V3l-9.8 1.3Z" />
+        </symbol>
+        <symbol id="os-apple" viewBox="0 0 24 24">
+          <path d="M16.4 12.7c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.8-.8-3-.8-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7 2-1.1 2.8-2.2c.9-1.3 1.2-2.5 1.3-2.6-.1 0-2.5-1-2.5-3.8ZM14.2 5.8c.6-.8 1.1-1.9 1-3-.9 0-2.1.6-2.8 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2.1-.5 2.8-1.3Z" />
+        </symbol>
+        <symbol id="win-ctl" viewBox="0 0 64 10">
+          <path d="M2 5h8" />
+          <rect x="28" y="1" width="8" height="8" rx="1" />
+          <path d="M54 1l8 8M62 1l-8 8" />
+        </symbol>
+      </defs>
+      <symbol id="i-mouse-pointer-2" viewBox="0 0 24 24"><path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"/></symbol>
+      <symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></symbol>
+      <symbol id="i-square" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/></symbol>
+      <symbol id="i-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></symbol>
+      <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+      <symbol id="i-pen-tool" viewBox="0 0 24 24"><path d="M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z"/><path d="m18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18"/><path d="m2.3 2.3 7.286 7.286"/><circle cx="11" cy="11" r="2"/></symbol>
+      <symbol id="i-highlighter" viewBox="0 0 24 24"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></symbol>
+      <symbol id="i-list-ordered" viewBox="0 0 24 24"><path d="M10 12h11"/><path d="M10 18h11"/><path d="M10 6h11"/><path d="M4 10h2"/><path d="M4 6h1v4"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></symbol>
+      <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></symbol>
+      <symbol id="i-type" viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></symbol>
+      <symbol id="i-undo-2" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol>
+      <symbol id="i-redo-2" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+      <symbol id="i-save" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
+      <symbol id="i-eraser" viewBox="0 0 24 24"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></symbol>
+      <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></symbol>
+      <symbol id="i-volume-2" viewBox="0 0 24 24"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></symbol>
+      <symbol id="i-maximize" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+      <symbol id="i-folder-open" viewBox="0 0 24 24"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></symbol>
+      <symbol id="i-external-link" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+      <symbol id="i-trash-2" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></symbol>
+      <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+      <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+      <symbol id="i-crop" viewBox="0 0 24 24"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></symbol>
+      <symbol id="i-video" viewBox="0 0 24 24"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></symbol>
+      <symbol id="i-monitor" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+      <symbol id="i-zoom-in" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/></symbol>
+      <symbol id="i-zoom-out" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="8" x2="14" y1="11" y2="11"/></symbol>
+      <symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+      <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/></symbol>
+      <symbol id="i-user-x" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" x2="22" y1="8" y2="13"/><line x1="22" x2="17" y1="8" y2="13"/></symbol>
+      <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></symbol>
+    </svg>
+
+    <!-- ── navigacija ──────────────────────────────────────────── -->
+    <header class="nav" id="nav">
+      <div class="wrap nav__inner">
+        <a class="brand" href="#top" aria-label="Snapvere home">
+          <svg class="brand__mark" aria-hidden="true"><use href="#logo" /></svg>
+          Snapvere
+        </a>
+        <nav class="nav__links" aria-label="Main navigation">
+          <a href="#features">Features</a>
+          <a href="#gallery">Gallery</a>
+          <a href="#privacy">Privacy</a>
+          <a href="#specs">Specs</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+        <div class="nav__end">
+          <a class="nav__gh" href="https://github.com/bren-wp/Snapvere" target="_blank" rel="noopener" aria-label="Snapvere on GitHub">
+            <svg class="i"><use href="#i-github" /></svg>
+          </a>
+          <a class="btn btn--primary btn--sm" href="#download">Download</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- ── hero ──────────────────────────────────────────────── -->
+      <section class="hero">
+        <div class="wrap hero__inner">
+          <a class="hero__news" href="#gallery">
+            <b>New in 0.2.2</b> Play recordings and zoom into screenshots, right in the gallery
+            <svg class="i"><use href="#i-chevron-right" /></svg>
+          </a>
+
+          <h1 class="hero__title">Capture the screen.<br /><span>Keep it yours.</span></h1>
+
+          <p class="hero__lead">
+            Snapvere is a free screenshot and screen recorder for Windows. Press a key,
+            drag a box, mark it up&nbsp;&mdash; then copy it, save it, or record it to MP4.
+            No account, no cloud, no ads.
+          </p>
+
+          <div class="hero__cta">
+            <a class="btn btn--primary btn--lg" data-os="windows" data-from="hero" href="/download/?os=windows&amp;from=hero">
+              <svg class="btn__os" aria-hidden="true"><use href="#os-windows" /></svg>
+              Download for Windows
+            </a>
+            <a class="btn btn--ghost btn--lg" data-os="mac" data-from="hero" href="#download">
+              <svg class="btn__os" aria-hidden="true"><use href="#os-apple" /></svg>
+              macOS <span class="btn__note">In testing</span>
+            </a>
+          </div>
+          <p class="hero__meta">Free &middot; 4.6&nbsp;MB &middot; Windows 10 &amp; 11, 64-bit</p>
+        </div>
+
+        <div class="wrap">
+          <figure class="stage hero__stage reveal" aria-label="Snapvere selecting part of a dashboard. A red box frames the revenue figure, an arrow labelled Launch day points at a spike in the chart, and a customer email is pixelated. The Snapvere toolbar sits under the selection.">
+            <div class="stage__canvas" style="--ar: 120 / 63" aria-hidden="true">
+              <div class="desk"></div>
+
+              <div class="win" style="left: 20em; top: 3.4em; width: 80em; height: 49.4em">
+                <div class="win__bar">
+                  <span class="win__logo"></span>
+                  <small>Northwind &mdash; Revenue</small>
+                  <span class="win__ctl"><span><svg viewBox="0 0 10 10"><path d="M1 5h8" /></svg></span><span><svg viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" rx="1" /></svg></span><span><svg viewBox="0 0 10 10"><path d="M1 1l8 8M9 1 1 9" /></svg></span></span>
+                </div>
+                <div class="dash">
+                  <aside class="dash__side">
+                    <div class="dash__ws"><i></i>Northwind</div>
+                    <ul class="dash__nav">
+                      <li>Overview</li>
+                      <li class="on">Revenue</li>
+                      <li>Customers</li>
+                      <li>Products</li>
+                      <li>Reports</li>
+                      <li>Settings</li>
+                    </ul>
+                  </aside>
+                  <div class="dash__main">
+                    <div class="dash__head">
+                      <h4>Revenue</h4>
+                      <div class="seg"><span>7D</span><span class="on">14D</span><span>90D</span></div>
+                    </div>
+                    <div class="kpis">
+                      <div class="kpi">
+                        <div class="kpi__label">Revenue</div>
+                        <div class="kpi__value">$48,210</div>
+                        <div class="kpi__delta">+12.4% vs last period</div>
+                        <span class="ann-rect"></span>
+                      </div>
+                      <div class="kpi">
+                        <div class="kpi__label">Orders</div>
+                        <div class="kpi__value">1,284</div>
+                        <div class="kpi__delta">+8.1%</div>
+                      </div>
+                      <div class="kpi">
+                        <div class="kpi__label">Refund rate</div>
+                        <div class="kpi__value">0.9%</div>
+                        <div class="kpi__delta kpi__delta--down">&minus;0.3 pts</div>
+                      </div>
+                    </div>
+                    <div class="dash__row">
+                      <div class="card">
+                        <div class="card__title">Daily revenue</div>
+                        <svg class="chart" viewBox="0 0 600 250">
+                          <defs>
+                            <linearGradient id="area-g" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0" stop-color="#0a84ff" stop-opacity=".32" />
+                              <stop offset="1" stop-color="#0a84ff" stop-opacity="0" />
+                            </linearGradient>
+                            <marker id="ah" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="3.4" markerHeight="3.4" orient="auto">
+                              <path d="M0 0 10 5 0 10z" fill="#ff453a" />
+                            </marker>
+                          </defs>
+                          <g stroke="rgba(255,255,255,.06)" stroke-width="1">
+                            <path d="M0 62H600M0 125H600M0 188H600" />
+                          </g>
+                          <path fill="url(#area-g)" d="M0.0 145.6 C7.7 144.7 30.8 139.4 46.2 140.2 C61.5 141.1 76.9 151.7 92.3 150.9 C107.7 150.0 123.1 137.0 138.5 134.9 C153.8 132.9 169.2 139.9 184.6 138.5 C200.0 137.0 215.4 127.6 230.8 126.1 C246.2 124.6 261.5 131.1 276.9 129.6 C292.3 128.1 307.7 131.4 323.1 117.2 C338.5 103.1 353.8 51.4 369.2 44.6 C384.6 37.9 400.0 68.5 415.4 76.5 C430.8 84.5 446.2 91.0 461.5 92.4 C476.9 93.9 492.3 84.8 507.7 85.4 C523.1 86.0 538.5 96.9 553.8 96.0 C569.2 95.1 592.3 82.7 600.0 80.0 L600 250 L0 250 Z" />
+                          <path fill="none" stroke="#3d9bff" stroke-width="3" stroke-linecap="round" d="M0.0 145.6 C7.7 144.7 30.8 139.4 46.2 140.2 C61.5 141.1 76.9 151.7 92.3 150.9 C107.7 150.0 123.1 137.0 138.5 134.9 C153.8 132.9 169.2 139.9 184.6 138.5 C200.0 137.0 215.4 127.6 230.8 126.1 C246.2 124.6 261.5 131.1 276.9 129.6 C292.3 128.1 307.7 131.4 323.1 117.2 C338.5 103.1 353.8 51.4 369.2 44.6 C384.6 37.9 400.0 68.5 415.4 76.5 C430.8 84.5 446.2 91.0 461.5 92.4 C476.9 93.9 492.3 84.8 507.7 85.4 C523.1 86.0 538.5 96.9 553.8 96.0 C569.2 95.1 592.3 82.7 600.0 80.0" />
+                          <circle cx="369.2" cy="44.6" r="6" fill="#fff" stroke="#0a84ff" stroke-width="3" />
+                          <!-- anotacija: strelica + tekst -->
+                          <path d="M178 62 L334 47" stroke="#ff453a" stroke-width="6.5" stroke-linecap="round" fill="none" marker-end="url(#ah)" />
+                          <text class="ann-text" x="6" y="76" font-size="30">Launch day</text>
+                          <!-- kursor upravo završio strelicu -->
+                          <g transform="translate(350 46) scale(1.9)">
+                            <path d="M0 0 5.6 15.3 8 9.1 14.2 6.7Z" fill="#fff" stroke="#0a0a0c" stroke-width="1.1" stroke-linejoin="round" />
+                          </g>
+                        </svg>
+                        <div class="chart__axis"><span>Oct 1</span><span>Oct 5</span><span>Oct 9</span><span>Oct 14</span></div>
+                      </div>
+                      <div class="card">
+                        <div class="card__title">Top customers</div>
+                        <ul class="people">
+                          <li><span class="av" style="--c: #5e5ce6">AL</span><span><b>Ada Lindqvist</b><small>ada@lindqvist.studio</small></span><span class="amt">$4,120</span></li>
+                          <li><span class="av" style="--c: #ff9f0a">MO</span><span><b>Marco Oliveira</b><small>marco.o@fastmail.com<svg class="mosaic" viewBox="0 0 16 3" preserveAspectRatio="none" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1" fill="rgb(92,92,96)"/><rect x="1" y="0" width="1" height="1" fill="rgb(70,70,74)"/><rect x="2" y="0" width="1" height="1" fill="rgb(100,100,104)"/><rect x="3" y="0" width="1" height="1" fill="rgb(58,58,62)"/><rect x="4" y="0" width="1" height="1" fill="rgb(64,64,68)"/><rect x="5" y="0" width="1" height="1" fill="rgb(64,64,68)"/><rect x="6" y="0" width="1" height="1" fill="rgb(92,92,96)"/><rect x="7" y="0" width="1" height="1" fill="rgb(58,58,62)"/><rect x="8" y="0" width="1" height="1" fill="rgb(76,76,80)"/><rect x="9" y="0" width="1" height="1" fill="rgb(58,58,62)"/><rect x="10" y="0" width="1" height="1" fill="rgb(64,64,68)"/><rect x="11" y="0" width="1" height="1" fill="rgb(100,100,104)"/><rect x="12" y="0" width="1" height="1" fill="rgb(100,100,104)"/><rect x="13" y="0" width="1" height="1" fill="rgb(64,64,68)"/><rect x="14" y="0" width="1" height="1" fill="rgb(76,76,80)"/><rect x="15" y="0" width="1" height="1" fill="rgb(64,64,68)"/><rect x="0" y="1" width="1" height="1" fill="rgb(100,100,104)"/><rect x="1" y="1" width="1" height="1" fill="rgb(58,58,62)"/><rect x="2" y="1" width="1" height="1" fill="rgb(64,64,68)"/><rect x="3" y="1" width="1" height="1" fill="rgb(76,76,80)"/><rect x="4" y="1" width="1" height="1" fill="rgb(58,58,62)"/><rect x="5" y="1" width="1" height="1" fill="rgb(100,100,104)"/><rect x="6" y="1" width="1" height="1" fill="rgb(58,58,62)"/><rect x="7" y="1" width="1" height="1" fill="rgb(76,76,80)"/><rect x="8" y="1" width="1" height="1" fill="rgb(58,58,62)"/><rect x="9" y="1" width="1" height="1" fill="rgb(70,70,74)"/><rect x="10" y="1" width="1" height="1" fill="rgb(84,84,88)"/><rect x="11" y="1" width="1" height="1" fill="rgb(100,100,104)"/><rect x="12" y="1" width="1" height="1" fill="rgb(70,70,74)"/><rect x="13" y="1" width="1" height="1" fill="rgb(64,64,68)"/><rect x="14" y="1" width="1" height="1" fill="rgb(84,84,88)"/><rect x="15" y="1" width="1" height="1" fill="rgb(70,70,74)"/><rect x="0" y="2" width="1" height="1" fill="rgb(64,64,68)"/><rect x="1" y="2" width="1" height="1" fill="rgb(76,76,80)"/><rect x="2" y="2" width="1" height="1" fill="rgb(92,92,96)"/><rect x="3" y="2" width="1" height="1" fill="rgb(64,64,68)"/><rect x="4" y="2" width="1" height="1" fill="rgb(64,64,68)"/><rect x="5" y="2" width="1" height="1" fill="rgb(58,58,62)"/><rect x="6" y="2" width="1" height="1" fill="rgb(76,76,80)"/><rect x="7" y="2" width="1" height="1" fill="rgb(110,110,114)"/><rect x="8" y="2" width="1" height="1" fill="rgb(100,100,104)"/><rect x="9" y="2" width="1" height="1" fill="rgb(92,92,96)"/><rect x="10" y="2" width="1" height="1" fill="rgb(110,110,114)"/><rect x="11" y="2" width="1" height="1" fill="rgb(110,110,114)"/><rect x="12" y="2" width="1" height="1" fill="rgb(92,92,96)"/><rect x="13" y="2" width="1" height="1" fill="rgb(84,84,88)"/><rect x="14" y="2" width="1" height="1" fill="rgb(76,76,80)"/><rect x="15" y="2" width="1" height="1" fill="rgb(70,70,74)"/></svg></small></span><span class="amt">$3,890</span></li>
+                          <li><span class="av" style="--c: #30b0c7">KT</span><span><b>Kenji Tanaka</b><small>kenji@tanaka.dev</small></span><span class="amt">$3,240</span></li>
+                          <li><span class="av" style="--c: #ff375f">SR</span><span><b>Sofia Rossi</b><small>sofia@rossi.design</small></span><span class="amt">$2,975</span></li>
+                          <li><span class="av" style="--c: #32d74b">JB</span><span><b>Jonas Berg</b><small>jonas@berg.no</small></span><span class="amt">$2,410</span></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="taskbar">
+                <div class="taskbar__apps">
+                  <span class="taskbar__app taskbar__app--start"><i></i><i></i><i></i><i></i></span>
+                  <span class="taskbar__app" style="--c: #2b2b30"></span>
+                  <span class="taskbar__app" style="--c: #e8a93a"></span>
+                  <span class="taskbar__app" style="--c: #1f6fd1"></span>
+                  <span class="taskbar__app" style="--c: #23a35a"></span>
+                  <span class="taskbar__app" style="--c: #1b1b1f"></span>
+                </div>
+                <div class="taskbar__tray"><span class="tray-snapvere"></span><span>13:10<br />14/10/2026</span></div>
+              </div>
+
+              <!-- overlay: selekcija + toolbar -->
+              <div class="sel" style="left: 35.4em; top: 8.4em; width: 63em; height: 39.4em">
+                <span class="sel__h" style="left: 0; top: 0"></span>
+                <span class="sel__h" style="left: 50%; top: 0"></span>
+                <span class="sel__h" style="left: 100%; top: 0"></span>
+                <span class="sel__h" style="left: 0; top: 50%"></span>
+                <span class="sel__h" style="left: 100%; top: 50%"></span>
+                <span class="sel__h" style="left: 0; top: 100%"></span>
+                <span class="sel__h" style="left: 50%; top: 100%"></span>
+                <span class="sel__h" style="left: 100%; top: 100%"></span>
+              </div>
+              <span class="chip" style="left: 35.4em; top: 5.7em">1260 &times; 788</span>
+
+              <div class="bar" style="left: 34.4em; top: 49.6em">
+                <div class="lg bar__grp">
+                  <span class="bb"><svg class="i"><use href="#i-mouse-pointer-2" /></svg></span>
+                  <span class="bb on"><svg class="i"><use href="#i-arrow-up-right" /></svg></span>
+                  <span class="bb"><svg class="i"><use href="#i-square" /></svg></span>
+                  <span class="bb"><svg class="i"><use href="#i-circle" /></svg></span>
+                  <span class="bb"><svg class="i"><use href="#i-minus" /></svg></span>
+                  <span class="bb"><svg class="i"><use href="#i-pen-tool" /></svg></span>
+                  <span class="bb"><svg class="i"><use href="#i-highlighter" /></svg></span>
+                  <span class="bb"><svg class="i"><use href="#i-list-ordered" /></svg></span>
+                  <span class="bb"><svg class="i"><use href="#i-eye-off" /></svg></span>
+                  <span class="bb"><svg class="i"><use href="#i-type" /></svg></span>
+                  <span class="bar__sep"></span>
+                  <span class="bb"><span class="bb__sw"></span></span>
+                  <span class="bb"><span class="bb__dot"></span></span>
+                  <span class="bar__sep"></span>
+                  <span class="bb"><svg class="i"><use href="#i-undo-2" /></svg></span>
+                  <span class="bb dim"><svg class="i"><use href="#i-redo-2" /></svg></span>
+                </div>
+                <div class="lg bar__grp">
+                  <span class="bb"><svg class="i"><use href="#i-copy" /></svg></span>
+                  <span class="bb"><svg class="i"><use href="#i-save" /></svg></span>
+                  <span class="bb"><svg class="i"><use href="#i-download" /></svg></span>
+                  <span class="bb"><svg class="i"><use href="#i-upload" /></svg></span>
+                  <span class="bb"><svg class="i"><use href="#i-x" /></svg></span>
+                </div>
+              </div>
+            </div>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ── kako radi ─────────────────────────────────────────── -->
+      <section class="section" id="features">
+        <div class="wrap">
+          <header class="head reveal">
+            <div>
+              <p class="kicker">How it works</p>
+              <h2 class="h2">Press, drag, done.</h2>
+            </div>
+            <p class="lede">
+              Snapvere waits in your tray and stays out of the way. There&rsquo;s no
+              editor window to manage and nothing to sign in to &mdash; the whole tool
+              lives on top of your screen for as long as you need it.
+            </p>
+          </header>
+
+          <ol class="steps reveal">
+            <li class="step">
+              <span class="step__num">01</span>
+              <div class="step__keys"><kbd>PrtSc</kbd></div>
+              <h3>Press Print Screen</h3>
+              <p>The screen freezes instantly on the monitor under your cursor &mdash; open menus and tooltips included.</p>
+            </li>
+            <li class="step">
+              <span class="step__num">02</span>
+              <div class="step__keys"><span class="step__drag"></span></div>
+              <h3>Drag over what matters</h3>
+              <p>A magnifier loupe and live dimensions make pixel-perfect edges easy. Move and resize until it&rsquo;s right.</p>
+            </li>
+            <li class="step">
+              <span class="step__num">03</span>
+              <div class="step__keys"><kbd>Ctrl</kbd>+<kbd>C</kbd></div>
+              <h3>Copy, save or mark it up</h3>
+              <p>Draw on the selection, then copy it to the clipboard, save it to your gallery, or save it as a PNG, JPG or WebP file.</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- ── anotacija ─────────────────────────────────────────── -->
+      <section class="section section--line" id="annotate">
+        <div class="wrap">
+          <header class="head reveal">
+            <div>
+              <p class="kicker">Annotate</p>
+              <h2 class="h2">Mark it up right where you took it.</h2>
+            </div>
+            <p class="lede">
+              The toolbar opens under your selection, and everything you draw is
+              flattened into the capture &mdash; including a pixelating blur that
+              really hides what&rsquo;s underneath.
+            </p>
+          </header>
+
+          <ul class="tools reveal">
+            <li class="tool tool--on">
+              <span class="tool__icon"><svg class="i"><use href="#i-arrow-up-right" /></svg></span>
+              <h3>Arrow</h3>
+              <p>Point straight at the thing that matters.</p>
+            </li>
+            <li class="tool">
+              <span class="tool__icon"><svg class="i"><use href="#i-square" /></svg></span>
+              <h3>Rectangle</h3>
+              <p>Frame a button, a row or a whole region.</p>
+            </li>
+            <li class="tool">
+              <span class="tool__icon"><svg class="i"><use href="#i-circle" /></svg></span>
+              <h3>Ellipse</h3>
+              <p>Circle a detail without covering it.</p>
+            </li>
+            <li class="tool">
+              <span class="tool__icon"><svg class="i"><use href="#i-minus" /></svg></span>
+              <h3>Line</h3>
+              <p>Straight connectors and underlines.</p>
+            </li>
+            <li class="tool">
+              <span class="tool__icon"><svg class="i"><use href="#i-pen-tool" /></svg></span>
+              <h3>Pen</h3>
+              <p>Freehand, for everything else.</p>
+            </li>
+            <li class="tool">
+              <span class="tool__icon"><svg class="i"><use href="#i-highlighter" /></svg></span>
+              <h3>Marker</h3>
+              <p>A translucent highlight over text.</p>
+            </li>
+            <li class="tool">
+              <span class="tool__icon"><svg class="i"><use href="#i-list-ordered" /></svg></span>
+              <h3>Numbered steps</h3>
+              <p>Click, click, click &mdash; 1, 2, 3 in order.</p>
+            </li>
+            <li class="tool">
+              <span class="tool__icon"><svg class="i"><use href="#i-type" /></svg></span>
+              <h3>Text</h3>
+              <p>Type a label right on the capture.</p>
+            </li>
+            <li class="tool">
+              <span class="tool__icon"><svg class="i"><use href="#i-eye-off" /></svg></span>
+              <h3>Blur / redact</h3>
+              <p>Pixelate passwords, emails and keys for good.</p>
+            </li>
+            <li class="tool">
+              <span class="tool__icon"><svg class="i"><use href="#i-undo-2" /></svg></span>
+              <h3>Colour &amp; undo</h3>
+              <p>Any colour, an eyedropper, four sizes, undo and redo.</p>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ── snimanje ──────────────────────────────────────────── -->
+      <section class="section section--line" id="record">
+        <div class="wrap">
+          <header class="head reveal">
+            <div>
+              <p class="kicker">Record</p>
+              <h2 class="h2">Record the screen. <em>Draw on it live.</em></h2>
+            </div>
+            <p class="lede">
+              Press <kbd>Ctrl</kbd>&thinsp;+&thinsp;<kbd>Shift</kbd>&thinsp;+&thinsp;<kbd>R</kbd>,
+              drag out an area and hit Enter. Snapvere records straight to
+              <strong>MP4</strong> or <strong>GIF</strong> with your cursor, mic and
+              system audio. Circle things while you talk &mdash; the toolbar itself is
+              never captured.
+            </p>
+          </header>
+
+          <figure class="stage reveal" aria-label="A code editor being recorded. A red frame marks the recorded area, a yellow circle and numbered steps are drawn over the code, and the Snapvere recording bar shows 0:42 with pause, stop and discard buttons.">
+            <div class="stage__canvas" style="--ar: 120 / 70" aria-hidden="true">
+              <div class="desk"></div>
+              <div class="win" style="left: 8em; top: 2.6em; width: 104em; height: 53em">
+                <div class="win__bar">
+                  <span class="win__logo" style="--c: #0a84ff"></span>
+                  <small>server.ts &mdash; api</small>
+                  <span class="win__ctl"><span><svg viewBox="0 0 10 10"><path d="M1 5h8" /></svg></span><span><svg viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" rx="1" /></svg></span><span><svg viewBox="0 0 10 10"><path d="M1 1l8 8M9 1 1 9" /></svg></span></span>
+                </div>
+                <div class="code">
+                  <div class="code__rail">
+                    <svg class="i on"><use href="#i-copy" /></svg>
+                    <svg class="i"><use href="#i-search" /></svg>
+                    <svg class="i"><use href="#i-settings" /></svg>
+                  </div>
+                  <div class="code__tree">
+                    <p class="h">API</p>
+                    <p>&#9662; src</p>
+                    <p class="d1">middleware</p>
+                    <p class="d1">rate-limit.ts</p>
+                    <p class="d1">routes.ts</p>
+                    <p class="d1 on">server.ts</p>
+                    <p class="d1">storage.ts</p>
+                    <p>package.json</p>
+                    <p>tsconfig.json</p>
+                  </div>
+                  <div class="code__ed">
+                    <div class="code__tabs"><span class="on">server.ts</span><span>rate-limit.ts</span></div>
+<pre class="code__src"><span><span class="k">import</span> { <span class="v">Hono</span> } <span class="k">from</span> <span class="s">"hono"</span>;</span><span><span class="k">import</span> { <span class="v">rateLimit</span> } <span class="k">from</span> <span class="s">"./middleware/rate-limit"</span>;</span><span><span class="k">import</span> { <span class="v">storage</span> } <span class="k">from</span> <span class="s">"./storage"</span>;</span><span> </span><span><span class="kw">const</span> <span class="v">app</span> = <span class="kw">new</span> <span class="t">Hono</span>();</span><span> </span><span class="cur"><span class="v">app</span>.<span class="f">use</span>(<span class="s">"/api/*"</span>, <span class="f">rateLimit</span>({ <span class="v">window</span>: <span class="n">60</span>, <span class="v">max</span>: <span class="n">100</span> }));<i class="ann-ell" style="left: calc(3.6em + 17.2ch); width: 37.6ch"></i><i class="ann-pin" style="left: calc(3.6em + 56.6ch)"><b class="ann-step">1</b></i></span><span> </span><span><span class="v">app</span>.<span class="f">get</span>(<span class="s">"/api/health"</span>, (<span class="v">c</span>) =&gt; <span class="v">c</span>.<span class="f">json</span>({ <span class="v">ok</span>: <span class="kw">true</span> }));</span><span> </span><span><span class="v">app</span>.<span class="f">post</span>(<span class="s">"/api/upload"</span>, <span class="kw">async</span> (<span class="v">c</span>) =&gt; {</span><span>  <span class="kw">const</span> <span class="v">body</span> = <span class="k">await</span> <span class="v">c</span>.<span class="v">req</span>.<span class="f">parseBody</span>();</span><span>  <span class="kw">const</span> <span class="v">file</span> = <span class="v">body</span>[<span class="s">"file"</span>];</span><span>  <span class="k">if</span> (!(<span class="v">file</span> <span class="kw">instanceof</span> <span class="t">File</span>)) {</span><span>    <span class="k">return</span> <span class="v">c</span>.<span class="f">json</span>({ <span class="v">error</span>: <span class="s">"No file"</span> }, <span class="n">400</span>);</span><span>  }</span><span>  <span class="kw">const</span> <span class="v">id</span> = <span class="v">crypto</span>.<span class="f">randomUUID</span>();</span><span>  <span class="k">await</span> <span class="v">storage</span>.<span class="f">put</span>(<span class="v">id</span>, <span class="v">file</span>);<svg class="ann-pen" style="left: calc(3.6em + 2ch); width: 27ch" viewBox="0 0 270 14" preserveAspectRatio="none"><path d="M3 8c30-5 52 4 86-1s58-4 92 0 54 2 86-2" /></svg><i class="ann-pin" style="left: calc(3.6em + 32ch)"><b class="ann-step">2</b></i></span><span>  <span class="k">return</span> <span class="v">c</span>.<span class="f">json</span>({ <span class="v">id</span> }, <span class="n">201</span>);</span><span>});</span><span> </span><span><span class="k">export default</span> <span class="v">app</span>;</span></pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="taskbar">
+                <div class="taskbar__apps">
+                  <span class="taskbar__app taskbar__app--start"><i></i><i></i><i></i><i></i></span>
+                  <span class="taskbar__app" style="--c: #2b2b30"></span>
+                  <span class="taskbar__app" style="--c: #e8a93a"></span>
+                  <span class="taskbar__app" style="--c: #1f6fd1"></span>
+                  <span class="taskbar__app" style="--c: #23a35a"></span>
+                  <span class="taskbar__app" style="--c: #1b1b1f"></span>
+                </div>
+                <div class="taskbar__tray"><span class="tray-snapvere"></span><span>13:10<br />14/10/2026</span></div>
+              </div>
+
+              <div class="recframe" style="left: 29.2em; top: 9.6em; width: 82.8em; height: 46em"></div>
+
+              <div class="hud" style="left: 50%; top: 58.6em; transform: translateX(-50%)">
+                <span class="hud__dot"></span>
+                <span class="hud__time">0:42</span>
+                <span class="hud__sep"></span>
+                <span class="hb"><svg class="i"><use href="#i-mouse-pointer-2" /></svg></span>
+                <span class="hb"><svg class="i"><use href="#i-arrow-up-right" /></svg></span>
+                <span class="hb"><svg class="i"><use href="#i-square" /></svg></span>
+                <span class="hb on"><svg class="i"><use href="#i-circle" /></svg></span>
+                <span class="hb"><svg class="i"><use href="#i-minus" /></svg></span>
+                <span class="hb"><svg class="i"><use href="#i-pen-tool" /></svg></span>
+                <span class="hb"><svg class="i"><use href="#i-highlighter" /></svg></span>
+                <span class="hb"><svg class="i"><use href="#i-list-ordered" /></svg></span>
+                <span class="hb"><svg class="i"><use href="#i-eye-off" /></svg></span>
+                <span class="hb"><svg class="i"><use href="#i-type" /></svg></span>
+                <span class="hb"><span class="bb__sw" style="background: var(--yellow)"></span></span>
+                <span class="hb"><svg class="i"><use href="#i-undo-2" /></svg></span>
+                <span class="hb"><svg class="i"><use href="#i-eraser" /></svg></span>
+                <span class="hud__sep"></span>
+                <span class="hb hb--round"><svg class="i"><use href="#i-pause" /></svg></span>
+                <span class="hb hb--round hb--stop"><svg class="i i--fill"><use href="#i-square" /></svg></span>
+                <span class="hb hb--round"><svg class="i"><use href="#i-x" /></svg></span>
+                <span class="hud__info">1920&times;1080<br />MP4 <svg class="i"><use href="#i-mic" /></svg> <svg class="i"><use href="#i-volume-2" /></svg> &middot; 18.4 MB</span>
+              </div>
+            </div>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ── galerija ──────────────────────────────────────────── -->
+      <section class="section section--line" id="gallery">
+        <div class="wrap">
+          <header class="head reveal">
+            <div>
+              <p class="kicker">Gallery &middot; New in 0.2.2</p>
+              <h2 class="h2">Everything you capture, <em>one click away.</em></h2>
+            </div>
+            <p class="lede">
+              Every screenshot and recording lands in a local gallery you can search by
+              name or tag. Click a recording to play it right there &mdash; scrub, change
+              the speed, go full screen. Click a screenshot to zoom in to the pixel.
+            </p>
+          </header>
+
+          <figure class="stage reveal" aria-label="The Snapvere gallery playing a recording of the code editor, with the yellow circle drawn during recording visible in the video. Player controls show 0:42 of 1:36.">
+            <div class="stage__canvas" style="--ar: 120 / 70" aria-hidden="true">
+              <div class="desk"></div>
+              <div class="win" style="left: 7em; top: 2.6em; width: 106em; height: 60.4em">
+                <div class="win__bar">
+                  <svg class="win__logo" style="background: none"><use href="#logo" /></svg>
+                  <small>Snapvere</small>
+                  <span class="win__ctl"><span><svg viewBox="0 0 10 10"><path d="M1 5h8" /></svg></span><span><svg viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" rx="1" /></svg></span><span><svg viewBox="0 0 10 10"><path d="M1 1l8 8M9 1 1 9" /></svg></span></span>
+                </div>
+                <div class="viewer">
+                  <div class="viewer__top">
+                    <div class="viewer__name">
+                      <b>Snapvere 2026-10-14 13.10.59</b>
+                      <small>MP4 &middot; 1920&times;1080 &middot; 18.4 MB &middot; 14 Oct 2026, 13:10</small>
+                    </div>
+                    <span class="viewer__count">4 / 12</span>
+                    <div class="lg bar__grp">
+                      <span class="bb"><svg class="i"><use href="#i-folder-open" /></svg></span>
+                      <span class="bb"><svg class="i"><use href="#i-external-link" /></svg></span>
+                      <span class="bar__sep"></span>
+                      <span class="bb"><svg class="i"><use href="#i-maximize" /></svg></span>
+                      <span class="bb"><svg class="i"><use href="#i-trash-2" /></svg></span>
+                    </div>
+                    <span class="lg viewer__x"><svg class="i"><use href="#i-x" /></svg></span>
+                  </div>
+
+                  <div class="viewer__frame">
+                    <div class="code__ed" style="height: 100%; font-size: 0.894em; background: #1e1e1e">
+                      <div class="code__tabs"><span class="on">server.ts</span><span>rate-limit.ts</span></div>
+<pre class="code__src"><span><span class="k">import</span> { <span class="v">Hono</span> } <span class="k">from</span> <span class="s">"hono"</span>;</span><span><span class="k">import</span> { <span class="v">rateLimit</span> } <span class="k">from</span> <span class="s">"./middleware/rate-limit"</span>;</span><span><span class="k">import</span> { <span class="v">storage</span> } <span class="k">from</span> <span class="s">"./storage"</span>;</span><span> </span><span><span class="kw">const</span> <span class="v">app</span> = <span class="kw">new</span> <span class="t">Hono</span>();</span><span> </span><span class="cur"><span class="v">app</span>.<span class="f">use</span>(<span class="s">"/api/*"</span>, <span class="f">rateLimit</span>({ <span class="v">window</span>: <span class="n">60</span>, <span class="v">max</span>: <span class="n">100</span> }));<i class="ann-ell" style="left: calc(3.6em + 17.2ch); width: 37.6ch"></i><i class="ann-pin" style="left: calc(3.6em + 56.6ch)"><b class="ann-step">1</b></i></span><span> </span><span><span class="v">app</span>.<span class="f">get</span>(<span class="s">"/api/health"</span>, (<span class="v">c</span>) =&gt; <span class="v">c</span>.<span class="f">json</span>({ <span class="v">ok</span>: <span class="kw">true</span> }));</span><span> </span><span><span class="v">app</span>.<span class="f">post</span>(<span class="s">"/api/upload"</span>, <span class="kw">async</span> (<span class="v">c</span>) =&gt; {</span><span>  <span class="kw">const</span> <span class="v">body</span> = <span class="k">await</span> <span class="v">c</span>.<span class="v">req</span>.<span class="f">parseBody</span>();</span><span>  <span class="kw">const</span> <span class="v">file</span> = <span class="v">body</span>[<span class="s">"file"</span>];</span><span>  <span class="k">if</span> (!(<span class="v">file</span> <span class="kw">instanceof</span> <span class="t">File</span>)) {</span><span>    <span class="k">return</span> <span class="v">c</span>.<span class="f">json</span>({ <span class="v">error</span>: <span class="s">"No file"</span> }, <span class="n">400</span>);</span><span>  }</span><span>  <span class="kw">const</span> <span class="v">id</span> = <span class="v">crypto</span>.<span class="f">randomUUID</span>();</span><span>  <span class="k">await</span> <span class="v">storage</span>.<span class="f">put</span>(<span class="v">id</span>, <span class="v">file</span>);</span><span>  <span class="k">return</span> <span class="v">c</span>.<span class="f">json</span>({ <span class="v">id</span> }, <span class="n">201</span>);</span><span>});</span></pre>
+                    </div>
+                  </div>
+
+                  <span class="lg viewer__nav" style="left: 2em"><svg class="i"><use href="#i-chevron-left" /></svg></span>
+                  <span class="lg viewer__nav" style="right: 2em"><svg class="i"><use href="#i-chevron-right" /></svg></span>
+
+                  <div class="lg player">
+                    <span class="bb"><svg class="i i--fill"><use href="#i-pause" /></svg></span>
+                    <span class="player__time">0:42 / 1:36</span>
+                    <span class="scrub">
+                      <span class="scrub__track"><span class="scrub__hover"></span><span class="scrub__fill"></span></span>
+                      <span class="scrub__thumb"></span>
+                      <span class="scrub__tip">0:59</span>
+                    </span>
+                    <span class="bb"><svg class="i"><use href="#i-volume-2" /></svg></span>
+                    <span class="vol"></span>
+                    <span class="player__speed">1&times;</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ── privatnost ────────────────────────────────────────── -->
+      <section class="section section--line" id="privacy">
+        <div class="wrap">
+          <header class="head reveal">
+            <div>
+              <p class="kicker">Privacy</p>
+              <h2 class="h2">Nothing leaves your computer.</h2>
+            </div>
+            <p class="lede">
+              Your captures are ordinary files on your disk, indexed by a small local
+              database. There&rsquo;s no account, no cloud and no telemetry &mdash; and
+              that&rsquo;s the whole system.
+            </p>
+          </header>
+
+          <div class="points reveal">
+            <div class="point">
+              <h3>No account</h3>
+              <p>Download, install, capture. There is nothing to sign up for and nothing to sign in to.</p>
+            </div>
+            <div class="point">
+              <h3>No telemetry</h3>
+              <p>The app sends no analytics or usage data. Not anonymously, not &ldquo;to improve the product&rdquo;.</p>
+            </div>
+            <div class="point">
+              <h3>Offline by design</h3>
+              <p>Capture, recording, annotation and the gallery all work without a network connection.</p>
+            </div>
+            <div class="point">
+              <h3>Redaction built in</h3>
+              <p>Pixelate sensitive details in screenshots &mdash; and in recordings, while you record.</p>
+            </div>
+          </div>
+
+          <p class="note reveal">
+            <span class="note__tag">Planned</span>
+            <span>
+              <b>Private share links.</b> Unguessable addresses (~128&nbsp;bits), an
+              optional password and an expiry from one hour to never. Never public,
+              never indexed by search engines &mdash; and off unless you use it.
+            </span>
+          </p>
+        </div>
+      </section>
+
+      <!-- ── specifikacije ─────────────────────────────────────── -->
+      <section class="section section--line" id="specs">
+        <div class="wrap">
+          <header class="head reveal">
+            <div>
+              <p class="kicker">Specifications</p>
+              <h2 class="h2">The details.</h2>
+            </div>
+          </header>
+
+          <dl class="specs reveal">
+            <div class="specs__row">
+              <dt>Capture</dt>
+              <dd>Region or full screen, with a magnifier loupe <span>&middot; captures the monitor under your cursor</span></dd>
+            </div>
+            <div class="specs__row">
+              <dt>Annotation</dt>
+              <dd>Arrow, rectangle, ellipse, line, pen, marker, numbered steps, text, blur / redact <span>&middot; any colour, eyedropper, undo and redo</span></dd>
+            </div>
+            <div class="specs__row">
+              <dt>Recording</dt>
+              <dd>MP4 (H.264) or GIF at 15, 24, 30 or 60 fps <span>&middot; cursor, pause and resume, live drawing, auto-stop limit</span></dd>
+            </div>
+            <div class="specs__row">
+              <dt>Audio</dt>
+              <dd>Microphone and system audio <span>&middot; MP4 only</span></dd>
+            </div>
+            <div class="specs__row">
+              <dt>Image formats</dt>
+              <dd>PNG, JPG, WebP</dd>
+            </div>
+            <div class="specs__row">
+              <dt>Gallery</dt>
+              <dd>Local and searchable by name or tag <span>&middot; built-in video player and image viewer with zoom up to 800%</span></dd>
+            </div>
+            <div class="specs__row">
+              <dt>Hotkeys</dt>
+              <dd><kbd>PrtSc</kbd> to capture, <kbd>Ctrl</kbd>&thinsp;+&thinsp;<kbd>Shift</kbd>&thinsp;+&thinsp;<kbd>R</kbd> to record <span>&middot; rebind either in Settings</span></dd>
+            </div>
+            <div class="specs__row">
+              <dt>System</dt>
+              <dd>Windows 10 and 11, 64-bit <span>&middot; macOS in testing</span></dd>
+            </div>
+            <div class="specs__row">
+              <dt>Download</dt>
+              <dd>4.6&nbsp;MB installer (.msi) <span>&middot; starts with Windows, lives in the tray</span></dd>
+            </div>
+            <div class="specs__row">
+              <dt>Price</dt>
+              <dd>Free <span>&middot; no account, no ads, no trial</span></dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <!-- ── download ──────────────────────────────────────────── -->
+      <section class="section section--line" id="download">
+        <div class="wrap get reveal">
+          <img class="get__icon" src="/icon.png" width="88" height="88" alt="" />
+          <h2 class="h2">Get Snapvere</h2>
+          <p class="lede">Free for Windows 10 and 11. It installs in seconds and waits in your tray until you press Print Screen.</p>
+
+          <div class="hero__cta">
+            <a class="btn btn--primary btn--lg" data-os="windows" data-from="cta" href="/download/?os=windows&amp;from=cta">
+              <svg class="btn__os" aria-hidden="true"><use href="#os-windows" /></svg>
+              Download for Windows
+            </a>
+            <a class="btn btn--ghost btn--lg" data-os="mac" data-from="cta" href="#download">
+              <svg class="btn__os" aria-hidden="true"><use href="#os-apple" /></svg>
+              macOS <span class="btn__note">In testing</span>
+            </a>
+          </div>
+          <p class="get__hint" id="os-hint"></p>
+        </div>
+      </section>
+
+      <!-- ── FAQ — SEO long-tail + korisnička pitanja ──────────── -->
+      <section class="section section--line" id="faq">
+        <div class="wrap faq-layout">
+          <header class="reveal">
+            <p class="kicker">FAQ</p>
+            <h2 class="h2">Questions, answered.</h2>
+            <p class="lede">
+              Something else?
+              <a class="link" href="https://github.com/bren-wp/Snapvere/issues" target="_blank" rel="noopener">Ask on GitHub</a>.
+            </p>
+          </header>
+
+          <div class="faq reveal">
+            <details class="faq__item">
+              <summary>Is Snapvere free?</summary>
+              <p>
+                Yes. Snapvere is completely free: no account, no ads and no trial. It runs
+                on Windows 10 and 11; a macOS build is in testing.
+              </p>
+            </details>
+            <details class="faq__item">
+              <summary>How do I take a screenshot with Snapvere?</summary>
+              <p>
+                Press <kbd>PrtSc</kbd>, drag over the area you want and draw on it if you
+                like. Then press <kbd>Ctrl</kbd>&thinsp;+&thinsp;<kbd>C</kbd> to copy it,
+                <kbd>Ctrl</kbd>&thinsp;+&thinsp;<kbd>S</kbd> to save it to your gallery, or
+                choose <b>Save as&hellip;</b> to export it as a file.
+              </p>
+            </details>
+            <details class="faq__item">
+              <summary>Can Snapvere record my screen?</summary>
+              <p>
+                Yes. Press <kbd>Ctrl</kbd>&thinsp;+&thinsp;<kbd>Shift</kbd>&thinsp;+&thinsp;<kbd>R</kbd>,
+                drag out an area or pick the whole screen, and press <kbd>Enter</kbd>.
+                Snapvere records to <strong>MP4</strong> (H.264) or <strong>GIF</strong> at
+                up to 60&nbsp;fps, with the mouse cursor, your microphone and system audio
+                if you want them, and a pause button.
+              </p>
+            </details>
+            <details class="faq__item">
+              <summary>Can I draw on a recording while it runs?</summary>
+              <p>
+                Yes &mdash; the same tools you get on a screenshot. Arrows, shapes, pen,
+                marker, numbered steps, text and blur, drawn live over the area you&rsquo;re
+                recording and baked into the video. The toolbar itself never shows up in
+                the recording.
+              </p>
+            </details>
+            <details class="faq__item">
+              <summary>Can I play my recordings inside Snapvere?</summary>
+              <p>
+                Yes. Since version 0.2.2, clicking a recording in the gallery plays it right
+                there, with seeking, volume, playback speed and full screen. Screenshots open
+                in a viewer where you can zoom up to 800% and pan, and the arrow keys move
+                between captures.
+              </p>
+            </details>
+            <details class="faq__item">
+              <summary>Why does Windows warn me when I install it?</summary>
+              <p>
+                Snapvere isn&rsquo;t code-signed yet, so Windows SmartScreen may show
+                &ldquo;Windows protected your PC&rdquo;. Click <b>More info &rarr; Run
+                anyway</b>. The installer is built automatically from the public source code on
+                <a class="link" href="https://github.com/bren-wp/Snapvere" target="_blank" rel="noopener">GitHub</a>.
+              </p>
+            </details>
+            <details class="faq__item">
+              <summary>Does Snapvere work on both Windows and Mac?</summary>
+              <p>
+                Snapvere runs on Windows 10 and 11 (64-bit) today. The macOS build for Apple
+                Silicon and Intel is in testing and goes up on the download page as soon as
+                it&rsquo;s ready.
+              </p>
+            </details>
+            <details class="faq__item">
+              <summary>What makes Snapvere more private than other screenshot tools?</summary>
+              <p>
+                Nothing leaves your computer. There&rsquo;s no account and no telemetry, the
+                app works fully offline, and blur / redact is a first-class tool. Private
+                share links &mdash; unguessable addresses, an optional password and an
+                expiry &mdash; are planned, and will never be indexed by search engines.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ── footer ──────────────────────────────────────────────── -->
+    <footer class="footer">
+      <div class="wrap">
+        <div class="footer__inner">
+          <div class="footer__brand">
+            <a class="brand" href="#top">
+              <svg class="brand__mark" aria-hidden="true"><use href="#logo" /></svg>
+              Snapvere
+            </a>
+            <p>A private screenshot and screen recording tool for Windows.</p>
+          </div>
+          <nav class="footer__cols" aria-label="Footer">
+            <div>
+              <h4>Product</h4>
+              <a href="#features">Features</a>
+              <a href="#gallery">Gallery</a>
+              <a href="#specs">Specs</a>
+              <a href="/download/?os=windows&amp;from=footer" data-os="windows" data-from="footer">Download</a>
+              <a href="/download/#support" data-support-link hidden>Support Snapvere</a>
+            </div>
+            <div>
+              <h4>Resources</h4>
+              <a href="https://github.com/bren-wp/Snapvere" target="_blank" rel="noopener">GitHub</a>
+              <a href="https://github.com/bren-wp/Snapvere/releases" target="_blank" rel="noopener">Release notes</a>
+              <a href="#faq">FAQ</a>
+              <a href="/privacy/">Privacy policy</a>
+            </div>
+          </nav>
+        </div>
+        <div class="footer__bottom">
+          <span>&copy; <span id="year">2026</span> Snapvere · <a href="https://brendigo.com">Brendigo</a></span>
+          <button type="button" class="linkbtn" data-consent-open hidden>Cookie settings</button>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
