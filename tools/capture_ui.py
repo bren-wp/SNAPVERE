@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Capture REAL React UI renders for README (with a stubbed IPC preview bridge)."""
 from pathlib import Path
+from shutil import copyfile
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,14 +49,34 @@ with sync_playwright() as p:
     settings.wait_for_timeout(1500)
     settings.screenshot(path=str(OUTPUT / "settings.png"), full_page=False)
     app.close()
+    compact = browser.new_context(viewport={"width": 920, "height": 650},
+                                  device_scale_factor=1, color_scheme="dark")
+    compact.add_init_script(TAURI_PREVIEW)
+    compact_page = compact.new_page()
+    compact_page.goto("http://127.0.0.1:1420/", wait_until="networkidle")
+    compact_page.get_by_role("button", name="Capture region").wait_for(timeout=30000)
+    compact_page.screenshot(path=str(OUTPUT / "home-compact.png"))
+    compact.close()
     site = browser.new_context(viewport={"width": 1440, "height": 900}, device_scale_factor=1)
     page = site.new_page()
     page.goto("http://127.0.0.1:4173/", wait_until="networkidle")
     page.screenshot(path=str(OUTPUT / "website.png"), full_page=False)
     site.close()
+    mobile_site = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=1)
+    mobile_page = mobile_site.new_page()
+    mobile_page.goto("http://127.0.0.1:4173/", wait_until="networkidle")
+    mobile_page.screenshot(path=str(OUTPUT / "website-mobile.png"), full_page=False)
+    mobile_site.close()
     browser.close()
 
 for path in OUTPUT.glob("*.png"):
     if path.stat().st_size < 5000:
         raise RuntimeError(f"Screenshot output seems invalid: {path}")
     print(f"Screenshot: {path.relative_to(ROOT)} ({path.stat().st_size} bytes)")
+
+# Website preview cards must always show the same current React UI captures.
+SITE_PREVIEWS = ROOT / "site" / "screenshots"
+SITE_PREVIEWS.mkdir(parents=True, exist_ok=True)
+for name in ("home.png", "settings.png"):
+    copyfile(OUTPUT / name, SITE_PREVIEWS / name)
+    print(f"Synced website preview: site/screenshots/{name}")

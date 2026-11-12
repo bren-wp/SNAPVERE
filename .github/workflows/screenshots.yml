@@ -2,7 +2,7 @@ name: Capture real Snapvere frontend previews
 on:
   push:
     branches:
-      - feature/snapvere-full-rebrand
+      - feature/snapvere-hardening-v0.2.5
     paths:
       - 'tools/capture_ui.py'
       - '.github/workflows/screenshots.yml'
@@ -57,13 +57,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Snapvere-UI-Screenshots
-          path: docs/screenshots/*.png
+          path: |
+            docs/screenshots/*.png
+            site/screenshots/*.png
       - name: Commit exact captured images to the PR branch
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/screenshots/*.png
+          git add docs/screenshots/*.png site/screenshots/home.png site/screenshots/settings.png
           if ! git diff --cached --quiet; then
             git commit -m "docs: add real rendered Snapvere interface screenshots"
             git push
