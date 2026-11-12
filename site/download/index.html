@@ -93,16 +93,37 @@
             <a
               class="btn btn--primary btn--lg btn--stack"
               id="dl-btn"
-              href="https://github.com/bren-wp/Snapvere/releases/latest/download/Snapvere-Setup.msi"
+              href="https://github.com/bren-wp/Snapvere/releases/download/v0.2.4/Snapvere-Portable.exe"
             >
               <svg class="btn__os" data-icon="windows" aria-hidden="true"><use href="#os-windows" /></svg>
               <svg class="btn__os" data-icon="mac" aria-hidden="true" hidden><use href="#os-apple" /></svg>
               <span>
                 <b id="dl-btn-text">Download for Windows</b>
-                <small id="dl-file">Snapvere-Setup.msi</small>
+                <small id="dl-file">Snapvere-Portable.exe</small>
               </span>
             </a>
           </div>
+
+
+          <h2 class="dl__editions-title">Choose your Windows edition</h2>
+          <div class="dl__editions" aria-label="Windows editions">
+            <a class="dl__edition" id="dl-portable" data-download-edition="windowsPortable" href="https://github.com/bren-wp/Snapvere/releases/download/v0.2.4/Snapvere-Portable.exe">
+              <span class="dl__edition-icon" aria-hidden="true">⚡</span>
+              <strong>Portable .exe</strong>
+              <small>No Snapvere installation</small>
+            </a>
+            <a class="dl__edition" id="dl-setup-exe" data-download-edition="windowsSetupExe" href="https://github.com/bren-wp/Snapvere/releases/download/v0.2.4/Snapvere-Setup.exe">
+              <span class="dl__edition-icon" aria-hidden="true">🖥️</span>
+              <strong>Setup .exe</strong>
+              <small>Standard installer</small>
+            </a>
+            <a class="dl__edition" id="dl-setup-msi" data-download-edition="windowsSetupMsi" href="https://github.com/bren-wp/Snapvere/releases/download/v0.2.4/Snapvere-Setup.msi">
+              <span class="dl__edition-icon" aria-hidden="true">📦</span>
+              <strong>Setup .msi</strong>
+              <small>Windows Installer</small>
+            </a>
+          </div>
+          <p class="dl__integrity">All packages are unsigned preview builds. <a href="https://github.com/bren-wp/Snapvere/releases/download/v0.2.4/SHA256SUMS.txt">Verify SHA-256 checksums</a>.</p>
 
           <p class="dl__note" id="dl-note">
             Windows 10 &amp; 11, 64-bit &middot;
@@ -125,19 +146,18 @@
           <ol class="steps">
             <li class="step">
               <span class="step__num">01</span>
-              <h3 class="step__title">Run the installer</h3>
+              <h3 class="step__title">Choose Portable or an installer</h3>
               <p>
-                Open <b>Snapvere-Setup.msi</b> from your downloads. If Windows says
+                Run <b>Snapvere-Portable.exe</b> directly or install using <b>Snapvere-Setup.exe</b> or <b>Snapvere-Setup.msi</b>. If Windows says
                 &ldquo;Windows protected your PC&rdquo;, click <b>More info &rarr; Run
-                anyway</b>. Snapvere isn&rsquo;t code-signed yet &mdash; that&rsquo;s all
-                the warning means.
+                anyway</b> only when you trust the publisher and have verified the checksum. Snapvere isn&rsquo;t code-signed yet.
               </p>
             </li>
             <li class="step">
               <span class="step__num">02</span>
               <h3 class="step__title">Find it in your tray</h3>
               <p>
-                Launch Snapvere from the Start menu. It runs quietly next to the clock
+                Launch Snapvere from the Start menu, or run the portable file. It runs next to the clock
                 &mdash; click the icon for your gallery, right-click for capture,
                 recording and settings. It starts with Windows; you can switch that off.
               </p>
