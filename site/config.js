@@ -1,6 +1,6 @@
 /* Snapvere — public release configuration.
  * All browser-visible downloads remain on snapvere.com.
- * Actual release redirects are configured in netlify.toml.
+ * Verified release assets are mirrored into site/files/.
  */
 window.SNAPVERE = Object.freeze({
   version: "0.2.4",

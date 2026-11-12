@@ -8,7 +8,7 @@
 
 **An all-in-one screenshot & screen recording app by [Brendigo](https://brendigo.com)**
 
-[🌐 Official website](https://snapvere.com) · [📦 Download Snapvere](https://github.com/bren-wp/Snapvere/releases/tag/v0.2.4) · [🔏 Privacy](https://snapvere.com/privacy/) · [🐛 Report an issue](https://github.com/bren-wp/Snapvere/issues)
+[🌐 Official website](https://snapvere.com) · [📦 Download Snapvere](https://snapvere.com/download/) · [🔏 Privacy](https://snapvere.com/privacy/) · [🧭 Download center](https://snapvere.com/download/)
 
 <img src="site/og.png" width="850" alt="Snapvere — Capture. Record. Create. Brendigo brand artwork"/>
 
@@ -49,15 +49,15 @@ Three Windows editions are built **from the same source revision**, and the rele
 
 | Edition | Best for | Download |
 |---|---|---|
-| 🟢 **Portable** | Run without an installer | [**Snapvere-Portable.exe**](https://github.com/bren-wp/Snapvere/releases/download/v0.2.4/Snapvere-Portable.exe) |
-| 🖥️ **EXE installer** | Quick setup with NSIS | [**Snapvere-Setup.exe**](https://github.com/bren-wp/Snapvere/releases/download/v0.2.4/Snapvere-Setup.exe) |
-| 🧰 **MSI installer** | Managed Windows installations | [**Snapvere-Setup.msi**](https://github.com/bren-wp/Snapvere/releases/download/v0.2.4/Snapvere-Setup.msi) |
+| 🟢 **Portable** | Run without an installer | [**Snapvere-Portable.exe**](https://snapvere.com/files/Snapvere-Portable.exe) |
+| 🖥️ **EXE installer** | Quick setup with NSIS | [**Snapvere-Setup.exe**](https://snapvere.com/files/Snapvere-Setup.exe) |
+| 🧰 **MSI installer** | Managed Windows installations | [**Snapvere-Setup.msi**](https://snapvere.com/files/Snapvere-Setup.msi) |
 
 **Requirements:** Windows 10/11 (64-bit) with the Microsoft WebView2 Runtime. Portable means **no Snapvere installation** is required; a missing system WebView2 runtime may still need provisioning. These preview builds are unsigned, so Windows SmartScreen may warn.
 
 ### 🛡️ Verify your download
 
-Download [SHA256SUMS.txt](https://github.com/bren-wp/Snapvere/releases/download/v0.2.4/SHA256SUMS.txt) from the **same release**, then verify in PowerShell:
+Download [SHA256SUMS.txt](https://snapvere.com/files/SHA256SUMS.txt) from the **same release**, then verify in PowerShell:
 
 ```powershell
 Get-FileHash .\Snapvere-Portable.exe -Algorithm SHA256
@@ -103,6 +103,6 @@ tools/capture_ui.py        Preview capture from actual frontend source
 
 **SNAPVERE** · Designed and maintained by **BRENDIGO**
 
-[🌐 snapvere.com](https://snapvere.com) · [🔗 brendigo.com](https://brendigo.com) · [⭐ Star the project](https://github.com/bren-wp/Snapvere)
+[🌐 snapvere.com](https://snapvere.com) · [🔗 brendigo.com](https://brendigo.com) · [🔗 Snapvere](https://snapvere.com)
 
 </div>
