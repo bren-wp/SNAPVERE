@@ -1,0 +1,128 @@
+name: Snapvere build and quality checks
+on:
+  push:
+    branches:
+      - feature/snapvere-hardening-v0.2.5
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+permissions:
+  contents: write
+
+jobs:
+  frontend:
+    name: Frontend and brand verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - name: Install locked dependencies
+        working-directory: apps/desktop
+        run: npm ci
+      - name: Typecheck and build
+        working-directory: apps/desktop
+        run: npm run build
+      - name: Parse site and app config
+        run: |
+          node --check site/app.js
+          node --check site/download.js
+          node --check site/config.js
+          python -m json.tool apps/desktop/src-tauri/tauri.conf.json > /dev/null
+      - name: Verify public surfaces are Snapvere branded
+        shell: bash
+        run: |
+          if grep -RniE 'rvgeshot|notbrec' apps site docs README.md; then
+            echo 'Unbranded references found in user-facing code/docs.'
+            exit 1
+          fi
+          grep -q 'Brendigo' README.md
+          grep -q 'snapvere.com' README.md
+      - name: NPM runtime security audit (report, do not suppress)
+        continue-on-error: true
+        working-directory: apps/desktop
+        run: npm audit --omit=dev --audit-level=high
+
+  native:
+    name: Rust tests and all Windows packages
+    runs-on: windows-latest
+    timeout-minutes: 85
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri -> target
+      - name: Install locked dependencies
+        working-directory: apps/desktop
+        run: npm ci
+      - name: Build frontend for Tauri
+        working-directory: apps/desktop
+        run: npm run build
+      - name: Format Rust sources
+        working-directory: apps/desktop/src-tauri
+        run: cargo fmt --all
+      - name: Run Rust tests with locked dependencies
+        working-directory: apps/desktop/src-tauri
+        run: cargo test --locked
+      - name: Clippy dead-code and correctness report
+        continue-on-error: true
+        working-directory: apps/desktop/src-tauri
+        run: cargo clippy --all-targets --locked -- -D warnings
+      - name: Build portable / NSIS / MSI
+        working-directory: apps/desktop
+        run: npm run tauri -- build --bundles nsis,msi
+      - name: Verify packages and generate SHA256
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $target = Join-Path $PWD 'apps/desktop/src-tauri/target/release'
+          $out = Join-Path $PWD 'dist-installers'
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          $exe = Join-Path $target 'snapvere.exe'
+          $nsis = Get-ChildItem (Join-Path $target 'bundle/nsis') -Filter '*.exe' -File | Select-Object -First 1
+          $msi = Get-ChildItem (Join-Path $target 'bundle/msi') -Filter '*.msi' -File | Select-Object -First 1
+          if (!(Test-Path $exe) -or !$nsis -or !$msi) { throw 'Missing a required Windows package' }
+          Copy-Item $exe (Join-Path $out 'Snapvere-Portable.exe')
+          Copy-Item $nsis.FullName (Join-Path $out 'Snapvere-Setup.exe')
+          Copy-Item $msi.FullName (Join-Path $out 'Snapvere-Setup.msi')
+          @('Snapvere-Portable.exe','Snapvere-Setup.exe','Snapvere-Setup.msi') | ForEach-Object {
+            $path = Join-Path $out $_
+            if ((Get-Item $path).Length -lt 1000000) { throw "Invalid package: $_" }
+          }
+          Get-ChildItem $out -File | Get-FileHash -Algorithm SHA256 | ForEach-Object {
+            "$($_.Hash.ToLowerInvariant())  $(Split-Path $_.Path -Leaf)"
+          } | Set-Content (Join-Path $out 'SHA256SUMS.txt') -Encoding ascii
+      - name: Upload private QA build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Snapvere-v0.2.5-Windows-QA
+          path: dist-installers/*
+          if-no-files-found: error
+          retention-days: 30
+      - name: Commit formatting on the development branch
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/desktop/src-tauri/src
+          if ! git diff --cached --quiet; then
+            git commit -m 'style: apply Rust formatting after passing Windows tests'
+            git pull --rebase origin feature/snapvere-hardening-v0.2.5
+            git push origin HEAD:feature/snapvere-hardening-v0.2.5
+          fi
