@@ -69,8 +69,8 @@ pub fn run() {
             };
             app.manage(AppState::new(db));
 
-            // Autostart je UKLJUČEN po defaultu — tray alat ima smisla samo ako je uvijek tu.
-            // Korisnik ga isključi u Settings ("autostart": false u store-u) i više ga ne diramo.
+            // Privacy-friendly default: do not register Windows startup automatically.
+            // Users can opt in from Settings, and the saved preference is respected.
             sync_autostart(app.handle());
 
             if let Err(e) = tray::build_tray(app.handle()) {
@@ -198,7 +198,7 @@ fn sync_autostart(app: &tauri::AppHandle) {
         .ok()
         .and_then(|s| s.get("autostart"))
         .and_then(|v| v.as_bool())
-        .unwrap_or(true);
+        .unwrap_or(false);
 
     let al = app.autolaunch();
     let result = if wants {

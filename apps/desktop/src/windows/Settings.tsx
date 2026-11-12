@@ -109,7 +109,7 @@ export default function Settings() {
     try {
       on ? await enable() : await disable();
       setAutostart(on);
-      // Jezgra pri svakom startu uključuje autostart osim ako je ovdje eksplicitno false.
+      // Remember the explicit user preference. Portable mode never auto-enables startup.
       void store?.set("autostart", on);
     } catch (e) {
       console.error(e);
@@ -155,7 +155,7 @@ export default function Settings() {
             </Row>
             <Row
               label="Launch on startup"
-              hint="Open Snapvere quietly in the background at every sign-in."
+              hint="Optional. Start Snapvere when you sign in (off by default)."
             >
               <Toggle checked={autostart} onChange={toggleAutostart} />
             </Row>
