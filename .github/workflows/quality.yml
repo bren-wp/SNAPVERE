@@ -31,6 +31,8 @@ jobs:
       - name: Typecheck and build
         working-directory: apps/desktop
         run: npm run build
+      - name: Verify first-party downloads, HTML links and checksums
+        run: python tools/check_website.py
       - name: Parse site and app config
         run: |
           node --check site/app.js
@@ -62,10 +64,9 @@ jobs:
           assert npm['author'].startswith('Brendigo')
           assert npm['homepage'] == 'https://snapvere.com'
           PY
-      - name: NPM runtime security audit (report, do not suppress)
-        continue-on-error: true
+      - name: NPM security audit (production and development)
         working-directory: apps/desktop
-        run: npm audit --omit=dev --audit-level=high
+        run: npm audit --audit-level=high
 
   native:
     name: Rust tests and all Windows packages

@@ -1,12 +1,12 @@
-# Netlify headers — vrijede i za drag&drop deploy i za GitHub deploy.
+# Snapvere security and cache headers applied by static hosting.
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
+  X-Permitted-Cross-Domain-Policies: none
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=()
+  Content-Security-Policy: frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'
 
-# Fiksna imena fajlova (app.js, styles.css) — UVIJEK revalidiraj svježinu.
-# (immutable bi zaključao staru verziju u browseru i ignorirao redeploye!)
 /*.css
   Cache-Control: public, max-age=0, must-revalidate
 
@@ -15,3 +15,7 @@
 
 /*.svg
   Cache-Control: public, max-age=0, must-revalidate
+
+/files/*
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff

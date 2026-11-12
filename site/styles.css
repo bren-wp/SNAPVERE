@@ -358,26 +358,6 @@ kbd {
   align-items: center;
   gap: 8px;
 }
-.nav__gh {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  color: var(--text-2);
-  transition:
-    color 0.2s,
-    background-color 0.2s;
-}
-.nav__gh:hover {
-  color: var(--text);
-  background: rgb(255 255 255 / 0.06);
-}
-.nav__gh svg {
-  width: 19px;
-  height: 19px;
-}
-
 /* ── hero ────────────────────────────────────────────────────── */
 
 .hero {
