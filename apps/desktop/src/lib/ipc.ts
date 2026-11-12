@@ -76,8 +76,8 @@ export const ipc = {
     invoke<Screenshot[]>("list_screenshots", { limit, offset }),
   searchScreenshots: (query: string) =>
     invoke<Screenshot[]>("search_screenshots", { query }),
-  deleteScreenshot: (id: string, filePath: string) =>
-    invoke<void>("delete_screenshot", { id, filePath }),
+  deleteScreenshot: (id: string) =>
+    invoke<void>("delete_screenshot", { id }),
   addTag: (id: string, tag: string) => invoke<void>("add_tag", { id, tag }),
 
   // ── preglednik (po id-u zapisa, ne po putanji) ──
@@ -96,4 +96,6 @@ export const ipc = {
   /** [capture, record] — stvarno registrirani hotkeyi (default može pasti na fallback). */
   activeHotkeys: () => invoke<[string | null, string | null]>("active_hotkeys"),
   logFilePath: () => invoke<string | null>("log_file_path"),
+  openCaptureFolder: () => invoke<void>("open_capture_folder"),
+  openDataFolder: () => invoke<void>("open_data_folder"),
 };

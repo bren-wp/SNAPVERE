@@ -123,7 +123,7 @@
             "name": "Why does Windows warn me when I install Snapvere?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Snapvere is not code-signed yet, so Windows SmartScreen may show 'Windows protected your PC'. Click 'More info' and then 'Run anyway'. The installer is built automatically from the public source code on GitHub."
+              "text": "Snapvere preview builds are unsigned. Get them from snapvere.com/download, verify their SHA-256 checksums and proceed only when you trust the publisher."
             }
           },
           {
@@ -216,27 +216,23 @@
       <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/></symbol>
       <symbol id="i-user-x" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" x2="22" y1="8" y2="13"/><line x1="22" x2="17" y1="8" y2="13"/></symbol>
       <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></symbol>
-      <symbol id="i-github" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></symbol>
-    </svg>
+      </svg>
 
     <!-- ── navigacija ──────────────────────────────────────────── -->
     <header class="nav" id="nav">
       <div class="wrap nav__inner">
         <a class="brand" href="#top" aria-label="Snapvere home">
           <svg class="brand__mark" aria-hidden="true"><use href="#logo" /></svg>
-          Snapvere
+          SNAPVERE
         </a>
         <nav class="nav__links" aria-label="Main navigation">
-          <a href="#features">Features</a>
-          <a href="#gallery">Gallery</a>
+          <a href="#features">Product</a>
+          <a href="#app-preview">Workflow</a>
           <a href="#privacy">Privacy</a>
           <a href="#specs">Specs</a>
           <a href="#faq">FAQ</a>
         </nav>
         <div class="nav__end">
-          <a class="nav__gh" href="https://github.com/bren-wp/Snapvere" target="_blank" rel="noopener" aria-label="Snapvere on GitHub">
-            <svg class="i"><use href="#i-github" /></svg>
-          </a>
           <a class="btn btn--primary btn--sm" href="#download">Download</a>
         </div>
       </div>
@@ -247,11 +243,11 @@
       <section class="hero">
         <div class="wrap hero__inner">
           <a class="hero__news" href="#gallery">
-            <b>New in 0.2.2</b> Play recordings and zoom into screenshots, right in the gallery
+            <b>LOCAL-FIRST</b> Capture, annotate and organize on your computer
             <svg class="i"><use href="#i-chevron-right" /></svg>
           </a>
 
-          <h1 class="hero__title">Capture the screen.<br /><span>Keep it yours.</span></h1>
+          <h1 class="hero__title">Capture what matters.<br /><span>Edit it instantly. Keep it local.</span></h1>
 
           <p class="hero__lead">
             Snapvere is a free screenshot and screen recorder for Windows. Press a key,
@@ -269,7 +265,7 @@
               macOS <span class="btn__note">In testing</span>
             </a>
           </div>
-          <p class="hero__meta">Free &middot; 4.6&nbsp;MB &middot; Windows 10 &amp; 11, 64-bit</p>
+          <p class="hero__meta">Portable EXE · Setup EXE · MSI · Windows 10 &amp; 11, 64-bit</p>
         </div>
 
         <div class="wrap">
@@ -620,6 +616,27 @@
       </section>
 
       <!-- ── galerija ──────────────────────────────────────────── -->
+      <section class="section section--line" id="app-preview" aria-labelledby="snapvere-preview-title">
+        <div class="wrap">
+          <header class="snapvere-preview__intro reveal">
+            <p class="kicker">The actual interface</p>
+            <h2 class="h2" id="snapvere-preview-title">Capture, organize, create.</h2>
+            <p class="lede">An uncluttered desktop workspace designed for quick screenshots, screen recording and a private local gallery.</p>
+          </header>
+          <div class="snapvere-preview__grid">
+            <figure class="snapvere-preview__card reveal">
+              <img src="/screenshots/home.png" width="1120" height="740" loading="lazy" decoding="async" alt="Snapvere desktop application with screenshot capture toolbar and gallery" />
+              <figcaption><strong>Capture &amp; gallery</strong><span>Capture in one action and keep your work within reach.</span></figcaption>
+            </figure>
+            <figure class="snapvere-preview__card reveal">
+              <img src="/screenshots/settings.png" width="1120" height="740" loading="lazy" decoding="async" alt="Snapvere desktop preferences interface with tabs for recording and privacy" />
+              <figcaption><strong>Settings &amp; privacy</strong><span>Control shortcuts, recording quality and your workflow.</span></figcaption>
+            </figure>
+          </div>
+          <p class="snapvere-preview__note">Interface previews are rendered from Snapvere's React frontend with a simulated desktop bridge, not a live screen-recording demonstration.</p>
+        </div>
+      </section>
+
       <section class="section section--line" id="gallery">
         <div class="wrap">
           <header class="head reveal">
@@ -779,7 +796,7 @@
             </div>
             <div class="specs__row">
               <dt>Download</dt>
-              <dd>4.6&nbsp;MB installer (.msi) <span>&middot; starts with Windows, lives in the tray</span></dd>
+              <dd>Portable EXE, Setup EXE or MSI <span>&middot; download the edition that suits you</span></dd>
             </div>
             <div class="specs__row">
               <dt>Price</dt>
@@ -818,7 +835,7 @@
             <h2 class="h2">Questions, answered.</h2>
             <p class="lede">
               Something else?
-              <a class="link" href="https://github.com/bren-wp/Snapvere/issues" target="_blank" rel="noopener">Ask on GitHub</a>.
+              <a class="link" href="/privacy/">Read our privacy policy</a>.
             </p>
           </header>
 
@@ -870,10 +887,10 @@
             <details class="faq__item">
               <summary>Why does Windows warn me when I install it?</summary>
               <p>
-                Snapvere isn&rsquo;t code-signed yet, so Windows SmartScreen may show
-                &ldquo;Windows protected your PC&rdquo;. Click <b>More info &rarr; Run
-                anyway</b>. The installer is built automatically from the public source code on
-                <a class="link" href="https://github.com/bren-wp/Snapvere" target="_blank" rel="noopener">GitHub</a>.
+                Snapvere preview builds are not digitally signed, so Windows may show
+                a SmartScreen warning. Download only from the
+                <a class="link" href="/download/">official Snapvere download center</a>,
+                verify the SHA-256 checksum and only proceed if you trust the application.
               </p>
             </details>
             <details class="faq__item">
@@ -905,7 +922,7 @@
           <div class="footer__brand">
             <a class="brand" href="#top">
               <svg class="brand__mark" aria-hidden="true"><use href="#logo" /></svg>
-              Snapvere
+              SNAPVERE
             </a>
             <p>A private screenshot and screen recording tool for Windows.</p>
           </div>
@@ -916,12 +933,11 @@
               <a href="#gallery">Gallery</a>
               <a href="#specs">Specs</a>
               <a href="/download/?os=windows&amp;from=footer" data-os="windows" data-from="footer">Download</a>
-              <a href="/download/#support" data-support-link hidden>Support Snapvere</a>
-            </div>
+              </div>
             <div>
               <h4>Resources</h4>
-              <a href="https://github.com/bren-wp/Snapvere" target="_blank" rel="noopener">GitHub</a>
-              <a href="https://github.com/bren-wp/Snapvere/releases" target="_blank" rel="noopener">Release notes</a>
+              <a href="https://snapvere.com/">Snapvere.com</a>
+              <a href="/download/">Download center</a>
               <a href="#faq">FAQ</a>
               <a href="/privacy/">Privacy policy</a>
             </div>

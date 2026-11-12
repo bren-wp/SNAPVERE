@@ -224,7 +224,7 @@ export default function Editor({ pathB64 }: { pathB64: string }) {
     <WindowFrame title="Snapvere — Editor">
       <div className="flex min-h-0 flex-1 flex-col text-text">
       {/* kontekstni bar */}
-      <div className="flex items-center gap-3 border-b border-white/5 bg-black/10 px-3 py-2">
+      <div className="snapvere-editor-toolbar flex flex-wrap items-center gap-3 px-3 py-2">
         <span className="font-mono text-sm text-muted">Editor</span>
         <div className="mx-1 h-5 w-px bg-border" />
         {/* boje */}

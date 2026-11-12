@@ -1,19 +1,11 @@
 name: Snapvere Windows release
 on:
   push:
-    branches:
-      - feature/snapvere-full-rebrand
+    branches: [main]
     paths:
       - '.github/workflows/release.yml'
       - 'apps/**'
-      - 'docs/screenshots/**'
-      - 'README.md'
   workflow_dispatch:
-    inputs:
-      release_tag:
-        description: "Windows release tag"
-        required: true
-        default: "v0.2.4"
 permissions:
   contents: write
 jobs:
@@ -22,11 +14,8 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 85
     steps:
-      - name: Checkout feature branch
+      - name: Checkout release revision
         uses: actions/checkout@v4
-        with:
-          ref: feature/snapvere-full-rebrand
-          persist-credentials: true
       - name: Node 22
         uses: actions/setup-node@v4
         with:
@@ -39,12 +28,27 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: apps/desktop/src-tauri -> target
+      - name: Determine and verify Snapvere version
+        id: version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $config = Get-Content 'apps/desktop/src-tauri/tauri.conf.json' -Raw | ConvertFrom-Json
+          $pkg = Get-Content 'apps/desktop/package.json' -Raw | ConvertFrom-Json
+          if ($config.productName -ne 'Snapvere') { throw 'Incorrect application name' }
+          if ($config.identifier -ne 'com.brendigo.snapvere') { throw 'Incorrect application identifier' }
+          if ($pkg.version -ne $config.version) { throw 'Package versions are not synchronized' }
+          if ([string]::IsNullOrWhiteSpace($config.version)) { throw 'Empty release version' }
+          "value=$($config.version)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
       - name: Install dependencies using lockfile
         working-directory: apps/desktop
         run: npm ci --no-audit
       - name: Build and typecheck frontend
         working-directory: apps/desktop
         run: npm run build
+      - name: Test Rust core on Windows
+        working-directory: apps/desktop/src-tauri
+        run: cargo test --locked
       - name: Build Windows NSIS EXE and WiX MSI bundles
         working-directory: apps/desktop
         run: npm run tauri -- build --bundles nsis,msi
@@ -80,22 +84,22 @@ jobs:
       - name: Upload verified installers as workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Snapvere-v0.2.4-Windows
+          name: Snapvere-v${{ steps.version.outputs.value }}-Windows
           path: dist-installers/*
           if-no-files-found: error
           retention-days: 90
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.2.4
+          tag_name: v${{ steps.version.outputs.value }}
           target_commitish: ${{ github.sha }}
-          name: Snapvere v0.2.4 — Brendigo
+          name: Snapvere v${{ steps.version.outputs.value }} — Brendigo
           draft: false
           prerelease: true
           fail_on_unmatched_files: true
           files: dist-installers/*
           body: |
-            # Snapvere v0.2.4 — Windows
+            # Snapvere v${{ steps.version.outputs.value }} — Windows
             Branded by **Brendigo** · https://brendigo.com · https://snapvere.com
 
             ### Download
@@ -108,4 +112,4 @@ jobs:
 
             **Unsigned preview build.** Windows SmartScreen or corporate endpoint controls may flag unsigned software. Test on Windows 10/11 before production use.
 
-            **Original source attribution:** Based on an RvgeShot snapshot; see THIRD_PARTY_NOTICES.md. Original upstream source licensing must be verified prior to wider redistribution. This is a prerelease.
+            **Release provenance:** Review the repository's license terms and third-party dependency notices before redistributing. This is an unsigned preview build.

@@ -1,0 +1,50 @@
+name: Update compatible frontend dependencies
+on:
+  push:
+    branches:
+      - feature/snapvere-hardening-v0.2.5
+    paths:
+      - .github/workflows/npm-security-fix.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - name: Install current locked dependencies
+        working-directory: apps/desktop
+        run: npm ci
+      - name: Update vulnerable frontend build toolchain and apply safe advisories
+        working-directory: apps/desktop
+        shell: bash
+        run: |
+          npm install --save-dev vite@latest @vitejs/plugin-react@latest
+          npm audit fix --no-fund || true
+          npm run build
+          npm audit --omit=dev --audit-level=high
+          npm audit --audit-level=high
+      - name: Report remaining development dependency advisories
+        continue-on-error: true
+        working-directory: apps/desktop
+        run: npm audit --audit-level=high
+      - name: Commit safe lockfile updates after frontend validation
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/desktop/package.json apps/desktop/package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: refresh compatible frontend dependencies after audit'
+            git pull --rebase origin feature/snapvere-hardening-v0.2.5
+            git push origin HEAD:feature/snapvere-hardening-v0.2.5
+          fi

@@ -1,12 +1,12 @@
 /* ─────────────────────────────────────────────────────────────
    Snapvere landing — interaktivnost
 
-   Download linkovi, verzija, GA i donacije žive u config.js.
+   Download linkovi, verzija, GA i postavke žive u config.js.
    Gumbi s [data-os] vode na /download/?os=…&from=… (thank-you stranica):
-   ona pokrene download, pošalje GA event i ponudi donaciju.
+   ona pokrene download, pošalje GA event i ponudi dodatne korake.
    `data-from` = mjesto gumba na stranici (hero / cta / footer) za GA.
    ───────────────────────────────────────────────────────────── */
-const CFG = window.SNAPVERE || { version: "", downloads: {}, support: {} };
+const CFG = window.SNAPVERE || { version: "", downloads: {} };
 const OS_LABEL = { windows: "Windows", mac: "macOS" };
 const track = (name, params) => window.snapvereTrack && window.snapvereTrack(name, params);
 
@@ -82,14 +82,6 @@ function flashHint(msg) {
   }, 2600);
 }
 
-/* ── link „Support Snapvere" samo ako postoji ijedan link za donaciju ── */
-function wireSupport() {
-  const any = Object.values(CFG.support || {}).some(Boolean);
-  document.querySelectorAll("[data-support-link]").forEach((el) => {
-    el.hidden = !any;
-  });
-}
-
 /* ── reveal na scroll ────────────────────────────────────────── */
 function wireReveal() {
   const els = document.querySelectorAll(".reveal");
@@ -134,7 +126,6 @@ function wireFaq() {
 /* ── init ────────────────────────────────────────────────────── */
 document.addEventListener("DOMContentLoaded", () => {
   wireDownloads();
-  wireSupport();
   wireReveal();
   wireNav();
   wireFaq();

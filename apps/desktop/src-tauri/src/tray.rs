@@ -30,8 +30,6 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         MenuItem::with_id(app, "capture_region", "Capture Region", true, Some("PrintScreen"))?;
     let capture_full =
         MenuItem::with_id(app, "capture_full", "Capture Full Screen", true, None::<&str>)?;
-    let capture_window =
-        MenuItem::with_id(app, "capture_window", "Capture Window", true, None::<&str>)?;
     let sep1 = PredefinedMenuItem::separator(app)?;
 
     let record_region = MenuItem::with_id(
@@ -57,7 +55,6 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         &[
             &capture_region,
             &capture_full,
-            &capture_window,
             &sep1,
             &record_region,
             &record_screen,
@@ -111,9 +108,6 @@ fn on_menu_event(app: &AppHandle, event: MenuEvent) {
     match event.id().as_ref() {
         "capture_region" => commands::dispatch_region_capture(app, CaptureMode::Shot),
         "capture_full" => commands::dispatch_capture_fullscreen(app, ImageFormat::Png, 100),
-        "capture_window" => {
-            let _ = commands::capture_active_window();
-        }
         "record_region" => commands::dispatch_region_capture(app, CaptureMode::Record),
         "record_screen" => commands::dispatch_record_fullscreen(app),
         "record_stop" => {

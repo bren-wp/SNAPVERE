@@ -6,31 +6,13 @@
        (os, placement = odakle je klik došao, method = auto).
    /download/ bez ?os
      → samo gumb, ništa se ne skida samo od sebe (sigurno za linkove
-       poput /download/#support i za posjetitelje iz tražilice).
+       poput /download/#install i za posjetitelje iz tražilice).
    Mobitel / OS bez builda → bez auto-downloada, jasna poruka.
    ───────────────────────────────────────────────────────────── */
-const CFG = window.SNAPVERE || { version: "", downloads: {}, support: {} };
+const CFG = window.SNAPVERE || { version: "", downloads: {} };
 const OS_LABEL = { windows: "Windows", mac: "macOS" };
 const track = (name, params) => window.snapvereTrack && window.snapvereTrack(name, params);
 const AUTO_DELAY_MS = 900;
-
-const SUPPORT = {
-  kofi: {
-    label: "Buy me a coffee",
-    sub: "on Ko-fi",
-    icon: '<path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Z"/><path d="M17 9h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 3v2M12 3v2"/>',
-  },
-  github: {
-    label: "Sponsor",
-    sub: "on GitHub",
-    icon: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/>',
-  },
-  paypal: {
-    label: "Donate",
-    sub: "with PayPal",
-    icon: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/>',
-  },
-};
 
 function detectOS() {
   const p = (navigator.userAgentData?.platform || navigator.platform || "")
@@ -110,8 +92,7 @@ function render() {
     sub.textContent =
       "It lands here as soon as it’s cleared for release. The Windows build is ready today.";
     const winUrl = setButton("windows");
-    note.innerHTML =
-      'Want a heads-up? <a href="https://github.com/bren-wp/Snapvere/releases" target="_blank" rel="noopener">Watch the releases on GitHub</a>.';
+    note.textContent = "Windows editions are available below. Other platforms will appear here after release testing.";
     track("download_unavailable", { os: target, placement: from });
     $("dl-btn").addEventListener("click", () => {
       track("file_download", eventParams("windows", winUrl, { placement: from, method: "button" }));
@@ -155,31 +136,6 @@ function render() {
   }
 }
 
-/* ── donacije: iscrtaj samo gumbe koji imaju link ────────────── */
-function renderSupport() {
-  const links = CFG.support || {};
-  const keys = Object.keys(SUPPORT).filter((k) => links[k]);
-  const box = $("support");
-  const list = $("support-links");
-  if (!box || !list || !keys.length) return;
-
-  list.innerHTML = keys
-    .map(
-      (k, i) => `
-      <a class="btn ${i === 0 ? "btn--primary" : "btn--ghost"} btn--lg" data-platform="${k}"
-         href="${encodeURI(links[k])}" target="_blank" rel="noopener">
-        <svg class="btn__icon btn__icon--line" viewBox="0 0 24 24" aria-hidden="true">${SUPPORT[k].icon}</svg>
-        <span>${SUPPORT[k].label}<small>${SUPPORT[k].sub}</small></span>
-      </a>`
-    )
-    .join("");
-  list.addEventListener("click", (e) => {
-    const a = e.target.closest("[data-platform]");
-    if (a) track("donate_click", { platform: a.dataset.platform });
-  });
-  box.hidden = false;
-}
-
 function wireNav() {
   const nav = $("nav");
   if (!nav) return;
@@ -190,11 +146,7 @@ function wireNav() {
 
 document.addEventListener("DOMContentLoaded", () => {
   render();
-  renderSupport();
   wireNav();
-  document.querySelectorAll("[data-support-link]").forEach((el) => {
-    el.hidden = !Object.values(CFG.support || {}).some(Boolean);
-  });
   const y = $("year");
   if (y) y.textContent = new Date().getFullYear();
 });

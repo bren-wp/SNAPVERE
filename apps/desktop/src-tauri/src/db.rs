@@ -1,7 +1,9 @@
 //! Lokalna SQLite baza za povijest screenshotova, tagove i pretragu.
 //! Shema prati `docs/SPECIFICATION.md` §6.1.
 
+use std::collections::HashMap;
 use std::path::Path;
+use std::time::Duration;
 
 use rusqlite::{params, Connection};
 
@@ -15,7 +17,9 @@ impl Db {
     /// Otvori (ili kreiraj) bazu na zadanoj putanji i pokreni migracije.
     pub fn open(path: &Path) -> anyhow::Result<Self> {
         let conn = Connection::open(path)?;
+        conn.busy_timeout(Duration::from_secs(5))?;
         conn.pragma_update(None, "journal_mode", "WAL")?;
+        conn.pragma_update(None, "synchronous", "NORMAL")?;
         conn.pragma_update(None, "foreign_keys", "ON")?;
         let db = Self { conn };
         db.migrate()?;
@@ -100,13 +104,10 @@ impl Db {
                ORDER BY created_at DESC
                LIMIT ?1 OFFSET ?2"#,
         )?;
-        let rows = stmt.query_map(params![limit, offset], Self::map_row)?;
+        let rows = stmt.query_map(params![limit.min(500), offset], Self::map_row)?;
         let mut out = Vec::new();
-        for r in rows {
-            let mut s = r?;
-            s.tags = self.tags_for(&s.id)?;
-            out.push(s);
-        }
+        for r in rows { out.push(r?); }
+        self.attach_tags(&mut out)?;
         Ok(out)
     }
 
@@ -144,11 +145,8 @@ impl Db {
         )?;
         let rows = stmt.query_map(params![like], Self::map_row)?;
         let mut out = Vec::new();
-        for r in rows {
-            let mut s = r?;
-            s.tags = self.tags_for(&s.id)?;
-            out.push(s);
-        }
+        for r in rows { out.push(r?); }
+        self.attach_tags(&mut out)?;
         Ok(out)
     }
 
@@ -168,6 +166,29 @@ impl Db {
                VALUES (?1, (SELECT id FROM tags WHERE name = ?2))"#,
             params![screenshot_id, tag],
         )?;
+        Ok(())
+    }
+
+    /// Load tags for one page using one SQL query (avoids N+1 tag lookups).
+    fn attach_tags(&self, items: &mut [Screenshot]) -> anyhow::Result<()> {
+        if items.is_empty() { return Ok(()); }
+        let slots = vec!["?"; items.len()].join(", ");
+        let sql = format!(
+            "SELECT st.screenshot_id, t.name FROM screenshot_tags st
+             JOIN tags t ON t.id = st.tag_id
+             WHERE st.screenshot_id IN ({slots}) ORDER BY t.name"
+        );
+        let mut stmt = self.conn.prepare(&sql)?;
+        let pairs = stmt.query_map(
+            rusqlite::params_from_iter(items.iter().map(|s| s.id.as_str())),
+            |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
+        )?;
+        let mut tags: HashMap<String, Vec<String>> = HashMap::new();
+        for pair in pairs {
+            let (id, name) = pair?;
+            tags.entry(id).or_default().push(name);
+        }
+        for item in items { item.tags = tags.remove(&item.id).unwrap_or_default(); }
         Ok(())
     }
 
@@ -197,5 +218,39 @@ impl Db {
             is_uploaded: row.get::<_, i32>(10)? != 0,
             tags: Vec::new(),
         })
+    }
+}
+
+#[cfg(test)]
+mod gallery_tests {
+    use super::*;
+
+    fn shot(id: &str, time: i64) -> Screenshot {
+        Screenshot {
+            id: id.into(), file_path: format!("/tmp/{id}.png"),
+            thumb_path: None, name: format!("Snapvere {id}"),
+            format: "png".into(), width: 4, height: 4,
+            size_bytes: 64, source: "region".into(),
+            created_at: time, is_uploaded: false, tags: Vec::new(),
+        }
+    }
+    #[test]
+    fn list_search_pagination_and_tag_loading() -> anyhow::Result<()> {
+        let db = Db::open_in_memory()?;
+        db.insert(&shot("one", 100))?;
+        db.insert(&shot("two", 200))?;
+        db.add_tag("one", "design")?;
+        db.add_tag("one", "team")?;
+        db.add_tag("two", "team")?;
+        let all = db.list(200, 0)?;
+        assert_eq!(all.len(), 2);
+        assert_eq!(all[0].id, "two");
+        assert_eq!(all[0].tags, vec!["team"]);
+        assert_eq!(all[1].tags, vec!["design", "team"]);
+        assert_eq!(db.search("design")?[0].tags, vec!["design", "team"]);
+        assert_eq!(db.list(1, 1)?[0].id, "one");
+        assert!(db.list(1, 10)?.is_empty());
+        assert!(db.list(0, 0)?.is_empty());
+        Ok(())
     }
 }

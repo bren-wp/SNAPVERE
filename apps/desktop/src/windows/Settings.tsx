@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { load, type Store } from "@tauri-apps/plugin-store";
 import { enable, disable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { openPath } from "@tauri-apps/plugin-opener";
+import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { ipc } from "../lib/ipc";
 import type { ImageFormat, RecordFormat } from "../lib/types";
 import WindowFrame from "../components/WindowFrame";
@@ -30,8 +30,6 @@ interface AppSettings {
   recordSystemAudio: boolean;
   recordMaxSeconds: number;
   saveFolder: string;
-  warnSensitive: boolean;
-  stripExif: boolean;
 }
 
 const DEFAULTS: AppSettings = {
@@ -48,8 +46,6 @@ const DEFAULTS: AppSettings = {
   recordSystemAudio: false,
   recordMaxSeconds: 1800,
   saveFolder: "Pictures/Snapvere",
-  warnSensitive: true,
-  stripExif: true,
 };
 
 const TABS: { id: Tab; label: string }[] = [
@@ -67,6 +63,7 @@ export default function Settings() {
   const [s, setS] = useState<AppSettings>(DEFAULTS);
   const [store, setStore] = useState<Store | null>(null);
   const [autostart, setAutostart] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -91,12 +88,12 @@ export default function Settings() {
       } catch {
         /* noop */
       }
-    })();
+    })().catch((error) => setNotice(`Could not load settings: ${String(error)}`));
   }, []);
 
   function set<K extends keyof AppSettings>(key: K, val: AppSettings[K]) {
     setS((prev) => ({ ...prev, [key]: val }));
-    void store?.set(key, val);
+    void store?.set(key, val).catch((error) => setNotice(`Could not save ${key}: ${String(error)}`));
   }
 
   const applyTheme = (theme: "dark" | "light") => {
@@ -109,10 +106,10 @@ export default function Settings() {
     try {
       on ? await enable() : await disable();
       setAutostart(on);
-      // Jezgra pri svakom startu uključuje autostart osim ako je ovdje eksplicitno false.
+      // Remember the explicit user preference. Portable mode never auto-enables startup.
       void store?.set("autostart", on);
     } catch (e) {
-      console.error(e);
+      setNotice(`Could not change startup preference: ${String(e)}`);
     }
   };
 
@@ -125,13 +122,14 @@ export default function Settings() {
     <WindowFrame title="Settings">
       <div className="flex min-h-0 flex-1">
         {/* tabovi */}
-        <nav className="flex w-48 flex-col gap-1 border-r border-white/5 bg-black/10 p-3">
-        <div className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted">Settings</div>
+        <nav aria-label="Settings sections" className="snapvere-settings-sidebar flex w-48 shrink-0 flex-col gap-1 overflow-y-auto border-r border-white/10 bg-elevated/20 p-3">
+        <div className="snapvere-section-eyebrow px-2 pb-2 pt-2">PREFERENCES</div>
         {TABS.map((t) => (
           <button
             key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+            onClick={() => { setTab(t.id); setNotice(null); }}
+            aria-current={tab === t.id ? "page" : undefined}
+            className={`rounded-xl px-3 py-2.5 text-left text-sm transition-colors focus-visible:ring-2 focus-visible:ring-accent ${
               tab === t.id ? "bg-accent text-white" : "text-muted hover:bg-elevated hover:text-text"
             }`}
           >
@@ -141,6 +139,7 @@ export default function Settings() {
       </nav>
 
       <div className="min-h-0 flex-1 overflow-auto p-6">
+        {notice && <p role="alert" className="mb-4 rounded-xl border border-danger/40 bg-danger/10 p-3 text-sm">{notice}</p>}
         {tab === "general" && (
           <Section title="General">
             <Row label="Theme" hint="Light or dark interface scheme.">
@@ -155,7 +154,7 @@ export default function Settings() {
             </Row>
             <Row
               label="Launch on startup"
-              hint="Open Snapvere quietly in the background at every sign-in."
+              hint="Optional. Start Snapvere when you sign in (off by default)."
             >
               <Toggle checked={autostart} onChange={toggleAutostart} />
             </Row>
@@ -331,32 +330,58 @@ export default function Settings() {
         )}
 
         {tab === "privacy" && (
-          <Section title="Privacy">
-            <Row label="Warn before uploading sensitive content">
-              <Toggle checked={s.warnSensitive} onChange={(v) => set("warnSensitive", v)} />
-            </Row>
-            <Row label="Strip EXIF/metadata on save">
-              <Toggle checked={s.stripExif} onChange={(v) => set("stripExif", v)} />
-            </Row>
-            <div className="mt-6 rounded-xl border border-danger/40 bg-danger/5 p-4">
-              <div className="mb-1 text-sm font-medium text-danger">Danger zone</div>
-              <p className="mb-3 text-xs text-muted">Permanently deletes the local gallery and database. (F4-3)</p>
-              <button
-                onClick={() => alert("TODO (F4-3): delete all local data.")}
-                className="rounded-lg border border-danger px-3 py-1.5 text-sm text-danger hover:bg-danger hover:text-white"
-              >
-                Delete all local data
-              </button>
+          <Section title="Privacy & local storage">
+            <div className="rounded-2xl border border-accent/25 bg-accent/5 p-5">
+              <h2 className="text-base font-semibold">Your captures stay on your computer</h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                Screenshots, recordings, preferences and the local gallery database stay on your device.
+                Snapvere does not need an account or an upload to capture the screen.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button type="button" onClick={async () => {
+                  try { await ipc.openCaptureFolder(); }
+                  catch (error) { setNotice(`Cannot open capture folder: ${String(error)}`); }
+                }} className="rounded-xl border border-border bg-elevated px-4 py-2 text-sm font-medium hover:border-accent focus-visible:ring-2 focus-visible:ring-accent">
+                  Open capture folder
+                </button>
+                <button type="button" onClick={async () => {
+                  try { await ipc.openDataFolder(); }
+                  catch (error) { setNotice(`Cannot open data folder: ${String(error)}`); }
+                }} className="rounded-xl border border-border bg-elevated px-4 py-2 text-sm font-medium hover:border-accent focus-visible:ring-2 focus-visible:ring-accent">
+                  Open local data
+                </button>
+              </div>
             </div>
+            <p className="mt-4 text-xs leading-relaxed text-muted">
+              Use the gallery to review or delete individual captures. Closing Snapvere does not delete files.
+            </p>
           </Section>
         )}
 
         {tab === "about" && (
           <Section title="About">
-            <p className="text-sm text-muted">Snapvere · version 0.2.4</p>
+            <p className="text-sm text-muted">Snapvere · version 0.2.5</p>
             <p className="mt-2 text-sm text-muted">
-              Private capture by Brendigo · snapvere.com
+              Secure capture and screen recording by Brendigo.
             </p>
+            <div className="mt-3 flex flex-wrap gap-3 text-sm">
+              <button
+                type="button"
+                onClick={() => void openUrl("https://brendigo.com").catch(console.error)}
+                className="font-medium text-accent underline-offset-4 hover:underline focus-visible:underline"
+                aria-label="Open author Brendigo website"
+              >
+                Author: Brendigo
+              </button>
+              <button
+                type="button"
+                onClick={() => void openUrl("https://snapvere.com").catch(console.error)}
+                className="font-medium text-accent underline-offset-4 hover:underline focus-visible:underline"
+                aria-label="Open official Snapvere website"
+              >
+                Official website: snapvere.com
+              </button>
+            </div>
             <div className="mt-6 rounded-xl border border-border/60 p-4">
               <div className="mb-1 text-sm font-medium">Diagnostics</div>
               <p className="mb-3 text-xs text-muted">

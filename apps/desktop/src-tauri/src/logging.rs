@@ -3,7 +3,7 @@
 //! U release buildu (`windows_subsystem = "windows"`) nema konzole, pa se `println!`
 //! gubi. Bez traga u datoteci "aplikacija se samo ugasi" je nedijagnosticirljivo.
 //! Ovdje postavljamo:
-//!   1. log datoteku u `%APPDATA%/app.snapvere.desktop/logs/snapvere.log`,
+//!   1. log datoteku u `app.path().app_data_dir()/logs/snapvere.log`,
 //!   2. panic hook koji zapiše poruku + lokaciju prije nego dretva umre.
 
 use std::fs::{self, OpenOptions};

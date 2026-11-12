@@ -81,7 +81,6 @@ pub enum CaptureAction {
     Copy,
     Save,
     Edit,
-    Upload, // Faza 3
 }
 
 /// Zapis screenshota u lokalnoj galeriji.
