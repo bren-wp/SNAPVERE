@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -31,22 +31,28 @@ export default function Home() {
   const [toast, setToast] = useState<string | null>(null);
   /** Otvoren u pregledniku (id, ne indeks — lista se osvježava ispod njega). */
   const [viewId, setViewId] = useState<string | null>(null);
+  const galleryRequest = useRef(0);
 
   const load = useCallback(async (q: string) => {
+    const request = ++galleryRequest.current;
     setLoading(true);
     try {
       const res = q.trim() ? await ipc.searchScreenshots(q) : await ipc.listScreenshots(300, 0);
-      setItems(res);
+      if (request === galleryRequest.current) setItems(res);
     } catch (e) {
       console.error(e);
+      if (request === galleryRequest.current) setToast("Could not load the gallery");
     } finally {
-      setLoading(false);
+      if (request === galleryRequest.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     const t = setTimeout(() => void load(query), 200);
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(t);
+      galleryRequest.current += 1;
+    };
   }, [query, load]);
 
   useEffect(() => {
@@ -97,9 +103,14 @@ export default function Home() {
       cancelLabel: "Cancel",
     });
     if (!ok) return false;
-    await ipc.deleteScreenshot(s.id, s.filePath);
-    setItems((prev) => prev.filter((x) => x.id !== s.id));
-    return true;
+    try {
+      await ipc.deleteScreenshot(s.id);
+      setItems((prev) => prev.filter((x) => x.id !== s.id));
+      return true;
+    } catch (e) {
+      setToast(`Could not delete capture: ${String(e)}`);
+      return false;
+    }
   }, []);
 
   const reveal = useCallback(async (s: Screenshot) => {
@@ -113,16 +124,30 @@ export default function Home() {
   const closeViewer = useCallback(() => setViewId(null), []);
 
   const captureRegion = async () => {
-    await getCurrentWindow().hide();
-    await ipc.beginRegionCapture();
+    try {
+      await getCurrentWindow().hide();
+      await ipc.beginRegionCapture();
+    } catch (e) {
+      await getCurrentWindow().show().catch(console.error);
+      setToast(`Capture could not start: ${String(e)}`);
+    }
   };
   const captureFull = async () => {
-    await ipc.captureFullscreen("png", 100);
-    await load(query);
+    try {
+      await ipc.captureFullscreen("png", 100);
+      await load(query);
+    } catch (e) {
+      setToast(`Screenshot failed: ${String(e)}`);
+    }
   };
   const recordArea = async () => {
-    await getCurrentWindow().hide();
-    await ipc.beginRegionCapture("record");
+    try {
+      await getCurrentWindow().hide();
+      await ipc.beginRegionCapture("record");
+    } catch (e) {
+      await getCurrentWindow().show().catch(console.error);
+      setToast(`Recording could not start: ${String(e)}`);
+    }
   };
   const openSettings = async () => {
     const existing = await WebviewWindow.getByLabel("settings");
