@@ -1,0 +1,36 @@
+name: Refresh Snapvere v0.2.4 release branding
+on:
+  push:
+    branches: [feature/snapvere-hardening-v0.2.5]
+    paths:
+      - '.github/workflows/refresh-release-brand.yml'
+permissions:
+  contents: write
+jobs:
+  refresh-release:
+    name: Align public release description with Snapvere identity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update release description (keep binary assets unchanged)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          cat > /tmp/snapvere-release-notes.md <<'EOF'
+          # Snapvere v0.2.4 — Windows
+          
+          **Snapvere** by **[Brendigo](https://brendigo.com)** · Official website: [snapvere.com](https://snapvere.com)
+          
+          ### Three Windows editions
+          
+          - **Snapvere-Portable.exe** — no installer required; Windows WebView2 Runtime must be present
+          - **Snapvere-Setup.exe** — Windows NSIS setup
+          - **Snapvere-Setup.msi** — Windows Installer MSI setup
+          - **SHA256SUMS.txt** — SHA-256 checksums for package verification
+          
+          All files are packaged from the validated Windows build.
+          
+          **Release status:** Unsigned preview build. Windows SmartScreen may show a warning. Verify the checksums and test on Windows 10/11 before distribution. Source and third-party components remain subject to their applicable copyright and licensing conditions.
+          EOF
+          gh release edit v0.2.4 --repo bren-wp/Snapvere --notes-file /tmp/snapvere-release-notes.md
+          gh release view v0.2.4 --repo bren-wp/Snapvere --json tagName,assets | python -c 'import json,sys; d=json.load(sys.stdin); required={"Snapvere-Portable.exe","Snapvere-Setup.exe","Snapvere-Setup.msi","SHA256SUMS.txt"}; actual={x["name"] for x in d["assets"]}; missing=required-actual; assert not missing, f"Missing release assets: {missing}"; print("Release metadata aligned, all 4 assets retained")'
