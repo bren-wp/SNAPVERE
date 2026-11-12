@@ -1,98 +1,111 @@
-name: Release
-
-# Pokreće se na push taga oblika v1.2.3, ili ručno iz Actions taba.
+name: Snapvere Windows release
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - feature/snapvere-full-rebrand
+    paths:
+      - '.github/workflows/release.yml'
+      - 'apps/**'
+      - 'docs/screenshots/**'
+      - 'README.md'
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Verzija / tag (npr. v0.1.0)"
+      release_tag:
+        description: "Windows release tag"
         required: true
-        default: "v0.1.0"
-
+        default: "v0.2.4"
+permissions:
+  contents: write
 jobs:
-  build:
-    permissions:
-      contents: write # potrebno za kreiranje GitHub Release-a
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: macos-latest
-            args: "--target universal-apple-darwin"
-            rust_targets: "aarch64-apple-darwin,x86_64-apple-darwin"
-            installer: dmg
-          - platform: windows-latest
-            args: ""
-            rust_targets: ""
-            installer: msi
-    runs-on: ${{ matrix.platform }}
-
+  windows-release:
+    name: Build and publish Windows Portable / NSIS / MSI
+    runs-on: windows-latest
+    timeout-minutes: 85
     steps:
-      - name: Checkout
+      - name: Checkout feature branch
         uses: actions/checkout@v4
-
-      - name: Setup Node
+        with:
+          ref: feature/snapvere-full-rebrand
+          persist-credentials: true
+      - name: Node 22
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-
-      - name: Setup Rust
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - name: Rust stable
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.rust_targets }}
-
-      - name: Rust cache
+      - name: Rust build cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: apps/desktop/src-tauri -> target
-
-      - name: Install frontend dependencies
+      - name: Install dependencies using lockfile
         working-directory: apps/desktop
-        run: npm ci
-
-      - name: Generate app icons (.icns / .ico for all platforms)
+        run: npm ci --no-audit
+      - name: Build and typecheck frontend
         working-directory: apps/desktop
-        run: npm run tauri -- icon src-tauri/icons/icon.png
-
-      - name: Build the app
-        uses: tauri-apps/tauri-action@v0
-        with:
-          projectPath: apps/desktop
-          args: ${{ matrix.args }}
-
-      - name: Collect installer under a stable name
-        shell: bash
+        run: npm run build
+      - name: Build Windows NSIS EXE and WiX MSI bundles
+        working-directory: apps/desktop
+        run: npm run tauri -- build --bundles nsis,msi
+      - name: Collect and verify ALL THREE release packages
+        shell: pwsh
         run: |
-          mkdir -p dist-installers
-          if [ "${{ matrix.installer }}" = "msi" ]; then
-            src=$(ls apps/desktop/src-tauri/target/release/bundle/msi/*.msi | head -n1)
-            cp "$src" "dist-installers/Snapvere-Setup.msi"
-          else
-            src=$(ls apps/desktop/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg | head -n1)
-            cp "$src" "dist-installers/Snapvere.dmg"
-          fi
-          ls -la dist-installers
-
-      - name: Publish to GitHub Release
-        uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          $ErrorActionPreference = "Stop"
+          $dist = Join-Path $PWD "dist-installers"
+          New-Item -Path $dist -ItemType Directory -Force | Out-Null
+          $target = Join-Path $PWD "apps/desktop/src-tauri/target/release"
+          $portable = Join-Path $target "snapvere.exe"
+          if (-not (Test-Path $portable)) { throw "Portable app executable is missing: $portable" }
+          $nsis = Get-ChildItem -Path (Join-Path $target 'bundle/nsis') -Filter '*.exe' -File | Select-Object -First 1
+          if (-not $nsis) { throw "NSIS setup.exe is missing" }
+          $msi = Get-ChildItem -Path (Join-Path $target 'bundle/msi') -Filter '*.msi' -File | Select-Object -First 1
+          if (-not $msi) { throw "WiX setup.msi is missing" }
+          Copy-Item $portable (Join-Path $dist "Snapvere-Portable.exe")
+          Copy-Item $nsis.FullName (Join-Path $dist "Snapvere-Setup.exe")
+          Copy-Item $msi.FullName (Join-Path $dist "Snapvere-Setup.msi")
+          $expected = @('Snapvere-Portable.exe','Snapvere-Setup.exe','Snapvere-Setup.msi')
+          foreach ($name in $expected) {
+            $f = Join-Path $dist $name
+            if (-not (Test-Path $f)) { throw "Required Windows artifact missing: $name" }
+            if ((Get-Item $f).Length -lt 1000000) { throw "Unexpectedly small artifact: $name" }
+          }
+          $hashes = foreach ($name in $expected) {
+            $file = Join-Path $dist $name
+            $hash = (Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $name"
+          }
+          $hashes | Set-Content (Join-Path $dist "SHA256SUMS.txt") -Encoding ascii
+          Get-ChildItem $dist | Format-Table Name,Length
+      - name: Upload verified installers as workflow artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          name: Snapvere ${{ github.event.inputs.tag || github.ref_name }}
+          name: Snapvere-v0.2.4-Windows
+          path: dist-installers/*
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.2.4
+          target_commitish: ${{ github.sha }}
+          name: Snapvere v0.2.4 — Brendigo
           draft: false
-          prerelease: false
+          prerelease: true
           fail_on_unmatched_files: true
           files: dist-installers/*
           body: |
-            ## Snapvere ${{ github.event.inputs.tag || github.ref_name }}
+            # Snapvere v0.2.4 — Windows
+            Branded by **Brendigo** · https://brendigo.com · https://snapvere.com
 
-            **Windows:** download `Snapvere-Setup.msi`
-            **macOS:** download `Snapvere.dmg` (Apple Silicon + Intel)
+            ### Download
+            - **Snapvere-Portable.exe** — run directly; no installer or administrator access required (Windows WebView2 runtime is required)
+            - **Snapvere-Setup.exe** — NSIS installer
+            - **Snapvere-Setup.msi** — MSI installer
+            - **SHA256SUMS.txt** — integrity checksums for all packages
 
-            > Builds are not code-signed yet. On Windows, SmartScreen may warn —
-            > click "More info → Run anyway". On macOS, right-click the app →
-            > "Open" the first time.
+            All three executables originate from the same Tauri Windows build and are verified to exist before this release is published.
+
+            **Unsigned preview build.** Windows SmartScreen or corporate endpoint controls may flag unsigned software. Test on Windows 10/11 before production use.
+
+            **Original source attribution:** Based on an RvgeShot snapshot; see THIRD_PARTY_NOTICES.md. Original upstream source licensing must be verified prior to wider redistribution. This is a prerelease.
