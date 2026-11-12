@@ -1,0 +1,70 @@
+name: Capture real Snapvere frontend previews
+on:
+  push:
+    branches:
+      - feature/snapvere-full-rebrand
+    paths:
+      - 'tools/capture_ui.py'
+      - '.github/workflows/screenshots.yml'
+      - 'apps/desktop/src/**'
+      - 'site/**'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install app dependencies and Playwright
+        shell: bash
+        run: |
+          cd apps/desktop
+          npm ci --no-audit
+          cd ../..
+          python -m pip install playwright==1.55.0
+          python -m playwright install --with-deps chromium
+      - name: Serve real frontend and website
+        shell: bash
+        run: |
+          (cd apps/desktop && npm run dev -- --host 127.0.0.1 > /tmp/snapvere-vite.log 2>&1 &)
+          (cd site && python -m http.server 4173 --bind 127.0.0.1 > /tmp/snapvere-site.log 2>&1 &)
+          python - <<'PY'
+          import time, urllib.request
+          for url in ['http://127.0.0.1:1420/', 'http://127.0.0.1:4173/']:
+              for attempt in range(40):
+                  try:
+                      urllib.request.urlopen(url, timeout=2).read(200)
+                      break
+                  except Exception:
+                      time.sleep(0.5)
+              else:raise SystemExit('Server did not start: '+url)
+          PY
+      - name: Screenshot rendered screens
+        run: python tools/capture_ui.py
+      - name: Upload screenshot previews
+        uses: actions/upload-artifact@v4
+        with:
+          name: Snapvere-UI-Screenshots
+          path: docs/screenshots/*.png
+      - name: Commit exact captured images to the PR branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/screenshots/*.png
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: add real rendered Snapvere interface screenshots"
+            git push
+          fi

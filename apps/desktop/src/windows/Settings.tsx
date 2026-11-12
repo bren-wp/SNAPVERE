@@ -353,7 +353,7 @@ export default function Settings() {
 
         {tab === "about" && (
           <Section title="About">
-            <p className="text-sm text-muted">Snapvere · version 0.2.3</p>
+            <p className="text-sm text-muted">Snapvere · version 0.2.4</p>
             <p className="mt-2 text-sm text-muted">
               Private capture by Brendigo · snapvere.com
             </p>

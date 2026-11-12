@@ -5,7 +5,7 @@
    ───────────────────────────────────────────────────────────── */
 window.SNAPVERE = {
   // Prikazuje se na download stranici. Uskladi s tauri.conf.json kod releasea.
-  version: "0.2.3",
+  version: "0.2.4",
 
   // Prazan string ("") => gumb pokaže „coming soon" umjesto downloada.
   // `latest/download` uvijek vodi na zadnji objavljeni GitHub Release.
