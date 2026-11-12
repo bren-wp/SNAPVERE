@@ -128,6 +128,8 @@ pub fn run() {
             commands::copy_media_image,
             commands::show_home,
             commands::log_file_path,
+            commands::open_capture_folder,
+            commands::open_data_folder,
             shortcuts::update_hotkey,
             shortcuts::update_record_hotkey,
             shortcuts::active_hotkeys,

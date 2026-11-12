@@ -365,3 +365,17 @@ body.hud {
     transition: none !important;
   }
 }
+
+/* Fast, GPU-light Snapvere styling shared by every application window. */
+:where(button, input, [role="button"]):focus-visible {
+  outline: 2px solid rgb(var(--snapvere-accent)); outline-offset: 3px;
+}
+button:disabled { cursor: not-allowed; opacity: .55; }
+::selection { background: rgba(85, 224, 229, .28); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

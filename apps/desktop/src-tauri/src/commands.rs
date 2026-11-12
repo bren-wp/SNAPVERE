@@ -1177,3 +1177,19 @@ pub fn open_settings(app: &AppHandle) -> Result<(), String> {
 pub fn log_file_path() -> Option<String> {
     logging::log_path().map(|p| p.to_string_lossy().into_owned())
 }
+
+/** Open the configured capture directory, with no caller-controlled path. */
+#[tauri::command]
+pub fn open_capture_folder(app: AppHandle) -> Result<(), String> {
+    let dir = gallery_dir(&app)?;
+    fs::create_dir_all(&dir).map_err(estr)?;
+    app.opener().open_path(dir.to_string_lossy(), None::<&str>).map_err(estr)
+}
+
+/** Open Snapvere's data directory, without arbitrary filesystem IPC access. */
+#[tauri::command]
+pub fn open_data_folder(app: AppHandle) -> Result<(), String> {
+    let dir = app.path().app_data_dir().map_err(estr)?;
+    fs::create_dir_all(&dir).map_err(estr)?;
+    app.opener().open_path(dir.to_string_lossy(), None::<&str>).map_err(estr)
+}

@@ -16,7 +16,6 @@ import {
   Copy,
   Download,
   Save,
-  Upload,
   X,
   Monitor as MonitorIcon,
   Mic,
@@ -813,9 +812,6 @@ export default function Overlay() {
             </button>
             <button title="Save to gallery (Ctrl+S)" onClick={() => finish("save")} className="lg-btn">
               <Download size={16} />
-            </button>
-            <button title="Private upload (Phase 3)" onClick={() => setToast("Private upload coming in Phase 3")} className="lg-btn">
-              <Upload size={16} />
             </button>
             <button title="Cancel (Esc)" onClick={() => ipc.cancelCapture()} className="lg-btn">
               <X size={16} />

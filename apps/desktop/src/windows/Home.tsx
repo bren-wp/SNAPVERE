@@ -171,6 +171,7 @@ export default function Home() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by name or tag…"
+            aria-label="Search captures by name or tag"
             className="w-full rounded-full bg-elevated/80 py-2 pl-10 pr-4 text-sm outline-none ring-1 ring-white/10 transition focus:ring-2 focus:ring-accent"
           />
         </div>
@@ -196,6 +197,7 @@ export default function Home() {
           <button
             key={f}
             onClick={() => setFilter(f)}
+            aria-pressed={filter === f}
             className={`rounded-full px-3 py-1 text-xs capitalize transition-colors ${
               filter === f ? "bg-accent text-white" : "text-muted hover:bg-elevated"
             }`}
@@ -238,7 +240,7 @@ export default function Home() {
       )}
 
       {toast && (
-        <div className="pointer-events-none absolute bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-elevated/95 px-4 py-2 text-sm shadow-card ring-1 ring-white/10 animate-pop">
+        <div role="status" aria-live="polite" className="pointer-events-none absolute bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-elevated/95 px-4 py-2 text-sm shadow-card ring-1 ring-white/10 animate-pop">
           {toast}
         </div>
       )}

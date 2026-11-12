@@ -96,4 +96,6 @@ export const ipc = {
   /** [capture, record] — stvarno registrirani hotkeyi (default može pasti na fallback). */
   activeHotkeys: () => invoke<[string | null, string | null]>("active_hotkeys"),
   logFilePath: () => invoke<string | null>("log_file_path"),
+  openCaptureFolder: () => invoke<void>("open_capture_folder"),
+  openDataFolder: () => invoke<void>("open_data_folder"),
 };
