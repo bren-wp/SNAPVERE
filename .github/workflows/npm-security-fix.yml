@@ -24,13 +24,15 @@ jobs:
       - name: Install current locked dependencies
         working-directory: apps/desktop
         run: npm ci
-      - name: Repair compatible vulnerable packages (never force major upgrades)
+      - name: Update vulnerable frontend build toolchain and apply safe advisories
         working-directory: apps/desktop
         shell: bash
         run: |
+          npm install --save-dev vite@latest @vitejs/plugin-react@latest
           npm audit fix --no-fund || true
           npm run build
           npm audit --omit=dev --audit-level=high
+          npm audit --audit-level=high
       - name: Report remaining development dependency advisories
         continue-on-error: true
         working-directory: apps/desktop
