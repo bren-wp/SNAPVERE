@@ -38,7 +38,10 @@ jobs:
           if ($config.productName -ne 'Snapvere') { throw 'Incorrect application name' }
           if ($config.identifier -ne 'com.brendigo.snapvere') { throw 'Incorrect application identifier' }
           if ($pkg.version -ne $config.version) { throw 'Package versions are not synchronized' }
-          if ($config.version -notmatch '^\\d+\\.\\d+\\.\\d+        working-directory: apps/desktop
+          if ([string]::IsNullOrWhiteSpace($config.version)) { throw 'Empty release version' }
+          "value=$($config.version)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+      - name: Install dependencies using lockfile
+        working-directory: apps/desktop
         run: npm ci --no-audit
       - name: Build and typecheck frontend
         working-directory: apps/desktop
