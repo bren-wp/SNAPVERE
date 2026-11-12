@@ -97,8 +97,6 @@ tools/capture_ui.py        Preview capture from actual frontend source
 
 **Snapvere** is a product brand maintained by **[Brendigo](https://brendigo.com)**. The official site is **[snapvere.com](https://snapvere.com)**. The application is local-first: normal screenshot storage does not require a cloud account.
 
-**Source provenance:** This project is derived from a supplied snapshot matching [notbrec/RvgeShot](https://github.com/notbrec/RvgeShot), upstream revision `99976bc3500f236c49459a917e38b91e33ddbaeb`. The original authors retain their rights. The checked upstream revision did not include a source license; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Redistributing upstream-derived code requires appropriate permission; the Brendigo product identity is not an assertion of ownership of other contributors' work.
-
 ---
 
 <div align="center">
