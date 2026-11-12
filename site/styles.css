@@ -2147,3 +2147,63 @@ kbd {
 .dl__integrity { color: #aab9c7; text-align: center; font-size: .76rem; margin: .85rem 0 0; line-height: 1.5; }
 .dl__integrity a { color: #55e0e5; text-decoration: underline; }
 @media (max-width: 600px) { .dl__editions { grid-template-columns: 1fr; } .dl__edition { padding: .75rem 1rem; } }
+
+/* Shared Snapvere product styling: visual consistency with the desktop application */
+:root {
+  --focus-snapvere: #75edf0;
+  --snapvere-soft: rgba(85, 224, 229, 0.08);
+}
+:where(a, button, input, summary):focus-visible {
+  outline: 2px solid var(--focus-snapvere);
+  outline-offset: 4px;
+}
+.btn--primary {
+  box-shadow: 0 8px 26px rgba(9, 191, 217, 0.17), inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+.btn--primary:hover {
+  box-shadow: 0 14px 34px rgba(9, 191, 217, 0.24);
+}
+.snapvere-preview__intro { max-width: 760px; margin-bottom: 30px; }
+.snapvere-preview__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+.snapvere-preview__card {
+  min-width: 0;
+  border-radius: 22px;
+  padding: 12px;
+  border: 1px solid var(--line-2);
+  background: linear-gradient(155deg, var(--snapvere-soft), transparent 50%), var(--panel);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+}
+.snapvere-preview__card img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1120 / 740;
+  object-fit: cover;
+  border-radius: 13px;
+  border: 1px solid var(--line-2);
+}
+.snapvere-preview__card figcaption {
+  padding: 16px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.snapvere-preview__card strong { font-size: 17px; color: var(--text); letter-spacing: -0.02em; }
+.snapvere-preview__card span, .snapvere-preview__note { font-size: 14px; color: var(--text-2); }
+.snapvere-preview__note { margin-top: 16px; }
+@media (max-width: 780px) {
+  .snapvere-preview__grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .snapvere-preview__card { border-radius: 18px; padding: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+  .reveal { opacity: 1 !important; transform: none !important; }
+}
