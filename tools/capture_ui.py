@@ -21,7 +21,7 @@ TAURI_PREVIEW = r"""
       if (command === "plugin:autostart|is_enabled") return false;
       if (command.startsWith("plugin:event|")) return 1;
       if (command.startsWith("plugin:store|")) {
-        if (/^(plugin:store\\|load|plugin:store\\|new)$/.test(command)) return 1;
+        if (command === "plugin:store|load" || command === "plugin:store|new") return 1;
         return null;
       }
       if (command === "recording_status") return { state: "idle" };
