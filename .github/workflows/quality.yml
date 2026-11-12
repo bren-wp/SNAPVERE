@@ -40,7 +40,8 @@ jobs:
       - name: Verify public surfaces are Snapvere branded
         shell: bash
         run: |
-          if grep -RniE 'rvgeshot|notbrec' apps site docs README.md; then
+          legacy_pattern="$(printf '%s' 'rv' 'geshot')|$(printf '%s' 'not' 'brec')"
+          if grep -RniE "$legacy_pattern" apps site docs README.md .github; then
             echo 'Unbranded references found in user-facing code/docs.'
             exit 1
           fi

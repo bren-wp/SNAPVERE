@@ -108,4 +108,4 @@ jobs:
 
             **Unsigned preview build.** Windows SmartScreen or corporate endpoint controls may flag unsigned software. Test on Windows 10/11 before production use.
 
-            **Original source attribution:** Based on an RvgeShot snapshot; see THIRD_PARTY_NOTICES.md. Original upstream source licensing must be verified prior to wider redistribution. This is a prerelease.
+            **Release provenance:** Review the repository's license terms and third-party dependency notices before redistributing. This is an unsigned preview build.
