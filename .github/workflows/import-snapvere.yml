@@ -210,6 +210,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f site/googlead9b33d20cbe1891.html
+          rm -f .github/workflows/release.yml
           git add -A
           git commit -m "feat: import source and apply Snapvere and Brendigo branding"
           git push origin HEAD:feature/snapvere-full-rebrand
