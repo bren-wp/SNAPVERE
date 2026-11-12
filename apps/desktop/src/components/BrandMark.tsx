@@ -1,5 +1,3 @@
-import React from "react";
-
 /** Same vector silhouette as the product website's bundled favicon. */
 export default function BrandMark({ className = "" }: { className?: string }) {
   return (
