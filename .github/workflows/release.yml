@@ -1,19 +1,11 @@
 name: Snapvere Windows release
 on:
   push:
-    branches:
-      - feature/snapvere-full-rebrand
+    branches: [main]
     paths:
       - '.github/workflows/release.yml'
       - 'apps/**'
-      - 'docs/screenshots/**'
-      - 'README.md'
   workflow_dispatch:
-    inputs:
-      release_tag:
-        description: "Windows release tag"
-        required: true
-        default: "v0.2.4"
 permissions:
   contents: write
 jobs:
@@ -22,11 +14,8 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 85
     steps:
-      - name: Checkout feature branch
+      - name: Checkout release revision
         uses: actions/checkout@v4
-        with:
-          ref: feature/snapvere-full-rebrand
-          persist-credentials: true
       - name: Node 22
         uses: actions/setup-node@v4
         with:
@@ -39,6 +28,90 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: apps/desktop/src-tauri -> target
+      - name: Determine and verify Snapvere version
+        id: version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $config = Get-Content 'apps/desktop/src-tauri/tauri.conf.json' -Raw | ConvertFrom-Json
+          $pkg = Get-Content 'apps/desktop/package.json' -Raw | ConvertFrom-Json
+          if ($config.productName -ne 'Snapvere') { throw 'Incorrect application name' }
+          if ($config.identifier -ne 'com.brendigo.snapvere') { throw 'Incorrect application identifier' }
+          if ($pkg.version -ne $config.version) { throw 'Package versions are not synchronized' }
+          if ($config.version -notmatch '^\\d+\\.\\d+\\.\\d+        working-directory: apps/desktop
+        run: npm ci --no-audit
+      - name: Build and typecheck frontend
+        working-directory: apps/desktop
+        run: npm run build
+      - name: Test Rust core on Windows
+        working-directory: apps/desktop/src-tauri
+        run: cargo test --locked
+      - name: Build Windows NSIS EXE and WiX MSI bundles
+        working-directory: apps/desktop
+        run: npm run tauri -- build --bundles nsis,msi
+      - name: Collect and verify ALL THREE release packages
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $dist = Join-Path $PWD "dist-installers"
+          New-Item -Path $dist -ItemType Directory -Force | Out-Null
+          $target = Join-Path $PWD "apps/desktop/src-tauri/target/release"
+          $portable = Join-Path $target "snapvere.exe"
+          if (-not (Test-Path $portable)) { throw "Portable app executable is missing: $portable" }
+          $nsis = Get-ChildItem -Path (Join-Path $target 'bundle/nsis') -Filter '*.exe' -File | Select-Object -First 1
+          if (-not $nsis) { throw "NSIS setup.exe is missing" }
+          $msi = Get-ChildItem -Path (Join-Path $target 'bundle/msi') -Filter '*.msi' -File | Select-Object -First 1
+          if (-not $msi) { throw "WiX setup.msi is missing" }
+          Copy-Item $portable (Join-Path $dist "Snapvere-Portable.exe")
+          Copy-Item $nsis.FullName (Join-Path $dist "Snapvere-Setup.exe")
+          Copy-Item $msi.FullName (Join-Path $dist "Snapvere-Setup.msi")
+          $expected = @('Snapvere-Portable.exe','Snapvere-Setup.exe','Snapvere-Setup.msi')
+          foreach ($name in $expected) {
+            $f = Join-Path $dist $name
+            if (-not (Test-Path $f)) { throw "Required Windows artifact missing: $name" }
+            if ((Get-Item $f).Length -lt 1000000) { throw "Unexpectedly small artifact: $name" }
+          }
+          $hashes = foreach ($name in $expected) {
+            $file = Join-Path $dist $name
+            $hash = (Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $name"
+          }
+          $hashes | Set-Content (Join-Path $dist "SHA256SUMS.txt") -Encoding ascii
+          Get-ChildItem $dist | Format-Table Name,Length
+      - name: Upload verified installers as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Snapvere-v${{ steps.version.outputs.value }}-Windows
+          path: dist-installers/*
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.value }}
+          target_commitish: ${{ github.sha }}
+          name: Snapvere v${{ steps.version.outputs.value }} — Brendigo
+          draft: false
+          prerelease: true
+          fail_on_unmatched_files: true
+          files: dist-installers/*
+          body: |
+            # Snapvere v${{ steps.version.outputs.value }} — Windows
+            Branded by **Brendigo** · https://brendigo.com · https://snapvere.com
+
+            ### Download
+            - **Snapvere-Portable.exe** — run directly; no installer or administrator access required (Windows WebView2 runtime is required)
+            - **Snapvere-Setup.exe** — NSIS installer
+            - **Snapvere-Setup.msi** — MSI installer
+            - **SHA256SUMS.txt** — integrity checksums for all packages
+
+            All three executables originate from the same Tauri Windows build and are verified to exist before this release is published.
+
+            **Unsigned preview build.** Windows SmartScreen or corporate endpoint controls may flag unsigned software. Test on Windows 10/11 before production use.
+
+            **Release provenance:** Review the repository's license terms and third-party dependency notices before redistributing. This is an unsigned preview build.
+) { throw 'Invalid release version' }
+          "value=$($config.version)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
       - name: Install dependencies using lockfile
         working-directory: apps/desktop
         run: npm ci --no-audit
