@@ -30,3 +30,30 @@
   for = "/*.svg"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
+
+# Version-pinned same-origin paths for current verified release.
+# Netlify redirects to the external release storage; it does not mirror the binary.
+
+[[redirects]]
+  from = "/files/Snapvere-Portable.exe"
+  to = "https://github.com/bren-wp/Snapvere/releases/download/v0.2.4/Snapvere-Portable.exe"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/files/Snapvere-Setup.exe"
+  to = "https://github.com/bren-wp/Snapvere/releases/download/v0.2.4/Snapvere-Setup.exe"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/files/Snapvere-Setup.msi"
+  to = "https://github.com/bren-wp/Snapvere/releases/download/v0.2.4/Snapvere-Setup.msi"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/files/SHA256SUMS.txt"
+  to = "https://github.com/bren-wp/Snapvere/releases/download/v0.2.4/SHA256SUMS.txt"
+  status = 302
+  force = true
