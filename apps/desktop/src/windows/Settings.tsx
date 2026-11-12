@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { load, type Store } from "@tauri-apps/plugin-store";
 import { enable, disable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { openPath } from "@tauri-apps/plugin-opener";
+import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { ipc } from "../lib/ipc";
 import type { ImageFormat, RecordFormat } from "../lib/types";
 import WindowFrame from "../components/WindowFrame";
@@ -355,8 +355,26 @@ export default function Settings() {
           <Section title="About">
             <p className="text-sm text-muted">Snapvere · version 0.2.5</p>
             <p className="mt-2 text-sm text-muted">
-              Private capture by Brendigo · snapvere.com
+              Secure capture and screen recording by Brendigo.
             </p>
+            <div className="mt-3 flex flex-wrap gap-3 text-sm">
+              <button
+                type="button"
+                onClick={() => void openUrl("https://brendigo.com").catch(console.error)}
+                className="font-medium text-accent underline-offset-4 hover:underline focus-visible:underline"
+                aria-label="Open author Brendigo website"
+              >
+                Author: Brendigo
+              </button>
+              <button
+                type="button"
+                onClick={() => void openUrl("https://snapvere.com").catch(console.error)}
+                className="font-medium text-accent underline-offset-4 hover:underline focus-visible:underline"
+                aria-label="Open official Snapvere website"
+              >
+                Official website: snapvere.com
+              </button>
+            </div>
             <div className="mt-6 rounded-xl border border-border/60 p-4">
               <div className="mb-1 text-sm font-medium">Diagnostics</div>
               <p className="mb-3 text-xs text-muted">
