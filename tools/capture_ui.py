@@ -54,7 +54,7 @@ with sync_playwright() as p:
     compact.add_init_script(TAURI_PREVIEW)
     compact_page = compact.new_page()
     compact_page.goto("http://127.0.0.1:1420/", wait_until="networkidle")
-    compact_page.get_by_role("button", name="Capture region").wait_for(timeout=30000)
+    compact_page.get_by_role("banner").get_by_role("button", name="Capture region").wait_for(timeout=30000)
     compact_page.screenshot(path=str(OUTPUT / "home-compact.png"))
     compact.close()
     site = browser.new_context(viewport={"width": 1440, "height": 900}, device_scale_factor=1)
