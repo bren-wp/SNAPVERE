@@ -41,12 +41,27 @@ jobs:
         shell: bash
         run: |
           legacy_pattern="$(printf '%s' 'rv' 'geshot')|$(printf '%s' 'not' 'brec')"
-          if grep -RniE "$legacy_pattern" apps site docs README.md .github; then
-            echo 'Unbranded references found in user-facing code/docs.'
+          if git grep -niE "$legacy_pattern" -- .; then
+            echo 'Legacy identity found in tracked source or documentation.'
+            exit 1
+          fi
+          if git ls-files | grep -iE "$legacy_pattern"; then
+            echo 'Legacy identity found in tracked paths.'
             exit 1
           fi
           grep -q 'Brendigo' README.md
           grep -q 'snapvere.com' README.md
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          config = json.loads(Path('apps/desktop/src-tauri/tauri.conf.json').read_text())
+          npm = json.loads(Path('apps/desktop/package.json').read_text())
+          assert config['productName'] == 'Snapvere'
+          assert config['identifier'] == 'com.brendigo.snapvere'
+          assert config['version'] == npm['version']
+          assert npm['author'].startswith('Brendigo')
+          assert npm['homepage'] == 'https://snapvere.com'
+          PY
       - name: NPM runtime security audit (report, do not suppress)
         continue-on-error: true
         working-directory: apps/desktop
