@@ -1,0 +1,85 @@
+[package]
+name = "snapvere"
+version = "0.2.3"
+description = "Snapvere — brzi, privatni screenshot i screen-recording alat"
+authors = ["Brendigo <https://brendigo.com>"]
+edition = "2021"
+rust-version = "1.77"
+
+# Tauri build proizvodi lib (za mobilne/dijeljenje) + binarni entry (main.rs).
+[lib]
+name = "snapvere_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png", "protocol-asset"] }
+tauri-plugin-single-instance = "2"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-store = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-os = "2"
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Capture ekrana (monitor / prozor). NAPOMENA: provjeri/uskladi verziju s `cargo update`.
+xcap = "0.4"
+# Encode/decode + crop + blur.
+image = "0.25"
+webp = "0.3"
+# Animirani GIF izlaz za snimanje (cross-platform fallback).
+gif = "0.13"
+
+# Lokalna baza (bundled => ne treba sistemski SQLite).
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+uuid = { version = "1", features = ["v4"] }
+chrono = "0.4"
+anyhow = "1"
+thiserror = "2"
+base64 = "0.22"
+
+# Windows: cursor pozicija, DXGI Desktop Duplication (snimanje) i Media Foundation (MP4/H.264).
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.60", features = [
+  "Win32_Foundation",
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_Graphics_Gdi",
+  "Win32_Graphics_Dwm",
+  "Win32_Graphics_Direct3D",
+  "Win32_Graphics_Direct3D11",
+  "Win32_Graphics_Dxgi",
+  "Win32_Graphics_Dxgi_Common",
+  "Win32_Media_MediaFoundation",
+  "Win32_Media_Audio",
+  "Win32_Media_KernelStreaming",
+  "Win32_Media_Multimedia",
+  "Win32_System_Com",
+  "Win32_System_Com_StructuredStorage",
+  "Win32_System_Variant",
+] }
+
+[features]
+# Default produkcijski profil.
+default = []
+
+[profile.release]
+opt-level = "s"   # optimiziraj za veličinu binarya (premium = mali footprint)
+lto = true
+codegen-units = 1
+strip = true
+# NAPOMENA: NE koristi `panic = "abort"`. Uz abort svaki panic u bilo kojoj radnoj
+# dretvi (xcap, DXGI, image) trenutno ubije cijeli proces — točno "aplikacija se
+# jednostavno ugasi". S unwind panic ostaje lokalan i hvata ga `catch_unwind`.
+panic = "unwind"
+
+# Snimanje mora biti brzo i u debug buildu — inače dropa frameove.
+[profile.dev.package."*"]
+opt-level = 2

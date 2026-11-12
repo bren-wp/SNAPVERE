@@ -1,0 +1,217 @@
+name: Import and rebrand Snapvere
+on:
+  push:
+    branches:
+      - feature/snapvere-full-rebrand
+    paths:
+      - .github/workflows/import-snapvere.yml
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Retrieve pinned source revision
+        shell: bash
+        run: |
+          git clone --quiet --filter=blob:none https://github.com/notbrec/RvgeShot.git /tmp/snapvere-source
+          git -C /tmp/snapvere-source checkout --quiet 99976bc3500f236c49459a917e38b91e33ddbaeb
+          test "$(git -C /tmp/snapvere-source rev-parse HEAD)" = 99976bc3500f236c49459a917e38b91e33ddbaeb
+          test "$(git hash-object /tmp/snapvere-source/apps/desktop/package.json)" = 856c423b03054b9365d1787ad0e15f17f53bc1c2
+          cp -R /tmp/snapvere-source/apps .
+          cp -R /tmp/snapvere-source/docs .
+          cp -R /tmp/snapvere-source/site .
+          cp /tmp/snapvere-source/netlify.toml .
+          cp /tmp/snapvere-source/.gitignore .
+          mkdir -p .github/workflows
+          cp /tmp/snapvere-source/.github/workflows/release.yml .github/workflows/release.yml
+      - name: Generate identity and brand assets
+        shell: bash
+        run: |
+          python -m pip install Pillow==11.3.0
+          python - <<'PY'
+          from pathlib import Path
+          import json,re
+          from math import sin,pi
+          from PIL import Image, ImageDraw, ImageFont
+          R=Path.cwd()
+          replacements=[
+              ("https://github.com/notbrec/RvgeShot","https://github.com/bren-wp/Snapvere"),
+              ("https://rvgeshot.netlify.app","https://snapvere.com"),
+              ("RvgeShot","Snapvere"),("RVGESHOT","SNAPVERE"),
+              ("rvgeshot","snapvere"),("RVGE","SNAPVERE"),("rvge","snapvere")
+          ]
+          ext={'.md','.json','.lock','.toml','.rs','.tsx','.ts','.js','.css','.html','.xml','.yml','.yaml','.svg','.gitignore'}
+          for p in R.rglob('*'):
+              if not p.is_file() or '.git' in p.parts or p.name=='LICENSE' or p.name=='import-snapvere.yml':
+                  continue
+              if p.suffix not in ext and p.name not in {'.gitignore','netlify.toml','_headers'}:continue
+              try:s=p.read_text(encoding='utf-8')
+              except UnicodeError:continue
+              v=s
+              for a,b in replacements:v=v.replace(a,b)
+              if v!=s:p.write_text(v,encoding='utf-8')
+          p=R/'apps/desktop/src-tauri/tauri.conf.json'
+          o=json.loads(p.read_text())
+          o['productName']='Snapvere';o['identifier']='com.brendigo.snapvere'
+          o['app']['windows'][0]['title']='Snapvere'
+          o['bundle']['shortDescription']='Screenshots and screen recording'
+          o['bundle']['longDescription']='Snapvere by Brendigo: private capture, annotation and recording.'
+          p.write_text(json.dumps(o,ensure_ascii=False,indent=2)+'\n')
+          p=R/'apps/desktop/src-tauri/Cargo.toml'
+          p.write_text(re.sub(r'(?m)^authors\s*=.*$', 'authors = ["Brendigo <https://brendigo.com>"]',p.read_text()))
+          p=R/'apps/desktop/package.json';o=json.loads(p.read_text())
+          o['name']='snapvere-desktop';o['author']='Brendigo (https://brendigo.com)'
+          o['homepage']='https://snapvere.com'
+          o['repository']={'type':'git','url':'https://github.com/bren-wp/Snapvere.git'}
+          p.write_text(json.dumps(o,ensure_ascii=False,indent=2)+'\n')
+          p=R/'apps/desktop/package-lock.json';o=json.loads(p.read_text())
+          o['name']='snapvere-desktop';o['packages']['']['name']='snapvere-desktop'
+          p.write_text(json.dumps(o,ensure_ascii=False,indent=2)+'\n')
+          sprite='<symbol id="logo" viewBox="0 0 128 128"><rect width="128" height="128" rx="28" fill="#081b30"/><g fill="none" stroke="#55e0e5" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M44 27H27V44 M84 27H101V44 M27 84V101H44 M101 84V101H84"/></g><path d="M79 36C51 20 38 49 61 62C84 75 72 108 43 93" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round"/><circle cx="96" cy="94" r="5" fill="#55e0e5"/></symbol>'
+          for path in ['site/index.html','site/download/index.html','site/privacy/index.html']:
+              p=R/path;s=p.read_text()
+              s=re.sub(r'<symbol id="logo" viewBox="0 0 128 128">[\s\S]*?</symbol>',sprite,s)
+              s=s.replace('github.com/notbrec/Snapvere','github.com/bren-wp/Snapvere')
+              if path=='site/index.html':
+                  s=re.sub(r'\s*<!-- Google Search Console verifikacija -->\s*<meta\s+name="google-site-verification"\s+content="[^"]+"\s*/>','',s,count=1)
+                  s=s.replace('<meta name="author" content="Snapvere" />','<meta name="author" content="Brendigo" />\n    <link rel="author" href="https://brendigo.com" />')
+                  s=s.replace('"name": "Snapvere",\n        "operatingSystem"','"name": "Snapvere",\n        "author": {"@type":"Organization","name":"Brendigo","url":"https://brendigo.com"},\n        "operatingSystem"')
+              else:
+                  s=s.replace('</head>','<meta name="author" content="Brendigo" />\n    <link rel="author" href="https://brendigo.com" />\n  </head>')
+              s=s.replace('2026</span> Snapvere','2026</span> Snapvere · <a href="https://brendigo.com">Brendigo</a>')
+              p.write_text(s)
+          p=R/'site/config.js';s=p.read_text()
+          s=s.replace('https://github.com/sponsors/notbrec','https://github.com/sponsors/bren-wp')
+          s=s.replace('"https://github.com/bren-wp/Snapvere/releases/latest/download/Snapvere-Setup.msi"','""')
+          p.write_text(s)
+          p=R/'apps/desktop/src/windows/Settings.tsx';s=p.read_text()
+          s=s.replace('Snapvere · version 0.2.0','Snapvere · version 0.2.3')
+          s=s.replace('Fast, private screenshot and screen recording. Privacy built in, not bolted on.','Private capture by Brendigo · snapvere.com')
+          p.write_text(s)
+          p=R/'site/styles.css';s=p.read_text().replace('#0a84ff','#09bfd9').replace('#3d9bff','#55e0e5');p.write_text(s)
+          p=R/'apps/desktop/src/styles.css';s=p.read_text()
+          s=s.replace('--snapvere-accent: 10 132 255','--snapvere-accent: 9 191 217')
+          s=s.replace('--snapvere-accent: 0 122 255','--snapvere-accent: 0 139 181')
+          p.write_text(s)
+          p=R/'.github/workflows/release.yml';p.write_text(p.read_text().replace('run: npm install','run: npm ci'))
+          ico=R/'apps/desktop/src-tauri/icons'
+          ico.mkdir(parents=True,exist_ok=True)
+          def icon(n):
+              im=Image.new('RGBA',(n,n),(0,0,0,0));d=ImageDraw.Draw(im)
+              d.rounded_rectangle((0,0,n-1,n-1),radius=round(n*.22),fill='#081b30')
+              w=max(2,round(n*.055));m=int(n*.21);a=int(n*.15)
+              for x,dx in [(m,1),(n-m,-1)]:
+                  for y,dy in [(m,1),(n-m,-1)]:
+                      d.line(((x,y+dy*a),(x,y),(x+dx*a,y)),fill='#55e0e5',width=w,joint='curve')
+              pts=[((.5+.145*sin(i/100*2*pi)+.018*sin(3*i/100*2*pi))*n,(.5-.24*(i/100*2-1))*n) for i in range(101)]
+              d.line(pts,fill='#fff',width=max(2,round(n*.068)),joint='curve')
+              d.ellipse((round(n*.72),round(n*.71),round(n*.79),round(n*.78)),fill='#55e0e5')
+              return im
+          for fn,n in [('32x32.png',32),('128x128.png',128),('128x128@2x.png',256),('icon.png',512)]:
+              icon(n).save(ico/fn)
+          icon(256).save(ico/'icon.ico',format='ICO',sizes=[(16,16),(24,24),(32,32),(48,48),(64,64),(128,128),(256,256)])
+          icon(1024).save(ico/'icon.icns',format='ICNS')
+          icon(256).save(R/'site/icon.png')
+          (R/'site/favicon.svg').write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">'+sprite.replace('<symbol id="logo" viewBox="0 0 128 128">','').replace('</symbol>','')+'</svg>\n')
+          im=Image.new('RGB',(1200,630),'#081b30');d=ImageDraw.Draw(im)
+          for y in range(630):
+              q=y/630;d.line(((0,y),(1200,y)),fill=(round(7+6*q),round(24+14*q),round(44+26*q)))
+          badge=icon(270);im.paste(badge,(84,180),badge)
+          try:
+              big=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',94)
+              small=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',29)
+          except OSError:big=small=ImageFont.load_default()
+          d.text((400,218),'Snapvere',font=big,fill='#fff')
+          d.text((408,333),'Capture. Record. Create.',font=small,fill='#75e5ee')
+          d.text((410,389),'by Brendigo  ·  snapvere.com',font=small,fill='#d1dfeb')
+          im.save(R/'site/og.png',optimize=True)
+          (R/'README.md').write_text('''# Snapvere
+
+          **Capture. Record. Create.** A screenshot and screen recording app by **Brendigo**.
+
+          **Website:** https://snapvere.com · **Author:** https://brendigo.com · **GitHub:** https://github.com/bren-wp/Snapvere
+
+          ## Features
+
+          - Screenshot regions, entire displays and active windows
+          - Annotation and blur/redaction before saving
+          - MP4 and GIF recordings with audio and cursor controls
+          - Searchable offline local gallery and preview player
+          - Configurable shortcuts, export preferences and autostart
+
+          Built with **Tauri v2, Rust, React, TypeScript and SQLite**.
+
+          ## Build
+
+          Node.js 20+, Rust stable and Tauri v2 native prerequisites are required.
+
+          ```sh
+          cd apps/desktop
+          npm ci
+          npm run build
+          npm run tauri build
+          ```
+
+          The release pipeline creates Windows and macOS artifacts. Artifacts are not yet code-signed; verify builds and distribution rights before any public release.
+
+          ## Project structure
+
+          - `apps/desktop/`: desktop frontend and Rust backend
+          - `site/`: website, download page, privacy policy
+          - `docs/`: specification and task breakdown
+          - `.github/workflows/release.yml`: build and release configuration
+
+          ## Credits
+
+          **Snapvere brand and product maintainer:** [Brendigo](https://brendigo.com). **Official website:** [snapvere.com](https://snapvere.com).
+
+          Based on the user-supplied **RvgeShot** snapshot, which matches original source [notbrec/RvgeShot](https://github.com/notbrec/RvgeShot) at commit `99976bc3500f236c49459a917e38b91e33ddbaeb`. Original authors retain their rights. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+          '''.replace('\n          ','\n'))
+          (R/'THIRD_PARTY_NOTICES.md').write_text('''# Source attribution and rights
+
+          The supplied code snapshot matches source authored in the public project
+          [notbrec/RvgeShot](https://github.com/notbrec/RvgeShot),
+          commit `99976bc3500f236c49459a917e38b91e33ddbaeb` (27 October 2026).
+
+          Original copyright belongs to the source author(s) and contributors.
+          That source snapshot did not contain a LICENSE file when checked.
+          The preexisting Snapvere MIT license with Brendigo's name does
+          **not** establish a license or permission for third-party source.
+          Confirm original redistribution rights before publishing or distributing
+          this derivative. Dependencies retain their respective licenses.
+          '''.replace('\n          ','\n'))
+          errors=[]
+          for p in list((R/'apps').rglob('*'))+list((R/'site').rglob('*')):
+              if not p.is_file() or p.suffix not in ext:continue
+              if p.suffix in {'.png','.ico','.icns'}:continue
+              t=p.read_text(encoding='utf-8')
+              if re.search('rvgeshot|RvgeShot|RVGESHOT',t):errors.append(str(p))
+          if errors:raise RuntimeError('Old brand references: '+repr(errors))
+          print('Snapvere branding and image assets generated')
+          PY
+      - name: Validate website JS and project manifests
+        shell: bash
+        run: |
+          python -m json.tool apps/desktop/package.json > /dev/null
+          python -m json.tool apps/desktop/src-tauri/tauri.conf.json > /dev/null
+          python -m json.tool apps/desktop/package-lock.json > /dev/null
+          node --check site/config.js
+          node --check site/app.js
+          node --check site/analytics.js
+          node --check site/download.js
+      - name: Commit the complete imported project
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f site/googlead9b33d20cbe1891.html
+          rm -f .github/workflows/release.yml
+          git add -A
+          git commit -m "feat: import source and apply Snapvere and Brendigo branding"
+          git push origin HEAD:feature/snapvere-full-rebrand

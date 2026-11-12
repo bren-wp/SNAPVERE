@@ -1,0 +1,367 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────
+   Snapvere — Liquid Glass design system
+   ───────────────────────────────────────────────────────────── */
+
+:root,
+[data-theme="dark"] {
+  --snapvere-bg: 18 18 20;
+  --snapvere-surface: 28 28 30;
+  --snapvere-elevated: 44 44 46;
+  --snapvere-border: 84 84 88;
+  --snapvere-muted: 152 152 159;
+  --snapvere-text: 245 245 247;
+  --snapvere-accent: 9 191 217; /* Apple system blue (dark) */
+  --snapvere-accent-soft: 30 58 95;
+  --snapvere-danger: 255 69 58;
+  --snapvere-warn: 255 214 10;
+}
+
+[data-theme="light"] {
+  --snapvere-bg: 246 246 248;
+  --snapvere-surface: 255 255 255;
+  --snapvere-elevated: 240 240 242;
+  --snapvere-border: 209 209 214;
+  --snapvere-muted: 110 110 115;
+  --snapvere-text: 28 28 30;
+  --snapvere-accent: 0 139 181; /* Apple system blue */
+  --snapvere-accent-soft: 215 235 255;
+  --snapvere-danger: 255 59 48;
+  --snapvere-warn: 255 179 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: rgb(var(--snapvere-bg));
+  color: rgb(var(--snapvere-text));
+  font-family: -apple-system, "SF Pro Display", "SF Pro Text", "Inter",
+    system-ui, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.01em;
+  -webkit-user-select: none;
+  user-select: none;
+  overflow: hidden;
+}
+
+/* Overlay je neproziran i prikazuje zamrznuti screenshot kao podlogu (robusno na Windowsu). */
+body.overlay {
+  background: #000;
+}
+
+/* Record mode: overlay je proziran i pokazuje živi desktop (nema zamrznutog framea). */
+body.overlay.rec-live {
+  background: transparent;
+}
+
+/* HUD snimanja lebdi iznad desktopa — prozor je transparentan, traka nosi svoju podlogu. */
+body.hud {
+  background: transparent;
+}
+
+/* ── Liquid glass materijali ──────────────────────────────────
+   Pravi staklo: backdrop blur + saturacija, hairline rub,
+   gornji specular highlight, mekani lebdeći shadow. */
+
+.lg {
+  position: relative;
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02) 40%),
+    rgba(34, 34, 38, 0.86);
+  /* backdrop blur izostavljen (GPU off) — tint + sheen + rub daju premium izgled, ali glatko */
+  border-radius: 20px;
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 0 22px rgba(255, 255, 255, 0.06),
+    inset 0 -14px 28px rgba(0, 0, 0, 0.18);
+}
+/* gornji specular sheen */
+.lg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.22) 0%,
+    rgba(255, 255, 255, 0.06) 22%,
+    rgba(255, 255, 255, 0) 52%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+/* svijetli hairline rub ("wet edge") — 1px gradijentni okvir maskom */
+.lg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0.1) 40%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(255, 255, 255, 0.18)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: -1;
+}
+[data-theme="light"] .lg {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.3) 40%),
+    rgba(250, 250, 252, 0.92);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.18),
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -14px 28px rgba(0, 0, 0, 0.05);
+}
+[data-theme="light"] .lg::after {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.2) 45%,
+    rgba(0, 0, 0, 0.04) 60%,
+    rgba(255, 255, 255, 0.3)
+  );
+}
+
+/* Capsule toolbar (glavni liquid-glass bar) */
+.lg-bar {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 4px;
+  border-radius: 9999px;
+}
+
+/* Glass gumb */
+.lg-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 9999px;
+  color: rgb(var(--snapvere-text));
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.18s ease;
+}
+.lg-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px) scale(1.06);
+}
+.lg-btn:active {
+  transform: scale(0.9);
+  transition-duration: 0.07s;
+}
+.lg-btn.is-active {
+  background: rgb(var(--snapvere-accent));
+  color: #fff;
+  box-shadow:
+    0 2px 10px rgba(var(--snapvere-accent), 0.55),
+    0 0 0 0.5px rgba(255, 255, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+.lg-btn.is-active:hover {
+  background: rgb(var(--snapvere-accent));
+  transform: translateY(-1px) scale(1.06);
+}
+/* aktivni alat: svjetleća točkica ispod gumba */
+.lg-btn.is-active::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: #fff;
+  transform: translateX(-50%);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.9);
+  animation: lg-dot-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes lg-dot-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+.lg-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.lg-btn:disabled:hover {
+  background: transparent;
+  transform: none;
+}
+
+.lg-sep {
+  width: 1px;
+  height: 22px;
+  margin: 0 4px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* Glass popover (boje / debljina) */
+.lg-pop {
+  position: absolute;
+  padding: 14px;
+  border-radius: 20px;
+  transform-origin: bottom center;
+}
+.lg-pop button {
+  transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Dimenzijski chip */
+.lg-chip {
+  border-radius: 9999px;
+  padding: 3px 10px;
+  font-variant-numeric: tabular-nums;
+  background: rgba(20, 20, 22, 0.85);
+  box-shadow:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.18),
+    0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+/* ── Preglednik galerije ──────────────────────────────────────
+   Uvijek taman (konvencija za pregled medija), i kad je app u light temi. */
+.viewer {
+  --snapvere-text: 245 245 247;
+  --snapvere-muted: 152 152 159;
+  --snapvere-accent: 9 191 217;
+  --snapvere-danger: 255 69 58;
+  --snapvere-warn: 255 214 10;
+  color: rgb(var(--snapvere-text));
+}
+[data-theme="light"] .viewer .lg {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02) 40%),
+    rgba(34, 34, 38, 0.86);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 0 22px rgba(255, 255, 255, 0.06),
+    inset 0 -14px 28px rgba(0, 0, 0, 0.18);
+}
+[data-theme="light"] .viewer .lg::after {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0.1) 40%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(255, 255, 255, 0.18)
+  );
+}
+
+/* Klizač glasnoće: ispunjeni dio do --p */
+.vw-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    rgb(255 255 255 / 0.85) var(--p, 100%),
+    rgb(255 255 255 / 0.15) var(--p, 100%)
+  );
+  cursor: pointer;
+  outline: none;
+}
+.vw-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Pomoćne animacije ── */
+@keyframes lg-pop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.92);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.012);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes lg-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-pop {
+  animation: lg-pop-in 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  will-change: transform, opacity;
+}
+.lg-pop.animate-pop {
+  animation-duration: 0.3s;
+}
+.animate-fade {
+  animation: lg-fade 0.16s ease;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 155, 0.4);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::selection {
+  background: rgba(var(--snapvere-accent), 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

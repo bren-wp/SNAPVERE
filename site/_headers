@@ -1,0 +1,17 @@
+# Netlify headers — vrijede i za drag&drop deploy i za GitHub deploy.
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+# Fiksna imena fajlova (app.js, styles.css) — UVIJEK revalidiraj svježinu.
+# (immutable bi zaključao staru verziju u browseru i ignorirao redeploye!)
+/*.css
+  Cache-Control: public, max-age=0, must-revalidate
+
+/*.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/*.svg
+  Cache-Control: public, max-age=0, must-revalidate

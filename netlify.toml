@@ -1,0 +1,32 @@
+# Netlify konfiguracija za Snapvere landing.
+# Sajt je čisti statički HTML/CSS/JS — nema build koraka.
+# Objavljuje se sadržaj foldera `site/`.
+
+[build]
+  publish = "site"
+  command = ""
+
+# Sigurnosni + cache headeri
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+
+# Fiksna imena fajlova → uvijek revalidiraj (immutable bi zaključao stari cache).
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/*.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
