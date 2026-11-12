@@ -20,17 +20,27 @@
 }
 
 :root {
-  --bg: #0a0a0b;
+  --brand-bg: #0a0a0b;
+  --brand-surface: #141416;
+  --brand-elevated: #1a1a1d;
+  --brand-accent: #09bfd9;
+  --brand-accent-hi: #55e0e5;
+  --brand-text: #f5f5f7;
+  --brand-muted: #a1a1a6;
+  --brand-border: rgba(255, 255, 255, 0.12);
+  --brand-card-radius: 18px;
+  --brand-control-radius: 999px;
+  --bg: var(--brand-bg);
   --bg-raise: #0f0f11;
-  --panel: #141416;
-  --panel-2: #1a1a1d;
+  --panel: var(--brand-surface);
+  --panel-2: var(--brand-elevated);
   --line: rgb(255 255 255 / 0.07);
   --line-2: rgb(255 255 255 / 0.12);
-  --text: #f5f5f7;
-  --text-2: #a1a1a6;
+  --text: var(--brand-text);
+  --text-2: var(--brand-muted);
   --text-3: #6e6e73;
-  --accent: #09bfd9;
-  --accent-hi: #55e0e5;
+  --accent: var(--brand-accent);
+  --accent-hi: var(--brand-accent-hi);
   --red: #ff453a;
   --green: #30d158;
   --yellow: #ffd60a;
@@ -2186,4 +2196,28 @@ kbd {
     transition-duration: .01ms !important;
   }
   .reveal { opacity: 1 !important; transform: none !important; }
+}
+
+/* Shared SNAPVERE design system: the values above also exist in desktop/styles.css. */
+.brand { text-transform: uppercase; letter-spacing: .115em; font-weight: 800; }
+.nav { border-bottom: 1px solid var(--brand-border); }
+.nav.is-scrolled { box-shadow: 0 8px 30px rgba(0,0,0,.2); }
+.hero__title { letter-spacing: -.056em; font-weight: 780; }
+.hero__title span { color: var(--brand-accent-hi); }
+.hero__news {
+  background: linear-gradient(90deg, rgba(9,191,217,.11), rgba(85,224,229,.025));
+  border: 1px solid rgba(85,224,229,.23);
+}
+.btn--primary { border: 1px solid rgba(85,224,229,.35); }
+.btn--ghost { border: 1px solid var(--brand-border); }
+:where(.faq__item,.dl__card,.dl__edition,.snapvere-preview__card) {
+  border-color: var(--brand-border);
+}
+:where(.dl__card,.dl__edition,.snapvere-preview__card) {
+  border-radius: var(--brand-card-radius);
+}
+:where(.btn,.nav__links a) { -webkit-tap-highlight-color: transparent; }
+@media (max-width: 700px) {
+  .hero__title { letter-spacing: -.042em; }
+  .nav__inner { gap: 12px; }
 }
