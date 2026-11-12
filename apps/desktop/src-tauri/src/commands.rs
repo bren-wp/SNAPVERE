@@ -403,7 +403,6 @@ pub fn list_monitors() -> Result<Vec<MonitorInfo>, String> {
 
 #[derive(serde::Serialize, Clone)]
 struct CapturePayload {
-    path: String,
     token: i64,
     id: u32,
     mode: &'static str,
@@ -462,33 +461,27 @@ pub fn dispatch_region_capture(app: &AppHandle, mode: CaptureMode) {
     }
 }
 
-/// Zamrzni monitor POD MIŠEM: spremi frame na disk i javi overlayu putanju
-/// (asset protokol = brzo, bez 14 MB IPC prijenosa).
+/// Capture the monitor under the cursor directly into memory.
+/// Never write a transient frozen.png to disk or depend on asset:// grants:
+/// the overlay receives the pixels over a scoped Tauri IPC command.
 fn region_capture_blocking(app: &AppHandle, mode: CaptureMode) -> Result<(), String> {
     let (cx, cy) = cursor_pos();
     let t = std::time::Instant::now();
     let token = Utc::now().timestamp_millis();
 
-    // Record mode ne zamrzava ekran: overlay je proziran i pokazuje živi desktop,
-    // pa preskačemo capture + PNG + disk + učitavanje (~300 ms) — odabir je instant.
-    let (info, path, png_kb) = if mode == CaptureMode::Record {
+    // Recording uses a transparent overlay and the live desktop.
+    // Screenshots retain only a memory image until the selection is finished.
+    let info = if mode == CaptureMode::Record {
         let info = capture::monitor_at(cx, cy).map_err(estr)?;
         lock(&app.state::<AppState>().frozen).clear();
-        (info, String::new(), 0)
+        info
     } else {
         let (info, img) = capture::capture_at(cx, cy).map_err(estr)?;
-        let png = capture::encode_png_fast(&img).map_err(estr)?;
-        let dir = app.path().app_data_dir().map_err(estr)?;
-        fs::create_dir_all(&dir).map_err(estr)?;
-        let path = dir.join("frozen.png");
-        fs::write(&path, &png).map_err(estr)?;
-
-        // Frame ide i u memoriju: `finish_region_capture` tako radi bez ponovnog čitanja diska.
         let state = app.state::<AppState>();
         let mut frozen = lock(&state.frozen);
         frozen.clear();
         frozen.frames.insert(info.id, img);
-        (info, path.to_string_lossy().into_owned(), png.len() / 1024)
+        info
     };
 
     ensure_overlay(app)?;
@@ -502,7 +495,6 @@ fn region_capture_blocking(app: &AppHandle, mode: CaptureMode) -> Result<(), Str
         let _ = win.emit(
             "snapvere:capture",
             CapturePayload {
-                path,
                 token,
                 id: info.id,
                 mode: mode.as_str(),
@@ -514,11 +506,10 @@ fn region_capture_blocking(app: &AppHandle, mode: CaptureMode) -> Result<(), Str
         );
     }
     log(&format!(
-        "capture {}x{} za {:?}, png {} KB, mode {}",
+        "capture {}x{} za {:?}, mode {}",
         info.width,
         info.height,
         t.elapsed(),
-        png_kb,
         mode.as_str()
     ));
     Ok(())
