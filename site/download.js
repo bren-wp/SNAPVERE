@@ -73,7 +73,20 @@ function setButton(os) {
   return url;
 }
 
+function wireEditionLinks() {
+  document.querySelectorAll("[data-download-edition]").forEach((el) => {
+    const key = el.dataset.downloadEdition;
+    const url = CFG.downloads[key];
+    if (!url) { el.hidden = true; return; }
+    el.href = url;
+    el.addEventListener("click", () => {
+      track("file_download", eventParams("windows", url, { placement: "edition-selector", method: "button" }));
+    });
+  });
+}
+
 function render() {
+  wireEditionLinks();
   const q = new URLSearchParams(location.search);
   const wanted = OS_LABEL[q.get("os")] ? q.get("os") : null;
   const from = (q.get("from") || "direct").slice(0, 24);

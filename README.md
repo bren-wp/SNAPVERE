@@ -97,8 +97,6 @@ tools/capture_ui.py        Preview capture from actual frontend source
 
 **Snapvere** is a product brand maintained by **[Brendigo](https://brendigo.com)**. The official site is **[snapvere.com](https://snapvere.com)**. The application is local-first: normal screenshot storage does not require a cloud account.
 
-**Legal:** The Snapvere brand and product are maintained by [Brendigo](https://brendigo.com). See [LICENSE](LICENSE) and [legal notices](THIRD_PARTY_NOTICES.md).
-
 ---
 
 <div align="center">
