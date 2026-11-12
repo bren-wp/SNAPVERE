@@ -575,18 +575,19 @@ pub fn finish_region_capture(
     format: ImageFormat,
     quality: u8,
 ) -> Result<Option<Screenshot>, String> {
+    // Always close the overlay and release frozen frames, even on invalid
+    // selections or when the capture frame has already disappeared.
     let cropped = {
         let frozen = lock(&state.frozen);
-        let frame = frozen
-            .frames
-            .get(&region.monitor_id)
-            .or_else(|| frozen.frames.values().next())
-            .ok_or("frozen frame missing")?;
-        capture::crop(frame, &region).map_err(estr)?
+        match frozen.frames.get(&region.monitor_id)
+            .or_else(|| frozen.frames.values().next()) {
+            Some(frame) => capture::crop(frame, &region).map_err(estr),
+            None => Err("frozen frame missing".to_string()),
+        }
     };
-
     hide_overlays(&app);
     lock(&state.frozen).clear();
+    let cropped = cropped?;
 
     match action {
         CaptureAction::Copy => {
@@ -601,10 +602,6 @@ pub fn finish_region_capture(
             let shot = save_to_gallery(&app, &state, &cropped, CaptureSource::Region, ImageFormat::Png, 100)?;
             open_editor_window(&app, &shot.file_path)?;
             Ok(Some(shot))
-        }
-        CaptureAction::Upload => {
-            // Faza 3 — vidi docs/SPECIFICATION.md §3.3
-            Err("Upload coming in Phase 3".into())
         }
     }
 }
@@ -656,12 +653,6 @@ pub fn dispatch_capture_fullscreen(app: &AppHandle, format: ImageFormat, quality
                 }
             }
         });
-}
-
-/// Capture aktivnog prozora — TODO (F1-10): xcap::Window + fokusirani prozor.
-#[tauri::command]
-pub fn capture_active_window() -> Result<Screenshot, String> {
-    Err("Active window capture: TODO (F1-10)".into())
 }
 
 /// Spremi sliku iz editora (base64 PNG s canvasa) u galeriju.

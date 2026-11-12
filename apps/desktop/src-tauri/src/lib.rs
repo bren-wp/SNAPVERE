@@ -106,7 +106,6 @@ pub fn run() {
             commands::finish_region_capture,
             commands::cancel_capture,
             commands::capture_fullscreen,
-            commands::capture_active_window,
             commands::save_edited_image,
             commands::save_image_as,
             commands::copy_base64_to_clipboard,

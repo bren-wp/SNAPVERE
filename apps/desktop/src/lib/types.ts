@@ -2,7 +2,7 @@
 
 export type ImageFormat = "png" | "jpg" | "webp";
 export type CaptureSource = "region" | "fullscreen" | "window" | "recording";
-export type CaptureAction = "copy" | "save" | "edit" | "upload";
+export type CaptureAction = "copy" | "save" | "edit";
 
 export interface MonitorInfo {
   id: number;
