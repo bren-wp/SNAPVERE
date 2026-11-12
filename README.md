@@ -1,80 +1,102 @@
 <div align="center">
 
-<img src="site/icon.png" width="108" alt="Snapvere logo" />
+<img src="site/icon.png" alt="Snapvere application icon" width="100" />
 
-# Snapvere
+# SNAPVERE
 
-### Capture what matters. Record with confidence. Create without distraction.
+### Capture what matters. Edit it instantly. Keep it local.
 
-**An all-in-one screenshot & screen recording app by [Brendigo](https://brendigo.com)**
+**A Windows screenshot and screen recording workspace by [BRENDIGO](https://brendigo.com).**
 
-[🌐 Official website](https://snapvere.com) · [📦 Download Snapvere](https://snapvere.com/download/) · [🔏 Privacy](https://snapvere.com/privacy/) · [🧭 Download center](https://snapvere.com/download/)
+[🌐 Official website](https://snapvere.com/) · [⬇️ Download](https://snapvere.com/download/) · [🔒 Privacy](https://snapvere.com/privacy/)
 
-<img src="site/og.png" width="850" alt="Snapvere — Capture. Record. Create. Brendigo brand artwork"/>
+<img src="site/og.png" alt="SNAPVERE product branding" width="850" />
 
 </div>
 
 ---
 
-## ✨ See Snapvere in action
+## Your screenshots, under your control
 
-Screenshots below are **actual renders of the project's React interface**, recorded by the automated UI preview workflow. The preview uses a local substitute for Tauri's IPC bridge (so capture/recording is **not** exercised by these images). No fictional recordings or customer data are inserted.
+Select a portion of your desktop, capture the entire screen, or record a walkthrough. Annotate what matters, obscure private information, and manage the result in a local gallery. **No account required to capture.**
+
+| 📸 Capture | 🎬 Record | ✏️ Annotate | 🗂️ Organize |
+|:--:|:--:|:--:|:--:|
+| Screen area or full screen | MP4 / GIF | Arrows, shapes, text, blur | Searchable local gallery |
+| Multi-monitor support | Optional audio and cursor | Copy, export and save | Local SQLite metadata |
+
+## See the real interface
+
+These are **actual browser renders of the project's React/Tauri frontend**, created from the source by an automated Playwright workflow. The workflow stubs the native IPC layer for previews; **the images do not themselves verify the Windows capture or recording engine**. No AI-generated app screenshots are used.
 
 <table>
-<tr><td width="50%"><img src="docs/screenshots/home.png" alt="Snapvere desktop library with capture toolbar" /></td><td width="50%"><img src="docs/screenshots/settings.png" alt="Snapvere settings interface" /></td></tr>
-<tr><td align="center"><b>📸 Capture & Gallery</b><br/>Find your screenshots and start recording.</td><td align="center"><b>⚙️ Customize Your Workflow</b><br/>Privacy, shortcuts, export and recording controls.</td></tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/home.png" alt="SNAPVERE gallery and primary capture actions" /></td>
+    <td width="50%"><img src="docs/screenshots/settings.png" alt="SNAPVERE General settings" /></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Capture library</strong><br />Fast shortcuts, search and capture history</td>
+    <td align="center"><strong>Preferences</strong><br />Appearance, hotkeys, output and privacy</td>
+  </tr>
 </table>
 
 <details>
-<summary><b>🌍 Preview the official website</b></summary>
+  <summary><strong>🖥️ More app and website previews</strong></summary>
 
-![Snapvere website (live HTML render)](docs/screenshots/website.png)
+  **Compact desktop layout**
 
+  ![SNAPVERE compact desktop application](docs/screenshots/home-compact.png)
+
+  **Official website — desktop**
+
+  ![SNAPVERE website desktop render](docs/screenshots/website.png)
+
+  **Official website — mobile**
+
+  <img src="docs/screenshots/website-mobile.png" width="350" alt="SNAPVERE mobile website render" />
 </details>
 
-## 🚀 Features
+## Download for Windows
 
-| | Capability | Description |
+**Latest published build: v0.2.5.** Portable executable, EXE installer and MSI package are built from the same Windows release. Development changes in PRs are not automatically part of the published version.
+
+| Edition | What you get | Download |
 |---|---|---|
-| 📷 | **Fast screenshots** | Capture a region, full display or active window. |
-| 🎬 | **Screen recording** | MP4 and GIF workflows with adjustable quality, cursor and optional audio. |
-| ✏️ | **Edit & protect** | Annotate, crop, blur and redact before sharing. |
-| 🗂️ | **Private gallery** | Search and manage captures from a local library. |
-| ⌨️ | **Custom hotkeys** | Capture and record without breaking your workflow. |
-| 🔐 | **Local-first** | Local files and SQLite; no account needed for basic capture. |
+| 💻 **Portable EXE** | Run without a Snapvere installer | [Snapvere-Portable.exe](https://snapvere.com/files/Snapvere-Portable.exe) |
+| 📦 **Setup EXE** | Windows installer | [Snapvere-Setup.exe](https://snapvere.com/files/Snapvere-Setup.exe) |
+| 🛠️ **MSI** | Managed Windows installation | [Snapvere-Setup.msi](https://snapvere.com/files/Snapvere-Setup.msi) |
 
-## ⬇️ Download Snapvere v0.2.4
+**System requirements:** 64-bit Windows 10 or 11 and Microsoft WebView2 Runtime. Portable mode does not automatically bundle every system prerequisite. The available binaries are unsigned preview builds: Windows SmartScreen may display a warning.
 
-Three Windows editions are built **from the same source revision**, and the release process validates their presence and publishes SHA-256 checksums.
-
-| Edition | Best for | Download |
-|---|---|---|
-| 🟢 **Portable** | Run without an installer | [**Snapvere-Portable.exe**](https://snapvere.com/files/Snapvere-Portable.exe) |
-| 🖥️ **EXE installer** | Quick setup with NSIS | [**Snapvere-Setup.exe**](https://snapvere.com/files/Snapvere-Setup.exe) |
-| 🧰 **MSI installer** | Managed Windows installations | [**Snapvere-Setup.msi**](https://snapvere.com/files/Snapvere-Setup.msi) |
-
-**Requirements:** Windows 10/11 (64-bit) with the Microsoft WebView2 Runtime. Portable means **no Snapvere installation** is required; a missing system WebView2 runtime may still need provisioning. These preview builds are unsigned, so Windows SmartScreen may warn.
-
-### 🛡️ Verify your download
-
-Download [SHA256SUMS.txt](https://snapvere.com/files/SHA256SUMS.txt) from the **same release**, then verify in PowerShell:
+**Integrity:** Download [SHA256SUMS.txt](https://snapvere.com/files/SHA256SUMS.txt) alongside the installers. Verify the SHA-256 checksum for the exact file and version you downloaded:
 
 ```powershell
 Get-FileHash .\Snapvere-Portable.exe -Algorithm SHA256
 ```
 
-Compare the result with the entry in `SHA256SUMS.txt`. Do not use mismatched downloads.
+The website deployment and its download mirror are separate from the repository. Check the published version before installing; a new commit does not mean the live website has been deployed.
 
-## 💎 Designed for a simpler capture workflow
+## Core workflow
 
-1. **Capture** an area of the screen or begin recording from the toolbar.
-2. **Refine** a screenshot with cropping, annotation or privacy tools.
-3. **Organize** captures in the local gallery.
-4. **Export or share** the result when you're ready.
+**01 — Capture.** Launch from the system tray, use the configured screenshot hotkey, or select a capture action in the gallery.
 
-## 🧑‍💻 Build from source
+**02 — Focus.** Drag to select a region. The app displays the captured desktop image behind the selection; tools let you annotate and redact sensitive content.
 
-**Tech:** Tauri 2, Rust, React, TypeScript, Vite and SQLite.
+**03 — Save.** Copy the result to the clipboard, save it as an image, or open it in the editor.
+
+**04 — Revisit.** Search the local capture library, open a recording, or reveal the exported file in Explorer.
+
+The project includes capture region and full-screen actions. **Active-window capture and private cloud upload are not presented as implemented features.**
+
+## Privacy and security
+
+Capture files and metadata are stored locally; screenshot capture does not require an account. The desktop application does not display donation advertisements or public promotional links. Screen content is sensitive: review it before copying, exporting or sharing it.
+
+A blocked image source must never be silently presented as a successful black screenshot. The development branch includes an in-memory framebuffer transfer with a PNG fallback and an explicit failure path to address that issue.
+
+## Build from source
+
+**Stack:** Tauri 2, Rust, React, TypeScript, Vite, SQLite.
 
 ```bash
 cd apps/desktop
@@ -83,26 +105,28 @@ npm run build
 npm run tauri -- build --bundles nsis,msi
 ```
 
-Windows builds also require Rust with the MSVC toolchain and Tauri's WiX/NSIS dependencies. On macOS, the relevant Tauri platform prerequisites apply. See [the Windows release workflow](.github/workflows/release.yml) for the reproducible build procedure.
+Windows packaging requires Rust/MSVC and Tauri's native Windows build prerequisites. The project's CI runs frontend checks, dependency auditing, native Rust tests and Windows packaging. UI preview rendering uses the scripted browser under `tools/capture_ui.py`.
 
+```text
+apps/desktop/src/                Windows UI (gallery, settings, overlay, editor and recorder HUD)
+apps/desktop/src-tauri/          Native capture, recording, storage and app lifecycle
+site/                            SNAPVERE website, download and privacy pages
+docs/screenshots/                Real rendered UI and website previews
+tools/                           Automated site, branding and screenshot checks
+.github/workflows/               Build, visual QA and Windows release workflows
 ```
-apps/desktop/              React interface and native Rust backend
-site/                      Official website, privacy and download pages
-docs/screenshots/          Automated UI render screenshots
-tools/capture_ui.py        Preview capture from actual frontend source
-.github/workflows/         Source import, screenshot and release pipelines
-```
 
-## ❤️ About and privacy
+## Product identity
 
-**Snapvere** is a product brand maintained by **[Brendigo](https://brendigo.com)**. The official site is **[snapvere.com](https://snapvere.com)**. The application is local-first: normal screenshot storage does not require a cloud account.
+**SNAPVERE** is the product name. **BRENDIGO** is the product publisher and maintainer. Official domain: **[snapvere.com](https://snapvere.com)** · Publisher: **[brendigo.com](https://brendigo.com)**.
+
+The application and website share the same SNAPVERE design tokens and wordmark. Development source derived from third-party components remains subject to applicable licence and attribution obligations; product rebranding does not remove those obligations.
 
 ---
 
 <div align="center">
 
-**SNAPVERE** · Designed and maintained by **BRENDIGO**
-
-[🌐 snapvere.com](https://snapvere.com) · [🔗 brendigo.com](https://brendigo.com) · [🔗 Snapvere](https://snapvere.com)
+**SNAPVERE** · by **BRENDIGO**  
+[🌐 snapvere.com](https://snapvere.com) · [🏢 brendigo.com](https://brendigo.com)
 
 </div>
