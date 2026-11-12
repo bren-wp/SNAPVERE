@@ -7,11 +7,13 @@ window.SNAPVERE = {
   // Prikazuje se na download stranici. Uskladi s tauri.conf.json kod releasea.
   version: "0.2.4",
 
-  // Prazan string ("") => gumb pokaže „coming soon" umjesto downloada.
-  // `latest/download` uvijek vodi na zadnji objavljeni GitHub Release.
+  // Production GitHub Release links. Versioned links also work for prereleases.
+  // Update all three Windows edition links together for every new version.
   downloads: {
-    windows:
-      "",
+    windows: "https://github.com/bren-wp/Snapvere/releases/download/v0.2.4/Snapvere-Portable.exe",
+    windowsPortable: "https://github.com/bren-wp/Snapvere/releases/download/v0.2.4/Snapvere-Portable.exe",
+    windowsSetupExe: "https://github.com/bren-wp/Snapvere/releases/download/v0.2.4/Snapvere-Setup.exe",
+    windowsSetupMsi: "https://github.com/bren-wp/Snapvere/releases/download/v0.2.4/Snapvere-Setup.msi",
     mac: "", // .dmg se gradi u CI-u, ali čeka potvrdu da radi na Macu
   },
 

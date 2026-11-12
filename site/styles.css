@@ -2135,3 +2135,15 @@ kbd {
   font: 700 0.82em/1 var(--font);
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
 }
+
+/* Snapvere v0.2.4: three real downloadable Windows editions. */
+.dl__editions-title { margin: 1.35rem 0 .75rem; font-size: .95rem; font-weight: 700; color: var(--text, #fff); text-align: center; }
+.dl__editions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; width: 100%; }
+.dl__edition { min-width: 0; padding: .9rem .55rem; border-radius: 14px; border: 1px solid rgba(144,177,198,.22); background: rgba(111,147,171,.08); color: inherit; text-align: center; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: .32rem; transition: border-color .2s, transform .2s, background .2s; }
+.dl__edition:hover, .dl__edition:focus-visible { border-color: #55e0e5; background: rgba(85,224,229,.12); transform: translateY(-2px); }
+.dl__edition-icon { font-size: 1.28rem; }
+.dl__edition strong { font-size: .85rem; }
+.dl__edition small { font-size: .72rem; color: #aab9c7; }
+.dl__integrity { color: #aab9c7; text-align: center; font-size: .76rem; margin: .85rem 0 0; line-height: 1.5; }
+.dl__integrity a { color: #55e0e5; text-decoration: underline; }
+@media (max-width: 600px) { .dl__editions { grid-template-columns: 1fr; } .dl__edition { padding: .75rem 1rem; } }
