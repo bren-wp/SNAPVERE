@@ -4373,7 +4373,7 @@ dependencies = [
 
 [[package]]
 name = "snapvere"
-version = "0.2.7"
+version = "0.2.8"
 dependencies = [
  "anyhow",
  "base64 0.22.1",

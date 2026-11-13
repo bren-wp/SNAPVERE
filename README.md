@@ -13,15 +13,21 @@ A focused Windows capture workspace from **[BRENDIGO](https://brendigo.com)**.
 [![Product](https://img.shields.io/badge/Product-SNAPVERE-7648eb?style=flat-square)](https://snapvere.com)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-141416?style=flat-square)](https://snapvere.com/download/)
 [![Privacy](https://img.shields.io/badge/Storage-Local--first-141416?style=flat-square)](https://snapvere.com/privacy/)
-[![Release](https://img.shields.io/badge/Published-v0.2.7-141416?style=flat-square)](https://snapvere.com/download/)
+[![Release](https://img.shields.io/badge/Repository-v0.2.8-141416?style=flat-square)](https://github.com/bren-wp/Snapvere/releases)
 
-[**🌐 Explore SNAPVERE**](https://snapvere.com/) · [**⬇️ Download for Windows**](https://snapvere.com/download/) · [**🔐 Privacy**](https://snapvere.com/privacy/)
+[**🌐 Public SNAPVERE website (.NET edition)**](https://snapvere.com/) · [**⬇️ Tauri / Rust Windows releases**](https://github.com/bren-wp/Snapvere/releases) · [**🔐 Website privacy**](https://snapvere.com/privacy/)
 
 <img src="site/og.png" alt="Original SNAPVERE branded product artwork" width="860" />
 
 </div>
 
 ---
+
+> **Distribution notice:** snapvere.com currently publishes SNAPVERE v0.0.8 built with
+> .NET / WinUI 3. This repository builds the separate Tauri 2 / Rust Windows edition
+> (v0.2.8). Do not mix their installers, licenses, versions or upgrade paths.
+> The production website, email download flow, and its binaries are not modified
+> by this GitHub release.
 
 ## Your screen. Your story. One streamlined workflow.
 

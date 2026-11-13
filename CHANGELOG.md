@@ -1,6 +1,19 @@
 # SNAPVERE — Release history
 
-SNAPVERE is a Windows screenshot and recording workspace published by **BRENDIGO** at https://snapvere.com.
+SNAPVERE is a Windows screenshot and recording workspace published by **BRENDIGO**.
+
+## v0.2.8 — November 13, 2026 (Tauri/Rust preview)
+
+- Fixed screenshot cropping at negative virtual-desktop coordinates and monitor edges, with Rust regression coverage.
+- Made gallery search treat literal %, _ and backslash correctly instead of unintended SQL LIKE wildcards.
+- Kept SQLite foreign keys enabled in the in-memory fallback, preserving referential integrity of tags.
+- Propagated tag query errors rather than silently losing tags.
+- Restricted environment-supplied WebView2 remote debugging flags to debug builds.
+- Removed CI auto-commits of generated source/images and excessive quality workflow write permissions.
+- Introduced non-mutating Rust formatting, strict Clippy gating, and a working TypeScript static-analysis lint command.
+- Removed old release-note claims and distinguished the GitHub Tauri edition from the separately deployed .NET/WinUI website.
+
+**Release type:** preview, pending native Windows hardware, DPI, multi-monitor, audio, install/upgrade and pixel-perfect reference validation. The TypeScript compiler's strict and unused-symbol checks are enforced; ESLint is not yet a locked dependency and must be added separately before claiming ESLint coverage.
 
 ## v0.2.7 — November 2026
 
