@@ -1292,6 +1292,15 @@ fn validate_copy_image(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// Copy only a gallery-registered media path, never an arbitrary UI-supplied path.
+#[tauri::command]
+pub fn copy_media_path(app: AppHandle, id: String) -> Result<(), String> {
+    let path = media_path(&app, &id)?;
+    app.clipboard()
+        .write_text(path.to_string_lossy().into_owned())
+        .map_err(estr)
+}
+
 /// Kopiraj sliku iz galerije u clipboard. Dekodiranje velikog PNG-a traje — ne na
 /// glavnoj dretvi.
 #[tauri::command]

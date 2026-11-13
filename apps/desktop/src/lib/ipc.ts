@@ -86,6 +86,7 @@ export const ipc = {
   /** Pokaži datoteku u Exploreru. */
   revealMedia: (id: string) => invoke<void>("reveal_media", { id }),
   copyMediaImage: (id: string) => invoke<void>("copy_media_image", { id }),
+  copyMediaPath: (id: string) => invoke<void>("copy_media_path", { id }),
 
   // ── sustav ──
   showHome: () => invoke<void>("show_home"),

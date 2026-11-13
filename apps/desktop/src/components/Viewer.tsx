@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import {
   AlertTriangle,
   ChevronLeft,
@@ -115,7 +114,7 @@ export default function Viewer({ items, id, onNavigate, onClose, onDelete, onToa
   const copyPath = useCallback(async () => {
     if (!shot) return;
     try {
-      await writeText(shot.filePath);
+      await ipc.copyMediaPath(shot.id);
       onToast("File path copied");
     } catch (error) {
       onToast(`Could not copy file path: ${String(error)}`);
