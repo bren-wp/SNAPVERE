@@ -144,14 +144,20 @@ impl DxgiGrabber {
             let mut info = DXGI_OUTDUPL_FRAME_INFO::default();
             let mut resource: Option<IDXGIResource> = None;
 
-            match self.dupl.AcquireNextFrame(timeout_ms, &mut info, &mut resource) {
+            match self
+                .dupl
+                .AcquireNextFrame(timeout_ms, &mut info, &mut resource)
+            {
                 Ok(()) => {
                     // LastPresentTime == 0 obično znači "pomaknuo se samo kursor", ALI prvi
                     // frame nakon DuplicateOutput nosi cijeli desktop i često ima 0 —
                     // bez ovog `|| !have_frame` snimka bi počela crnim kadrovima.
                     let has_pixels = info.LastPresentTime != 0 || !self.have_frame;
                     let copied = if has_pixels {
-                        match resource.as_ref().and_then(|r| r.cast::<ID3D11Texture2D>().ok()) {
+                        match resource
+                            .as_ref()
+                            .and_then(|r| r.cast::<ID3D11Texture2D>().ok())
+                        {
                             Some(tex) => self.copy_texture(&tex),
                             // Anomalija, ali ne vrijedi prekinuti snimanje — zadrži zadnji frame.
                             None => Ok(()),
@@ -192,7 +198,8 @@ impl DxgiGrabber {
         let mut desc = D3D11_TEXTURE2D_DESC::default();
         src.GetDesc(&mut desc);
 
-        let stale = !matches!(&self.staging, Some((_, w, h)) if *w == desc.Width && *h == desc.Height);
+        let stale =
+            !matches!(&self.staging, Some((_, w, h)) if *w == desc.Width && *h == desc.Height);
         if stale {
             let mut sdesc = desc;
             sdesc.BindFlags = 0;

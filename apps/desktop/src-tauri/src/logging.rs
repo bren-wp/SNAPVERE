@@ -25,7 +25,10 @@ pub fn init(app_data_dir: &std::path::Path) {
 
     // Rotacija — log ne smije rasti bez granice.
     if let Some(p) = &path {
-        if fs::metadata(p).map(|m| m.len() > MAX_LOG_BYTES).unwrap_or(false) {
+        if fs::metadata(p)
+            .map(|m| m.len() > MAX_LOG_BYTES)
+            .unwrap_or(false)
+        {
             let _ = fs::rename(p, p.with_extension("log.1"));
         }
     }

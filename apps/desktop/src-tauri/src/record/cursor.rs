@@ -54,7 +54,9 @@ impl CursorPainter {
         origin_x: i32,
         origin_y: i32,
     ) {
-        let Some((bmp, pos)) = self.current() else { return };
+        let Some((bmp, pos)) = self.current() else {
+            return;
+        };
         let fw = frame_w as i32;
         let fh = frame_h as i32;
 
@@ -167,7 +169,13 @@ unsafe fn decode_cursor(icon: HICON) -> Option<CursorBitmap> {
                 p[3] = if and[i] { 0 } else { 255 };
             }
         }
-        return Some(CursorBitmap { w, h, hot_x, hot_y, px });
+        return Some(CursorBitmap {
+            w,
+            h,
+            hot_x,
+            hot_y,
+            px,
+        });
     }
 
     // Monokromatski kursor: maska je 2x visine.
@@ -204,7 +212,13 @@ unsafe fn decode_cursor(icon: HICON) -> Option<CursorBitmap> {
             }
         }
     }
-    Some(CursorBitmap { w, h, hot_x, hot_y, px })
+    Some(CursorBitmap {
+        w,
+        h,
+        hot_x,
+        hot_y,
+        px,
+    })
 }
 
 fn bitmap_size(hbm: HBITMAP) -> Option<(i32, i32)> {
