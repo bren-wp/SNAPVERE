@@ -91,6 +91,12 @@ with sync_playwright() as p:
         settings.get_by_role("navigation").get_by_role("button", name=tab + " settings", exact=True).click()
         settings.wait_for_timeout(200)
         settings.screenshot(path=str(OUTPUT / ("settings-" + tab.lower() + ".png")))
+    expected_version = json.loads(
+        (ROOT / "apps/desktop/package.json").read_text(encoding="utf-8")
+    )["version"]
+    settings.get_by_text(
+        "Snapvere · version " + expected_version, exact=True
+    ).wait_for(timeout=20000)
 
     # The editor shows an existing, real React UI screenshot as its test image.
     # The preview transport is mocked: this is a UI render, not a native capture test.
