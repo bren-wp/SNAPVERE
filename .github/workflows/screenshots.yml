@@ -33,7 +33,7 @@ jobs:
           cd apps/desktop
           npm ci --no-audit
           cd ../..
-          python -m pip install playwright==1.55.0
+          python -m pip install "playwright>=1.55,<2" "Pillow>=10,<13"
           python -m playwright install --with-deps chromium
       - name: Serve real frontend and website
         shell: bash
@@ -53,6 +53,16 @@ jobs:
           PY
       - name: Screenshot rendered screens
         run: python tools/capture_ui.py
+      - name: Measure exact visual differences from the deployed Snapvere website
+        continue-on-error: true
+        run: python tools/compare_live_site.py
+      - name: Upload live-site visual comparison evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Snapvere-Live-Site-Comparison
+          path: docs/visual-audit/
+          if-no-files-found: warn
       - name: Upload screenshot previews
         uses: actions/upload-artifact@v4
         with:
