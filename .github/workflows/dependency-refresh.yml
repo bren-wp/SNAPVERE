@@ -33,22 +33,27 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Remove installed JS bridges and utilities that are absent from source.
+          # Native Rust plugins remain registered in Cargo; they do not require
+          # their unused JavaScript wrapper packages to stay installed.
+          npm uninstall --save --no-fund \
+            clsx zustand \
+            @tauri-apps/plugin-clipboard-manager \
+            @tauri-apps/plugin-fs \
+            @tauri-apps/plugin-global-shortcut \
+            @tauri-apps/plugin-os
           npm update --no-fund
           npm install --save --no-fund \
             @tauri-apps/api@latest \
             @tauri-apps/plugin-autostart@latest \
-            @tauri-apps/plugin-clipboard-manager@latest \
             @tauri-apps/plugin-dialog@latest \
-            @tauri-apps/plugin-fs@latest \
-            @tauri-apps/plugin-global-shortcut@latest \
             @tauri-apps/plugin-opener@latest \
-            @tauri-apps/plugin-os@latest \
             @tauri-apps/plugin-store@latest \
-            clsx@latest lucide-react@latest
+            lucide-react@latest
           npm install --save-dev --no-fund \
             @tauri-apps/cli@latest @vitejs/plugin-react@latest \
             vite@latest typescript@latest autoprefixer@latest postcss@latest
-          # React 18, Zustand 4 and Tailwind 3 remain on their newest
+          # React 18 and Tailwind 3 remain on their newest
           # compatible patch/minor series until the tested UI migration.
           npm run build
           npm audit --audit-level=high
