@@ -2285,3 +2285,10 @@ body { background: var(--brand-bg); }
   .hero__cta { gap: 10px; }
   .snapvere-hero-product figcaption { padding: 16px; }
 }
+
+/* Native application and website use the same Brendigo design tokens. */
+.dl__license-note { max-width: 670px; margin: 18px auto 24px; text-align: center; color: var(--brand-muted); font-size: 13px; line-height: 1.7; }
+.snapvere-license { max-width: 920px; padding-bottom: 80px; }
+.snapvere-license__section { margin-top: 34px; }
+.snapvere-license__section p { white-space: pre-line; }
+.snapvere-license__more { margin-top: 40px; }
