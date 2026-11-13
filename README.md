@@ -13,7 +13,7 @@ A focused Windows capture workspace from **[BRENDIGO](https://brendigo.com)**.
 [![Product](https://img.shields.io/badge/Product-SNAPVERE-7648eb?style=flat-square)](https://snapvere.com)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-141416?style=flat-square)](https://snapvere.com/download/)
 [![Privacy](https://img.shields.io/badge/Storage-Local--first-141416?style=flat-square)](https://snapvere.com/privacy/)
-[![Release](https://img.shields.io/badge/Repository-v0.2.8-141416?style=flat-square)](https://github.com/bren-wp/Snapvere/releases)
+[![Release](https://img.shields.io/badge/Repository-v0.2.9-141416?style=flat-square)](https://github.com/bren-wp/Snapvere/releases)
 
 [**🌐 Public SNAPVERE website (.NET edition)**](https://snapvere.com/) · [**⬇️ Tauri / Rust Windows releases**](https://github.com/bren-wp/Snapvere/releases) · [**🔐 Website privacy**](https://snapvere.com/privacy/)
 
@@ -25,7 +25,7 @@ A focused Windows capture workspace from **[BRENDIGO](https://brendigo.com)**.
 
 > **Distribution notice:** snapvere.com currently publishes SNAPVERE v0.0.8 built with
 > .NET / WinUI 3. This repository builds the separate Tauri 2 / Rust Windows edition
-> (v0.2.8). Do not mix their installers, licenses, versions or upgrade paths.
+> (v0.2.9 development candidate). Do not mix their installers, licenses, versions or upgrade paths.
 > The production website, email download flow, and its binaries are not modified
 > by this GitHub release.
 >
@@ -92,6 +92,10 @@ The screenshots below come from **actual rendered React application screens in t
 </table>
 
 </details>
+
+## Upcoming v0.2.9 improvements
+
+The next SNAPVERE Windows edition brings precision keyboard capture controls, smoother video playback, resilient settings, stronger recorder startup and memory safety, and more maintainable native modules. Its PR build is undergoing verification and is not yet a published production update.
 
 ## What's improved in v0.2.7
 
