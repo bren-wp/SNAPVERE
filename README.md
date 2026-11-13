@@ -13,7 +13,7 @@ A focused Windows capture workspace from **[BRENDIGO](https://brendigo.com)**.
 [![Product](https://img.shields.io/badge/Product-SNAPVERE-09bfd9?style=flat-square)](https://snapvere.com)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-141416?style=flat-square)](https://snapvere.com/download/)
 [![Privacy](https://img.shields.io/badge/Storage-Local--first-141416?style=flat-square)](https://snapvere.com/privacy/)
-[![Release](https://img.shields.io/badge/Published-v0.2.5-141416?style=flat-square)](https://snapvere.com/download/)
+[![Release](https://img.shields.io/badge/Published-v0.2.6-141416?style=flat-square)](https://snapvere.com/download/)
 
 [**🌐 Explore SNAPVERE**](https://snapvere.com/) · [**⬇️ Download for Windows**](https://snapvere.com/download/) · [**🔐 Privacy**](https://snapvere.com/privacy/)
 
@@ -96,19 +96,19 @@ The screenshots below come from **actual rendered React application screens in t
 
 ## Get SNAPVERE for Windows
 
-**Latest published Windows preview: v0.2.5.** SNAPVERE currently provides three Windows package formats, with matching SHA-256 integrity data. Unreleased changes in the open development PR are **not included** in v0.2.5.
+**Windows preview v0.2.6 — prepared for release.** SNAPVERE provides three Windows package formats with SHA-256 integrity data. Use the verified [GitHub Releases](https://github.com/bren-wp/Snapvere/releases) page until the public website is confirmed to mirror the new binaries. These packages remain unsigned preview builds.
 
 | Package | Ideal for | Official download |
 |---|---|---|
-| 💻 **Portable EXE** | Run without installing SNAPVERE | [Snapvere-Portable.exe](https://snapvere.com/files/Snapvere-Portable.exe) |
-| 📦 **EXE Setup** | Guided installation | [Snapvere-Setup.exe](https://snapvere.com/files/Snapvere-Setup.exe) |
-| 🏢 **MSI Setup** | Windows managed installation | [Snapvere-Setup.msi](https://snapvere.com/files/Snapvere-Setup.msi) |
+| 💻 **Portable EXE** | Run without installing SNAPVERE | [Snapvere-Portable.exe](https://github.com/bren-wp/Snapvere/releases/download/v0.2.6/Snapvere-Portable.exe) |
+| 📦 **EXE Setup** | Guided installation | [Snapvere-Setup.exe](https://github.com/bren-wp/Snapvere/releases/download/v0.2.6/Snapvere-Setup.exe) |
+| 🏢 **MSI Setup** | Windows managed installation | [Snapvere-Setup.msi](https://github.com/bren-wp/Snapvere/releases/download/v0.2.6/Snapvere-Setup.msi) |
 
 **Requires:** 64-bit Windows 10/11 and Microsoft WebView2 Runtime. Portable means the SNAPVERE installer is not needed; some systems may still need WebView2 installed. These are **unsigned preview builds** and Windows SmartScreen may display a warning.
 
 ### Verify what you install
 
-Download [SHA256SUMS.txt](https://snapvere.com/files/SHA256SUMS.txt) **from the same package version**, then run:
+Download [SHA256SUMS.txt](https://github.com/bren-wp/Snapvere/releases/download/v0.2.6/SHA256SUMS.txt) **from the same package version**, then run:
 
 ```powershell
 Get-FileHash .\Snapvere-Portable.exe -Algorithm SHA256
