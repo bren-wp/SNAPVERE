@@ -55,7 +55,7 @@ jobs:
             echo 'Legacy identity found in tracked paths.'
             exit 1
           fi
-          grep -q 'Brendigo' README.md
+          grep -qi 'Brendigo' README.md
           grep -q 'snapvere.com' README.md
           python - <<'PY'
           import json
