@@ -561,7 +561,8 @@ export default function Overlay() {
         closeSoon();
       } catch (err) {
         console.error(err);
-        await ipc.cancelCapture();
+        // Keep the frozen frame and annotations available for retry.
+        setToast(`Export failed: ${String(err)}`);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

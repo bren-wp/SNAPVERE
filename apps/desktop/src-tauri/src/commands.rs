@@ -90,6 +90,24 @@ fn thumbs_dir(app: &AppHandle) -> Result<PathBuf, String> {
 
 // ──────────────────────────── interni helperi ────────────────────────────
 
+/// Create new media exclusively; never overwrite existing captures.
+/// Remove the newly created file if an interrupted write leaves partial bytes.
+fn write_new_capture(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+        .map_err(estr)?;
+    if let Err(error) = file.write_all(bytes) {
+        drop(file);
+        if let Err(cleanup) = fs::remove_file(path) {
+            log(&format!("incomplete capture cleanup {}: {cleanup}", path.display()));
+        }
+        return Err(format!("Could not write capture: {error}"));
+    }
+    Ok(())
+}
+
 /// Spremi sliku u galeriju (datoteka + thumbnail + DB zapis) i vrati zapis.
 fn save_to_gallery(
     app: &AppHandle,
@@ -108,12 +126,7 @@ fn save_to_gallery(
     let name = format!("Snapvere {}", Local::now().format("%Y-%m-%d %H.%M.%S"));
     // Stable display name, unique on-disk filename: never overwrite captures in the same second.
     let path = dir.join(format!("{name}-{id}.{}", format.ext()));
-    let mut file = fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(&path)
-        .map_err(estr)?;
-    file.write_all(&bytes).map_err(estr)?;
+    write_new_capture(&path, &bytes)?;
 
     let thumb_path = write_thumbnail(app, &id, img);
 
@@ -132,7 +145,18 @@ fn save_to_gallery(
         tags: Vec::new(),
     };
 
-    lock(&state.db).insert(&shot).map_err(estr)?;
+    if let Err(error) = lock(&state.db).insert(&shot) {
+        // Clean up only newly generated media; never touch existing user files.
+        if let Some(thumb) = &shot.thumb_path {
+            if let Err(cleanup) = fs::remove_file(thumb) {
+                log(&format!("orphan thumbnail cleanup {thumb}: {cleanup}"));
+            }
+        }
+        if let Err(cleanup) = fs::remove_file(&path) {
+            log(&format!("orphan capture cleanup {}: {cleanup}", path.display()));
+        }
+        return Err(format!("Could not index capture in gallery: {error}"));
+    }
     allow_media_dirs(app, std::slice::from_ref(&shot));
     Ok(shot)
 }
@@ -173,7 +197,18 @@ pub(crate) fn register_media(
     };
 
     let state = app.state::<AppState>();
-    lock(&state.db).insert(&shot).map_err(estr)?;
+    if let Err(error) = lock(&state.db).insert(&shot) {
+        // Keep the original recording on disk even if gallery indexing fails.
+        if let Some(thumb) = &shot.thumb_path {
+            if let Err(cleanup) = fs::remove_file(thumb) {
+                log(&format!("orphan thumbnail cleanup {thumb}: {cleanup}"));
+            }
+        }
+        return Err(format!(
+            "Could not index recording: {error}. Original file retained at {}",
+            path.display()
+        ));
+    }
     allow_media_dirs(app, std::slice::from_ref(&shot));
     Ok(shot)
 }
