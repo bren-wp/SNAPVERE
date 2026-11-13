@@ -29,6 +29,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
   const [toast, setToast] = useState<string | null>(null);
+  const [captureBusy, setCaptureBusy] = useState(false);
   /** Otvoren u pregledniku (id, ne indeks — lista se osvježava ispod njega). */
   const [viewId, setViewId] = useState<string | null>(null);
   const galleryRequest = useRef(0);
@@ -133,11 +134,24 @@ export default function Home() {
     }
   };
   const captureFull = async () => {
+    if (captureBusy) return;
+    setCaptureBusy(true);
+    const win = getCurrentWindow();
     try {
+      // Hide our own gallery before the OS takes its framebuffer snapshot.
+      // A short compositor delay prevents the disappearing WebView from being
+      // captured on slower Windows / WebView2 devices.
+      await win.hide();
+      await new Promise<void>((resolve) => setTimeout(resolve, 180));
       await ipc.captureFullscreen("png", 100);
       await load(query);
+      setToast("Full-screen screenshot saved.");
     } catch (e) {
       setToast(`Screenshot failed: ${String(e)}`);
+    } finally {
+      await win.show().catch(console.error);
+      await win.setFocus().catch(console.error);
+      setCaptureBusy(false);
     }
   };
   const recordArea = async () => {
@@ -176,14 +190,14 @@ export default function Home() {
           />
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <button onClick={captureRegion} className="snapvere-btn-primary flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 active:scale-95">
+          <button disabled={captureBusy} onClick={captureRegion} className="snapvere-btn-primary flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 active:scale-95">
             <Crop size={16} /> Capture region
           </button>
-          <button onClick={recordArea} className="snapvere-btn-secondary flex items-center gap-2 rounded-full px-3.5 py-2 text-sm transition hover:bg-elevated active:scale-95">
+          <button disabled={captureBusy} onClick={recordArea} className="snapvere-btn-secondary flex items-center gap-2 rounded-full px-3.5 py-2 text-sm transition hover:bg-elevated active:scale-95">
             <Video size={16} /> Record
           </button>
-          <button onClick={captureFull} className="snapvere-btn-secondary flex items-center gap-2 rounded-full px-3.5 py-2 text-sm transition hover:bg-elevated active:scale-95">
-            <Monitor size={16} /> Full screen
+          <button disabled={captureBusy} onClick={captureFull} className="snapvere-btn-secondary flex items-center gap-2 rounded-full px-3.5 py-2 text-sm transition hover:bg-elevated active:scale-95">
+            <Monitor size={16} /> {captureBusy ? "Capturing…" : "Full screen"}
           </button>
           <button onClick={openSettings} title="Settings" aria-label="Open settings" className="snapvere-btn-secondary grid h-9 w-9 place-items-center rounded-full transition hover:bg-elevated active:scale-95">
             <SettingsIcon size={18} />
@@ -272,20 +286,19 @@ function Card({
   // MP4 se ne moze prikazati u <img>; bez thumbnaila ide placeholder.
   const src = shot.thumbPath ?? (video ? null : shot.filePath);
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onOpen();
-        }
-      }}
-      title={video ? "Play" : "View"}
-      className="snapvere-gallery-card group relative cursor-pointer overflow-hidden outline-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card focus-visible:ring-2 focus-visible:ring-accent"
+    <article
+      role="group"
+      aria-label={shot.name}
+      className="snapvere-gallery-card group relative overflow-hidden outline-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card focus-within:ring-2 focus-within:ring-accent"
     >
-      <div className="relative aspect-video w-full bg-black/30">
+      {/* A real focusable button; utility buttons are siblings, never nested in it. */}
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={`${video ? "Play recording" : "View screenshot"}: ${shot.name}`}
+        className="absolute inset-0 z-[1] cursor-pointer rounded-[inherit] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent"
+      />
+      <div className="pointer-events-none relative aspect-video w-full bg-black/30">
         {src ? (
           <img
             src={convertFileSrc(src)}
@@ -313,14 +326,14 @@ function Card({
           </>
         )}
       </div>
-      <div className="px-3 py-2">
+      <div className="pointer-events-none relative px-3 py-2">
         <div className="truncate text-[13px] font-medium">{shot.name}</div>
         <div className="font-mono text-[11px] text-muted">
           {shot.width}×{shot.height} · {fmtBytes(shot.sizeBytes)}
         </div>
       </div>
       <div
-        className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+        className="absolute right-2 top-2 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
         onKeyDown={(e) => e.stopPropagation()}
       >
         <button
@@ -346,7 +359,7 @@ function Card({
           <Trash2 size={15} />
         </button>
       </div>
-    </div>
+    </article>
   );
 }
 

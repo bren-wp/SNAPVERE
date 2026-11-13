@@ -10,10 +10,10 @@
 
 A focused Windows capture workspace from **[BRENDIGO](https://brendigo.com)**.
 
-[![Product](https://img.shields.io/badge/Product-SNAPVERE-09bfd9?style=flat-square)](https://snapvere.com)
+[![Product](https://img.shields.io/badge/Product-SNAPVERE-7648eb?style=flat-square)](https://snapvere.com)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-141416?style=flat-square)](https://snapvere.com/download/)
 [![Privacy](https://img.shields.io/badge/Storage-Local--first-141416?style=flat-square)](https://snapvere.com/privacy/)
-[![Release](https://img.shields.io/badge/Published-v0.2.6-141416?style=flat-square)](https://snapvere.com/download/)
+[![Release](https://img.shields.io/badge/Published-v0.2.7-141416?style=flat-square)](https://snapvere.com/download/)
 
 [**🌐 Explore SNAPVERE**](https://snapvere.com/) · [**⬇️ Download for Windows**](https://snapvere.com/download/) · [**🔐 Privacy**](https://snapvere.com/privacy/)
 
@@ -81,6 +81,16 @@ The screenshots below come from **actual rendered React application screens in t
 
 </details>
 
+## What's improved in v0.2.7
+
+- **More reliable shortcuts:** Rebinding capture or recording shortcuts now preserves the previous keys if Windows rejects the new combination.
+- **Cleaner full-screen captures:** The application window hides before Windows samples the display and returns afterward, reducing screenshots that accidentally contain the gallery.
+- **A reliable editor:** Newly saved screenshots are explicitly authorized for the editor's image view. The preview test rejects unloaded or black editor frames.
+- **Unified product identity:** The redesigned navy/violet website, app shell, feather icon, favicon, Windows executable icons, macOS icon and social preview share the same local source.
+- **Clearer controls:** Accessible gallery card actions, narrower Settings layouts and status feedback for saving and changing hotkeys.
+
+The source and interface images are built directly from the SNAPVERE project. Preview images verify rendered UI; hardware capture and recording still require device-specific validation.
+
 ## Built to stay out of your way
 
 | | Everyday task | SNAPVERE workflow |
@@ -96,19 +106,19 @@ The screenshots below come from **actual rendered React application screens in t
 
 ## Get SNAPVERE for Windows
 
-**Windows preview v0.2.6 — prepared for release.** SNAPVERE provides three Windows package formats with SHA-256 integrity data. Use the verified [GitHub Releases](https://github.com/bren-wp/Snapvere/releases) page until the public website is confirmed to mirror the new binaries. These packages remain unsigned preview builds.
+**Windows preview v0.2.7 — prepared for release.** SNAPVERE provides three Windows package formats with SHA-256 integrity data. Use the verified [GitHub Releases](https://github.com/bren-wp/Snapvere/releases) page until the public website is confirmed to mirror the new binaries. These packages remain unsigned preview builds.
 
 | Package | Ideal for | Official download |
 |---|---|---|
-| 💻 **Portable EXE** | Run without installing SNAPVERE | [Snapvere-Portable.exe](https://github.com/bren-wp/Snapvere/releases/download/v0.2.6/Snapvere-Portable.exe) |
-| 📦 **EXE Setup** | Guided installation | [Snapvere-Setup.exe](https://github.com/bren-wp/Snapvere/releases/download/v0.2.6/Snapvere-Setup.exe) |
-| 🏢 **MSI Setup** | Windows managed installation | [Snapvere-Setup.msi](https://github.com/bren-wp/Snapvere/releases/download/v0.2.6/Snapvere-Setup.msi) |
+| 💻 **Portable EXE** | Run without installing SNAPVERE | [Snapvere-Portable.exe](https://github.com/bren-wp/Snapvere/releases/download/v0.2.7/Snapvere-Portable.exe) |
+| 📦 **EXE Setup** | Guided installation | [Snapvere-Setup.exe](https://github.com/bren-wp/Snapvere/releases/download/v0.2.7/Snapvere-Setup.exe) |
+| 🏢 **MSI Setup** | Windows managed installation | [Snapvere-Setup.msi](https://github.com/bren-wp/Snapvere/releases/download/v0.2.7/Snapvere-Setup.msi) |
 
 **Requires:** 64-bit Windows 10/11 and Microsoft WebView2 Runtime. Portable means the SNAPVERE installer is not needed; some systems may still need WebView2 installed. These are **unsigned preview builds** and Windows SmartScreen may display a warning.
 
 ### Verify what you install
 
-Download [SHA256SUMS.txt](https://github.com/bren-wp/Snapvere/releases/download/v0.2.6/SHA256SUMS.txt) **from the same package version**, then run:
+Download [SHA256SUMS.txt](https://github.com/bren-wp/Snapvere/releases/download/v0.2.7/SHA256SUMS.txt) **from the same package version**, then run:
 
 ```powershell
 Get-FileHash .\Snapvere-Portable.exe -Algorithm SHA256

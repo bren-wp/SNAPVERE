@@ -2,7 +2,8 @@ name: Snapvere build and quality checks
 on:
   push:
     branches:
-      - feature/snapvere-v0.2.6-capture-brand-polish
+      - "feature/**"
+      - "fix/**"
   pull_request:
     branches:
       - main

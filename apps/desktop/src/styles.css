@@ -15,24 +15,24 @@
 
 :root,
 [data-theme="dark"] {
-  --brand-bg: #0a0a0b;
-  --brand-surface: #141416;
-  --brand-elevated: #1a1a1d;
-  --brand-accent: #09bfd9;
-  --brand-accent-hi: #55e0e5;
-  --brand-text: #f5f5f7;
-  --brand-muted: #a1a1a6;
-  --brand-border: rgba(255, 255, 255, 0.12);
-  --brand-card-radius: 18px;
-  --brand-control-radius: 999px;
-  --snapvere-bg: 10 10 11;
-  --snapvere-surface: 20 20 22;
-  --snapvere-elevated: 26 26 29;
-  --snapvere-border: 70 70 76;
-  --snapvere-muted: 161 161 166;
-  --snapvere-text: 245 245 247;
-  --snapvere-accent: 9 191 217; /* shared Snapvere brand accent */
-  --snapvere-accent-soft: 26 69 76;
+  --brand-bg: #151831;
+  --brand-surface: #10172c;
+  --brand-elevated: #1c2441;
+  --brand-accent: #7648eb;
+  --brand-accent-hi: #a78bfa;
+  --brand-text: #f7f6ff;
+  --brand-muted: #abb7d7;
+  --brand-border: rgba(164, 141, 255, 0.19);
+  --brand-card-radius: 22px;
+  --brand-control-radius: 14px;
+  --snapvere-bg: 21 24 49;
+  --snapvere-surface: 16 23 44;
+  --snapvere-elevated: 28 36 65;
+  --snapvere-border: 92 86 144;
+  --snapvere-muted: 171 183 215;
+  --snapvere-text: 247 246 255;
+  --snapvere-accent: 118 72 235; /* shared Snapvere brand accent */
+  --snapvere-accent-soft: 50 33 91;
   --snapvere-danger: 255 69 58;
   --snapvere-warn: 255 214 10;
 }
@@ -44,8 +44,8 @@
   --snapvere-border: 209 209 214;
   --snapvere-muted: 110 110 115;
   --snapvere-text: 28 28 30;
-  --snapvere-accent: 0 139 181; /* accessible light theme accent */
-  --snapvere-accent-soft: 215 239 241;
+  --snapvere-accent: 95 56 194; /* accessible light theme accent */
+  --snapvere-accent-soft: 235 225 255;
   --snapvere-danger: 255 59 48;
   --snapvere-warn: 255 179 0;
 }
@@ -388,7 +388,7 @@ body.hud {
   outline: 2px solid rgb(var(--snapvere-accent)); outline-offset: 3px;
 }
 button:disabled { cursor: not-allowed; opacity: .55; }
-::selection { background: rgba(85, 224, 229, .28); }
+::selection { background: rgba(167, 139, 250, .28); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;
@@ -400,7 +400,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 /* Shared public-web / native Snapvere brand grammar. */
 .snapvere-app-shell {
   background:
-    radial-gradient(ellipse at 55% -35%, rgba(9,191,217,.085), transparent 60%),
+    radial-gradient(ellipse at 55% -35%, rgba(118,72,235,.085), transparent 60%),
     rgb(var(--snapvere-bg));
 }
 .snapvere-app-brandbar {
@@ -416,7 +416,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .snapvere-app-identity { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .snapvere-app-logo {
   width: 40px; height: 40px; flex: 0 0 40px; border-radius: 12px;
-  filter: drop-shadow(0 6px 10px rgba(9,191,217,.1));
+  filter: drop-shadow(0 6px 10px rgba(118,72,235,.1));
 }
 .snapvere-app-identity-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .snapvere-app-wordmark {
@@ -432,7 +432,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .snapvere-app-local {
   display: inline-flex; align-items: center; gap: 7px;
   border-radius: var(--brand-control-radius); padding: 6px 11px;
-  border: 1px solid var(--brand-border); background: rgba(85,224,229,.045);
+  border: 1px solid var(--brand-border); background: rgba(167,139,250,.045);
   color: rgb(var(--snapvere-text)); font-size: 10px; font-weight: 750;
   letter-spacing: .08em; white-space: nowrap;
 }
@@ -443,12 +443,12 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .snapvere-app-toolbar { border-bottom: 1px solid var(--brand-border); background: rgba(20,20,22,.48); }
 [data-theme="light"] .snapvere-app-toolbar { background: rgba(240,240,242,.45); }
 .snapvere-btn-primary {
-  border: 1px solid rgba(85,224,229,.35);
-  box-shadow: 0 4px 18px rgba(9,191,217,.21), inset 0 1px 0 rgba(255,255,255,.22);
+  border: 1px solid rgba(167,139,250,.35);
+  box-shadow: 0 4px 18px rgba(118,72,235,.21), inset 0 1px 0 rgba(255,255,255,.22);
 }
-.snapvere-btn-primary:hover { box-shadow: 0 8px 28px rgba(9,191,217,.3); }
+.snapvere-btn-primary:hover { box-shadow: 0 8px 28px rgba(118,72,235,.3); }
 .snapvere-btn-secondary { border: 1px solid var(--brand-border); background: rgba(255,255,255,.018); }
-.snapvere-btn-secondary:hover { border-color: rgba(85,224,229,.4); }
+.snapvere-btn-secondary:hover { border-color: rgba(167,139,250,.4); }
 .snapvere-section-eyebrow {
   color: rgb(var(--snapvere-accent)); font-size: 10px; font-weight: 800; letter-spacing: .15em;
 }
@@ -459,9 +459,9 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .snapvere-gallery-card {
   border: 1px solid var(--brand-border);
   border-radius: var(--brand-card-radius);
-  background: linear-gradient(145deg, rgba(9,191,217,.045), transparent 58%), rgb(var(--snapvere-surface));
+  background: linear-gradient(145deg, rgba(118,72,235,.045), transparent 58%), rgb(var(--snapvere-surface));
 }
-.snapvere-gallery-card:hover,.snapvere-gallery-card:focus-visible { border-color: rgba(85,224,229,.55); }
+.snapvere-gallery-card:hover,.snapvere-gallery-card:focus-visible { border-color: rgba(167,139,250,.55); }
 .snapvere-gallery-card button { opacity: 1; }
 .snapvere-settings-sidebar button[aria-current="page"] { box-shadow: inset 3px 0 0 rgb(var(--snapvere-accent)); }
 .snapvere-editor-toolbar { background: rgba(20,20,22,.68); border-bottom: 1px solid var(--brand-border); }
@@ -474,14 +474,14 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 
 /* SNAPVERE: keyboard-visible actions and consistent settings/editor materials. */
 .snapvere-settings-content {
-  background: linear-gradient(145deg, rgba(9, 191, 217, .022), transparent 45%);
+  background: linear-gradient(145deg, rgba(118, 72, 235, .022), transparent 45%);
 }
 .snapvere-settings-sidebar button[aria-current="page"] {
-  border: 1px solid rgba(85, 224, 229, .20);
+  border: 1px solid rgba(167, 139, 250, .20);
 }
 .snapvere-editor-notice {
-  border-bottom: 1px solid rgba(85, 224, 229, .23);
-  background: rgba(9, 191, 217, .08);
+  border-bottom: 1px solid rgba(167, 139, 250, .23);
+  background: rgba(118, 72, 235, .08);
   color: rgb(var(--snapvere-text));
 }
 .snapvere-gallery-card:focus-within {
@@ -490,10 +490,39 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 }
 .snapvere-gallery-card button:focus-visible {
   opacity: 1;
-  outline: 2px solid #55e0e5;
+  outline: 2px solid #a78bfa;
   outline-offset: 2px;
 }
 @media (prefers-reduced-motion: reduce) {
   .snapvere-gallery-card:focus-within,
   .snapvere-gallery-card button:focus-visible { transform: none; }
 }
+
+/* Compact Settings: the full 7-section navigation remains usable in small WebViews. */
+@media (max-width: 740px) {
+  .snapvere-settings-layout { flex-direction: column; }
+  .snapvere-settings-sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-shrink: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 6px;
+    padding: 10px;
+    border-right: 0;
+    border-bottom: 1px solid var(--brand-border);
+    scrollbar-width: thin;
+  }
+  .snapvere-settings-sidebar > .snapvere-section-eyebrow { display: none; }
+  .snapvere-settings-sidebar > button { white-space: nowrap; flex: 0 0 auto; }
+  .snapvere-settings-content { padding: 16px; }
+}
+
+/* Native shell with the same navy / violet identity as the published site. */
+.snapvere-app-brandbar { background: rgba(11,16,34,.92); min-height: 76px; }
+.snapvere-app-shell { background: linear-gradient(148deg,#151831, #101629 80%); }
+.snapvere-app-local { border-color: rgba(164,141,255,.24); background: rgba(118,72,235,.08); }
+.snapvere-app-toolbar { background: rgba(16,23,44,.84); }
+.snapvere-btn-primary { background-color: #7045d4; border-color: #9570ed; }
+.snapvere-btn-primary:hover { background-color: #875cf2; }
+[data-theme="light"] .snapvere-app-shell { background: rgb(var(--snapvere-bg)); }

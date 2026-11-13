@@ -400,6 +400,16 @@ const REC_HUD_W: u32 = 820;
 const REC_HUD_H: u32 = 58;
 
 fn open_editor_window(app: &AppHandle, file_path: &str) -> Result<(), String> {
+    // Newly saved gallery images may not have been listed yet, so their
+    // file:// asset URLs would otherwise be blocked in the editor WebView.
+    // Permit the exact saved file, never an arbitrary directory.
+    let image = Path::new(file_path);
+    if !image.is_file() {
+        return Err("Saved screenshot is missing; cannot open editor".into());
+    }
+    app.asset_protocol_scope()
+        .allow_file(image)
+        .map_err(|e| format!("Cannot authorize screenshot for editor: {e}"))?;
     // Putanju proslijedimo base64-encoded u hashu (izbjegava probleme s razmacima/\).
     let enc = base64::engine::general_purpose::STANDARD.encode(file_path);
     let url = format!("index.html#editor?p={enc}");

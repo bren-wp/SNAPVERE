@@ -7,6 +7,7 @@ import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { ipc } from "../lib/ipc";
 import type { ImageFormat, RecordFormat } from "../lib/types";
 import WindowFrame from "../components/WindowFrame";
+import { version as appVersion } from "../../package.json";
 
 type Tab =
   | "general"
@@ -65,6 +66,7 @@ export default function Settings() {
   const [store, setStore] = useState<Store | null>(null);
   const [autostart, setAutostart] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -97,6 +99,28 @@ export default function Settings() {
     void store?.set(key, val).catch((error) => setNotice(`Could not save ${key}: ${String(error)}`));
   }
 
+  // Save a hotkey only after the operating system has accepted it. On failure,
+  // the native service attempts to restore the previous binding.
+  const applyHotkey = async (key: "hotkey" | "recordHotkey", accelerator: string) => {
+    setStatus(null);
+    try {
+      if (key === "hotkey") await ipc.updateHotkey(accelerator);
+      else await ipc.updateRecordHotkey(accelerator);
+      const [capture, recording] = await ipc.activeHotkeys();
+      const active = key === "hotkey" ? capture : recording;
+      set(key, prettyAccel(active ?? accelerator));
+      setNotice(null);
+      setStatus(`${key === "hotkey" ? "Screenshot" : "Recording"} shortcut updated.`);
+    } catch (error) {
+      const current = await ipc.activeHotkeys().catch(() => null);
+      if (current) {
+        const previous = key === "hotkey" ? current[0] : current[1];
+        if (previous) setS((state) => ({ ...state, [key]: prettyAccel(previous) }));
+      }
+      setNotice(`Shortcut was not changed: ${String(error)}`);
+    }
+  };
+
   const applyTheme = (theme: "dark" | "light") => {
     set("theme", theme);
     document.documentElement.setAttribute("data-theme", theme);
@@ -108,7 +132,7 @@ export default function Settings() {
       on ? await enable() : await disable();
       setAutostart(on);
       // Remember the explicit user preference. Portable mode never auto-enables startup.
-      void store?.set("autostart", on);
+      await store?.set("autostart", on);
     } catch (e) {
       setNotice(`Could not change startup preference: ${String(e)}`);
     }
@@ -121,14 +145,14 @@ export default function Settings() {
 
   return (
     <WindowFrame title="Settings">
-      <div className="flex min-h-0 flex-1">
+      <div className="snapvere-settings-layout flex min-h-0 flex-1">
         {/* tabovi */}
         <nav aria-label="Settings sections" className="snapvere-settings-sidebar flex w-48 shrink-0 flex-col gap-1 overflow-y-auto border-r border-white/10 bg-elevated/20 p-3">
         <div className="snapvere-section-eyebrow px-2 pb-2 pt-2">PREFERENCES</div>
         {TABS.map((t) => (
           <button
             key={t.id}
-            onClick={() => { setTab(t.id); setNotice(null); }}
+            onClick={() => { setTab(t.id); setNotice(null); setStatus(null); }}
             aria-current={tab === t.id ? "page" : undefined}
             aria-label={`${t.label} settings`}
             className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm transition-colors focus-visible:ring-2 focus-visible:ring-accent ${
@@ -143,6 +167,7 @@ export default function Settings() {
 
       <div className="snapvere-settings-content min-h-0 flex-1 overflow-auto p-6">
         {notice && <p role="alert" className="mb-4 rounded-xl border border-danger/40 bg-danger/10 p-3 text-sm">{notice}</p>}
+        {status && <p role="status" aria-live="polite" className="mb-4 rounded-xl border border-accent/30 bg-accent/10 p-3 text-sm">{status}</p>}
         {tab === "general" && (
           <Section title="General">
             <Row label="Theme" hint="Light or dark interface scheme.">
@@ -159,7 +184,7 @@ export default function Settings() {
               label="Launch on startup"
               hint="Optional. Start Snapvere when you sign in (off by default)."
             >
-              <Toggle checked={autostart} onChange={toggleAutostart} />
+              <Toggle label="Launch on startup" checked={autostart} onChange={toggleAutostart} />
             </Row>
           </Section>
         )}
@@ -168,15 +193,9 @@ export default function Settings() {
           <Section title="Hotkeys">
             <Row label="Region capture" hint="Freeze the screen and pick an area.">
               <HotkeyInput
+                label="Screenshot shortcut"
                 value={s.hotkey}
-                onChange={async (accel) => {
-                  set("hotkey", accel);
-                  try {
-                    await ipc.updateHotkey(accel);
-                  } catch (e) {
-                    console.error(e);
-                  }
-                }}
+                onChange={(accel) => void applyHotkey("hotkey", accel)}
               />
             </Row>
             <Row
@@ -184,15 +203,9 @@ export default function Settings() {
               hint="Press once to pick an area, again to stop the recording."
             >
               <HotkeyInput
+                label="Recording shortcut"
                 value={s.recordHotkey}
-                onChange={async (accel) => {
-                  set("recordHotkey", accel);
-                  try {
-                    await ipc.updateRecordHotkey(accel);
-                  } catch (e) {
-                    console.error(e);
-                  }
-                }}
+                onChange={(accel) => void applyHotkey("recordHotkey", accel)}
               />
             </Row>
             <p className="mt-3 text-xs leading-relaxed text-muted">
@@ -273,6 +286,7 @@ export default function Settings() {
             </Row>
             <Row label="Include the mouse cursor">
               <Toggle
+                label="Include the mouse cursor"
                 checked={s.recordCursor}
                 onChange={(v) => set("recordCursor", v)}
               />
@@ -282,6 +296,7 @@ export default function Settings() {
               hint="Default input device. You can also flip this per recording, right in the capture bar."
             >
               <Toggle
+                label="Record microphone"
                 checked={s.recordMic}
                 onChange={(v) => set("recordMic", v)}
               />
@@ -291,6 +306,7 @@ export default function Settings() {
               hint="Whatever your speakers play — app sounds, calls, music. MP4 only."
             >
               <Toggle
+                label="Record system audio"
                 checked={s.recordSystemAudio}
                 onChange={(v) => set("recordSystemAudio", v)}
               />
@@ -363,7 +379,7 @@ export default function Settings() {
 
         {tab === "about" && (
           <Section title="About">
-            <p className="text-sm text-muted">Snapvere · version 0.2.5</p>
+            <p className="text-sm text-muted">Snapvere · version {appVersion}</p>
             <p className="mt-2 text-sm text-muted">
               Secure capture and screen recording by Brendigo.
             </p>
@@ -425,7 +441,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-6 border-b border-border/60 pb-4">
+    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-4">
       <div className="min-w-0">
         <div className="text-sm">{label}</div>
         {hint && <div className="mt-1 text-xs leading-snug text-muted">{hint}</div>}
@@ -434,11 +450,12 @@ function Row({ label, hint, children }: { label: string; hint?: string; children
     </div>
   );
 }
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
       onClick={() => onChange(!checked)}
       role="switch"
+      aria-label={label}
       aria-checked={checked}
       className={`inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 ${checked ? "bg-accent" : "bg-border"}`}
     >
@@ -472,7 +489,7 @@ function Segmented({ value, options, onChange }: { value: string; options: { v: 
  * interno (klasično za `Fn`), ovdje NE stigne nijedan event — i to korisniku
  * eksplicitno kažemo umjesto da polje šuti.
  */
-function HotkeyInput({ value, onChange }: { value: string; onChange: (accel: string) => void }) {
+function HotkeyInput({ label, value, onChange }: { label: string; value: string; onChange: (accel: string) => void }) {
   const [capturing, setCapturing] = useState(false);
   const [silent, setSilent] = useState(false);
 
@@ -490,6 +507,7 @@ function HotkeyInput({ value, onChange }: { value: string; onChange: (accel: str
     <div className="flex flex-col items-end gap-1">
       <input
         readOnly
+        aria-label={label}
         value={capturing ? "Press a combination…" : value}
         onFocus={() => setCapturing(true)}
         onBlur={() => setCapturing(false)}

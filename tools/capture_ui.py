@@ -34,7 +34,7 @@ TAURI_PREVIEW = r"""
   }
   window.__TAURI_INTERNALS__ = {
     metadata: { currentWindow: { label: "home" }, windows: [{ label: "home" }] },
-    convertFileSrc(path) { return "http://127.0.0.1:4173/screenshots/home.png"; },
+    convertFileSrc(path) { return window.__SNAPVERE_EDITOR_IMAGE || "http://127.0.0.1:4173/screenshots/home.png"; },
     transformCallback(cb) { const id = nextCallback++; callbacks.set(id, cb); return id; },
     unregisterCallback(id) { callbacks.delete(id); },
     previewListenerReady() { return eventCallbacks.has("snapvere:capture"); },
@@ -71,6 +71,11 @@ with sync_playwright() as p:
     browser = p.chromium.launch(headless=True, args=["--disable-web-security"])
     app = browser.new_context(viewport={"width": 1120, "height": 740},
                               device_scale_factor=1, color_scheme="dark")
+    # Re-use an actual SNAPVERE screenshot as the editor's image fixture.
+    editor_source = ROOT / "site/screenshots/home.png"
+    assert editor_source.is_file(), "SNAPVERE editor preview fixture is missing"
+    editor_uri = "data:image/png;base64," + b64encode(editor_source.read_bytes()).decode("ascii")
+    app.add_init_script("window.__SNAPVERE_EDITOR_IMAGE = " + json.dumps(editor_uri))
     app.add_init_script(TAURI_PREVIEW)
     page = app.new_page()
     page.goto("http://127.0.0.1:1420/", wait_until="networkidle")
@@ -86,6 +91,12 @@ with sync_playwright() as p:
         settings.get_by_role("navigation").get_by_role("button", name=tab + " settings", exact=True).click()
         settings.wait_for_timeout(200)
         settings.screenshot(path=str(OUTPUT / ("settings-" + tab.lower() + ".png")))
+    expected_version = json.loads(
+        (ROOT / "apps/desktop/package.json").read_text(encoding="utf-8")
+    )["version"]
+    settings.get_by_text(
+        "Snapvere · version " + expected_version, exact=True
+    ).wait_for(timeout=20000)
 
     # The editor shows an existing, real React UI screenshot as its test image.
     # The preview transport is mocked: this is a UI render, not a native capture test.
@@ -93,7 +104,8 @@ with sync_playwright() as p:
     editor_path = b64encode(b"Snapvere-frontend-preview.png").decode("ascii")
     editor.goto("http://127.0.0.1:1420/#editor?p=" + editor_path, wait_until="networkidle")
     editor.wait_for_function(
-        "() => document.querySelector('canvas')?.width > 1", timeout=20000
+        "() => document.querySelector('canvas')?.width >= 900"
+        " && !document.body.textContent.includes('could not be loaded')", timeout=20000
     )
     editor.screenshot(path=str(OUTPUT / "editor.png"))
     app.close()
@@ -109,6 +121,14 @@ with sync_playwright() as p:
     page = site.new_page()
     page.goto("http://127.0.0.1:4173/", wait_until="networkidle")
     page.screenshot(path=str(OUTPUT / "website.png"), full_page=False)
+    # Guard the new responsive split hero: marketing copy stays left of the
+    # genuine product image at desktop widths, and both stay within the viewport.
+    hero_title = page.locator(".hero__title").bounding_box()
+    hero_preview = page.locator(".snapvere-hero-product").bounding_box()
+    if not hero_title or not hero_preview or hero_title["x"] >= hero_preview["x"]:
+        raise RuntimeError("SNAPVERE desktop hero no longer uses the intended split layout")
+    if hero_preview["x"] + hero_preview["width"] > 1442:
+        raise RuntimeError("SNAPVERE desktop hero image overflows the viewport")
     for address, filename in (("/download/", "download.png"), ("/privacy/", "privacy.png")):
         subpage = site.new_page()
         subpage.goto("http://127.0.0.1:4173" + address, wait_until="networkidle")
@@ -118,6 +138,12 @@ with sync_playwright() as p:
     mobile_page = mobile_site.new_page()
     mobile_page.goto("http://127.0.0.1:4173/", wait_until="networkidle")
     mobile_page.screenshot(path=str(OUTPUT / "website-mobile.png"), full_page=False)
+    # No horizontal overflow on narrow phones.
+    horizontal_overflow = mobile_page.evaluate(
+        "() => document.documentElement.scrollWidth > window.innerWidth + 2"
+    )
+    if horizontal_overflow:
+        raise RuntimeError("SNAPVERE mobile homepage has horizontal overflow")
     for address, filename in (("/download/", "download-mobile.png"),
                               ("/privacy/", "privacy-mobile.png")):
         subpage = mobile_site.new_page()
