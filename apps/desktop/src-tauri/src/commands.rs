@@ -101,7 +101,10 @@ fn write_new_capture(path: &Path, bytes: &[u8]) -> Result<(), String> {
     if let Err(error) = file.write_all(bytes) {
         drop(file);
         if let Err(cleanup) = fs::remove_file(path) {
-            log(&format!("incomplete capture cleanup {}: {cleanup}", path.display()));
+            log(&format!(
+                "incomplete capture cleanup {}: {cleanup}",
+                path.display()
+            ));
         }
         return Err(format!("Could not write capture: {error}"));
     }
@@ -153,7 +156,10 @@ fn save_to_gallery(
             }
         }
         if let Err(cleanup) = fs::remove_file(&path) {
-            log(&format!("orphan capture cleanup {}: {cleanup}", path.display()));
+            log(&format!(
+                "orphan capture cleanup {}: {cleanup}",
+                path.display()
+            ));
         }
         return Err(format!("Could not index capture in gallery: {error}"));
     }
@@ -786,10 +792,7 @@ const MAX_EDITOR_BASE64_LEN: usize = 192 * 1024 * 1024;
 const MAX_EDITOR_PIXELS: u64 = 50_000_000;
 
 fn validate_editor_png_header(bytes: &[u8]) -> Result<(), String> {
-    if bytes.len() < 24
-        || !bytes.starts_with(b"\x89PNG\r\n\x1a\n")
-        || &bytes[12..16] != b"IHDR"
-    {
+    if bytes.len() < 24 || !bytes.starts_with(b"\x89PNG\r\n\x1a\n") || &bytes[12..16] != b"IHDR" {
         return Err("Editor export must be a valid PNG image".into());
     }
     let width = u32::from_be_bytes(bytes[16..20].try_into().map_err(estr)?);
