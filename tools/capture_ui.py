@@ -109,6 +109,14 @@ with sync_playwright() as p:
     page = site.new_page()
     page.goto("http://127.0.0.1:4173/", wait_until="networkidle")
     page.screenshot(path=str(OUTPUT / "website.png"), full_page=False)
+    # Guard the new responsive split hero: marketing copy stays left of the
+    # genuine product image at desktop widths, and both stay within the viewport.
+    hero_title = page.locator(".hero__title").bounding_box()
+    hero_preview = page.locator(".snapvere-hero-product").bounding_box()
+    if not hero_title or not hero_preview or hero_title["x"] >= hero_preview["x"]:
+        raise RuntimeError("SNAPVERE desktop hero no longer uses the intended split layout")
+    if hero_preview["x"] + hero_preview["width"] > 1442:
+        raise RuntimeError("SNAPVERE desktop hero image overflows the viewport")
     for address, filename in (("/download/", "download.png"), ("/privacy/", "privacy.png")):
         subpage = site.new_page()
         subpage.goto("http://127.0.0.1:4173" + address, wait_until="networkidle")
@@ -118,6 +126,12 @@ with sync_playwright() as p:
     mobile_page = mobile_site.new_page()
     mobile_page.goto("http://127.0.0.1:4173/", wait_until="networkidle")
     mobile_page.screenshot(path=str(OUTPUT / "website-mobile.png"), full_page=False)
+    # No horizontal overflow on narrow phones.
+    horizontal_overflow = mobile_page.evaluate(
+        "() => document.documentElement.scrollWidth > window.innerWidth + 2"
+    )
+    if horizontal_overflow:
+        raise RuntimeError("SNAPVERE mobile homepage has horizontal overflow")
     for address, filename in (("/download/", "download-mobile.png"),
                               ("/privacy/", "privacy-mobile.png")):
         subpage = mobile_site.new_page()

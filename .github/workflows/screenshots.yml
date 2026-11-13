@@ -2,12 +2,15 @@ name: Capture real Snapvere frontend previews
 on:
   push:
     branches:
-      - feature/snapvere-v0.2.6-capture-brand-polish
+      - feature/snapvere-v0.2.7-ui-reliability
     paths:
       - 'tools/capture_ui.py'
       - '.github/workflows/screenshots.yml'
       - 'apps/desktop/src/**'
-      - 'site/**'
+      - 'site/**/*.html'
+      - 'site/styles.css'
+      - 'site/favicon.svg'
+      - 'site/config.js'
   workflow_dispatch:
 permissions:
   contents: write
