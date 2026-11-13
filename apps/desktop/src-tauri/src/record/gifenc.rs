@@ -61,7 +61,14 @@ impl GifEncoder {
     pub fn write(&mut self, bgra: &[u8]) -> Result<(), String> {
         self.fill_rgba(bgra);
         // Razdvojene posudbe polja — `from_rgba_speed` traži &mut rgba dok držimo &mut enc.
-        let Self { enc, out_w, out_h, delay_cs, rgba, .. } = self;
+        let Self {
+            enc,
+            out_w,
+            out_h,
+            delay_cs,
+            rgba,
+            ..
+        } = self;
         let Some(enc) = enc.as_mut() else {
             return Err("GIF enkoder je već zatvoren".into());
         };

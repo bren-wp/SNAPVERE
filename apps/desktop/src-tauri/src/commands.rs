@@ -27,8 +27,8 @@ use uuid::Uuid;
 use crate::capture;
 use crate::logging::{self, log};
 use crate::models::{
-    CaptureAction, CaptureSource, ImageFormat, MonitorInfo, PixelRect, RecFrameRect,
-    RecordOptions, RecordStatus, Region, Screenshot,
+    CaptureAction, CaptureSource, ImageFormat, MonitorInfo, PixelRect, RecFrameRect, RecordOptions,
+    RecordStatus, Region, Screenshot,
 };
 use crate::record::{self, RecordTarget};
 use crate::state::{lock, AppState};
@@ -109,7 +109,10 @@ fn save_to_gallery(
     // Stable display name, unique on-disk filename: never overwrite captures in the same second.
     let path = dir.join(format!("{name}-{id}.{}", format.ext()));
     let mut file = fs::OpenOptions::new()
-        .write(true).create_new(true).open(&path).map_err(estr)?;
+        .write(true)
+        .create_new(true)
+        .open(&path)
+        .map_err(estr)?;
     file.write_all(&bytes).map_err(estr)?;
 
     let thumb_path = write_thumbnail(app, &id, img);
@@ -212,7 +215,9 @@ fn cursor_pos() -> (i32, i32) {
 #[cfg(windows)]
 fn exclude_from_capture(win: &tauri::WebviewWindow) {
     use windows::Win32::Foundation::HWND;
-    use windows::Win32::UI::WindowsAndMessaging::{SetWindowDisplayAffinity, WDA_EXCLUDEFROMCAPTURE};
+    use windows::Win32::UI::WindowsAndMessaging::{
+        SetWindowDisplayAffinity, WDA_EXCLUDEFROMCAPTURE,
+    };
     let Ok(handle) = win.hwnd() else { return };
     // Tauri vraća HWND iz svoje verzije `windows` cratea; oba su newtype nad *mut c_void.
     let hwnd = HWND(handle.0 as _);
@@ -265,7 +270,17 @@ pub fn raise_topmost(win: &tauri::WebviewWindow) {
     };
     let Ok(handle) = win.hwnd() else { return };
     let hwnd = HWND(handle.0 as _);
-    let _ = unsafe { SetWindowPos(hwnd, Some(HWND_TOPMOST), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE) };
+    let _ = unsafe {
+        SetWindowPos(
+            hwnd,
+            Some(HWND_TOPMOST),
+            0,
+            0,
+            0,
+            0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
+        )
+    };
 }
 
 #[cfg(not(windows))]
@@ -299,16 +314,17 @@ pub fn ensure_overlay(app: &AppHandle) -> Result<(), String> {
     if app.get_webview_window("overlay").is_some() {
         return Ok(());
     }
-    let win = WebviewWindowBuilder::new(app, "overlay", WebviewUrl::App("index.html#overlay".into()))
-        .decorations(false)
-        .always_on_top(true)
-        .skip_taskbar(true)
-        .resizable(false)
-        .shadow(false)
-        .transparent(true)
-        .visible(false)
-        .build()
-        .map_err(estr)?;
+    let win =
+        WebviewWindowBuilder::new(app, "overlay", WebviewUrl::App("index.html#overlay".into()))
+            .decorations(false)
+            .always_on_top(true)
+            .skip_taskbar(true)
+            .resizable(false)
+            .shadow(false)
+            .transparent(true)
+            .visible(false)
+            .build()
+            .map_err(estr)?;
     exclude_from_capture(&win);
     Ok(())
 }
@@ -318,53 +334,59 @@ pub fn ensure_overlay(app: &AppHandle) -> Result<(), String> {
 /// sekundu prije nego korisnik vidi ikakvu kontrolu.
 pub fn ensure_rec_windows(app: &AppHandle) -> Result<(), String> {
     if app.get_webview_window("recbar").is_none() {
-        let win = WebviewWindowBuilder::new(app, "recbar", WebviewUrl::App("index.html#recbar".into()))
-            .title("Snapvere — Recording")
-            .decorations(false)
-            .always_on_top(true)
-            .skip_taskbar(true)
-            .resizable(false)
-            .shadow(false)
-            .transparent(true)
-            // WS_EX_NOACTIVATE: gumbi rade na klik, ali tipkovnica NIKAD ne prelazi na
-            // HUD — inače Enter/brojke pritisnute "u svojoj aplikaciji" završe ovdje.
-            .focusable(false)
-            .inner_size(REC_HUD_W as f64, REC_HUD_H as f64)
-            .visible(false)
-            .build()
-            .map_err(estr)?;
+        let win =
+            WebviewWindowBuilder::new(app, "recbar", WebviewUrl::App("index.html#recbar".into()))
+                .title("Snapvere — Recording")
+                .decorations(false)
+                .always_on_top(true)
+                .skip_taskbar(true)
+                .resizable(false)
+                .shadow(false)
+                .transparent(true)
+                // WS_EX_NOACTIVATE: gumbi rade na klik, ali tipkovnica NIKAD ne prelazi na
+                // HUD — inače Enter/brojke pritisnute "u svojoj aplikaciji" završe ovdje.
+                .focusable(false)
+                .inner_size(REC_HUD_W as f64, REC_HUD_H as f64)
+                .visible(false)
+                .build()
+                .map_err(estr)?;
         exclude_from_capture(&win);
     }
     if app.get_webview_window("recdraw").is_none() {
-        let win = WebviewWindowBuilder::new(app, "recdraw", WebviewUrl::App("index.html#recdraw".into()))
-            .title("Snapvere — Draw")
-            .decorations(false)
-            .always_on_top(true)
-            .skip_taskbar(true)
-            .resizable(false)
-            .shadow(false)
-            .transparent(true)
-            .focused(false)
-            .visible(false)
-            .build()
-            .map_err(estr)?;
+        let win =
+            WebviewWindowBuilder::new(app, "recdraw", WebviewUrl::App("index.html#recdraw".into()))
+                .title("Snapvere — Draw")
+                .decorations(false)
+                .always_on_top(true)
+                .skip_taskbar(true)
+                .resizable(false)
+                .shadow(false)
+                .transparent(true)
+                .focused(false)
+                .visible(false)
+                .build()
+                .map_err(estr)?;
         let _ = win.set_ignore_cursor_events(true);
     }
     if app.get_webview_window("recframe").is_none() {
         // Okvir snimanja: cijeli monitor, zatamni sve OKO snimanog područja i nacrta rub.
         // Izuzet je iz capture-a (dim ne smije završiti u videu) i propušta sve klikove.
-        let win = WebviewWindowBuilder::new(app, "recframe", WebviewUrl::App("index.html#recframe".into()))
-            .title("Snapvere — Frame")
-            .decorations(false)
-            .always_on_top(true)
-            .skip_taskbar(true)
-            .resizable(false)
-            .shadow(false)
-            .transparent(true)
-            .focusable(false)
-            .visible(false)
-            .build()
-            .map_err(estr)?;
+        let win = WebviewWindowBuilder::new(
+            app,
+            "recframe",
+            WebviewUrl::App("index.html#recframe".into()),
+        )
+        .title("Snapvere — Frame")
+        .decorations(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .resizable(false)
+        .shadow(false)
+        .transparent(true)
+        .focusable(false)
+        .visible(false)
+        .build()
+        .map_err(estr)?;
         let _ = win.set_ignore_cursor_events(true);
         exclude_from_capture(&win);
     }
@@ -488,11 +510,14 @@ fn region_capture_blocking(app: &AppHandle, mode: CaptureMode) -> Result<(), Str
     // silently leave frozen pixels in memory or show an unusable overlay.
     let present = (|| -> Result<(), String> {
         ensure_overlay(app)?;
-        let win = app.get_webview_window("overlay")
+        let win = app
+            .get_webview_window("overlay")
             .ok_or_else(|| "Overlay window unavailable".to_string())?;
         set_cloaked(&win, true);
-        win.set_position(PhysicalPosition::new(info.x, info.y)).map_err(estr)?;
-        win.set_size(PhysicalSize::new(info.width, info.height)).map_err(estr)?;
+        win.set_position(PhysicalPosition::new(info.x, info.y))
+            .map_err(estr)?;
+        win.set_size(PhysicalSize::new(info.width, info.height))
+            .map_err(estr)?;
         win.emit(
             "snapvere:capture",
             CapturePayload {
@@ -504,7 +529,8 @@ fn region_capture_blocking(app: &AppHandle, mode: CaptureMode) -> Result<(), Str
                 width: info.width,
                 height: info.height,
             },
-        ).map_err(estr)
+        )
+        .map_err(estr)
     })();
     if let Err(error) = present {
         hide_overlays(app);
@@ -582,8 +608,11 @@ pub fn finish_region_capture(
     // selections or when the capture frame has already disappeared.
     let cropped = {
         let frozen = lock(&state.frozen);
-        match frozen.frames.get(&region.monitor_id)
-            .or_else(|| frozen.frames.values().next()) {
+        match frozen
+            .frames
+            .get(&region.monitor_id)
+            .or_else(|| frozen.frames.values().next())
+        {
             Some(frame) => capture::crop(frame, &region).map_err(estr),
             None => Err("frozen frame missing".to_string()),
         }
@@ -598,11 +627,25 @@ pub fn finish_region_capture(
             Ok(None)
         }
         CaptureAction::Save => {
-            let shot = save_to_gallery(&app, &state, &cropped, CaptureSource::Region, format, quality)?;
+            let shot = save_to_gallery(
+                &app,
+                &state,
+                &cropped,
+                CaptureSource::Region,
+                format,
+                quality,
+            )?;
             Ok(Some(shot))
         }
         CaptureAction::Edit => {
-            let shot = save_to_gallery(&app, &state, &cropped, CaptureSource::Region, ImageFormat::Png, 100)?;
+            let shot = save_to_gallery(
+                &app,
+                &state,
+                &cropped,
+                CaptureSource::Region,
+                ImageFormat::Png,
+                100,
+            )?;
             open_editor_window(&app, &shot.file_path)?;
             Ok(Some(shot))
         }
@@ -629,7 +672,14 @@ pub async fn capture_fullscreen(
         logging::guard("capture_fullscreen", || {
             let img = capture::capture_primary().map_err(estr)?;
             let state = handle.state::<AppState>();
-            save_to_gallery(&handle, &state, &img, CaptureSource::Fullscreen, format, quality)
+            save_to_gallery(
+                &handle,
+                &state,
+                &img,
+                CaptureSource::Fullscreen,
+                format,
+                quality,
+            )
         })
     })
     .await
@@ -645,7 +695,14 @@ pub fn dispatch_capture_fullscreen(app: &AppHandle, format: ImageFormat, quality
             let res = logging::guard("capture_fullscreen", || {
                 let img = capture::capture_primary().map_err(estr)?;
                 let state = app.state::<AppState>();
-                save_to_gallery(&app, &state, &img, CaptureSource::Fullscreen, format, quality)
+                save_to_gallery(
+                    &app,
+                    &state,
+                    &img,
+                    CaptureSource::Fullscreen,
+                    format,
+                    quality,
+                )
             });
             match res {
                 Ok(shot) => {
@@ -740,16 +797,22 @@ fn start_recording_inner(
 
     // Okvir ide prvi (najniže), pa sloj za crtanje, pa HUD — HUD mora ostati na vrhu.
     if let Err(e) = show_rec_frame(app, &target, (ox, oy, ow, oh)) {
-        log(&format!("okvir snimanja se nije otvorio: {e} — snimanje ipak radi"));
+        log(&format!(
+            "okvir snimanja se nije otvorio: {e} — snimanje ipak radi"
+        ));
     }
     if let Err(e) = show_rec_draw(app, &target, (ox, oy, ow, oh)) {
-        log(&format!("sloj za crtanje se nije otvorio: {e} — snimanje ipak radi"));
+        log(&format!(
+            "sloj za crtanje se nije otvorio: {e} — snimanje ipak radi"
+        ));
     }
 
     // HUD je udobnost, ne uvjet. Snimanje već teče — ako se traka ne da otvoriti
     // (npr. transparentni prozor nije podržan), stat ćemo hotkeyem ili preko traya.
     if let Err(e) = show_rec_hud(app, &target) {
-        log(&format!("HUD snimanja se nije otvorio: {e} — snimanje ipak radi"));
+        log(&format!(
+            "HUD snimanja se nije otvorio: {e} — snimanje ipak radi"
+        ));
         let _ = app.emit(
             "snapvere:toast",
             "Recording started (controls unavailable — press the hotkey again to stop)",
@@ -782,7 +845,10 @@ fn record_options(app: &AppHandle) -> RecordOptions {
     if let Some(v) = store.get("recordSystemAudio").and_then(|v| v.as_bool()) {
         o.system_audio = v;
     }
-    if let Some(v) = store.get("recordFormat").and_then(|v| v.as_str().map(str::to_owned)) {
+    if let Some(v) = store
+        .get("recordFormat")
+        .and_then(|v| v.as_str().map(str::to_owned))
+    {
         o.format = match v.as_str() {
             "gif" => crate::models::RecordFormat::Gif,
             _ => crate::models::RecordFormat::default(),
@@ -1103,7 +1169,8 @@ pub async fn copy_media_image(app: AppHandle, id: String) -> Result<(), String> 
 pub fn delete_screenshot(state: State<AppState>, id: String) -> Result<(), String> {
     // Only delete the path from an existing gallery record, never an arbitrary webview argument.
     let shot = lock(&state.db)
-        .get(&id).map_err(estr)?
+        .get(&id)
+        .map_err(estr)?
         .ok_or("This capture is no longer in the gallery")?;
     match fs::remove_file(&shot.file_path) {
         Ok(()) => {}
@@ -1157,12 +1224,16 @@ pub fn open_settings(app: &AppHandle) -> Result<(), String> {
         let _ = win.set_focus();
         return Ok(());
     }
-    WebviewWindowBuilder::new(app, "settings", WebviewUrl::App("index.html#settings".into()))
-        .title("Snapvere — Settings")
-        .inner_size(880.0, 680.0)
-        .center()
-        .build()
-        .map_err(estr)?;
+    WebviewWindowBuilder::new(
+        app,
+        "settings",
+        WebviewUrl::App("index.html#settings".into()),
+    )
+    .title("Snapvere — Settings")
+    .inner_size(880.0, 680.0)
+    .center()
+    .build()
+    .map_err(estr)?;
     Ok(())
 }
 
@@ -1177,7 +1248,9 @@ pub fn log_file_path() -> Option<String> {
 pub fn open_capture_folder(app: AppHandle) -> Result<(), String> {
     let dir = gallery_dir(&app)?;
     fs::create_dir_all(&dir).map_err(estr)?;
-    app.opener().open_path(dir.to_string_lossy(), None::<&str>).map_err(estr)
+    app.opener()
+        .open_path(dir.to_string_lossy(), None::<&str>)
+        .map_err(estr)
 }
 
 /** Open Snapvere's data directory, without arbitrary filesystem IPC access. */
@@ -1185,7 +1258,9 @@ pub fn open_capture_folder(app: AppHandle) -> Result<(), String> {
 pub fn open_data_folder(app: AppHandle) -> Result<(), String> {
     let dir = app.path().app_data_dir().map_err(estr)?;
     fs::create_dir_all(&dir).map_err(estr)?;
-    app.opener().open_path(dir.to_string_lossy(), None::<&str>).map_err(estr)
+    app.opener()
+        .open_path(dir.to_string_lossy(), None::<&str>)
+        .map_err(estr)
 }
 
 #[cfg(test)]

@@ -16,12 +16,13 @@ use std::path::Path;
 use windows::core::HSTRING;
 use windows::Win32::Media::MediaFoundation as mf;
 use windows::Win32::Media::MediaFoundation::{
-    IMFSinkWriter, MFCreateAttributes, MFCreateMediaType, MFCreateMemoryBuffer, MFCreateSample,
-    MFCreateSinkWriterFromURL, MFShutdown, MFStartup, MFVideoFormat_H264, MFVideoFormat_NV12,
-    MFVideoInterlace_Progressive, MFMediaType_Video, MFSTARTUP_NOSOCKET, MF_MT_AVG_BITRATE,
-    MF_MT_FRAME_RATE, MF_MT_FRAME_SIZE, MF_MT_INTERLACE_MODE, MF_MT_MAJOR_TYPE,
-    MF_MT_MPEG2_PROFILE, MF_MT_PIXEL_ASPECT_RATIO, MF_MT_SUBTYPE, MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS,
-    MF_SINK_WRITER_DISABLE_THROTTLING, MF_VERSION, eAVEncH264VProfile_High,
+    eAVEncH264VProfile_High, IMFSinkWriter, MFCreateAttributes, MFCreateMediaType,
+    MFCreateMemoryBuffer, MFCreateSample, MFCreateSinkWriterFromURL, MFMediaType_Video, MFShutdown,
+    MFStartup, MFVideoFormat_H264, MFVideoFormat_NV12, MFVideoInterlace_Progressive,
+    MFSTARTUP_NOSOCKET, MF_MT_AVG_BITRATE, MF_MT_FRAME_RATE, MF_MT_FRAME_SIZE,
+    MF_MT_INTERLACE_MODE, MF_MT_MAJOR_TYPE, MF_MT_MPEG2_PROFILE, MF_MT_PIXEL_ASPECT_RATIO,
+    MF_MT_SUBTYPE, MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS, MF_SINK_WRITER_DISABLE_THROTTLING,
+    MF_VERSION,
 };
 use windows::Win32::System::Com::{CoInitializeEx, CoUninitialize, COINIT_MULTITHREADED};
 
@@ -107,27 +108,40 @@ impl Mp4Encoder {
 
             // ── izlazni tip: H.264 ──
             let out = MFCreateMediaType().map_err(|e| e.to_string())?;
-            out.SetGUID(&MF_MT_MAJOR_TYPE, &MFMediaType_Video).map_err(|e| e.to_string())?;
-            out.SetGUID(&MF_MT_SUBTYPE, &MFVideoFormat_H264).map_err(|e| e.to_string())?;
-            out.SetUINT32(&MF_MT_AVG_BITRATE, bitrate).map_err(|e| e.to_string())?;
+            out.SetGUID(&MF_MT_MAJOR_TYPE, &MFMediaType_Video)
+                .map_err(|e| e.to_string())?;
+            out.SetGUID(&MF_MT_SUBTYPE, &MFVideoFormat_H264)
+                .map_err(|e| e.to_string())?;
+            out.SetUINT32(&MF_MT_AVG_BITRATE, bitrate)
+                .map_err(|e| e.to_string())?;
             out.SetUINT32(&MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive.0 as u32)
                 .map_err(|e| e.to_string())?;
             out.SetUINT32(&MF_MT_MPEG2_PROFILE, eAVEncH264VProfile_High.0 as u32)
                 .map_err(|e| e.to_string())?;
-            out.SetUINT64(&MF_MT_FRAME_SIZE, pack(w, h)).map_err(|e| e.to_string())?;
-            out.SetUINT64(&MF_MT_FRAME_RATE, pack(fps, 1)).map_err(|e| e.to_string())?;
-            out.SetUINT64(&MF_MT_PIXEL_ASPECT_RATIO, pack(1, 1)).map_err(|e| e.to_string())?;
-            let stream = writer.AddStream(&out).map_err(|e| format!("AddStream: {e}"))?;
+            out.SetUINT64(&MF_MT_FRAME_SIZE, pack(w, h))
+                .map_err(|e| e.to_string())?;
+            out.SetUINT64(&MF_MT_FRAME_RATE, pack(fps, 1))
+                .map_err(|e| e.to_string())?;
+            out.SetUINT64(&MF_MT_PIXEL_ASPECT_RATIO, pack(1, 1))
+                .map_err(|e| e.to_string())?;
+            let stream = writer
+                .AddStream(&out)
+                .map_err(|e| format!("AddStream: {e}"))?;
 
             // ── ulazni tip: NV12 ──
             let inp = MFCreateMediaType().map_err(|e| e.to_string())?;
-            inp.SetGUID(&MF_MT_MAJOR_TYPE, &MFMediaType_Video).map_err(|e| e.to_string())?;
-            inp.SetGUID(&MF_MT_SUBTYPE, &MFVideoFormat_NV12).map_err(|e| e.to_string())?;
+            inp.SetGUID(&MF_MT_MAJOR_TYPE, &MFMediaType_Video)
+                .map_err(|e| e.to_string())?;
+            inp.SetGUID(&MF_MT_SUBTYPE, &MFVideoFormat_NV12)
+                .map_err(|e| e.to_string())?;
             inp.SetUINT32(&MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive.0 as u32)
                 .map_err(|e| e.to_string())?;
-            inp.SetUINT64(&MF_MT_FRAME_SIZE, pack(w, h)).map_err(|e| e.to_string())?;
-            inp.SetUINT64(&MF_MT_FRAME_RATE, pack(fps, 1)).map_err(|e| e.to_string())?;
-            inp.SetUINT64(&MF_MT_PIXEL_ASPECT_RATIO, pack(1, 1)).map_err(|e| e.to_string())?;
+            inp.SetUINT64(&MF_MT_FRAME_SIZE, pack(w, h))
+                .map_err(|e| e.to_string())?;
+            inp.SetUINT64(&MF_MT_FRAME_RATE, pack(fps, 1))
+                .map_err(|e| e.to_string())?;
+            inp.SetUINT64(&MF_MT_PIXEL_ASPECT_RATIO, pack(1, 1))
+                .map_err(|e| e.to_string())?;
             writer
                 .SetInputMediaType(stream, &inp, None)
                 .map_err(|e| format!("SetInputMediaType(NV12): {e}"))?;
@@ -136,29 +150,41 @@ impl Mp4Encoder {
             let audio_stream = match audio {
                 Some(a) => {
                     let out = MFCreateMediaType().map_err(|e| e.to_string())?;
-                    out.SetGUID(&MF_MT_MAJOR_TYPE, &mf::MFMediaType_Audio).map_err(|e| e.to_string())?;
-                    out.SetGUID(&MF_MT_SUBTYPE, &mf::MFAudioFormat_AAC).map_err(|e| e.to_string())?;
-                    out.SetUINT32(&mf::MF_MT_AUDIO_BITS_PER_SAMPLE, 16).map_err(|e| e.to_string())?;
+                    out.SetGUID(&MF_MT_MAJOR_TYPE, &mf::MFMediaType_Audio)
+                        .map_err(|e| e.to_string())?;
+                    out.SetGUID(&MF_MT_SUBTYPE, &mf::MFAudioFormat_AAC)
+                        .map_err(|e| e.to_string())?;
+                    out.SetUINT32(&mf::MF_MT_AUDIO_BITS_PER_SAMPLE, 16)
+                        .map_err(|e| e.to_string())?;
                     out.SetUINT32(&mf::MF_MT_AUDIO_SAMPLES_PER_SECOND, a.sample_rate)
                         .map_err(|e| e.to_string())?;
-                    out.SetUINT32(&mf::MF_MT_AUDIO_NUM_CHANNELS, a.channels).map_err(|e| e.to_string())?;
+                    out.SetUINT32(&mf::MF_MT_AUDIO_NUM_CHANNELS, a.channels)
+                        .map_err(|e| e.to_string())?;
                     // 16000 B/s = 128 kbps; AAC enkoder prihvaća 12000/16000/20000/24000.
                     out.SetUINT32(&mf::MF_MT_AUDIO_AVG_BYTES_PER_SECOND, 16_000)
                         .map_err(|e| e.to_string())?;
-                    let s = writer.AddStream(&out).map_err(|e| format!("AddStream(AAC): {e}"))?;
+                    let s = writer
+                        .AddStream(&out)
+                        .map_err(|e| format!("AddStream(AAC): {e}"))?;
 
                     let inp = MFCreateMediaType().map_err(|e| e.to_string())?;
-                    inp.SetGUID(&MF_MT_MAJOR_TYPE, &mf::MFMediaType_Audio).map_err(|e| e.to_string())?;
-                    inp.SetGUID(&MF_MT_SUBTYPE, &mf::MFAudioFormat_PCM).map_err(|e| e.to_string())?;
-                    inp.SetUINT32(&mf::MF_MT_AUDIO_BITS_PER_SAMPLE, 16).map_err(|e| e.to_string())?;
+                    inp.SetGUID(&MF_MT_MAJOR_TYPE, &mf::MFMediaType_Audio)
+                        .map_err(|e| e.to_string())?;
+                    inp.SetGUID(&MF_MT_SUBTYPE, &mf::MFAudioFormat_PCM)
+                        .map_err(|e| e.to_string())?;
+                    inp.SetUINT32(&mf::MF_MT_AUDIO_BITS_PER_SAMPLE, 16)
+                        .map_err(|e| e.to_string())?;
                     inp.SetUINT32(&mf::MF_MT_AUDIO_SAMPLES_PER_SECOND, a.sample_rate)
                         .map_err(|e| e.to_string())?;
-                    inp.SetUINT32(&mf::MF_MT_AUDIO_NUM_CHANNELS, a.channels).map_err(|e| e.to_string())?;
+                    inp.SetUINT32(&mf::MF_MT_AUDIO_NUM_CHANNELS, a.channels)
+                        .map_err(|e| e.to_string())?;
                     let block = a.channels * 2;
-                    inp.SetUINT32(&mf::MF_MT_AUDIO_BLOCK_ALIGNMENT, block).map_err(|e| e.to_string())?;
+                    inp.SetUINT32(&mf::MF_MT_AUDIO_BLOCK_ALIGNMENT, block)
+                        .map_err(|e| e.to_string())?;
                     inp.SetUINT32(&mf::MF_MT_AUDIO_AVG_BYTES_PER_SECOND, a.sample_rate * block)
                         .map_err(|e| e.to_string())?;
-                    inp.SetUINT32(&mf::MF_MT_ALL_SAMPLES_INDEPENDENT, 1).map_err(|e| e.to_string())?;
+                    inp.SetUINT32(&mf::MF_MT_ALL_SAMPLES_INDEPENDENT, 1)
+                        .map_err(|e| e.to_string())?;
                     writer
                         .SetInputMediaType(s, &inp, None)
                         .map_err(|e| format!("SetInputMediaType(PCM): {e}"))?;
@@ -167,7 +193,9 @@ impl Mp4Encoder {
                 None => None,
             };
 
-            writer.BeginWriting().map_err(|e| format!("BeginWriting: {e}"))?;
+            writer
+                .BeginWriting()
+                .map_err(|e| format!("BeginWriting: {e}"))?;
 
             log(&format!(
                 "MP4 enkoder: {w}x{h} @ {fps}fps, {} kbps → {}",
@@ -195,15 +223,21 @@ impl Mp4Encoder {
         unsafe {
             let buffer = MFCreateMemoryBuffer(len).map_err(|e| e.to_string())?;
             let mut dst: *mut u8 = std::ptr::null_mut();
-            buffer.Lock(&mut dst, None, None).map_err(|e| e.to_string())?;
+            buffer
+                .Lock(&mut dst, None, None)
+                .map_err(|e| e.to_string())?;
             std::ptr::copy_nonoverlapping(self.nv12.as_ptr(), dst, len as usize);
             buffer.Unlock().map_err(|e| e.to_string())?;
             buffer.SetCurrentLength(len).map_err(|e| e.to_string())?;
 
             let sample = MFCreateSample().map_err(|e| e.to_string())?;
             sample.AddBuffer(&buffer).map_err(|e| e.to_string())?;
-            sample.SetSampleTime(time_100ns).map_err(|e| e.to_string())?;
-            sample.SetSampleDuration(dur_100ns).map_err(|e| e.to_string())?;
+            sample
+                .SetSampleTime(time_100ns)
+                .map_err(|e| e.to_string())?;
+            sample
+                .SetSampleDuration(dur_100ns)
+                .map_err(|e| e.to_string())?;
             self.writer
                 .WriteSample(self.stream, &sample)
                 .map_err(|e| format!("WriteSample: {e}"))?;
@@ -212,7 +246,12 @@ impl Mp4Encoder {
     }
 
     /// Zapiši blok PCM16 uzoraka (interleaved). `time`/`duration` u 100-ns jedinicama.
-    pub fn write_audio(&mut self, pcm: &[i16], time_100ns: i64, dur_100ns: i64) -> Result<(), String> {
+    pub fn write_audio(
+        &mut self,
+        pcm: &[i16],
+        time_100ns: i64,
+        dur_100ns: i64,
+    ) -> Result<(), String> {
         let Some(stream) = self.audio_stream else {
             return Ok(());
         };
@@ -223,15 +262,21 @@ impl Mp4Encoder {
         unsafe {
             let buffer = MFCreateMemoryBuffer(len).map_err(|e| e.to_string())?;
             let mut dst: *mut u8 = std::ptr::null_mut();
-            buffer.Lock(&mut dst, None, None).map_err(|e| e.to_string())?;
+            buffer
+                .Lock(&mut dst, None, None)
+                .map_err(|e| e.to_string())?;
             std::ptr::copy_nonoverlapping(pcm.as_ptr() as *const u8, dst, len as usize);
             buffer.Unlock().map_err(|e| e.to_string())?;
             buffer.SetCurrentLength(len).map_err(|e| e.to_string())?;
 
             let sample = MFCreateSample().map_err(|e| e.to_string())?;
             sample.AddBuffer(&buffer).map_err(|e| e.to_string())?;
-            sample.SetSampleTime(time_100ns).map_err(|e| e.to_string())?;
-            sample.SetSampleDuration(dur_100ns).map_err(|e| e.to_string())?;
+            sample
+                .SetSampleTime(time_100ns)
+                .map_err(|e| e.to_string())?;
+            sample
+                .SetSampleDuration(dur_100ns)
+                .map_err(|e| e.to_string())?;
             self.writer
                 .WriteSample(stream, &sample)
                 .map_err(|e| format!("WriteSample(audio): {e}"))?;
@@ -343,8 +388,10 @@ fn convert_rows(bgra: &[u8], wi: usize, row0: usize, yb: &mut [u8], uvb: &mut [u
         for x in (0..wi).step_by(2) {
             let o = x * 4;
             let b = (top[o] as i32 + top[o + 4] as i32 + bot[o] as i32 + bot[o + 4] as i32) / 4;
-            let g = (top[o + 1] as i32 + top[o + 5] as i32 + bot[o + 1] as i32 + bot[o + 5] as i32) / 4;
-            let rr = (top[o + 2] as i32 + top[o + 6] as i32 + bot[o + 2] as i32 + bot[o + 6] as i32) / 4;
+            let g =
+                (top[o + 1] as i32 + top[o + 5] as i32 + bot[o + 1] as i32 + bot[o + 5] as i32) / 4;
+            let rr =
+                (top[o + 2] as i32 + top[o + 6] as i32 + bot[o + 2] as i32 + bot[o + 6] as i32) / 4;
             uv[x] = (((-38 * rr - 74 * g + 112 * b + 128) >> 8) + 128).clamp(0, 255) as u8;
             uv[x + 1] = (((112 * rr - 94 * g - 18 * b + 128) >> 8) + 128).clamp(0, 255) as u8;
         }

@@ -106,7 +106,9 @@ impl Db {
         )?;
         let rows = stmt.query_map(params![limit.min(500), offset], Self::map_row)?;
         let mut out = Vec::new();
-        for r in rows { out.push(r?); }
+        for r in rows {
+            out.push(r?);
+        }
         self.attach_tags(&mut out)?;
         Ok(out)
     }
@@ -145,7 +147,9 @@ impl Db {
         )?;
         let rows = stmt.query_map(params![like], Self::map_row)?;
         let mut out = Vec::new();
-        for r in rows { out.push(r?); }
+        for r in rows {
+            out.push(r?);
+        }
         self.attach_tags(&mut out)?;
         Ok(out)
     }
@@ -171,7 +175,9 @@ impl Db {
 
     /// Load tags for one page using one SQL query (avoids N+1 tag lookups).
     fn attach_tags(&self, items: &mut [Screenshot]) -> anyhow::Result<()> {
-        if items.is_empty() { return Ok(()); }
+        if items.is_empty() {
+            return Ok(());
+        }
         let slots = vec!["?"; items.len()].join(", ");
         let sql = format!(
             "SELECT st.screenshot_id, t.name FROM screenshot_tags st
@@ -188,7 +194,9 @@ impl Db {
             let (id, name) = pair?;
             tags.entry(id).or_default().push(name);
         }
-        for item in items { item.tags = tags.remove(&item.id).unwrap_or_default(); }
+        for item in items {
+            item.tags = tags.remove(&item.id).unwrap_or_default();
+        }
         Ok(())
     }
 
@@ -227,11 +235,18 @@ mod gallery_tests {
 
     fn shot(id: &str, time: i64) -> Screenshot {
         Screenshot {
-            id: id.into(), file_path: format!("/tmp/{id}.png"),
-            thumb_path: None, name: format!("Snapvere {id}"),
-            format: "png".into(), width: 4, height: 4,
-            size_bytes: 64, source: "region".into(),
-            created_at: time, is_uploaded: false, tags: Vec::new(),
+            id: id.into(),
+            file_path: format!("/tmp/{id}.png"),
+            thumb_path: None,
+            name: format!("Snapvere {id}"),
+            format: "png".into(),
+            width: 4,
+            height: 4,
+            size_bytes: 64,
+            source: "region".into(),
+            created_at: time,
+            is_uploaded: false,
+            tags: Vec::new(),
         }
     }
     #[test]

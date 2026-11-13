@@ -63,7 +63,10 @@ pub fn run() {
             let db = match Db::open(&db_path) {
                 Ok(db) => db,
                 Err(e) => {
-                    log(&format!("baza {}: {e} — prelazim na in-memory", db_path.display()));
+                    log(&format!(
+                        "baza {}: {e} — prelazim na in-memory",
+                        db_path.display()
+                    ));
                     Db::open_in_memory().map_err(|e| e.to_string())?
                 }
             };
@@ -210,7 +213,10 @@ fn sync_autostart(app: &tauri::AppHandle) {
         Ok(())
     };
     match result {
-        Ok(()) => log(&format!("autostart: {}", if wants { "uključen" } else { "isključen" })),
+        Ok(()) => log(&format!(
+            "autostart: {}",
+            if wants { "uključen" } else { "isključen" }
+        )),
         Err(e) => log(&format!("autostart: {e}")),
     }
 }

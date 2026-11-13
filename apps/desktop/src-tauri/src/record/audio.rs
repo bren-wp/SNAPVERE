@@ -70,7 +70,9 @@ impl Mixer {
         let mut opened = Vec::new();
 
         for &kind in kinds {
-            let queue = Arc::new(Queue { samples: Mutex::new(VecDeque::new()) });
+            let queue = Arc::new(Queue {
+                samples: Mutex::new(VecDeque::new()),
+            });
             let (ready_tx, ready_rx) = std::sync::mpsc::channel::<Result<(), String>>();
             let q = Arc::clone(&queue);
             let st = Arc::clone(&stop);
@@ -80,7 +82,10 @@ impl Mixer {
             {
                 Ok(h) => h,
                 Err(e) => {
-                    log(&format!("audio: dretva za {} nije pokrenuta — {e}", kind.label()));
+                    log(&format!(
+                        "audio: dretva za {} nije pokrenuta — {e}",
+                        kind.label()
+                    ));
                     continue;
                 }
             };
@@ -96,7 +101,12 @@ impl Mixer {
             }
         }
 
-        Self { queues, stop, threads, kinds: opened }
+        Self {
+            queues,
+            stop,
+            threads,
+            kinds: opened,
+        }
     }
 
     pub fn is_empty(&self) -> bool {
@@ -214,8 +224,9 @@ fn capture_thread(
 
 fn open(kind: Kind) -> Result<(IAudioClient, IAudioCaptureClient, SourceFormat), String> {
     unsafe {
-        let enumerator: IMMDeviceEnumerator = CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL)
-            .map_err(|e| format!("MMDeviceEnumerator: {e}"))?;
+        let enumerator: IMMDeviceEnumerator =
+            CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL)
+                .map_err(|e| format!("MMDeviceEnumerator: {e}"))?;
         let flow = match kind {
             Kind::Microphone => eCapture,
             Kind::SystemLoopback => eRender,
@@ -227,7 +238,9 @@ fn open(kind: Kind) -> Result<(IAudioClient, IAudioCaptureClient, SourceFormat),
             .Activate(CLSCTX_ALL, None)
             .map_err(|e| format!("IAudioClient: {e}"))?;
 
-        let fmt_ptr = client.GetMixFormat().map_err(|e| format!("GetMixFormat: {e}"))?;
+        let fmt_ptr = client
+            .GetMixFormat()
+            .map_err(|e| format!("GetMixFormat: {e}"))?;
         let fmt = read_format(fmt_ptr);
 
         let flags = match kind {
@@ -286,7 +299,8 @@ unsafe fn to_stereo_f32(data: *const u8, frames: usize, fmt: &SourceFormat, out:
             (false, 32) => *(data as *const i32).add(i) as f32 / 2_147_483_648.0,
             (false, 24) => {
                 let b = data.add(i * 3);
-                let v = ((*b.add(2) as i32) << 24 | (*b.add(1) as i32) << 16 | (*b as i32) << 8) >> 8;
+                let v =
+                    ((*b.add(2) as i32) << 24 | (*b.add(1) as i32) << 16 | (*b as i32) << 8) >> 8;
                 v as f32 / 8_388_608.0
             }
             (false, 8) => (*data.add(i) as f32 - 128.0) / 128.0,
@@ -320,7 +334,12 @@ struct Resampler {
 
 impl Resampler {
     fn new(src_rate: u32) -> Self {
-        Self { ratio: src_rate as f64 / RATE as f64, pos: 0.0, tail: [0.0; 2], has_tail: false }
+        Self {
+            ratio: src_rate as f64 / RATE as f64,
+            pos: 0.0,
+            tail: [0.0; 2],
+            has_tail: false,
+        }
     }
 
     fn process(&mut self, input: &[f32]) -> Vec<f32> {
@@ -375,7 +394,9 @@ mod tests {
         let mut r = Resampler::new(96_000);
         // 2 paketa po 100 stereo frameova rampe → izlaz ~100 frameova ukupno, monotono rastuć.
         let mk = |start: usize| -> Vec<f32> {
-            (0..100).flat_map(|f| [(start + f) as f32, -((start + f) as f32)]).collect()
+            (0..100)
+                .flat_map(|f| [(start + f) as f32, -((start + f) as f32)])
+                .collect()
         };
         let a = r.process(&mk(0));
         let b = r.process(&mk(100));
@@ -387,7 +408,12 @@ mod tests {
 
     #[test]
     fn mixer_bez_izvora_daje_tisinu() {
-        let m = Mixer { queues: vec![], stop: Arc::new(AtomicBool::new(false)), threads: vec![], kinds: vec![] };
+        let m = Mixer {
+            queues: vec![],
+            stop: Arc::new(AtomicBool::new(false)),
+            threads: vec![],
+            kinds: vec![],
+        };
         let out = m.pull(10);
         assert_eq!(out.len(), 20);
         assert!(out.iter().all(|&s| s == 0));
@@ -395,9 +421,18 @@ mod tests {
 
     #[test]
     fn mixer_zbraja_izvore_i_klipa() {
-        let q1 = Arc::new(Queue { samples: Mutex::new(VecDeque::from(vec![0.5f32; 4])) });
-        let q2 = Arc::new(Queue { samples: Mutex::new(VecDeque::from(vec![0.75f32; 2])) });
-        let m = Mixer { queues: vec![q1, q2], stop: Arc::new(AtomicBool::new(false)), threads: vec![], kinds: vec![] };
+        let q1 = Arc::new(Queue {
+            samples: Mutex::new(VecDeque::from(vec![0.5f32; 4])),
+        });
+        let q2 = Arc::new(Queue {
+            samples: Mutex::new(VecDeque::from(vec![0.75f32; 2])),
+        });
+        let m = Mixer {
+            queues: vec![q1, q2],
+            stop: Arc::new(AtomicBool::new(false)),
+            threads: vec![],
+            kinds: vec![],
+        };
         let out = m.pull(2);
         // prva dva uzorka: 0.5+0.75 = 1.25 → klip na 1.0; druga dva: samo 0.5 (q2 prazan)
         assert_eq!(out[0], i16::MAX);

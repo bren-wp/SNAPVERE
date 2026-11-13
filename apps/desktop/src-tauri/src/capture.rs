@@ -161,7 +161,13 @@ pub fn to_png_data_url(img: &RgbaImage) -> Result<String> {
 mod crop_tests {
     use super::*;
     fn region(x: i32, y: i32, w: u32, h: u32) -> Region {
-        Region { monitor_id: 0, x, y, width: w, height: h }
+        Region {
+            monitor_id: 0,
+            x,
+            y,
+            width: w,
+            height: h,
+        }
     }
     #[test]
     fn crop_clamps_outside_edges() {

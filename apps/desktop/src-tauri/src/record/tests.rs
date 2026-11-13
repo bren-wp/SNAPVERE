@@ -17,7 +17,13 @@ fn crop_rect_poravnava_na_parne_dimenzije() {
         monitor_y: 0,
         monitor_w: 1920,
         monitor_h: 1080,
-        region: Some(Region { monitor_id: 1, x: 11, y: 7, width: 301, height: 199 }),
+        region: Some(Region {
+            monitor_id: 1,
+            x: 11,
+            y: 7,
+            width: 301,
+            height: 199,
+        }),
     };
     let (x, y, w, h) = crop_rect(&t).expect("regija je valjana");
     assert_eq!((x, y), (11, 7));
@@ -34,7 +40,13 @@ fn crop_rect_obrezuje_regiju_izvan_monitora() {
         monitor_y: 0,
         monitor_w: 800,
         monitor_h: 600,
-        region: Some(Region { monitor_id: 1, x: 700, y: 500, width: 999, height: 999 }),
+        region: Some(Region {
+            monitor_id: 1,
+            x: 700,
+            y: 500,
+            width: 999,
+            height: 999,
+        }),
     };
     let (x, y, w, h) = crop_rect(&t).expect("regija se obrezuje, ne odbija");
     assert_eq!((x, y), (700, 500));
@@ -49,7 +61,13 @@ fn crop_rect_odbija_premalu_regiju() {
         monitor_y: 0,
         monitor_w: 1920,
         monitor_h: 1080,
-        region: Some(Region { monitor_id: 1, x: 0, y: 0, width: 8, height: 8 }),
+        region: Some(Region {
+            monitor_id: 1,
+            x: 0,
+            y: 0,
+            width: 8,
+            height: 8,
+        }),
     };
     assert!(crop_rect(&t).is_err());
 }
@@ -94,7 +112,10 @@ fn crop_bgra_izvan_granica_daje_crno_umjesto_panica() {
     // Traži 2x4 blok koji počinje na y=3 → zadnja 3 retka su izvan izvora.
     crop_bgra(&src, sw, sh, 0, 3, 2, 4, &mut dst);
     assert_eq!(&dst[0..8], &[200u8; 8], "prvi redak postoji");
-    assert!(dst[8..].iter().all(|&b| b == 0), "retci izvan izvora su crni");
+    assert!(
+        dst[8..].iter().all(|&b| b == 0),
+        "retci izvan izvora su crni"
+    );
 }
 
 #[test]
@@ -113,7 +134,12 @@ fn pixelate_izravnava_blokove_i_ne_dira_okolinu() {
     }
     let before = buf.clone();
 
-    let rect = PixelRect { x: 8, y: 8, width: 16, height: 16 };
+    let rect = PixelRect {
+        x: 8,
+        y: 8,
+        width: 16,
+        height: 16,
+    };
     pixelate_bgra(&mut buf, w, h, &rect);
 
     let px = |b: &[u8], x: usize, y: usize| {
@@ -138,8 +164,28 @@ fn pixelate_ignorira_pravokutnik_izvan_slike() {
     let mut buf = vec![3u8; (w * h * 4) as usize];
     let before = buf.clone();
     // Potpuno izvan granica i nulte širine — oboje mora proći bez panica.
-    pixelate_bgra(&mut buf, w, h, &PixelRect { x: 99, y: 99, width: 10, height: 10 });
-    pixelate_bgra(&mut buf, w, h, &PixelRect { x: 2, y: 2, width: 0, height: 4 });
+    pixelate_bgra(
+        &mut buf,
+        w,
+        h,
+        &PixelRect {
+            x: 99,
+            y: 99,
+            width: 10,
+            height: 10,
+        },
+    );
+    pixelate_bgra(
+        &mut buf,
+        w,
+        h,
+        &PixelRect {
+            x: 2,
+            y: 2,
+            width: 0,
+            height: 4,
+        },
+    );
     assert_eq!(buf, before);
 }
 
@@ -169,7 +215,11 @@ fn gif_enkoder_daje_valjanu_animaciju() {
     let bytes = std::fs::read(&path).expect("GIF datoteka");
     assert_eq!(&bytes[0..6], b"GIF89a", "nedostaje GIF89a zaglavlje");
     assert_eq!(*bytes.last().unwrap(), 0x3B, "nedostaje GIF trailer (0x3B)");
-    assert!(bytes.len() > 300, "GIF je sumnjivo malen: {} B", bytes.len());
+    assert!(
+        bytes.len() > 300,
+        "GIF je sumnjivo malen: {} B",
+        bytes.len()
+    );
 
     let _ = std::fs::remove_file(&path);
 }
@@ -214,7 +264,11 @@ mod windows_only {
 
         let white = vec![255u8; (w * h * 4) as usize];
         super::super::mp4::bgra_to_nv12_for_test(&white, w, h, &mut out);
-        assert!((out[0] as i32 - 235).abs() <= 1, "bijela Y ≈ 235, dobiveno {}", out[0]);
+        assert!(
+            (out[0] as i32 - 235).abs() <= 1,
+            "bijela Y ≈ 235, dobiveno {}",
+            out[0]
+        );
         assert!((out[4] as i32 - 128).abs() <= 1, "bijela U ≈ 128");
         assert!((out[5] as i32 - 128).abs() <= 1, "bijela V ≈ 128");
 
@@ -223,7 +277,11 @@ mod windows_only {
             p[3] = 255;
         }
         super::super::mp4::bgra_to_nv12_for_test(&black, w, h, &mut out);
-        assert!((out[0] as i32 - 16).abs() <= 1, "crna Y ≈ 16, dobiveno {}", out[0]);
+        assert!(
+            (out[0] as i32 - 16).abs() <= 1,
+            "crna Y ≈ 16, dobiveno {}",
+            out[0]
+        );
     }
 
     /// Čista crvena mora dati visok V i nizak U — hvata zamjenu B/R kanala.
@@ -352,11 +410,19 @@ mod windows_only {
             meta.len() / 1024,
             path.display()
         );
-        assert!(meta.len() > 8 * 1024, "MP4 je sumnjivo malen: {} B", meta.len());
+        assert!(
+            meta.len() > 8 * 1024,
+            "MP4 je sumnjivo malen: {} B",
+            meta.len()
+        );
 
         // MP4 mora početi ftyp boxom, inače ga playeri neće otvoriti.
         let head = std::fs::read(&path).expect("čitanje");
-        assert_eq!(&head[4..8], b"ftyp", "nema ftyp boxa — kontejner nije zatvoren");
+        assert_eq!(
+            &head[4..8],
+            b"ftyp",
+            "nema ftyp boxa — kontejner nije zatvoren"
+        );
         assert!(
             head.windows(4).any(|w| w == b"moov"),
             "nema moov boxa — Finalize() nije prošao"
