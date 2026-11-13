@@ -28,7 +28,13 @@ function resolveWindow() {
 }
 
 // Primijeni spremljenu temu što ranije (izbjegne bljesak).
-const theme = localStorage.getItem("snapvere-theme") ?? "dark";
+let theme: "dark" | "light" = "dark";
+try {
+  // Storage can throw when WebView2 denies local access; never crash startup.
+  if (localStorage.getItem("snapvere-theme") === "light") theme = "light";
+} catch {
+  // Use the secure default; Settings can still recover later.
+}
 document.documentElement.setAttribute("data-theme", theme);
 
 const { kind, params } = resolveWindow();

@@ -199,7 +199,8 @@ function Scrubber({ time, duration, onSeek }: { time: number; duration: number; 
   const pct = safeDuration > 0 ? Math.min(100, (time / safeDuration) * 100) : 0;
 
   const at = (clientX: number) => {
-    const r = ref.current!.getBoundingClientRect();
+    const r = ref.current?.getBoundingClientRect();
+    if (!r || r.width <= 0) return 0;
     return Math.max(0, Math.min(1, (clientX - r.left) / r.width));
   };
 

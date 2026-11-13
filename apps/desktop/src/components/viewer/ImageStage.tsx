@@ -72,8 +72,10 @@ export default function ImageStage({
   }, []);
 
   const relToCenter = (e: { clientX: number; clientY: number }) => {
-    const r = boxRef.current!.getBoundingClientRect();
-    return { x: e.clientX - r.left - r.width / 2, y: e.clientY - r.top - r.height / 2 };
+    const r = boxRef.current?.getBoundingClientRect();
+    return r
+      ? { x: e.clientX - r.left - r.width / 2, y: e.clientY - r.top - r.height / 2 }
+      : { x: 0, y: 0 };
   };
 
   useEffect(() => {
