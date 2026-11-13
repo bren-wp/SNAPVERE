@@ -13,7 +13,8 @@ assert "putImageData" in OVERLAY and "new ImageData" in OVERLAY
 assert "await ipc.cancelCapture()" in OVERLAY, "Failed frame must cancel capture"
 assert "Unable to display the desktop capture" in OVERLAY
 assert "convertFileSrc" not in OVERLAY, "Do not load the frozen desktop through asset://"
-assert "frozen.png" not in BACKEND, "Frozen screenshot must not be persisted to disk"
+assert 'dir.join("frozen.png")' not in BACKEND and "fs::write(&path, &png)" not in BACKEND, \
+    "Frozen screenshot must not be persisted to disk"
 assert "get_frozen_rgba" in BACKEND and "get_frozen_frame" in BACKEND
 assert "invoke<ArrayBuffer>" in IPC and "get_frozen_rgba" in IPC
 
