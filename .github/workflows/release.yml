@@ -41,10 +41,10 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($config.version)) { throw 'Empty release version' }
           $cargo = Get-Content 'apps/desktop/src-tauri/Cargo.toml' -Raw
           $cargoLock = Get-Content 'apps/desktop/src-tauri/Cargo.lock' -Raw
-          $npmLock = Get-Content 'apps/desktop/package-lock.json' -Raw | ConvertFrom-Json
+          $npmLock = Get-Content 'apps/desktop/package-lock.json' -Raw | ConvertFrom-Json -AsHashtable
           if ($cargo -notmatch ('(?m)^version = "' + [regex]::Escape($config.version) + '"$')) { throw 'Rust package version differs from release version' }
           if ($cargoLock -notmatch ('(?ms)^\[\[package\]\]\s+name = "snapvere"\s+version = "' + [regex]::Escape($config.version) + '"')) { throw 'Cargo.lock package version differs from release version' }
-          if ($npmLock.version -ne $config.version -or $npmLock.packages.''.version -ne $config.version) { throw 'npm lockfile version differs from release version' }
+          if ($npmLock['version'] -ne $config.version -or $npmLock['packages']['']['version'] -ne $config.version) { throw 'npm lockfile version differs from release version' }
           "value=$($config.version)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
       - name: Prevent overwriting an existing release tag
         shell: pwsh
