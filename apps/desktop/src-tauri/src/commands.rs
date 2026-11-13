@@ -1271,12 +1271,34 @@ pub fn reveal_media(app: AppHandle, id: String) -> Result<(), String> {
     app.opener().reveal_item_in_dir(&path).map_err(estr)
 }
 
+const MAX_CLIPBOARD_FILE_BYTES: u64 = 200 * 1024 * 1024;
+
+fn can_copy_image(file_bytes: u64, width: u32, height: u32) -> bool {
+    file_bytes <= MAX_CLIPBOARD_FILE_BYTES
+        && width > 0
+        && height > 0
+        && u64::from(width) * u64::from(height) <= MAX_EDITOR_PIXELS
+}
+
+fn validate_copy_image(path: &Path) -> Result<(), String> {
+    let bytes = fs::metadata(path).map_err(estr)?.len();
+    if bytes > MAX_CLIPBOARD_FILE_BYTES {
+        return Err("Clipboard source exceeds safe file size (200 MB)".into());
+    }
+    let (width, height) = image::image_dimensions(path).map_err(estr)?;
+    if !can_copy_image(bytes, width, height) {
+        return Err("Clipboard image exceeds supported dimensions".into());
+    }
+    Ok(())
+}
+
 /// Kopiraj sliku iz galerije u clipboard. Dekodiranje velikog PNG-a traje — ne na
 /// glavnoj dretvi.
 #[tauri::command]
 pub async fn copy_media_image(app: AppHandle, id: String) -> Result<(), String> {
     let path = media_path(&app, &id)?;
     tauri::async_runtime::spawn_blocking(move || {
+        validate_copy_image(&path)?;
         let img = image::open(&path).map_err(estr)?.to_rgba8();
         copy_rgba_to_clipboard(&app, &img)
     })
@@ -1393,6 +1415,14 @@ mod export_safety_tests {
         bytes[16..20].copy_from_slice(&width.to_be_bytes());
         bytes[20..24].copy_from_slice(&height.to_be_bytes());
         bytes
+    }
+
+    #[test]
+    fn clipboard_limits_guard_against_decode_memory_exhaustion() {
+        assert!(can_copy_image(123_456, 3840, 2160));
+        assert!(!can_copy_image(123_456, 0, 2160));
+        assert!(!can_copy_image(123_456, 100_000, 100_000));
+        assert!(!can_copy_image(MAX_CLIPBOARD_FILE_BYTES + 1, 100, 100));
     }
 
     #[test]

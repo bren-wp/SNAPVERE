@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
   Copy,
+  FileText,
   ExternalLink,
   FolderOpen,
   Maximize,
@@ -29,6 +31,7 @@ import type { Screenshot } from "../lib/types";
  *
  * Tipke: ←/→ prethodna/sljedeća · Esc zatvori · F cijeli zaslon · Del obriši
  *   slika: +/− zoom · 0 prilagodi · 1 = 100 % · Ctrl+C kopiraj
+ *   sve datoteke: Ctrl+Shift+C kopiraj putanju
  *   video: Space/K pusti/pauza · J/L ±5 s · M zvuk
  */
 
@@ -109,6 +112,16 @@ export default function Viewer({ items, id, onNavigate, onClose, onDelete, onToa
     }
   }, [shot, onToast]);
 
+  const copyPath = useCallback(async () => {
+    if (!shot) return;
+    try {
+      await writeText(shot.filePath);
+      onToast("File path copied");
+    } catch (error) {
+      onToast(`Could not copy file path: ${String(error)}`);
+    }
+  }, [shot, onToast]);
+
   const run = useCallback(
     (fn: (id: string) => Promise<void>) => async () => {
       if (!shot) return;
@@ -138,6 +151,9 @@ export default function Viewer({ items, id, onNavigate, onClose, onDelete, onToa
         void setWindowFullscreen(!fullscreen);
       } else if (e.key === "Delete") {
         void remove();
+      } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        void copyPath();
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
         e.preventDefault();
         void copy();
@@ -148,7 +164,7 @@ export default function Viewer({ items, id, onNavigate, onClose, onDelete, onToa
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [prev, next, fullscreen, onClose, onNavigate, setWindowFullscreen, remove, copy, wake]);
+  }, [prev, next, fullscreen, onClose, onNavigate, setWindowFullscreen, remove, copy, copyPath, wake]);
 
   if (!shot) return null;
   const video = playsAsVideo(shot);
@@ -189,6 +205,9 @@ export default function Viewer({ items, id, onNavigate, onClose, onDelete, onToa
               <Copy size={16} />
             </button>
           )}
+          <button className="lg-btn" title="Copy file path (Ctrl+Shift+C)" aria-label="Copy file path" onClick={() => void copyPath()}>
+            <FileText size={16} />
+          </button>
           <button className="lg-btn" title="Show in folder" onClick={run(ipc.revealMedia)}>
             <FolderOpen size={16} />
           </button>

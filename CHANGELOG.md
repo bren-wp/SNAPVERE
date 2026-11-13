@@ -6,6 +6,7 @@ SNAPVERE is a Windows screenshot and recording workspace published by **BRENDIGO
 
 - Added a versioned Brendigo commercial-use installer license with an acceptance page for NSIS/MSI, matching first-party website terms and an in-app About link; previously issued MIT and third-party open-source rights remain intact.
 - Reduced peak memory usage for PNG saves by encoding borrowed RGBA pixels; bounded gallery search and tag input; eliminated duplicate tag-join results in SQLite with a correlated EXISTS query.
+- Bounded image clipboard decoding by source size and pixel dimensions; added a one-click Copy file path option (also Ctrl+Shift+C) for images and recordings; corrected the web download guide to reflect opt-in autostart.
 - Hardened website and application CI to reject public GitHub links and verify the installer license and legal navigation.
 
 - Fixed screenshot cropping at negative virtual-desktop coordinates and monitor edges, with Rust regression coverage.
