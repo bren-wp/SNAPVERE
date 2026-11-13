@@ -27,6 +27,7 @@ jobs:
       - name: Install exact current dependencies
         working-directory: apps/desktop
         run: npm ci
+      # TypeScript 6+ no longer supports baseUrl; aliases are relative paths.
       - name: Refresh compatible packages and current stable Tauri 2 / build tooling
         working-directory: apps/desktop
         shell: bash

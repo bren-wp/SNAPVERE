@@ -83,7 +83,7 @@ with sync_playwright() as p:
     settings.wait_for_timeout(1500)
     settings.screenshot(path=str(OUTPUT / "settings.png"), full_page=False)
     for tab in ("Hotkeys", "Capture", "Recording", "Save", "Privacy", "About"):
-        settings.get_by_role("navigation").get_by_role("button", name=tab, exact=True).click()
+        settings.get_by_role("navigation").get_by_role("button", name=tab + " settings", exact=True).click()
         settings.wait_for_timeout(200)
         settings.screenshot(path=str(OUTPUT / ("settings-" + tab.lower() + ".png")))
 
