@@ -2,7 +2,7 @@ name: Snapvere build and quality checks
 on:
   push:
     branches:
-      - feature/snapvere-hardening-v0.2.5
+      - feature/snapvere-v0.2.6-capture-brand-polish
   pull_request:
     branches:
       - main
@@ -19,10 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '24'
           cache: npm
           cache-dependency-path: apps/desktop/package-lock.json
       - name: Install locked dependencies
@@ -35,6 +35,8 @@ jobs:
         run: python tools/check_website.py
       - name: Verify matching public and desktop design tokens
         run: python tools/check_brand_tokens.py
+      - name: Check capture overlay pipeline and legacy brand references
+        run: python tools/check_capture_pipeline.py
       - name: Parse site and app config
         run: |
           node --check site/app.js
@@ -53,7 +55,7 @@ jobs:
             echo 'Legacy identity found in tracked paths.'
             exit 1
           fi
-          grep -q 'Brendigo' README.md
+          grep -qi 'Brendigo' README.md
           grep -q 'snapvere.com' README.md
           python - <<'PY'
           import json
@@ -75,12 +77,12 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 85
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: true
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '24'
           cache: npm
           cache-dependency-path: apps/desktop/package-lock.json
       - uses: dtolnay/rust-toolchain@stable
@@ -132,7 +134,7 @@ jobs:
       - name: Upload private QA build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Snapvere-v0.2.5-Windows-QA
+          name: Snapvere-Windows-QA-${{ github.sha }}
           path: dist-installers/*
           if-no-files-found: error
           retention-days: 30
@@ -145,6 +147,6 @@ jobs:
           git add apps/desktop/src-tauri/src
           if ! git diff --cached --quiet; then
             git commit -m 'style: apply Rust formatting after passing Windows tests'
-            git pull --rebase origin feature/snapvere-hardening-v0.2.5
-            git push origin HEAD:feature/snapvere-hardening-v0.2.5
+            git pull --rebase origin feature/snapvere-v0.2.6-capture-brand-polish
+            git push origin HEAD:feature/snapvere-v0.2.6-capture-brand-polish
           fi

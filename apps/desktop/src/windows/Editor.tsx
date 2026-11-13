@@ -29,7 +29,7 @@ const TOOLS: { id: EditorTool; icon: typeof Square; label: string }[] = [
   { id: "text", icon: Type, label: "Text" },
 ];
 
-const COLORS = ["#ef4444", "#f59e0b", "#22c55e", "#3b82f6", "#a855f7", "#ffffff", "#18181b"];
+const COLORS = ["#ef4444", "#f59e0b", "#22c55e", "#09bfd9", "#a855f7", "#ffffff", "#18181b"];
 
 let counter = 0;
 const uid = () => `a${++counter}`;
@@ -38,6 +38,7 @@ export default function Editor({ pathB64 }: { pathB64: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const baseImg = useRef<HTMLImageElement | null>(null);
   const [ready, setReady] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const [tool, setTool] = useState<EditorTool>("arrow");
   const [color, setColor] = useState("#ef4444");
@@ -54,6 +55,7 @@ export default function Editor({ pathB64 }: { pathB64: string }) {
     try {
       path = atob(pathB64);
     } catch {
+      setNotice("Could not open the image. Invalid capture reference.");
       return;
     }
     const img = new Image();
@@ -64,6 +66,7 @@ export default function Editor({ pathB64 }: { pathB64: string }) {
       c.height = img.naturalHeight;
       setReady(true);
     };
+    img.onerror = () => setNotice("This capture could not be loaded. Check the saved image file.");
     img.src = convertFileSrc(path);
   }, [pathB64]);
 
@@ -196,14 +199,18 @@ export default function Editor({ pathB64 }: { pathB64: string }) {
   const onSave = async () => {
     try {
       await ipc.saveEditedImage(exportBase64(), "png", 100);
+      setNotice("Saved to your local Snapvere gallery.");
     } catch (e) {
+      setNotice(`Could not save the screenshot: ${String(e)}`);
       console.error(e);
     }
   };
   const onCopy = async () => {
     try {
       await ipc.copyBase64ToClipboard(exportBase64());
+      setNotice("Image copied to clipboard.");
     } catch (e) {
+      setNotice(`Could not copy the image: ${String(e)}`);
       console.error(e);
     }
   };
@@ -223,6 +230,7 @@ export default function Editor({ pathB64 }: { pathB64: string }) {
   return (
     <WindowFrame title="Snapvere — Editor">
       <div className="flex min-h-0 flex-1 flex-col text-text">
+      {notice && <p role="status" aria-live="polite" className="snapvere-editor-notice px-4 py-2 text-xs">{notice}</p>}
       {/* kontekstni bar */}
       <div className="snapvere-editor-toolbar flex flex-wrap items-center gap-3 px-3 py-2">
         <span className="font-mono text-sm text-muted">Editor</span>
@@ -233,6 +241,8 @@ export default function Editor({ pathB64 }: { pathB64: string }) {
             <button
               key={c}
               onClick={() => setColor(c)}
+              aria-label={`Use annotation color ${c}`}
+              aria-pressed={color === c}
               className={`h-6 w-6 rounded-full border-2 transition-transform ${color === c ? "scale-110 border-text" : "border-transparent"}`}
               style={{ background: c }}
               title={c}
@@ -254,10 +264,10 @@ export default function Editor({ pathB64 }: { pathB64: string }) {
             <Redo2 size={18} />
           </IconBtn>
           <div className="mx-1 h-5 w-px bg-border" />
-          <button onClick={onCopy} className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm hover:bg-elevated">
+          <button onClick={onCopy} disabled={!ready} className="snapvere-btn-secondary flex items-center gap-2 rounded-full px-3 py-1.5 text-sm hover:bg-elevated">
             <Copy size={16} /> Copy
           </button>
-          <button onClick={onSave} className="flex items-center gap-2 rounded-lg bg-accent px-3 py-1.5 text-sm text-white hover:opacity-90">
+          <button onClick={onSave} disabled={!ready} className="snapvere-btn-primary flex items-center gap-2 rounded-full bg-accent px-3 py-1.5 text-sm text-white hover:opacity-90">
             <Save size={16} /> Save
           </button>
         </div>
@@ -271,6 +281,8 @@ export default function Editor({ pathB64 }: { pathB64: string }) {
               key={t.id}
               onClick={() => setTool(t.id)}
               title={t.label}
+              aria-label={t.label}
+              aria-pressed={tool === t.id}
               className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${
                 tool === t.id ? "bg-accent text-white" : "text-muted hover:bg-elevated hover:text-text"
               }`}

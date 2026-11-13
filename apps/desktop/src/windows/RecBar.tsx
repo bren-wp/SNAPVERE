@@ -46,7 +46,7 @@ const TOOLS: { id: RecTool; icon: typeof Square; label: string }[] = [
 
 const SWATCHES = [
   "#FF453A", "#FF9F0A", "#FFD60A", "#30D158", "#40C8E0",
-  "#0A84FF", "#BF5AF2", "#FF375F", "#FFFFFF", "#1C1C1E",
+  "#09BFD9", "#BF5AF2", "#FF375F", "#FFFFFF", "#1C1C1E",
 ];
 
 export default function RecBar() {

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { SlidersHorizontal, Keyboard, Crop, Video, FolderOpen, ShieldCheck, Info } from "lucide-react";
 import { load, type Store } from "@tauri-apps/plugin-store";
 import { enable, disable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
@@ -48,14 +49,14 @@ const DEFAULTS: AppSettings = {
   saveFolder: "Pictures/Snapvere",
 };
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "general", label: "General" },
-  { id: "hotkeys", label: "Hotkeys" },
-  { id: "capture", label: "Capture" },
-  { id: "recording", label: "Recording" },
-  { id: "save", label: "Save" },
-  { id: "privacy", label: "Privacy" },
-  { id: "about", label: "About" },
+const TABS: { id: Tab; label: string; icon: typeof SlidersHorizontal }[] = [
+  { id: "general", label: "General", icon: SlidersHorizontal },
+  { id: "hotkeys", label: "Hotkeys", icon: Keyboard },
+  { id: "capture", label: "Capture", icon: Crop },
+  { id: "recording", label: "Recording", icon: Video },
+  { id: "save", label: "Save", icon: FolderOpen },
+  { id: "privacy", label: "Privacy", icon: ShieldCheck },
+  { id: "about", label: "About", icon: Info },
 ];
 
 export default function Settings() {
@@ -129,16 +130,18 @@ export default function Settings() {
             key={t.id}
             onClick={() => { setTab(t.id); setNotice(null); }}
             aria-current={tab === t.id ? "page" : undefined}
-            className={`rounded-xl px-3 py-2.5 text-left text-sm transition-colors focus-visible:ring-2 focus-visible:ring-accent ${
+            aria-label={`${t.label} settings`}
+            className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm transition-colors focus-visible:ring-2 focus-visible:ring-accent ${
               tab === t.id ? "bg-accent text-white" : "text-muted hover:bg-elevated hover:text-text"
             }`}
           >
-            {t.label}
+            <t.icon size={17} strokeWidth={1.8} aria-hidden="true" className="shrink-0" />
+            <span>{t.label}</span>
           </button>
         ))}
       </nav>
 
-      <div className="min-h-0 flex-1 overflow-auto p-6">
+      <div className="snapvere-settings-content min-h-0 flex-1 overflow-auto p-6">
         {notice && <p role="alert" className="mb-4 rounded-xl border border-danger/40 bg-danger/10 p-3 text-sm">{notice}</p>}
         {tab === "general" && (
           <Section title="General">

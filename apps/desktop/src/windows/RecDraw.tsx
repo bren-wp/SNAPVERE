@@ -26,7 +26,7 @@ const DRAG_TOOLS: RecTool[] = ["arrow", "rect", "ellipse", "line", "blur"];
 
 export default function RecDraw() {
   const [tool, setTool] = useState<RecTool>("off");
-  const [color, setColor] = useState("#FF453A");
+  const [color, setColor] = useState("#09BFD9");
   const [size, setSize] = useState(6);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [textEdit, setTextEdit] = useState<Point | null>(null);

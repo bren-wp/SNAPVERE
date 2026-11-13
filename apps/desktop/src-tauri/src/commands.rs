@@ -403,7 +403,6 @@ pub fn list_monitors() -> Result<Vec<MonitorInfo>, String> {
 
 #[derive(serde::Serialize, Clone)]
 struct CapturePayload {
-    path: String,
     token: i64,
     id: u32,
     mode: &'static str,
@@ -462,47 +461,41 @@ pub fn dispatch_region_capture(app: &AppHandle, mode: CaptureMode) {
     }
 }
 
-/// Zamrzni monitor POD MIŠEM: spremi frame na disk i javi overlayu putanju
-/// (asset protokol = brzo, bez 14 MB IPC prijenosa).
+/// Capture the monitor under the cursor directly into memory.
+/// Never write a transient frozen.png to disk or depend on asset:// grants:
+/// the overlay receives the pixels over a scoped Tauri IPC command.
 fn region_capture_blocking(app: &AppHandle, mode: CaptureMode) -> Result<(), String> {
     let (cx, cy) = cursor_pos();
     let t = std::time::Instant::now();
     let token = Utc::now().timestamp_millis();
 
-    // Record mode ne zamrzava ekran: overlay je proziran i pokazuje živi desktop,
-    // pa preskačemo capture + PNG + disk + učitavanje (~300 ms) — odabir je instant.
-    let (info, path, png_kb) = if mode == CaptureMode::Record {
+    // Recording uses a transparent overlay and the live desktop.
+    // Screenshots retain only a memory image until the selection is finished.
+    let info = if mode == CaptureMode::Record {
         let info = capture::monitor_at(cx, cy).map_err(estr)?;
         lock(&app.state::<AppState>().frozen).clear();
-        (info, String::new(), 0)
+        info
     } else {
         let (info, img) = capture::capture_at(cx, cy).map_err(estr)?;
-        let png = capture::encode_png_fast(&img).map_err(estr)?;
-        let dir = app.path().app_data_dir().map_err(estr)?;
-        fs::create_dir_all(&dir).map_err(estr)?;
-        let path = dir.join("frozen.png");
-        fs::write(&path, &png).map_err(estr)?;
-
-        // Frame ide i u memoriju: `finish_region_capture` tako radi bez ponovnog čitanja diska.
         let state = app.state::<AppState>();
         let mut frozen = lock(&state.frozen);
         frozen.clear();
         frozen.frames.insert(info.id, img);
-        (info, path.to_string_lossy().into_owned(), png.len() / 1024)
+        info
     };
 
-    ensure_overlay(app)?;
-    if let Some(win) = app.get_webview_window("overlay") {
-        // Cloak PRIJE prikaza: frontend ga otkriva tek kad je novi frame iscrtan.
+    // If the WebView cannot receive the frame, report the error; do not
+    // silently leave frozen pixels in memory or show an unusable overlay.
+    let present = (|| -> Result<(), String> {
+        ensure_overlay(app)?;
+        let win = app.get_webview_window("overlay")
+            .ok_or_else(|| "Overlay window unavailable".to_string())?;
         set_cloaked(&win, true);
-        // Pozicioniraj točno preko aktivnog monitora u FIZIČKIM px (ispravno na HiDPI).
-        let _ = win.set_position(PhysicalPosition::new(info.x, info.y));
-        let _ = win.set_size(PhysicalSize::new(info.width, info.height));
-        // Prikaz radi FRONTEND tek nakon što učita sliku → nema crnog bljeska.
-        let _ = win.emit(
+        win.set_position(PhysicalPosition::new(info.x, info.y)).map_err(estr)?;
+        win.set_size(PhysicalSize::new(info.width, info.height)).map_err(estr)?;
+        win.emit(
             "snapvere:capture",
             CapturePayload {
-                path,
                 token,
                 id: info.id,
                 mode: mode.as_str(),
@@ -511,14 +504,18 @@ fn region_capture_blocking(app: &AppHandle, mode: CaptureMode) -> Result<(), Str
                 width: info.width,
                 height: info.height,
             },
-        );
+        ).map_err(estr)
+    })();
+    if let Err(error) = present {
+        hide_overlays(app);
+        lock(&app.state::<AppState>().frozen).clear();
+        return Err(error);
     }
     log(&format!(
-        "capture {}x{} za {:?}, png {} KB, mode {}",
+        "capture {}x{} za {:?}, mode {}",
         info.width,
         info.height,
         t.elapsed(),
-        png_kb,
         mode.as_str()
     ));
     Ok(())
@@ -557,12 +554,18 @@ pub fn get_frozen_rgba(state: State<AppState>, monitor_id: u32) -> Response {
     else {
         return Response::new(Vec::new());
     };
+    Response::new(frame_to_rgba_packet(frame))
+}
+
+/// Binary response format: 8 bytes of little-endian width and height, then
+/// exactly width * height * 4 bytes of RGBA pixels. Never transmit file paths.
+fn frame_to_rgba_packet(frame: &image::RgbaImage) -> Vec<u8> {
     let raw = frame.as_raw();
     let mut out = Vec::with_capacity(8 + raw.len());
     out.extend_from_slice(&frame.width().to_le_bytes());
     out.extend_from_slice(&frame.height().to_le_bytes());
     out.extend_from_slice(raw);
-    Response::new(out)
+    out
 }
 
 /// Završi capture regije odabranom akcijom. Vraća zapis ako je nešto spremljeno.
@@ -1183,4 +1186,28 @@ pub fn open_data_folder(app: AppHandle) -> Result<(), String> {
     let dir = app.path().app_data_dir().map_err(estr)?;
     fs::create_dir_all(&dir).map_err(estr)?;
     app.opener().open_path(dir.to_string_lossy(), None::<&str>).map_err(estr)
+}
+
+#[cfg(test)]
+mod frozen_capture_transport_tests {
+    use super::frame_to_rgba_packet;
+    use image::{Rgba, RgbaImage};
+
+    #[test]
+    fn rgba_packet_keeps_dimensions_and_pixel_colors() {
+        let mut image = RgbaImage::new(2, 1);
+        image.put_pixel(0, 0, Rgba([9, 191, 217, 255]));
+        image.put_pixel(1, 0, Rgba([232, 42, 87, 255]));
+        let packet = frame_to_rgba_packet(&image);
+        assert_eq!(&packet[..4], &2u32.to_le_bytes());
+        assert_eq!(&packet[4..8], &1u32.to_le_bytes());
+        assert_eq!(&packet[8..], &[9, 191, 217, 255, 232, 42, 87, 255]);
+        assert_eq!(packet.len(), 8 + 2 * 1 * 4);
+    }
+
+    #[test]
+    fn rgba_packet_empty_image_has_only_header() {
+        let packet = frame_to_rgba_packet(&RgbaImage::new(0, 0));
+        assert_eq!(packet, vec![0u8; 8]);
+    }
 }

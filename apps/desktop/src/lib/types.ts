@@ -104,7 +104,6 @@ export interface RecordDone {
 
 /** Payload eventa `snapvere:capture` — overlay ga dobiva pri svakom capture-u. */
 export interface CapturePayload {
-  path: string;
   token: number;
   id: number;
   mode: "shot" | "record";

@@ -1,3 +1,10 @@
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -53,8 +60,8 @@ body {
   margin: 0;
   background: rgb(var(--snapvere-bg));
   color: rgb(var(--snapvere-text));
-  font-family: "Inter", "Segoe UI Variable Text", "Segoe UI",
-    -apple-system, system-ui, sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont,
+    "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   letter-spacing: -0.01em;
@@ -463,4 +470,30 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 @media (max-width: 700px) { .snapvere-app-local { display: none; } .snapvere-app-brandbar { padding-inline: 14px; } }
 @media (prefers-reduced-motion: reduce) {
   .snapvere-gallery-card,.snapvere-btn-primary,.snapvere-btn-secondary { transition: none !important; transform: none !important; }
+}
+
+/* SNAPVERE: keyboard-visible actions and consistent settings/editor materials. */
+.snapvere-settings-content {
+  background: linear-gradient(145deg, rgba(9, 191, 217, .022), transparent 45%);
+}
+.snapvere-settings-sidebar button[aria-current="page"] {
+  border: 1px solid rgba(85, 224, 229, .20);
+}
+.snapvere-editor-notice {
+  border-bottom: 1px solid rgba(85, 224, 229, .23);
+  background: rgba(9, 191, 217, .08);
+  color: rgb(var(--snapvere-text));
+}
+.snapvere-gallery-card:focus-within {
+  outline: 2px solid rgb(var(--snapvere-accent));
+  outline-offset: 2px;
+}
+.snapvere-gallery-card button:focus-visible {
+  opacity: 1;
+  outline: 2px solid #55e0e5;
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .snapvere-gallery-card:focus-within,
+  .snapvere-gallery-card button:focus-visible { transform: none; }
 }
