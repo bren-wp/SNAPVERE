@@ -21,7 +21,7 @@ mod gifenc;
 #[cfg(test)]
 mod tests;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
@@ -714,7 +714,7 @@ fn write_audio_until(
 }
 
 fn open_encoder(
-    path: &PathBuf,
+    path: &Path,
     format: RecordFormat,
     w: u32,
     h: u32,
@@ -920,8 +920,8 @@ fn pixelate_bgra(buf: &mut [u8], w: u32, h: u32, r: &PixelRect) {
                     n += 1;
                 }
             }
-            if n > 0 {
-                let (b, g, rr) = ((b / n) as u8, (g / n) as u8, (rr / n) as u8);
+            if let Some(b_avg) = b.checked_div(n) {
+                let (b, g, rr) = (b_avg as u8, (g / n) as u8, (rr / n) as u8);
                 for y in by..ymax {
                     let row = y * stride;
                     for x in bx..xmax {
@@ -940,7 +940,7 @@ fn pixelate_bgra(buf: &mut [u8], w: u32, h: u32, r: &PixelRect) {
 
 fn bgra_to_rgba_image(bgra: &[u8], w: u32, h: u32) -> image::RgbaImage {
     let mut out = vec![0u8; bgra.len()];
-    for (d, s) in out.chunks_exact_mut(4).zip(bgra.chunks_exact(4)) {
+    for (d, s) in out.as_chunks_mut::<4>().0.iter_mut().zip(bgra.as_chunks::<4>().0.iter()) {
         d[0] = s[2];
         d[1] = s[1];
         d[2] = s[0];

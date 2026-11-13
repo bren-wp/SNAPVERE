@@ -85,7 +85,7 @@ impl Mp4Encoder {
         quality: u8,
         audio: Option<AudioSpec>,
     ) -> Result<Self, String> {
-        if w % 2 != 0 || h % 2 != 0 || w == 0 || h == 0 {
+        if !w.is_multiple_of(2) || !h.is_multiple_of(2) || w == 0 || h == 0 {
             return Err(format!("nevaljane dimenzije za H.264: {w}x{h}"));
         }
         let bitrate = bitrate_for(w, h, fps, quality);
@@ -372,7 +372,7 @@ fn convert_rows(bgra: &[u8], wi: usize, row0: usize, yb: &mut [u8], uvb: &mut [u
     for r in 0..rows {
         let src = &bgra[(row0 + r) * stride..(row0 + r + 1) * stride];
         let dst = &mut yb[r * wi..(r + 1) * wi];
-        for (d, p) in dst.iter_mut().zip(src.chunks_exact(4)) {
+        for (d, p) in dst.iter_mut().zip(src.as_chunks::<4>().0.iter()) {
             let b = p[0] as i32;
             let g = p[1] as i32;
             let rr = p[2] as i32;

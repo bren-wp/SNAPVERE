@@ -1287,7 +1287,7 @@ mod frozen_capture_transport_tests {
         assert_eq!(&packet[..4], &2u32.to_le_bytes());
         assert_eq!(&packet[4..8], &1u32.to_le_bytes());
         assert_eq!(&packet[8..], &[9, 191, 217, 255, 232, 42, 87, 255]);
-        assert_eq!(packet.len(), 8 + 2 * 1 * 4);
+        assert_eq!(packet.len(), 8 + 2 * 4);
     }
 
     #[test]

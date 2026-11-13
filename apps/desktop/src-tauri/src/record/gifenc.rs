@@ -97,7 +97,7 @@ impl GifEncoder {
         let oh = self.out_h as usize;
 
         if ow == sw && oh == sh {
-            for (d, s) in self.rgba.chunks_exact_mut(4).zip(bgra.chunks_exact(4)) {
+            for (d, s) in self.rgba.as_chunks_mut::<4>().0.iter_mut().zip(bgra.as_chunks::<4>().0.iter()) {
                 d[0] = s[2];
                 d[1] = s[1];
                 d[2] = s[0];
