@@ -870,7 +870,10 @@ pub fn save_image_as(
     write_new_capture(&staged, &out)?;
     if let Err(error) = fs::rename(&staged, &target) {
         if let Err(cleanup) = fs::remove_file(&staged) {
-            log(&format!("failed to remove staged export {}: {cleanup}", staged.display()));
+            log(&format!(
+                "failed to remove staged export {}: {cleanup}",
+                staged.display()
+            ));
         }
         return Err(format!("Could not finalize exported image: {error}"));
     }
