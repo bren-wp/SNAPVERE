@@ -779,6 +779,62 @@ pub fn dispatch_capture_fullscreen(app: &AppHandle) {
         });
 }
 
+// Validate PNG canvas exports before allocating a full-size RGBA frame.
+// Legitimate 8K desktop captures still fit; forged dimensions and overly large
+// IPC messages cannot force unbounded decompression.
+const MAX_EDITOR_BASE64_LEN: usize = 192 * 1024 * 1024;
+const MAX_EDITOR_PIXELS: u64 = 50_000_000;
+
+fn validate_editor_png_header(bytes: &[u8]) -> Result<(), String> {
+    if bytes.len() < 24
+        || !bytes.starts_with(b"\x89PNG\r\n\x1a\n")
+        || &bytes[12..16] != b"IHDR"
+    {
+        return Err("Editor export must be a valid PNG image".into());
+    }
+    let width = u32::from_be_bytes(bytes[16..20].try_into().map_err(estr)?);
+    let height = u32::from_be_bytes(bytes[20..24].try_into().map_err(estr)?);
+    let pixels = u64::from(width) * u64::from(height);
+    if pixels == 0 || pixels > MAX_EDITOR_PIXELS {
+        return Err("Editor image exceeds supported pixel dimensions".into());
+    }
+    Ok(())
+}
+
+fn decode_editor_png(encoded: &str) -> Result<image::RgbaImage, String> {
+    let encoded = encoded.trim();
+    if encoded.len() > MAX_EDITOR_BASE64_LEN {
+        return Err("Editor PNG is too large to import safely".into());
+    }
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(encoded)
+        .map_err(estr)?;
+    validate_editor_png_header(&bytes)?;
+    let image =
+        image::load_from_memory_with_format(&bytes, image::ImageFormat::Png).map_err(estr)?;
+    Ok(image.to_rgba8())
+}
+
+fn validate_export_path(path: &str, format: ImageFormat) -> Result<PathBuf, String> {
+    let target = PathBuf::from(path);
+    if !target.is_absolute() {
+        return Err("Save As requires an absolute destination path".into());
+    }
+    let ext = target
+        .extension()
+        .and_then(|v| v.to_str())
+        .ok_or("Save As requires a supported image extension")?;
+    let matches = match format {
+        ImageFormat::Png => ext.eq_ignore_ascii_case("png"),
+        ImageFormat::Jpg => ext.eq_ignore_ascii_case("jpg") || ext.eq_ignore_ascii_case("jpeg"),
+        ImageFormat::Webp => ext.eq_ignore_ascii_case("webp"),
+    };
+    if !matches {
+        return Err("Image format must match the Save As file extension".into());
+    }
+    Ok(target)
+}
+
 /// Spremi sliku iz editora (base64 PNG s canvasa) u galeriju.
 #[tauri::command]
 pub fn save_edited_image(
@@ -788,10 +844,7 @@ pub fn save_edited_image(
     format: ImageFormat,
     quality: u8,
 ) -> Result<Screenshot, String> {
-    let bytes = base64::engine::general_purpose::STANDARD
-        .decode(base64_png.trim())
-        .map_err(estr)?;
-    let img = image::load_from_memory(&bytes).map_err(estr)?.to_rgba8();
+    let img = decode_editor_png(&base64_png)?;
     save_to_gallery(&app, &state, &img, CaptureSource::Region, format, quality)
 }
 
@@ -803,22 +856,17 @@ pub fn save_image_as(
     format: ImageFormat,
     quality: u8,
 ) -> Result<(), String> {
-    let bytes = base64::engine::general_purpose::STANDARD
-        .decode(base64_png.trim())
-        .map_err(estr)?;
-    let img = image::load_from_memory(&bytes).map_err(estr)?.to_rgba8();
+    let target = validate_export_path(&path, format)?;
+    let img = decode_editor_png(&base64_png)?;
     let out = capture::encode(&img, format, quality).map_err(estr)?;
-    fs::write(&path, out).map_err(estr)?;
+    fs::write(&target, out).map_err(estr)?;
     Ok(())
 }
 
 /// Kopiraj base64 PNG (iz editora) u clipboard.
 #[tauri::command]
 pub fn copy_base64_to_clipboard(app: AppHandle, base64_png: String) -> Result<(), String> {
-    let bytes = base64::engine::general_purpose::STANDARD
-        .decode(base64_png.trim())
-        .map_err(estr)?;
-    let img = image::load_from_memory(&bytes).map_err(estr)?.to_rgba8();
+    let img = decode_editor_png(&base64_png)?;
     copy_rgba_to_clipboard(&app, &img)
 }
 
@@ -1325,6 +1373,49 @@ pub fn open_data_folder(app: AppHandle) -> Result<(), String> {
     app.opener()
         .open_path(dir.to_string_lossy(), None::<&str>)
         .map_err(estr)
+}
+
+#[cfg(test)]
+mod export_safety_tests {
+    use super::*;
+
+    fn header(width: u32, height: u32) -> Vec<u8> {
+        let mut bytes = vec![0; 24];
+        bytes[..8].copy_from_slice(b"\x89PNG\r\n\x1a\n");
+        bytes[12..16].copy_from_slice(b"IHDR");
+        bytes[16..20].copy_from_slice(&width.to_be_bytes());
+        bytes[20..24].copy_from_slice(&height.to_be_bytes());
+        bytes
+    }
+
+    #[test]
+    fn reject_malformed_and_oversized_editor_png() {
+        assert!(validate_editor_png_header(b"not a png").is_err());
+        assert!(validate_editor_png_header(&header(0, 100)).is_err());
+        assert!(validate_editor_png_header(&header(60_000, 60_000)).is_err());
+        assert!(validate_editor_png_header(&header(3840, 2160)).is_ok());
+        assert!(decode_editor_png("invalid base64").is_err());
+    }
+
+    #[test]
+    fn save_as_requires_matching_extension_and_absolute_path() {
+        let base = std::env::temp_dir();
+        let jpg = base.join("capture.JPEG");
+        let exe = base.join("capture.exe");
+        assert!(validate_export_path(&jpg.to_string_lossy(), ImageFormat::Jpg).is_ok());
+        assert!(validate_export_path(&jpg.to_string_lossy(), ImageFormat::Png).is_err());
+        assert!(validate_export_path(&exe.to_string_lossy(), ImageFormat::Png).is_err());
+        assert!(validate_export_path("capture.png", ImageFormat::Png).is_err());
+    }
+
+    #[test]
+    fn exclusive_capture_write_never_overwrites_existing_media() {
+        let path = std::env::temp_dir().join(format!("snapvere-test-{}.png", Uuid::new_v4()));
+        write_new_capture(&path, b"original").expect("create new capture");
+        assert!(write_new_capture(&path, b"replacement").is_err());
+        assert_eq!(fs::read(&path).expect("read"), b"original");
+        fs::remove_file(&path).expect("cleanup");
+    }
 }
 
 #[cfg(test)]
