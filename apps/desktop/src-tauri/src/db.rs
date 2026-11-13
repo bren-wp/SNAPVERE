@@ -136,7 +136,10 @@ impl Db {
     /// Pretraga po imenu ili tagu (LIKE; FTS5 dolazi u F2-14).
     pub fn search(&self, query: &str) -> anyhow::Result<Vec<Screenshot>> {
         // A user's % and _ are literal search terms, not SQLite wildcards.
-        let escaped = query.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_");
+        let escaped = query
+            .replace('\\', "\\\\")
+            .replace('%', "\\%")
+            .replace('_', "\\_");
         let like = format!("%{escaped}%");
         let mut stmt = self.conn.prepare(
             r#"SELECT DISTINCT s.id, s.file_path, s.thumb_path, s.name, s.format, s.width, s.height,
@@ -292,7 +295,9 @@ mod gallery_tests {
         db.insert(&shot("one", 100))?;
         db.add_tag("one", "important")?;
         db.delete("one")?;
-        let count: i64 = db.conn.query_row("SELECT COUNT(*) FROM screenshot_tags", [], |r| r.get(0))?;
+        let count: i64 = db
+            .conn
+            .query_row("SELECT COUNT(*) FROM screenshot_tags", [], |r| r.get(0))?;
         assert_eq!(count, 0);
         Ok(())
     }

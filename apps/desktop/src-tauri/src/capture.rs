@@ -92,7 +92,14 @@ pub fn crop(img: &RgbaImage, region: &Region) -> Result<RgbaImage> {
     if x1 <= x0 || y1 <= y0 {
         return Err(anyhow!("Capture region is outside the screen"));
     }
-    Ok(image::imageops::crop_imm(img, x0 as u32, y0 as u32, (x1 - x0) as u32, (y1 - y0) as u32).to_image())
+    Ok(image::imageops::crop_imm(
+        img,
+        x0 as u32,
+        y0 as u32,
+        (x1 - x0) as u32,
+        (y1 - y0) as u32,
+    )
+    .to_image())
 }
 
 /// Encode slike u traženi format. `quality` 1..=100 (ignorira se za PNG).
