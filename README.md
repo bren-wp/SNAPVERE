@@ -47,6 +47,14 @@ These are **actual browser renders of the project's React/Tauri frontend**, crea
 
   ![SNAPVERE compact desktop application](docs/screenshots/home-compact.png)
 
+  **Screenshot editor — annotation controls and a real interface screenshot**
+
+  ![SNAPVERE editor render](docs/screenshots/editor.png)
+
+  **Recording, capture, hotkey, save, privacy and about settings**
+
+  <table><tr><td><img src="docs/screenshots/settings-recording.png" alt="Recording preferences"/></td><td><img src="docs/screenshots/settings-hotkeys.png" alt="Hotkey preferences"/></td></tr><tr><td><img src="docs/screenshots/settings-privacy.png" alt="Local privacy controls"/></td><td><img src="docs/screenshots/settings-save.png" alt="Save location and output preferences"/></td></tr></table>
+
   **Official website — desktop**
 
   ![SNAPVERE website desktop render](docs/screenshots/website.png)

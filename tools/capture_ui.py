@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Capture REAL React UI renders for README (with a stubbed IPC preview bridge)."""
 from pathlib import Path
+from base64 import b64encode
 from shutil import copyfile
 from playwright.sync_api import sync_playwright
 
@@ -14,6 +15,7 @@ TAURI_PREVIEW = r"""
   const callbacks = new Map();
   window.__TAURI_INTERNALS__ = {
     metadata: { currentWindow: { label: "home" }, windows: [{ label: "home" }] },
+    convertFileSrc(path) { return "http://127.0.0.1:4173/screenshots/home.png"; },
     transformCallback(cb) { const id = nextCallback++; callbacks.set(id, cb); return id; },
     unregisterCallback(id) { callbacks.delete(id); },
     async invoke(command, args) {
@@ -48,6 +50,20 @@ with sync_playwright() as p:
     settings.get_by_role("navigation").get_by_role("button", name="General").wait_for(timeout=30000)
     settings.wait_for_timeout(1500)
     settings.screenshot(path=str(OUTPUT / "settings.png"), full_page=False)
+    for tab in ("Hotkeys", "Capture", "Recording", "Save", "Privacy", "About"):
+        settings.get_by_role("navigation").get_by_role("button", name=tab, exact=True).click()
+        settings.wait_for_timeout(200)
+        settings.screenshot(path=str(OUTPUT / ("settings-" + tab.lower() + ".png")))
+
+    # The editor shows an existing, real React UI screenshot as its test image.
+    # The preview transport is mocked: this is a UI render, not a native capture test.
+    editor = app.new_page()
+    editor_path = b64encode(b"Snapvere-frontend-preview.png").decode("ascii")
+    editor.goto("http://127.0.0.1:1420/#editor?p=" + editor_path, wait_until="networkidle")
+    editor.wait_for_function(
+        "() => document.querySelector('canvas')?.width > 1", timeout=20000
+    )
+    editor.screenshot(path=str(OUTPUT / "editor.png"))
     app.close()
     compact = browser.new_context(viewport={"width": 920, "height": 650},
                                   device_scale_factor=1, color_scheme="dark")
@@ -61,11 +77,20 @@ with sync_playwright() as p:
     page = site.new_page()
     page.goto("http://127.0.0.1:4173/", wait_until="networkidle")
     page.screenshot(path=str(OUTPUT / "website.png"), full_page=False)
+    for address, filename in (("/download/", "download.png"), ("/privacy/", "privacy.png")):
+        subpage = site.new_page()
+        subpage.goto("http://127.0.0.1:4173" + address, wait_until="networkidle")
+        subpage.screenshot(path=str(OUTPUT / filename))
     site.close()
     mobile_site = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=1)
     mobile_page = mobile_site.new_page()
     mobile_page.goto("http://127.0.0.1:4173/", wait_until="networkidle")
     mobile_page.screenshot(path=str(OUTPUT / "website-mobile.png"), full_page=False)
+    for address, filename in (("/download/", "download-mobile.png"),
+                              ("/privacy/", "privacy-mobile.png")):
+        subpage = mobile_site.new_page()
+        subpage.goto("http://127.0.0.1:4173" + address, wait_until="networkidle")
+        subpage.screenshot(path=str(OUTPUT / filename))
     mobile_site.close()
     browser.close()
 
@@ -77,6 +102,6 @@ for path in OUTPUT.glob("*.png"):
 # Website preview cards must always show the same current React UI captures.
 SITE_PREVIEWS = ROOT / "site" / "screenshots"
 SITE_PREVIEWS.mkdir(parents=True, exist_ok=True)
-for name in ("home.png", "settings.png"):
+for name in ("home.png", "settings.png", "editor.png"):
     copyfile(OUTPUT / name, SITE_PREVIEWS / name)
     print(f"Synced website preview: site/screenshots/{name}")
