@@ -61,7 +61,7 @@ const TOOLS: { id: EditorTool; icon: typeof Square; label: string }[] = [
 
 const SWATCHES = [
   "#FF453A", "#FF9F0A", "#FFD60A", "#30D158", "#40C8E0",
-  "#0A84FF", "#BF5AF2", "#FF375F", "#FFFFFF", "#1C1C1E",
+  "#09BFD9", "#BF5AF2", "#FF375F", "#FFFFFF", "#1C1C1E",
 ];
 
 const MIN = 12;
@@ -320,7 +320,7 @@ export default function Overlay() {
     ctx.clearRect(0, 0, c.width, c.height);
     ctx.drawImage(fz, cx - span / 2, cy - span / 2, span, span, 0, 0, c.width, c.height);
     const mid = c.width / 2;
-    ctx.strokeStyle = "rgba(10,132,255,0.95)";
+    ctx.strokeStyle = "rgba(9,191,217,0.96)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(mid, 0); ctx.lineTo(mid, c.height);
@@ -664,7 +664,7 @@ export default function Overlay() {
       {sel && (
         <div
           className="pointer-events-none absolute"
-          style={{ left: sel.x, top: sel.y, width: sel.w, height: sel.h, outline: "1.5px solid rgba(10,132,255,0.95)", borderRadius: 2 }}
+          style={{ left: sel.x, top: sel.y, width: sel.w, height: sel.h, outline: "1.5px solid rgba(9,191,217,0.96)", borderRadius: 2 }}
         >
           {(phase === "select" || dragOp.current) && (
             <div className="lg-chip absolute -top-8 left-0 text-xs text-white">

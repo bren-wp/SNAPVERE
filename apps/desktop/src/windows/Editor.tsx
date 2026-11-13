@@ -29,7 +29,7 @@ const TOOLS: { id: EditorTool; icon: typeof Square; label: string }[] = [
   { id: "text", icon: Type, label: "Text" },
 ];
 
-const COLORS = ["#ef4444", "#f59e0b", "#22c55e", "#3b82f6", "#a855f7", "#ffffff", "#18181b"];
+const COLORS = ["#ef4444", "#f59e0b", "#22c55e", "#09bfd9", "#a855f7", "#ffffff", "#18181b"];
 
 let counter = 0;
 const uid = () => `a${++counter}`;

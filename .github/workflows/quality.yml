@@ -2,7 +2,7 @@ name: Snapvere build and quality checks
 on:
   push:
     branches:
-      - feature/snapvere-hardening-v0.2.5
+      - feature/snapvere-v0.2.6-capture-brand-polish
   pull_request:
     branches:
       - main
@@ -35,6 +35,8 @@ jobs:
         run: python tools/check_website.py
       - name: Verify matching public and desktop design tokens
         run: python tools/check_brand_tokens.py
+      - name: Check capture overlay pipeline and legacy brand references
+        run: python tools/check_capture_pipeline.py
       - name: Parse site and app config
         run: |
           node --check site/app.js
@@ -145,6 +147,6 @@ jobs:
           git add apps/desktop/src-tauri/src
           if ! git diff --cached --quiet; then
             git commit -m 'style: apply Rust formatting after passing Windows tests'
-            git pull --rebase origin feature/snapvere-hardening-v0.2.5
-            git push origin HEAD:feature/snapvere-hardening-v0.2.5
+            git pull --rebase origin feature/snapvere-v0.2.6-capture-brand-polish
+            git push origin HEAD:feature/snapvere-v0.2.6-capture-brand-polish
           fi
