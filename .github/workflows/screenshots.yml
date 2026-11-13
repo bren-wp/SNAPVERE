@@ -68,5 +68,16 @@ jobs:
           git add docs/screenshots/*.png site/screenshots/home.png site/screenshots/settings.png site/screenshots/editor.png
           if ! git diff --cached --quiet; then
             git commit -m "docs: add real rendered Snapvere interface screenshots"
-            git push
+            # Capturing previews takes time; other PR commits can arrive meanwhile.
+            # Rebase without force-pushing so screenshot artifacts never overwrite code.
+            for attempt in 1 2 3; do
+              git fetch origin "${GITHUB_REF_NAME}"
+              git rebase "origin/${GITHUB_REF_NAME}"
+              if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+                exit 0
+              fi
+              echo "Branch moved during screenshot upload, retrying (${attempt}/3)" >&2
+              sleep 2
+            done
+            exit 1
           fi
