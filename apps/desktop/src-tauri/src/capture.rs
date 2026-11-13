@@ -206,7 +206,9 @@ mod crop_tests {
         original.put_pixel(0, 0, image::Rgba([2, 3, 5, 7]));
         original.put_pixel(1, 1, image::Rgba([97, 42, 128, 255]));
         let bytes = encode(&original, ImageFormat::Png, 92).expect("encode PNG");
-        let decoded = image::load_from_memory(&bytes).expect("decode PNG").to_rgba8();
+        let decoded = image::load_from_memory(&bytes)
+            .expect("decode PNG")
+            .to_rgba8();
         assert_eq!(original, decoded);
     }
 

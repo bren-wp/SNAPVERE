@@ -43,10 +43,8 @@ pub fn run() {
             let _ = commands::show_home(app.clone());
         }))
         // ── ostali plugini ───────────────────────────────────────
-        .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
@@ -181,10 +179,8 @@ pub fn run() {
                     let _ = record::stop(app_handle);
                     // H.264/GIF finalization and SQLite registration may exceed
                     // 600 ms on slow disks: wait for the worker, not a fixed guess.
-                    let _ = record::wait_for_finalize(
-                        app_handle,
-                        std::time::Duration::from_secs(12),
-                    );
+                    let _ =
+                        record::wait_for_finalize(app_handle, std::time::Duration::from_secs(12));
                 }
                 log("izlaz iz aplikacije");
             }

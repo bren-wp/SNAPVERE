@@ -135,7 +135,10 @@ impl Db {
 
     /// Bounded substring search without multiplying results for matching tags.
     pub fn search(&self, query: &str, limit: u32, offset: u32) -> anyhow::Result<Vec<Screenshot>> {
-        anyhow::ensure!(query.chars().count() <= 128, "Search query exceeds 128 characters");
+        anyhow::ensure!(
+            query.chars().count() <= 128,
+            "Search query exceeds 128 characters"
+        );
         // A user's % and _ are literal search terms, not SQLite wildcards.
         let escaped = query
             .replace('\\', "\\\\")
@@ -176,7 +179,10 @@ impl Db {
         let tag = tag.trim();
         anyhow::ensure!(!tag.is_empty(), "Tag cannot be empty");
         anyhow::ensure!(tag.chars().count() <= 64, "Tag exceeds 64 characters");
-        anyhow::ensure!(!tag.chars().any(char::is_control), "Tag contains control characters");
+        anyhow::ensure!(
+            !tag.chars().any(char::is_control),
+            "Tag contains control characters"
+        );
         let exists: bool = self.conn.query_row(
             "SELECT EXISTS(SELECT 1 FROM screenshots WHERE id = ?1)",
             params![screenshot_id],

@@ -9,6 +9,7 @@ SNAPVERE is a Windows screenshot and recording workspace published by **BRENDIGO
 - Bounded image clipboard decoding by source size and pixel dimensions; added a one-click Copy file path option (also Ctrl+Shift+C) for images and recordings; corrected the web download guide to reflect opt-in autostart.
 - Replaced the 600 ms fixed delay during Quit with a bounded wait for actual recorder finalization and SQLite registration, reducing truncated recordings on slower storage.
 - Hardened website and application CI to reject public GitHub links and verify the installer license and legal navigation.
+- Removed unused Tauri filesystem and operating-system plugins and corresponding webview capabilities from runtime, reducing the native IPC attack surface.
 
 - Fixed screenshot cropping at negative virtual-desktop coordinates and monitor edges, with Rust regression coverage.
 - Connected fullscreen, region and editor Save operations to persisted image format and quality settings; Save As defaults to the configured extension, recognizes JPEG and rejects unsupported extensions. Added Node unit tests.
