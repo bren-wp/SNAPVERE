@@ -10,7 +10,7 @@
 
 A focused Windows capture workspace from **[BRENDIGO](https://brendigo.com)**.
 
-[![Product](https://img.shields.io/badge/Product-SNAPVERE-09bfd9?style=flat-square)](https://snapvere.com)
+[![Product](https://img.shields.io/badge/Product-SNAPVERE-7648eb?style=flat-square)](https://snapvere.com)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-141416?style=flat-square)](https://snapvere.com/download/)
 [![Privacy](https://img.shields.io/badge/Storage-Local--first-141416?style=flat-square)](https://snapvere.com/privacy/)
 [![Release](https://img.shields.io/badge/Published-v0.2.6-141416?style=flat-square)](https://snapvere.com/download/)

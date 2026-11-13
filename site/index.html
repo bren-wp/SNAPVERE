@@ -164,7 +164,7 @@
           <stop offset=".5" stop-color="#0A84FF" />
           <stop offset="1" stop-color="#7A5BFF" />
         </linearGradient>
-        <symbol id="logo" viewBox="0 0 128 128"><rect width="128" height="128" rx="28" fill="#081b30"/><g fill="none" stroke="#55e0e5" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M44 27H27V44 M84 27H101V44 M27 84V101H44 M101 84V101H84"/></g><path d="M79 36C51 20 38 49 61 62C84 75 72 108 43 93" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round"/><circle cx="96" cy="94" r="5" fill="#55e0e5"/></symbol>
+        
         <symbol id="os-windows" viewBox="0 0 24 24">
           <path d="M3 5.6 10.3 4.6v6.9H3V5.6Zm0 12.8 7.3 1V12.5H3v5.9Zm8.2 1.1L21 21V12.5h-9.8v7Zm0-15.2v7h9.8V3l-9.8 1.3Z" />
         </symbol>
@@ -222,7 +222,7 @@
     <header class="nav" id="nav">
       <div class="wrap nav__inner">
         <a class="brand" href="#top" aria-label="Snapvere home">
-          <svg class="brand__mark" aria-hidden="true"><use href="#logo" /></svg>
+          <img class="brand__mark" src="/favicon.svg" alt="" width="46" height="46" />
           SNAPVERE
         </a>
         <nav class="nav__links" aria-label="Main navigation">
@@ -247,7 +247,7 @@
             <svg class="i"><use href="#i-chevron-right" /></svg>
           </a>
 
-          <h1 class="hero__title">Capture what matters.<br /><span>Edit it instantly. Keep it local.</span></h1>
+          <h1 class="hero__title">Capture<br />what<br />matters.<br /><span>Edit it<br />instantly.<br />Keep it<br />local.</span></h1>
 
           <p class="hero__lead">
             Snapvere is a free screenshot and screen recorder for Windows. Press a key,
@@ -269,148 +269,13 @@
         </div>
 
         <div class="wrap">
-          <figure class="stage hero__stage reveal" aria-label="Snapvere selecting part of a dashboard. A red box frames the revenue figure, an arrow labelled Launch day points at a spike in the chart, and a customer email is pixelated. The Snapvere toolbar sits under the selection.">
-            <div class="stage__canvas" style="--ar: 120 / 63" aria-hidden="true">
-              <div class="desk"></div>
-
-              <div class="win" style="left: 20em; top: 3.4em; width: 80em; height: 49.4em">
-                <div class="win__bar">
-                  <span class="win__logo"></span>
-                  <small>Northwind &mdash; Revenue</small>
-                  <span class="win__ctl"><span><svg viewBox="0 0 10 10"><path d="M1 5h8" /></svg></span><span><svg viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" rx="1" /></svg></span><span><svg viewBox="0 0 10 10"><path d="M1 1l8 8M9 1 1 9" /></svg></span></span>
-                </div>
-                <div class="dash">
-                  <aside class="dash__side">
-                    <div class="dash__ws"><i></i>Northwind</div>
-                    <ul class="dash__nav">
-                      <li>Overview</li>
-                      <li class="on">Revenue</li>
-                      <li>Customers</li>
-                      <li>Products</li>
-                      <li>Reports</li>
-                      <li>Settings</li>
-                    </ul>
-                  </aside>
-                  <div class="dash__main">
-                    <div class="dash__head">
-                      <h4>Revenue</h4>
-                      <div class="seg"><span>7D</span><span class="on">14D</span><span>90D</span></div>
-                    </div>
-                    <div class="kpis">
-                      <div class="kpi">
-                        <div class="kpi__label">Revenue</div>
-                        <div class="kpi__value">$48,210</div>
-                        <div class="kpi__delta">+12.4% vs last period</div>
-                        <span class="ann-rect"></span>
-                      </div>
-                      <div class="kpi">
-                        <div class="kpi__label">Orders</div>
-                        <div class="kpi__value">1,284</div>
-                        <div class="kpi__delta">+8.1%</div>
-                      </div>
-                      <div class="kpi">
-                        <div class="kpi__label">Refund rate</div>
-                        <div class="kpi__value">0.9%</div>
-                        <div class="kpi__delta kpi__delta--down">&minus;0.3 pts</div>
-                      </div>
-                    </div>
-                    <div class="dash__row">
-                      <div class="card">
-                        <div class="card__title">Daily revenue</div>
-                        <svg class="chart" viewBox="0 0 600 250">
-                          <defs>
-                            <linearGradient id="area-g" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0" stop-color="#0a84ff" stop-opacity=".32" />
-                              <stop offset="1" stop-color="#0a84ff" stop-opacity="0" />
-                            </linearGradient>
-                            <marker id="ah" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="3.4" markerHeight="3.4" orient="auto">
-                              <path d="M0 0 10 5 0 10z" fill="#ff453a" />
-                            </marker>
-                          </defs>
-                          <g stroke="rgba(255,255,255,.06)" stroke-width="1">
-                            <path d="M0 62H600M0 125H600M0 188H600" />
-                          </g>
-                          <path fill="url(#area-g)" d="M0.0 145.6 C7.7 144.7 30.8 139.4 46.2 140.2 C61.5 141.1 76.9 151.7 92.3 150.9 C107.7 150.0 123.1 137.0 138.5 134.9 C153.8 132.9 169.2 139.9 184.6 138.5 C200.0 137.0 215.4 127.6 230.8 126.1 C246.2 124.6 261.5 131.1 276.9 129.6 C292.3 128.1 307.7 131.4 323.1 117.2 C338.5 103.1 353.8 51.4 369.2 44.6 C384.6 37.9 400.0 68.5 415.4 76.5 C430.8 84.5 446.2 91.0 461.5 92.4 C476.9 93.9 492.3 84.8 507.7 85.4 C523.1 86.0 538.5 96.9 553.8 96.0 C569.2 95.1 592.3 82.7 600.0 80.0 L600 250 L0 250 Z" />
-                          <path fill="none" stroke="#3d9bff" stroke-width="3" stroke-linecap="round" d="M0.0 145.6 C7.7 144.7 30.8 139.4 46.2 140.2 C61.5 141.1 76.9 151.7 92.3 150.9 C107.7 150.0 123.1 137.0 138.5 134.9 C153.8 132.9 169.2 139.9 184.6 138.5 C200.0 137.0 215.4 127.6 230.8 126.1 C246.2 124.6 261.5 131.1 276.9 129.6 C292.3 128.1 307.7 131.4 323.1 117.2 C338.5 103.1 353.8 51.4 369.2 44.6 C384.6 37.9 400.0 68.5 415.4 76.5 C430.8 84.5 446.2 91.0 461.5 92.4 C476.9 93.9 492.3 84.8 507.7 85.4 C523.1 86.0 538.5 96.9 553.8 96.0 C569.2 95.1 592.3 82.7 600.0 80.0" />
-                          <circle cx="369.2" cy="44.6" r="6" fill="#fff" stroke="#0a84ff" stroke-width="3" />
-                          <!-- anotacija: strelica + tekst -->
-                          <path d="M178 62 L334 47" stroke="#ff453a" stroke-width="6.5" stroke-linecap="round" fill="none" marker-end="url(#ah)" />
-                          <text class="ann-text" x="6" y="76" font-size="30">Launch day</text>
-                          <!-- kursor upravo završio strelicu -->
-                          <g transform="translate(350 46) scale(1.9)">
-                            <path d="M0 0 5.6 15.3 8 9.1 14.2 6.7Z" fill="#fff" stroke="#0a0a0c" stroke-width="1.1" stroke-linejoin="round" />
-                          </g>
-                        </svg>
-                        <div class="chart__axis"><span>Oct 1</span><span>Oct 5</span><span>Oct 9</span><span>Oct 14</span></div>
-                      </div>
-                      <div class="card">
-                        <div class="card__title">Top customers</div>
-                        <ul class="people">
-                          <li><span class="av" style="--c: #5e5ce6">AL</span><span><b>Ada Lindqvist</b><small>ada@lindqvist.studio</small></span><span class="amt">$4,120</span></li>
-                          <li><span class="av" style="--c: #ff9f0a">MO</span><span><b>Marco Oliveira</b><small>marco.o@fastmail.com<svg class="mosaic" viewBox="0 0 16 3" preserveAspectRatio="none" shape-rendering="crispEdges"><rect x="0" y="0" width="1" height="1" fill="rgb(92,92,96)"/><rect x="1" y="0" width="1" height="1" fill="rgb(70,70,74)"/><rect x="2" y="0" width="1" height="1" fill="rgb(100,100,104)"/><rect x="3" y="0" width="1" height="1" fill="rgb(58,58,62)"/><rect x="4" y="0" width="1" height="1" fill="rgb(64,64,68)"/><rect x="5" y="0" width="1" height="1" fill="rgb(64,64,68)"/><rect x="6" y="0" width="1" height="1" fill="rgb(92,92,96)"/><rect x="7" y="0" width="1" height="1" fill="rgb(58,58,62)"/><rect x="8" y="0" width="1" height="1" fill="rgb(76,76,80)"/><rect x="9" y="0" width="1" height="1" fill="rgb(58,58,62)"/><rect x="10" y="0" width="1" height="1" fill="rgb(64,64,68)"/><rect x="11" y="0" width="1" height="1" fill="rgb(100,100,104)"/><rect x="12" y="0" width="1" height="1" fill="rgb(100,100,104)"/><rect x="13" y="0" width="1" height="1" fill="rgb(64,64,68)"/><rect x="14" y="0" width="1" height="1" fill="rgb(76,76,80)"/><rect x="15" y="0" width="1" height="1" fill="rgb(64,64,68)"/><rect x="0" y="1" width="1" height="1" fill="rgb(100,100,104)"/><rect x="1" y="1" width="1" height="1" fill="rgb(58,58,62)"/><rect x="2" y="1" width="1" height="1" fill="rgb(64,64,68)"/><rect x="3" y="1" width="1" height="1" fill="rgb(76,76,80)"/><rect x="4" y="1" width="1" height="1" fill="rgb(58,58,62)"/><rect x="5" y="1" width="1" height="1" fill="rgb(100,100,104)"/><rect x="6" y="1" width="1" height="1" fill="rgb(58,58,62)"/><rect x="7" y="1" width="1" height="1" fill="rgb(76,76,80)"/><rect x="8" y="1" width="1" height="1" fill="rgb(58,58,62)"/><rect x="9" y="1" width="1" height="1" fill="rgb(70,70,74)"/><rect x="10" y="1" width="1" height="1" fill="rgb(84,84,88)"/><rect x="11" y="1" width="1" height="1" fill="rgb(100,100,104)"/><rect x="12" y="1" width="1" height="1" fill="rgb(70,70,74)"/><rect x="13" y="1" width="1" height="1" fill="rgb(64,64,68)"/><rect x="14" y="1" width="1" height="1" fill="rgb(84,84,88)"/><rect x="15" y="1" width="1" height="1" fill="rgb(70,70,74)"/><rect x="0" y="2" width="1" height="1" fill="rgb(64,64,68)"/><rect x="1" y="2" width="1" height="1" fill="rgb(76,76,80)"/><rect x="2" y="2" width="1" height="1" fill="rgb(92,92,96)"/><rect x="3" y="2" width="1" height="1" fill="rgb(64,64,68)"/><rect x="4" y="2" width="1" height="1" fill="rgb(64,64,68)"/><rect x="5" y="2" width="1" height="1" fill="rgb(58,58,62)"/><rect x="6" y="2" width="1" height="1" fill="rgb(76,76,80)"/><rect x="7" y="2" width="1" height="1" fill="rgb(110,110,114)"/><rect x="8" y="2" width="1" height="1" fill="rgb(100,100,104)"/><rect x="9" y="2" width="1" height="1" fill="rgb(92,92,96)"/><rect x="10" y="2" width="1" height="1" fill="rgb(110,110,114)"/><rect x="11" y="2" width="1" height="1" fill="rgb(110,110,114)"/><rect x="12" y="2" width="1" height="1" fill="rgb(92,92,96)"/><rect x="13" y="2" width="1" height="1" fill="rgb(84,84,88)"/><rect x="14" y="2" width="1" height="1" fill="rgb(76,76,80)"/><rect x="15" y="2" width="1" height="1" fill="rgb(70,70,74)"/></svg></small></span><span class="amt">$3,890</span></li>
-                          <li><span class="av" style="--c: #30b0c7">KT</span><span><b>Kenji Tanaka</b><small>kenji@tanaka.dev</small></span><span class="amt">$3,240</span></li>
-                          <li><span class="av" style="--c: #ff375f">SR</span><span><b>Sofia Rossi</b><small>sofia@rossi.design</small></span><span class="amt">$2,975</span></li>
-                          <li><span class="av" style="--c: #32d74b">JB</span><span><b>Jonas Berg</b><small>jonas@berg.no</small></span><span class="amt">$2,410</span></li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="taskbar">
-                <div class="taskbar__apps">
-                  <span class="taskbar__app taskbar__app--start"><i></i><i></i><i></i><i></i></span>
-                  <span class="taskbar__app" style="--c: #2b2b30"></span>
-                  <span class="taskbar__app" style="--c: #e8a93a"></span>
-                  <span class="taskbar__app" style="--c: #1f6fd1"></span>
-                  <span class="taskbar__app" style="--c: #23a35a"></span>
-                  <span class="taskbar__app" style="--c: #1b1b1f"></span>
-                </div>
-                <div class="taskbar__tray"><span class="tray-snapvere"></span><span>13:10<br />14/10/2026</span></div>
-              </div>
-
-              <!-- overlay: selekcija + toolbar -->
-              <div class="sel" style="left: 35.4em; top: 8.4em; width: 63em; height: 39.4em">
-                <span class="sel__h" style="left: 0; top: 0"></span>
-                <span class="sel__h" style="left: 50%; top: 0"></span>
-                <span class="sel__h" style="left: 100%; top: 0"></span>
-                <span class="sel__h" style="left: 0; top: 50%"></span>
-                <span class="sel__h" style="left: 100%; top: 50%"></span>
-                <span class="sel__h" style="left: 0; top: 100%"></span>
-                <span class="sel__h" style="left: 50%; top: 100%"></span>
-                <span class="sel__h" style="left: 100%; top: 100%"></span>
-              </div>
-              <span class="chip" style="left: 35.4em; top: 5.7em">1260 &times; 788</span>
-
-              <div class="bar" style="left: 34.4em; top: 49.6em">
-                <div class="lg bar__grp">
-                  <span class="bb"><svg class="i"><use href="#i-mouse-pointer-2" /></svg></span>
-                  <span class="bb on"><svg class="i"><use href="#i-arrow-up-right" /></svg></span>
-                  <span class="bb"><svg class="i"><use href="#i-square" /></svg></span>
-                  <span class="bb"><svg class="i"><use href="#i-circle" /></svg></span>
-                  <span class="bb"><svg class="i"><use href="#i-minus" /></svg></span>
-                  <span class="bb"><svg class="i"><use href="#i-pen-tool" /></svg></span>
-                  <span class="bb"><svg class="i"><use href="#i-highlighter" /></svg></span>
-                  <span class="bb"><svg class="i"><use href="#i-list-ordered" /></svg></span>
-                  <span class="bb"><svg class="i"><use href="#i-eye-off" /></svg></span>
-                  <span class="bb"><svg class="i"><use href="#i-type" /></svg></span>
-                  <span class="bar__sep"></span>
-                  <span class="bb"><span class="bb__sw"></span></span>
-                  <span class="bb"><span class="bb__dot"></span></span>
-                  <span class="bar__sep"></span>
-                  <span class="bb"><svg class="i"><use href="#i-undo-2" /></svg></span>
-                  <span class="bb dim"><svg class="i"><use href="#i-redo-2" /></svg></span>
-                </div>
-                <div class="lg bar__grp">
-                  <span class="bb"><svg class="i"><use href="#i-copy" /></svg></span>
-                  <span class="bb"><svg class="i"><use href="#i-save" /></svg></span>
-                  <span class="bb"><svg class="i"><use href="#i-download" /></svg></span>
-                  <span class="bb"><svg class="i"><use href="#i-upload" /></svg></span>
-                  <span class="bb"><svg class="i"><use href="#i-x" /></svg></span>
-                </div>
-              </div>
+          <figure class="hero__stage snapvere-hero-product reveal">
+            <div class="snapvere-hero-product__screen">
+              <img src="/screenshots/editor.png" width="1120" height="740" loading="eager" decoding="async" alt="Actual screenshot of the SNAPVERE screenshot editor with local markup tools" />
             </div>
+            <figcaption><strong>Tray-first by design</strong>
+              Start with a keyboard shortcut, capture your display, annotate what matters and keep the result in your local gallery.
+            </figcaption>
           </figure>
         </div>
       </section>
@@ -660,7 +525,7 @@
               <div class="desk"></div>
               <div class="win" style="left: 7em; top: 2.6em; width: 106em; height: 60.4em">
                 <div class="win__bar">
-                  <svg class="win__logo" style="background: none"><use href="#logo" /></svg>
+                  <img class="win__logo" src="/favicon.svg" alt="" />
                   <small>Snapvere</small>
                   <span class="win__ctl"><span><svg viewBox="0 0 10 10"><path d="M1 5h8" /></svg></span><span><svg viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" rx="1" /></svg></span><span><svg viewBox="0 0 10 10"><path d="M1 1l8 8M9 1 1 9" /></svg></span></span>
                 </div>
@@ -925,7 +790,7 @@
         <div class="footer__inner">
           <div class="footer__brand">
             <a class="brand" href="#top">
-              <svg class="brand__mark" aria-hidden="true"><use href="#logo" /></svg>
+              <img class="brand__mark" src="/favicon.svg" alt="" width="46" height="46" />
               SNAPVERE
             </a>
             <p>A private screenshot and screen recording tool for Windows.</p>
