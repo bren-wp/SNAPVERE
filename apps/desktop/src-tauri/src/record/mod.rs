@@ -17,6 +17,9 @@ mod dxgi;
 mod mp4;
 
 mod gifenc;
+mod pixels;
+
+use pixels::{bgra_to_rgba_image, crop_bgra, crop_rect, pixelate_bgra};
 
 #[cfg(test)]
 mod tests;
@@ -855,117 +858,6 @@ fn finish_session(
 }
 
 // ─────────────────────────────── pomoćno ───────────────────────────────
-
-/// Izlazni pravokutnik unutar monitora, poravnat na parne dimenzije (zahtjev NV12/H.264).
-pub fn crop_rect(t: &RecordTarget) -> Result<(u32, u32, u32, u32), String> {
-    let (mw, mh) = (t.monitor_w, t.monitor_h);
-    if mw < 2 || mh < 2 {
-        return Err("monitor prijavljuje nevaljanu veličinu".into());
-    }
-    let (x, y, w, h) = match t.region {
-        Some(r) => {
-            let x = r.x.max(0) as u32;
-            let y = r.y.max(0) as u32;
-            (
-                x,
-                y,
-                r.width.min(mw.saturating_sub(x)),
-                r.height.min(mh.saturating_sub(y)),
-            )
-        }
-        None => (0, 0, mw, mh),
-    };
-    let w = (w / 2) * 2;
-    let h = (h / 2) * 2;
-    if w < 16 || h < 16 {
-        return Err("područje snimanja je premalo (minimalno 16x16)".into());
-    }
-    Ok((x, y, w, h))
-}
-
-/// Kopiraj pravokutnik iz punog framea u izlazni buffer (oba BGRA, gusto pakirana).
-#[allow(clippy::too_many_arguments)]
-fn crop_bgra(src: &[u8], sw: u32, sh: u32, x: u32, y: u32, w: u32, h: u32, dst: &mut [u8]) {
-    let sw = sw as usize;
-    let (x, y, w, h) = (x as usize, y as usize, w as usize, h as usize);
-    let row = w * 4;
-    for r in 0..h {
-        let sy = y + r;
-        let d = r * row;
-        if sy >= sh as usize {
-            dst[d..d + row].fill(0);
-            continue;
-        }
-        let s = (sy * sw + x) * 4;
-        if s + row <= src.len() {
-            dst[d..d + row].copy_from_slice(&src[s..s + row]);
-        } else {
-            dst[d..d + row].fill(0);
-        }
-    }
-}
-
-/// Pikselizira pravokutnik u BGRA bufferu (prosjek po bloku).
-///
-/// Veličina bloka raste s veličinom snimke da redact izgleda jednako na 720p i 4K.
-fn pixelate_bgra(buf: &mut [u8], w: u32, h: u32, r: &PixelRect) {
-    let x0 = r.x.min(w) as usize;
-    let y0 = r.y.min(h) as usize;
-    let x1 = (r.x.saturating_add(r.width)).min(w) as usize;
-    let y1 = (r.y.saturating_add(r.height)).min(h) as usize;
-    if x1 <= x0 || y1 <= y0 {
-        return;
-    }
-    let stride = w as usize * 4;
-    let block = (w.min(h) / 60).clamp(6, 32) as usize;
-
-    let mut by = y0;
-    while by < y1 {
-        let ymax = (by + block).min(y1);
-        let mut bx = x0;
-        while bx < x1 {
-            let xmax = (bx + block).min(x1);
-            let (mut b, mut g, mut rr, mut n) = (0u32, 0u32, 0u32, 0u32);
-            for y in by..ymax {
-                let row = y * stride;
-                for x in bx..xmax {
-                    let p = row + x * 4;
-                    b += buf[p] as u32;
-                    g += buf[p + 1] as u32;
-                    rr += buf[p + 2] as u32;
-                    n += 1;
-                }
-            }
-            if let Some(b_avg) = b.checked_div(n) {
-                let (b, g, rr) = (b_avg as u8, (g / n) as u8, (rr / n) as u8);
-                for y in by..ymax {
-                    let row = y * stride;
-                    for x in bx..xmax {
-                        let p = row + x * 4;
-                        buf[p] = b;
-                        buf[p + 1] = g;
-                        buf[p + 2] = rr;
-                    }
-                }
-            }
-            bx = xmax;
-        }
-        by = ymax;
-    }
-}
-
-fn bgra_to_rgba_image(bgra: &[u8], w: u32, h: u32) -> image::RgbaImage {
-    let mut out = vec![0u8; bgra.len()];
-    let (destination_pixels, _) = out.as_chunks_mut::<4>();
-    let (source_pixels, _) = bgra.as_chunks::<4>();
-    for (d, s) in destination_pixels.iter_mut().zip(source_pixels.iter()) {
-        d[0] = s[2];
-        d[1] = s[1];
-        d[2] = s[0];
-        d[3] = 255;
-    }
-    image::RgbaImage::from_raw(w, h, out).unwrap_or_else(|| image::RgbaImage::new(1, 1))
-}
 
 /// Odredišna datoteka u galeriji, s vremenskim pečatom u imenu.
 fn output_path(app: &AppHandle, format: RecordFormat) -> Result<PathBuf, String> {
