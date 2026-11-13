@@ -133,8 +133,9 @@ impl Db {
         }
     }
 
-    /// Pretraga po imenu ili tagu (LIKE; FTS5 dolazi u F2-14).
+    /// Bounded substring search without multiplying results for matching tags.
     pub fn search(&self, query: &str, limit: u32, offset: u32) -> anyhow::Result<Vec<Screenshot>> {
+        anyhow::ensure!(query.chars().count() <= 128, "Search query exceeds 128 characters");
         // A user's % and _ are literal search terms, not SQLite wildcards.
         let escaped = query
             .replace('\\', "\\\\")
@@ -142,12 +143,15 @@ impl Db {
             .replace('_', "\\_");
         let like = format!("%{escaped}%");
         let mut stmt = self.conn.prepare(
-            r#"SELECT DISTINCT s.id, s.file_path, s.thumb_path, s.name, s.format, s.width, s.height,
+            r#"SELECT s.id, s.file_path, s.thumb_path, s.name, s.format, s.width, s.height,
                       s.size_bytes, s.source, s.created_at, s.is_uploaded
                FROM screenshots s
-               LEFT JOIN screenshot_tags st ON st.screenshot_id = s.id
-               LEFT JOIN tags t ON t.id = st.tag_id
-               WHERE s.name LIKE ?1 ESCAPE '\' OR t.name LIKE ?1 ESCAPE '\'
+               WHERE s.name LIKE ?1 ESCAPE '\'
+                  OR EXISTS (
+                      SELECT 1 FROM screenshot_tags st
+                      JOIN tags t ON t.id = st.tag_id
+                      WHERE st.screenshot_id = s.id AND t.name LIKE ?1 ESCAPE '\'
+                  )
                ORDER BY s.created_at DESC, s.id DESC
                LIMIT ?2 OFFSET ?3"#,
         )?;
@@ -169,6 +173,16 @@ impl Db {
 
     /// Dodaj tag screenshotu (kreira tag ako ne postoji).
     pub fn add_tag(&self, screenshot_id: &str, tag: &str) -> anyhow::Result<()> {
+        let tag = tag.trim();
+        anyhow::ensure!(!tag.is_empty(), "Tag cannot be empty");
+        anyhow::ensure!(tag.chars().count() <= 64, "Tag exceeds 64 characters");
+        anyhow::ensure!(!tag.chars().any(char::is_control), "Tag contains control characters");
+        let exists: bool = self.conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM screenshots WHERE id = ?1)",
+            params![screenshot_id],
+            |row| row.get(0),
+        )?;
+        anyhow::ensure!(exists, "Screenshot does not exist");
         self.conn
             .execute("INSERT OR IGNORE INTO tags(name) VALUES (?1)", params![tag])?;
         self.conn.execute(
@@ -301,6 +315,30 @@ mod gallery_tests {
         assert_eq!(db.search("same", 1, 0)?[0].id, "same_b");
         assert_eq!(db.search("same", 1, 1)?[0].id, "same_a");
         assert!(db.search("same", 1, 2)?.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn reject_invalid_tags_and_oversized_search() -> anyhow::Result<()> {
+        let db = Db::open_in_memory()?;
+        db.insert(&shot("one", 100))?;
+        assert!(db.add_tag("one", "").is_err());
+        assert!(db.add_tag("one", "a\nb").is_err());
+        assert!(db.add_tag("one", &"x".repeat(65)).is_err());
+        assert!(db.add_tag("missing", "valid").is_err());
+        db.add_tag("one", "  useful  ")?;
+        assert_eq!(db.get("one")?.expect("record").tags, vec!["useful"]);
+        assert!(db.search(&"x".repeat(129), 10, 0).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn search_does_not_duplicate_matches_across_tags() -> anyhow::Result<()> {
+        let db = Db::open_in_memory()?;
+        db.insert(&shot("one", 100))?;
+        db.add_tag("one", "meeting")?;
+        db.add_tag("one", "meet-up")?;
+        assert_eq!(db.search("meet", 10, 0)?.len(), 1);
         Ok(())
     }
 

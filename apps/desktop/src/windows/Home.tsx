@@ -227,6 +227,7 @@ export default function Home() {
               pageOffset.current = 0;
             }}
             placeholder="Search by name or tag…"
+            maxLength={128}
             aria-label="Search captures by name or tag"
             className="w-full rounded-full bg-elevated/80 py-2 pl-10 pr-4 text-sm outline-none ring-1 ring-white/10 transition focus:ring-2 focus:ring-accent"
           />

@@ -107,7 +107,13 @@ pub fn encode(img: &RgbaImage, format: ImageFormat, quality: u8) -> Result<Vec<u
     match format {
         ImageFormat::Png => {
             let mut buf = Cursor::new(Vec::new());
-            DynamicImage::ImageRgba8(img.clone()).write_to(&mut buf, image::ImageFormat::Png)?;
+            // Avoid cloning potentially hundreds of megabytes of RGBA pixels.
+            PngEncoder::new(&mut buf).write_image(
+                img.as_raw(),
+                img.width(),
+                img.height(),
+                image::ExtendedColorType::Rgba8,
+            )?;
             Ok(buf.into_inner())
         }
         ImageFormat::Jpg => {
@@ -192,6 +198,16 @@ mod crop_tests {
         assert!(crop(&img, &region(10, 0, 1, 1)).is_err());
         assert!(crop(&img, &region(0, 6, 1, 1)).is_err());
         assert!(crop(&img, &region(-30, 0, 5, 4)).is_err());
+    }
+
+    #[test]
+    fn saved_png_preserves_rgba_without_cloning() {
+        let mut original = RgbaImage::new(2, 2);
+        original.put_pixel(0, 0, image::Rgba([2, 3, 5, 7]));
+        original.put_pixel(1, 1, image::Rgba([97, 42, 128, 255]));
+        let bytes = encode(&original, ImageFormat::Png, 92).expect("encode PNG");
+        let decoded = image::load_from_memory(&bytes).expect("decode PNG").to_rgba8();
+        assert_eq!(original, decoded);
     }
 
     #[test]
