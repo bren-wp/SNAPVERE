@@ -57,7 +57,10 @@
           "en-US"
         ]
       }
-    }
+    },
+    "licenseFile": "windows/snapvere-eula.rtf",
+    "publisher": "Brendigo",
+    "copyright": "Copyright (c) 2026 Brendigo"
   },
   "plugins": {}
 }
