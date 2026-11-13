@@ -86,6 +86,8 @@ jobs:
       - name: Test Rust core on Windows
         working-directory: apps/desktop/src-tauri
         run: cargo test --locked
+      - name: Fail on unsafe dynamic HTML/code execution in public JavaScript
+        run: python tools/check_frontend_security.py
       - name: Verify installer license and public distribution
         run: python tools/check_public_distribution.py
       - name: Verify all frontend IPC commands are registered by Rust

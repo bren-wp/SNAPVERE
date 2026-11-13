@@ -40,6 +40,8 @@ jobs:
       - name: Typecheck and build
         working-directory: apps/desktop
         run: npm run build
+      - name: Fail on unsafe dynamic HTML/code execution in public JavaScript
+        run: python tools/check_frontend_security.py
       - name: Verify first-party downloads, HTML links and checksums
         run: python tools/check_website.py
       - name: Verify installer EULA and block public GitHub links
