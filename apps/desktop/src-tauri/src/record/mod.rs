@@ -940,7 +940,9 @@ fn pixelate_bgra(buf: &mut [u8], w: u32, h: u32, r: &PixelRect) {
 
 fn bgra_to_rgba_image(bgra: &[u8], w: u32, h: u32) -> image::RgbaImage {
     let mut out = vec![0u8; bgra.len()];
-    for (d, s) in out.as_chunks_mut::<4>().0.iter_mut().zip(bgra.as_chunks::<4>().0.iter()) {
+    let (destination_pixels, _) = out.as_chunks_mut::<4>();
+    let (source_pixels, _) = bgra.as_chunks::<4>();
+    for (d, s) in destination_pixels.iter_mut().zip(source_pixels.iter()) {
         d[0] = s[2];
         d[1] = s[1];
         d[2] = s[0];
