@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: true
       - name: Download and verify published Snapvere packages
@@ -21,7 +21,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p site/files
-          gh release download v0.2.5 --repo bren-wp/Snapvere --dir site/files --clobber
+          latest_tag="$(gh release list --repo bren-wp/Snapvere --limit 1 --json tagName --jq '.[0].tagName')"
+          test -n "$latest_tag" || { echo "No published Snapvere release"; exit 1; }
+          echo "Mirroring verified packages from $latest_tag"
+          gh release download "$latest_tag" --repo bren-wp/Snapvere --dir site/files --clobber
           cd site/files
           for file in Snapvere-Portable.exe Snapvere-Setup.exe Snapvere-Setup.msi SHA256SUMS.txt; do
             test -s "$file" || { echo "Missing expected file: $file"; exit 1; }
