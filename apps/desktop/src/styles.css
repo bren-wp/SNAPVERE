@@ -497,3 +497,23 @@ button:disabled { cursor: not-allowed; opacity: .55; }
   .snapvere-gallery-card:focus-within,
   .snapvere-gallery-card button:focus-visible { transform: none; }
 }
+
+/* Compact Settings: the full 7-section navigation remains usable in small WebViews. */
+@media (max-width: 740px) {
+  .snapvere-settings-layout { flex-direction: column; }
+  .snapvere-settings-sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-shrink: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 6px;
+    padding: 10px;
+    border-right: 0;
+    border-bottom: 1px solid var(--brand-border);
+    scrollbar-width: thin;
+  }
+  .snapvere-settings-sidebar > .snapvere-section-eyebrow { display: none; }
+  .snapvere-settings-sidebar > button { white-space: nowrap; flex: 0 0 auto; }
+  .snapvere-settings-content { padding: 16px; }
+}
