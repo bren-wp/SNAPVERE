@@ -74,8 +74,8 @@ export const ipc = {
   // ── galerija ──
   listScreenshots: (limit?: number, offset?: number) =>
     invoke<Screenshot[]>("list_screenshots", { limit, offset }),
-  searchScreenshots: (query: string) =>
-    invoke<Screenshot[]>("search_screenshots", { query }),
+  searchScreenshots: (query: string, limit?: number, offset?: number) =>
+    invoke<Screenshot[]>("search_screenshots", { query, limit, offset }),
   deleteScreenshot: (id: string) =>
     invoke<void>("delete_screenshot", { id }),
   addTag: (id: string, tag: string) => invoke<void>("add_tag", { id, tag }),

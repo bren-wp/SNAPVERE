@@ -8,6 +8,7 @@ SNAPVERE is a Windows screenshot and recording workspace published by **BRENDIGO
 - Connected fullscreen, region and editor Save operations to persisted image format and quality settings; Save As defaults to the configured extension, recognizes JPEG and rejects unsupported extensions. Added Node unit tests.
 - Preserve the overlay and annotations when export fails. Clean up partial captures and generated thumbnails on disk or gallery database errors; never delete original recorded video on indexing failure.
 - Made gallery search treat literal %, _ and backslash correctly instead of unintended SQL LIKE wildcards.
+- Added stable, bounded SQLite pagination and a Load more action so galleries and search results no longer silently stop at 300/500 items.
 - Kept SQLite foreign keys enabled in the in-memory fallback, preserving referential integrity of tags.
 - Propagated tag query errors rather than silently losing tags.
 - Restricted environment-supplied WebView2 remote debugging flags to debug builds.

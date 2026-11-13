@@ -23,24 +23,33 @@ import WindowFrame from "../components/WindowFrame";
 import Viewer, { fmtBytes } from "../components/Viewer";
 
 type Filter = "all" | "images" | "videos";
+const PAGE_SIZE = 120;
 
 export default function Home() {
   const [items, setItems] = useState<Screenshot[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [toast, setToast] = useState<string | null>(null);
   const [captureBusy, setCaptureBusy] = useState(false);
   /** Otvoren u pregledniku (id, ne indeks — lista se osvježava ispod njega). */
   const [viewId, setViewId] = useState<string | null>(null);
   const galleryRequest = useRef(0);
+  const pagingBusy = useRef(false);
 
   const load = useCallback(async (q: string) => {
     const request = ++galleryRequest.current;
     setLoading(true);
     try {
-      const res = q.trim() ? await ipc.searchScreenshots(q) : await ipc.listScreenshots(300, 0);
-      if (request === galleryRequest.current) setItems(res);
+      const res = q.trim()
+        ? await ipc.searchScreenshots(q, PAGE_SIZE, 0)
+        : await ipc.listScreenshots(PAGE_SIZE, 0);
+      if (request === galleryRequest.current) {
+        setItems(res);
+        setHasMore(res.length === PAGE_SIZE);
+      }
     } catch (e) {
       console.error(e);
       if (request === galleryRequest.current) setToast("Could not load the gallery");
@@ -48,6 +57,32 @@ export default function Home() {
       if (request === galleryRequest.current) setLoading(false);
     }
   }, []);
+
+  const loadMore = useCallback(async () => {
+    if (pagingBusy.current || loading || !hasMore) return;
+    pagingBusy.current = true;
+    const request = galleryRequest.current;
+    const offset = items.length;
+    setLoadingMore(true);
+    try {
+      const res = query.trim()
+        ? await ipc.searchScreenshots(query, PAGE_SIZE, offset)
+        : await ipc.listScreenshots(PAGE_SIZE, offset);
+      if (request !== galleryRequest.current) return;
+      setItems((previous) => {
+        const ids = new Set(previous.map((item) => item.id));
+        return previous.concat(res.filter((item) => !ids.has(item.id)));
+      });
+      setHasMore(res.length === PAGE_SIZE);
+    } catch (error) {
+      if (request === galleryRequest.current) {
+        setToast(`Could not load older captures: ${String(error)}`);
+      }
+    } finally {
+      pagingBusy.current = false;
+      if (request === galleryRequest.current) setLoadingMore(false);
+    }
+  }, [hasMore, items.length, loading, query]);
 
   useEffect(() => {
     const t = setTimeout(() => void load(query), 200);
@@ -213,7 +248,7 @@ export default function Home() {
           <h1 className="snapvere-gallery-title">Your captures</h1>
         </div>
         <p className="text-xs text-muted" aria-live="polite">
-          {loading ? "Updating…" : `${visible.length} ${visible.length === 1 ? "item" : "items"}`}
+          {loading ? "Updating…" : `${visible.length}${hasMore ? "+" : ""} ${visible.length === 1 ? "item" : "items"} loaded`}
         </p>
       </div>
       {/* filter */}
@@ -249,6 +284,19 @@ export default function Home() {
                 onDelete={() => void onDelete(s)}
               />
             ))}
+          </div>
+        )}
+        {hasMore && (
+          <div className="flex justify-center pt-5">
+            <button
+              type="button"
+              onClick={() => void loadMore()}
+              disabled={loadingMore || loading}
+              aria-label="Load older captures"
+              className="snapvere-btn-secondary rounded-full px-5 py-2.5 text-sm font-semibold transition hover:bg-elevated disabled:opacity-60"
+            >
+              {loadingMore ? "Loading older captures…" : "Load more captures"}
+            </button>
           </div>
         )}
       </main>

@@ -1201,13 +1201,17 @@ pub fn search_screenshots(
     app: AppHandle,
     state: State<AppState>,
     query: String,
+    limit: Option<u32>,
+    offset: Option<u32>,
 ) -> Result<Vec<Screenshot>, String> {
     let items = {
         let db = lock(&state.db);
+        let limit = limit.unwrap_or(120).min(500);
+        let offset = offset.unwrap_or(0);
         if query.trim().is_empty() {
-            db.list(200, 0).map_err(estr)?
+            db.list(limit, offset).map_err(estr)?
         } else {
-            db.search(query.trim()).map_err(estr)?
+            db.search(query.trim(), limit, offset).map_err(estr)?
         }
     };
     allow_media_dirs(&app, &items);

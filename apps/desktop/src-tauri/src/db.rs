@@ -102,7 +102,7 @@ impl Db {
             r#"SELECT id, file_path, thumb_path, name, format, width, height, size_bytes,
                       source, created_at, is_uploaded
                FROM screenshots
-               ORDER BY created_at DESC
+               ORDER BY created_at DESC, id DESC
                LIMIT ?1 OFFSET ?2"#,
         )?;
         let rows = stmt.query_map(params![limit.min(500), offset], Self::map_row)?;
@@ -134,7 +134,7 @@ impl Db {
     }
 
     /// Pretraga po imenu ili tagu (LIKE; FTS5 dolazi u F2-14).
-    pub fn search(&self, query: &str) -> anyhow::Result<Vec<Screenshot>> {
+    pub fn search(&self, query: &str, limit: u32, offset: u32) -> anyhow::Result<Vec<Screenshot>> {
         // A user's % and _ are literal search terms, not SQLite wildcards.
         let escaped = query
             .replace('\\', "\\\\")
@@ -148,10 +148,10 @@ impl Db {
                LEFT JOIN screenshot_tags st ON st.screenshot_id = s.id
                LEFT JOIN tags t ON t.id = st.tag_id
                WHERE s.name LIKE ?1 ESCAPE '\' OR t.name LIKE ?1 ESCAPE '\'
-               ORDER BY s.created_at DESC
-               LIMIT 500"#,
+               ORDER BY s.created_at DESC, s.id DESC
+               LIMIT ?2 OFFSET ?3"#,
         )?;
-        let rows = stmt.query_map(params![like], Self::map_row)?;
+        let rows = stmt.query_map(params![like, limit.min(500), offset], Self::map_row)?;
         let mut out = Vec::new();
         for r in rows {
             out.push(r?);
@@ -268,7 +268,7 @@ mod gallery_tests {
         assert_eq!(all[0].id, "two");
         assert_eq!(all[0].tags, vec!["team"]);
         assert_eq!(all[1].tags, vec!["design", "team"]);
-        assert_eq!(db.search("design")?[0].tags, vec!["design", "team"]);
+        assert_eq!(db.search("design", 200, 0)?[0].tags, vec!["design", "team"]);
         assert_eq!(db.list(1, 1)?[0].id, "one");
         assert!(db.list(1, 10)?.is_empty());
         assert!(db.list(0, 0)?.is_empty());
@@ -281,11 +281,26 @@ mod gallery_tests {
         db.insert(&shot("one%two", 100))?;
         db.insert(&shot("one_two", 200))?;
         db.insert(&shot("oneXtwo", 300))?;
-        assert_eq!(db.search("%")?[0].id, "one%two");
-        assert_eq!(db.search("%")?.len(), 1);
-        assert_eq!(db.search("_")?[0].id, "one_two");
-        assert_eq!(db.search("_")?.len(), 1);
-        assert_eq!(db.search("one")?.len(), 3);
+        assert_eq!(db.search("%", 200, 0)?[0].id, "one%two");
+        assert_eq!(db.search("%", 200, 0)?.len(), 1);
+        assert_eq!(db.search("_", 200, 0)?[0].id, "one_two");
+        assert_eq!(db.search("_", 200, 0)?.len(), 1);
+        assert_eq!(db.search("one", 200, 0)?.len(), 3);
+        Ok(())
+    }
+
+    #[test]
+    fn stable_pagination_across_matching_timestamps() -> anyhow::Result<()> {
+        let db = Db::open_in_memory()?;
+        db.insert(&shot("same_a", 100))?;
+        db.insert(&shot("same_b", 100))?;
+        db.insert(&shot("older", 90))?;
+        assert_eq!(db.list(1, 0)?[0].id, "same_b");
+        assert_eq!(db.list(1, 1)?[0].id, "same_a");
+        assert_eq!(db.list(1, 2)?[0].id, "older");
+        assert_eq!(db.search("same", 1, 0)?[0].id, "same_b");
+        assert_eq!(db.search("same", 1, 1)?[0].id, "same_a");
+        assert!(db.search("same", 1, 2)?.is_empty());
         Ok(())
     }
 
