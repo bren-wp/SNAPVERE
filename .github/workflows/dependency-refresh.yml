@@ -1,0 +1,114 @@
+name: Refresh tested Snapvere dependencies (existing PR)
+on:
+  push:
+    branches: [feature/snapvere-v0.2.6-capture-brand-polish]
+    paths: ['.github/workflows/dependency-refresh.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: snapvere-dependency-refresh
+  cancel-in-progress: false
+
+jobs:
+  frontend:
+    name: Update npm dependencies with typecheck and security gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - name: Install exact current dependencies
+        working-directory: apps/desktop
+        run: npm ci
+      - name: Refresh compatible packages and current stable Tauri 2 / build tooling
+        working-directory: apps/desktop
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm update --no-fund
+          npm install --save --no-fund \
+            @tauri-apps/api@latest \
+            @tauri-apps/plugin-autostart@latest \
+            @tauri-apps/plugin-clipboard-manager@latest \
+            @tauri-apps/plugin-dialog@latest \
+            @tauri-apps/plugin-fs@latest \
+            @tauri-apps/plugin-global-shortcut@latest \
+            @tauri-apps/plugin-opener@latest \
+            @tauri-apps/plugin-os@latest \
+            @tauri-apps/plugin-store@latest \
+            clsx@latest lucide-react@latest
+          npm install --save-dev --no-fund \
+            @tauri-apps/cli@latest @vitejs/plugin-react@latest \
+            vite@latest typescript@latest autoprefixer@latest postcss@latest
+          # React 18, Zustand 4 and Tailwind 3 remain on their newest
+          # compatible patch/minor series until the tested UI migration.
+          npm run build
+          npm audit --audit-level=high
+          npm ci
+          npm run build
+          npm outdated || true
+      - name: Commit only verified npm manifest and lockfile changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/desktop/package.json apps/desktop/package-lock.json
+          if git diff --cached --quiet; then
+            echo "All compatible npm dependencies are already current"
+            exit 0
+          fi
+          git commit -m "chore(deps): refresh tested npm and Tauri frontend packages"
+          for attempt in 1 2 3; do
+            git fetch origin "${GITHUB_REF_NAME}"
+            git rebase "origin/${GITHUB_REF_NAME}"
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+
+  rust:
+    name: Refresh compatible Cargo dependencies on Windows
+    runs-on: windows-latest
+    timeout-minutes: 85
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: true
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri -> target
+      - name: Update registry dependency lockfile (within declared major compatibility)
+        working-directory: apps/desktop/src-tauri
+        run: cargo update
+      - name: Verify native Rust tests with updated lockfile
+        working-directory: apps/desktop/src-tauri
+        run: cargo test --locked
+      - name: Commit only tested Cargo.lock
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/desktop/src-tauri/Cargo.lock
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { Write-Host 'Rust dependencies already current'; exit 0 }
+          git commit -m 'chore(deps): update compatible Rust crate lockfile after Windows tests'
+          foreach ($attempt in 1..3) {
+            git fetch origin $env:GITHUB_REF_NAME
+            if ($LASTEXITCODE -ne 0) { throw 'Git fetch failed' }
+            git rebase "origin/$env:GITHUB_REF_NAME"
+            if ($LASTEXITCODE -ne 0) { throw 'Git rebase failed' }
+            git push origin "HEAD:$env:GITHUB_REF_NAME"
+            if ($LASTEXITCODE -eq 0) { exit 0 }
+            Start-Sleep -Seconds 2
+          }
+          throw 'Could not safely push tested Rust dependency updates'
