@@ -112,7 +112,7 @@ The source and interface images are built directly from the SNAPVERE project. Pr
 
 ## Get SNAPVERE for Windows
 
-**Windows preview v0.2.7 — prepared for release.** SNAPVERE provides three Windows package formats with SHA-256 integrity data. Use the verified [GitHub Releases](https://github.com/bren-wp/Snapvere/releases) page until the public website is confirmed to mirror the new binaries. These packages remain unsigned preview builds.
+**Windows v0.2.8 release candidate — under review in PR #18.** SNAPVERE builds three Windows package formats with SHA-256 integrity data. The latest published GitHub release remains v0.2.7 until the candidate passes its release workflow. Use the verified [GitHub Releases](https://github.com/bren-wp/Snapvere/releases) page until the public website is confirmed to mirror the new binaries. These packages remain unsigned preview builds.
 
 | Package | Ideal for | Official download |
 |---|---|---|

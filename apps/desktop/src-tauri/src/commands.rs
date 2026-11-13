@@ -697,7 +697,26 @@ pub async fn capture_fullscreen(
 }
 
 /// Tray put za full-screen capture — na radnoj dretvi, bez blokiranja menija.
-pub fn dispatch_capture_fullscreen(app: &AppHandle, format: ImageFormat, quality: u8) {
+pub fn dispatch_capture_fullscreen(app: &AppHandle) {
+    // Tray captures run without a webview: read the same persisted settings
+    // that Home and the annotation editor use before starting the worker.
+    let (format, quality) = match app.store("settings.json") {
+        Ok(store) => {
+            let chosen_format = store.get("format");
+            let format = match chosen_format.as_ref().and_then(|v| v.as_str()) {
+                Some("jpg") => ImageFormat::Jpg,
+                Some("webp") => ImageFormat::Webp,
+                _ => ImageFormat::Png,
+            };
+            let quality = store
+                .get("quality")
+                .and_then(|v| v.as_u64())
+                .map(|q| q.clamp(1, 100) as u8)
+                .unwrap_or(92);
+            (format, quality)
+        }
+        Err(_) => (ImageFormat::Png, 92),
+    };
     let app = app.clone();
     let _ = std::thread::Builder::new()
         .name("snapvere-capture-full".into())

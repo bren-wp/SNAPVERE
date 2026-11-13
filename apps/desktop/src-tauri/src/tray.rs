@@ -13,7 +13,6 @@ use tauri::{
 };
 
 use crate::commands::{self, CaptureMode};
-use crate::models::ImageFormat;
 use crate::record;
 
 /// Stavke kojima mijenjamo stanje dok snimanje traje.
@@ -121,7 +120,7 @@ pub fn set_recording(app: &AppHandle, active: bool) {
 fn on_menu_event(app: &AppHandle, event: MenuEvent) {
     match event.id().as_ref() {
         "capture_region" => commands::dispatch_region_capture(app, CaptureMode::Shot),
-        "capture_full" => commands::dispatch_capture_fullscreen(app, ImageFormat::Png, 100),
+        "capture_full" => commands::dispatch_capture_fullscreen(app),
         "record_region" => commands::dispatch_region_capture(app, CaptureMode::Record),
         "record_screen" => commands::dispatch_record_fullscreen(app),
         "record_stop" => {
