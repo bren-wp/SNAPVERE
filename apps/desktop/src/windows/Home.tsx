@@ -3,6 +3,7 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ask } from "@tauri-apps/plugin-dialog";
+import { readCapturePreferences } from "../lib/capturePreferencesStore";
 import { listen } from "@tauri-apps/api/event";
 import {
   Crop,
@@ -17,29 +18,41 @@ import {
 } from "lucide-react";
 import { ipc } from "../lib/ipc";
 import { isVideo } from "../lib/types";
+import { mergeUniqueById } from "../lib/galleryPaging";
 import type { RecordDone, Screenshot } from "../lib/types";
 import WindowFrame from "../components/WindowFrame";
 import Viewer, { fmtBytes } from "../components/Viewer";
 
 type Filter = "all" | "images" | "videos";
+const PAGE_SIZE = 120;
 
 export default function Home() {
   const [items, setItems] = useState<Screenshot[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [toast, setToast] = useState<string | null>(null);
   const [captureBusy, setCaptureBusy] = useState(false);
   /** Otvoren u pregledniku (id, ne indeks — lista se osvježava ispod njega). */
   const [viewId, setViewId] = useState<string | null>(null);
   const galleryRequest = useRef(0);
+  const pagingBusy = useRef(false);
+  const pageOffset = useRef(0);
 
   const load = useCallback(async (q: string) => {
     const request = ++galleryRequest.current;
     setLoading(true);
     try {
-      const res = q.trim() ? await ipc.searchScreenshots(q) : await ipc.listScreenshots(300, 0);
-      if (request === galleryRequest.current) setItems(res);
+      const res = q.trim()
+        ? await ipc.searchScreenshots(q, PAGE_SIZE, 0)
+        : await ipc.listScreenshots(PAGE_SIZE, 0);
+      if (request === galleryRequest.current) {
+        pageOffset.current = res.length;
+        setItems(res);
+        setHasMore(res.length === PAGE_SIZE);
+      }
     } catch (e) {
       console.error(e);
       if (request === galleryRequest.current) setToast("Could not load the gallery");
@@ -47,6 +60,30 @@ export default function Home() {
       if (request === galleryRequest.current) setLoading(false);
     }
   }, []);
+
+  const loadMore = useCallback(async () => {
+    if (pagingBusy.current || loading || !hasMore) return;
+    pagingBusy.current = true;
+    const request = galleryRequest.current;
+    const offset = pageOffset.current;
+    setLoadingMore(true);
+    try {
+      const res = query.trim()
+        ? await ipc.searchScreenshots(query, PAGE_SIZE, offset)
+        : await ipc.listScreenshots(PAGE_SIZE, offset);
+      if (request !== galleryRequest.current) return;
+      pageOffset.current = offset + res.length;
+      setItems((previous) => mergeUniqueById(previous, res));
+      setHasMore(res.length === PAGE_SIZE);
+    } catch (error) {
+      if (request === galleryRequest.current) {
+        setToast(`Could not load older captures: ${String(error)}`);
+      }
+    } finally {
+      pagingBusy.current = false;
+      setLoadingMore(false);
+    }
+  }, [hasMore, loading, query]);
 
   useEffect(() => {
     const t = setTimeout(() => void load(query), 200);
@@ -143,7 +180,8 @@ export default function Home() {
       // captured on slower Windows / WebView2 devices.
       await win.hide();
       await new Promise<void>((resolve) => setTimeout(resolve, 180));
-      await ipc.captureFullscreen("png", 100);
+      const { format, quality } = await readCapturePreferences();
+      await ipc.captureFullscreen(format, quality);
       await load(query);
       setToast("Full-screen screenshot saved.");
     } catch (e) {
@@ -183,8 +221,13 @@ export default function Home() {
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setHasMore(false);
+              pageOffset.current = 0;
+            }}
             placeholder="Search by name or tag…"
+            maxLength={128}
             aria-label="Search captures by name or tag"
             className="w-full rounded-full bg-elevated/80 py-2 pl-10 pr-4 text-sm outline-none ring-1 ring-white/10 transition focus:ring-2 focus:ring-accent"
           />
@@ -211,7 +254,7 @@ export default function Home() {
           <h1 className="snapvere-gallery-title">Your captures</h1>
         </div>
         <p className="text-xs text-muted" aria-live="polite">
-          {loading ? "Updating…" : `${visible.length} ${visible.length === 1 ? "item" : "items"}`}
+          {loading ? "Updating…" : `${visible.length}${hasMore ? "+" : ""} ${visible.length === 1 ? "item" : "items"} loaded`}
         </p>
       </div>
       {/* filter */}
@@ -247,6 +290,19 @@ export default function Home() {
                 onDelete={() => void onDelete(s)}
               />
             ))}
+          </div>
+        )}
+        {hasMore && (
+          <div className="flex justify-center pt-5">
+            <button
+              type="button"
+              onClick={() => void loadMore()}
+              disabled={loadingMore || loading}
+              aria-label="Load older captures"
+              className="snapvere-btn-secondary rounded-full px-5 py-2.5 text-sm font-semibold transition hover:bg-elevated disabled:opacity-60"
+            >
+              {loadingMore ? "Loading older captures…" : "Load more captures"}
+            </button>
           </div>
         )}
       </main>

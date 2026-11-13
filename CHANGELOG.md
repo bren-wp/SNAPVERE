@@ -1,6 +1,31 @@
 # SNAPVERE — Release history
 
-SNAPVERE is a Windows screenshot and recording workspace published by **BRENDIGO** at https://snapvere.com.
+SNAPVERE is a Windows screenshot and recording workspace published by **BRENDIGO**.
+
+## v0.2.8 — November 13, 2026 (Tauri/Rust preview)
+
+- Added a versioned Brendigo commercial-use installer license with an acceptance page for NSIS/MSI, matching first-party website terms and an in-app About link; previously issued MIT and third-party open-source rights remain intact.
+- Reduced peak memory usage for PNG saves by encoding borrowed RGBA pixels; bounded gallery search and tag input; eliminated duplicate tag-join results in SQLite with a correlated EXISTS query.
+- Bounded image clipboard decoding by source size and pixel dimensions; added a one-click Copy file path option (also Ctrl+Shift+C) for images and recordings; corrected the web download guide to reflect opt-in autostart.
+- Replaced the 600 ms fixed delay during Quit with a bounded wait for actual recorder finalization and SQLite registration, reducing truncated recordings on slower storage.
+- Changed Save As to stage complete image bytes in the destination directory and rename only after a successful write, preventing truncation of existing files when an export fails.
+- Added a CI contract check for every frontend-to-Rust IPC command, plus an audit report distinguishing verified static checks from device-level and third-party security review still outstanding.
+- Hardened website and application CI to reject public GitHub links and verify the installer license and legal navigation.
+- Removed unused Tauri filesystem and operating-system plugins and corresponding webview capabilities from runtime, reducing the native IPC attack surface.
+
+- Fixed screenshot cropping at negative virtual-desktop coordinates and monitor edges, with Rust regression coverage.
+- Connected fullscreen, region and editor Save operations to persisted image format and quality settings; Save As defaults to the configured extension, recognizes JPEG and rejects unsupported extensions. Added Node unit tests.
+- Preserve the overlay and annotations when export fails. Clean up partial captures and generated thumbnails on disk or gallery database errors; never delete original recorded video on indexing failure.
+- Made gallery search treat literal %, _ and backslash correctly instead of unintended SQL LIKE wildcards.
+- Added stable, bounded SQLite pagination and a Load more action so galleries and search results no longer silently stop at 300/500 items. The pagination cursor remains correct after deletion or refresh, with duplicate prevention and frontend unit tests.
+- Kept SQLite foreign keys enabled in the in-memory fallback, preserving referential integrity of tags.
+- Propagated tag query errors rather than silently losing tags.
+- Restricted environment-supplied WebView2 remote debugging flags to debug builds.
+- Removed CI auto-commits of generated source/images and excessive quality workflow write permissions.
+- Introduced non-mutating Rust formatting, strict Clippy gating, and a working TypeScript static-analysis lint command.
+- Removed old release-note claims and distinguished the GitHub Tauri edition from the separately deployed .NET/WinUI website.
+
+**Release type:** preview, pending native Windows hardware, DPI, multi-monitor, audio, install/upgrade and pixel-perfect reference validation. The TypeScript compiler's strict and unused-symbol checks are enforced; ESLint is not yet a locked dependency and must be added separately before claiming ESLint coverage.
 
 ## v0.2.7 — November 2026
 

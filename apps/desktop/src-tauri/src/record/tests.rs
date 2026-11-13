@@ -201,7 +201,7 @@ fn gif_enkoder_daje_valjanu_animaciju() {
         let mut frame = vec![0u8; (w * h * 4) as usize];
         for i in 0..6 {
             // Svaki frame druga boja — kvantizator tako mora proizvesti različit sadržaj.
-            for p in frame.chunks_exact_mut(4) {
+            for p in frame.as_chunks_mut::<4>().0.iter_mut() {
                 p[0] = (i * 40) as u8; // B
                 p[1] = 80;
                 p[2] = (255 - i * 40) as u8; // R
@@ -273,7 +273,7 @@ mod windows_only {
         assert!((out[5] as i32 - 128).abs() <= 1, "bijela V ≈ 128");
 
         let mut black = vec![0u8; (w * h * 4) as usize];
-        for p in black.chunks_exact_mut(4) {
+        for p in black.as_chunks_mut::<4>().0.iter_mut() {
             p[3] = 255;
         }
         super::super::mp4::bgra_to_nv12_for_test(&black, w, h, &mut out);
@@ -290,7 +290,7 @@ mod windows_only {
         let (w, h) = (2u32, 2u32);
         let mut out = vec![0u8; (w * h * 3 / 2) as usize];
         let mut red = vec![0u8; (w * h * 4) as usize];
-        for p in red.chunks_exact_mut(4) {
+        for p in red.as_chunks_mut::<4>().0.iter_mut() {
             p[2] = 255; // R u BGRA
             p[3] = 255;
         }
@@ -336,7 +336,7 @@ mod windows_only {
         let (w, h) = (640usize, 362usize);
         let mut bgra = vec![0u8; w * h * 4];
         let mut seed = 0x1234_5678u32;
-        for px in bgra.chunks_exact_mut(4) {
+        for px in bgra.as_chunks_mut::<4>().0.iter_mut() {
             seed = seed.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
             px[0] = (seed >> 24) as u8;
             px[1] = (seed >> 16) as u8;

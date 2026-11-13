@@ -1,7 +1,7 @@
 {
   "name": "snapvere-desktop",
   "private": true,
-  "version": "0.2.7",
+  "version": "0.2.8",
   "type": "module",
   "description": "Snapvere — brzi, privatni screenshot i screen-recording alat (desktop)",
   "scripts": {
@@ -9,7 +9,9 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "tsc --noEmit --pretty false",
+    "test:capture": "node --test --experimental-strip-types tests/capturePreferences.test.mjs",
+    "test:unit": "node --test --experimental-strip-types tests/capturePreferences.test.mjs tests/galleryPaging.test.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\""
   },
   "dependencies": {

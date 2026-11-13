@@ -30,6 +30,7 @@ impl Db {
     /// Povijest se tada ne pamti između pokretanja, ali capture i snimanje rade.
     pub fn open_in_memory() -> anyhow::Result<Self> {
         let conn = Connection::open_in_memory()?;
+        conn.pragma_update(None, "foreign_keys", "ON")?;
         let db = Self { conn };
         db.migrate()?;
         Ok(db)
@@ -101,7 +102,7 @@ impl Db {
             r#"SELECT id, file_path, thumb_path, name, format, width, height, size_bytes,
                       source, created_at, is_uploaded
                FROM screenshots
-               ORDER BY created_at DESC
+               ORDER BY created_at DESC, id DESC
                LIMIT ?1 OFFSET ?2"#,
         )?;
         let rows = stmt.query_map(params![limit.min(500), offset], Self::map_row)?;
@@ -132,20 +133,32 @@ impl Db {
         }
     }
 
-    /// Pretraga po imenu ili tagu (LIKE; FTS5 dolazi u F2-14).
-    pub fn search(&self, query: &str) -> anyhow::Result<Vec<Screenshot>> {
-        let like = format!("%{}%", query);
+    /// Bounded substring search without multiplying results for matching tags.
+    pub fn search(&self, query: &str, limit: u32, offset: u32) -> anyhow::Result<Vec<Screenshot>> {
+        anyhow::ensure!(
+            query.chars().count() <= 128,
+            "Search query exceeds 128 characters"
+        );
+        // A user's % and _ are literal search terms, not SQLite wildcards.
+        let escaped = query
+            .replace('\\', "\\\\")
+            .replace('%', "\\%")
+            .replace('_', "\\_");
+        let like = format!("%{escaped}%");
         let mut stmt = self.conn.prepare(
-            r#"SELECT DISTINCT s.id, s.file_path, s.thumb_path, s.name, s.format, s.width, s.height,
+            r#"SELECT s.id, s.file_path, s.thumb_path, s.name, s.format, s.width, s.height,
                       s.size_bytes, s.source, s.created_at, s.is_uploaded
                FROM screenshots s
-               LEFT JOIN screenshot_tags st ON st.screenshot_id = s.id
-               LEFT JOIN tags t ON t.id = st.tag_id
-               WHERE s.name LIKE ?1 OR t.name LIKE ?1
-               ORDER BY s.created_at DESC
-               LIMIT 500"#,
+               WHERE s.name LIKE ?1 ESCAPE '\'
+                  OR EXISTS (
+                      SELECT 1 FROM screenshot_tags st
+                      JOIN tags t ON t.id = st.tag_id
+                      WHERE st.screenshot_id = s.id AND t.name LIKE ?1 ESCAPE '\'
+                  )
+               ORDER BY s.created_at DESC, s.id DESC
+               LIMIT ?2 OFFSET ?3"#,
         )?;
-        let rows = stmt.query_map(params![like], Self::map_row)?;
+        let rows = stmt.query_map(params![like, limit.min(500), offset], Self::map_row)?;
         let mut out = Vec::new();
         for r in rows {
             out.push(r?);
@@ -163,6 +176,19 @@ impl Db {
 
     /// Dodaj tag screenshotu (kreira tag ako ne postoji).
     pub fn add_tag(&self, screenshot_id: &str, tag: &str) -> anyhow::Result<()> {
+        let tag = tag.trim();
+        anyhow::ensure!(!tag.is_empty(), "Tag cannot be empty");
+        anyhow::ensure!(tag.chars().count() <= 64, "Tag exceeds 64 characters");
+        anyhow::ensure!(
+            !tag.chars().any(char::is_control),
+            "Tag contains control characters"
+        );
+        let exists: bool = self.conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM screenshots WHERE id = ?1)",
+            params![screenshot_id],
+            |row| row.get(0),
+        )?;
+        anyhow::ensure!(exists, "Screenshot does not exist");
         self.conn
             .execute("INSERT OR IGNORE INTO tags(name) VALUES (?1)", params![tag])?;
         self.conn.execute(
@@ -208,7 +234,7 @@ impl Db {
                ORDER BY t.name"#,
         )?;
         let rows = stmt.query_map(params![screenshot_id], |row| row.get::<_, String>(0))?;
-        Ok(rows.filter_map(Result::ok).collect())
+        Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
     }
 
     fn map_row(row: &rusqlite::Row) -> rusqlite::Result<Screenshot> {
@@ -262,10 +288,76 @@ mod gallery_tests {
         assert_eq!(all[0].id, "two");
         assert_eq!(all[0].tags, vec!["team"]);
         assert_eq!(all[1].tags, vec!["design", "team"]);
-        assert_eq!(db.search("design")?[0].tags, vec!["design", "team"]);
+        assert_eq!(db.search("design", 200, 0)?[0].tags, vec!["design", "team"]);
         assert_eq!(db.list(1, 1)?[0].id, "one");
         assert!(db.list(1, 10)?.is_empty());
         assert!(db.list(0, 0)?.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn search_treats_wildcards_as_literal_characters() -> anyhow::Result<()> {
+        let db = Db::open_in_memory()?;
+        db.insert(&shot("one%two", 100))?;
+        db.insert(&shot("one_two", 200))?;
+        db.insert(&shot("oneXtwo", 300))?;
+        assert_eq!(db.search("%", 200, 0)?[0].id, "one%two");
+        assert_eq!(db.search("%", 200, 0)?.len(), 1);
+        assert_eq!(db.search("_", 200, 0)?[0].id, "one_two");
+        assert_eq!(db.search("_", 200, 0)?.len(), 1);
+        assert_eq!(db.search("one", 200, 0)?.len(), 3);
+        Ok(())
+    }
+
+    #[test]
+    fn stable_pagination_across_matching_timestamps() -> anyhow::Result<()> {
+        let db = Db::open_in_memory()?;
+        db.insert(&shot("same_a", 100))?;
+        db.insert(&shot("same_b", 100))?;
+        db.insert(&shot("older", 90))?;
+        assert_eq!(db.list(1, 0)?[0].id, "same_b");
+        assert_eq!(db.list(1, 1)?[0].id, "same_a");
+        assert_eq!(db.list(1, 2)?[0].id, "older");
+        assert_eq!(db.search("same", 1, 0)?[0].id, "same_b");
+        assert_eq!(db.search("same", 1, 1)?[0].id, "same_a");
+        assert!(db.search("same", 1, 2)?.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn reject_invalid_tags_and_oversized_search() -> anyhow::Result<()> {
+        let db = Db::open_in_memory()?;
+        db.insert(&shot("one", 100))?;
+        assert!(db.add_tag("one", "").is_err());
+        assert!(db.add_tag("one", "a\nb").is_err());
+        assert!(db.add_tag("one", &"x".repeat(65)).is_err());
+        assert!(db.add_tag("missing", "valid").is_err());
+        db.add_tag("one", "  useful  ")?;
+        assert_eq!(db.get("one")?.expect("record").tags, vec!["useful"]);
+        assert!(db.search(&"x".repeat(129), 10, 0).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn search_does_not_duplicate_matches_across_tags() -> anyhow::Result<()> {
+        let db = Db::open_in_memory()?;
+        db.insert(&shot("one", 100))?;
+        db.add_tag("one", "meeting")?;
+        db.add_tag("one", "meet-up")?;
+        assert_eq!(db.search("meet", 10, 0)?.len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn in_memory_delete_cascades_tag_relations() -> anyhow::Result<()> {
+        let db = Db::open_in_memory()?;
+        db.insert(&shot("one", 100))?;
+        db.add_tag("one", "important")?;
+        db.delete("one")?;
+        let count: i64 = db
+            .conn
+            .query_row("SELECT COUNT(*) FROM screenshot_tags", [], |r| r.get(0))?;
+        assert_eq!(count, 0);
         Ok(())
     }
 }

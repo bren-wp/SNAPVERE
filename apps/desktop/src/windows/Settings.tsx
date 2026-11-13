@@ -401,6 +401,20 @@ export default function Settings() {
                 Official website: snapvere.com
               </button>
             </div>
+            <div className="mt-5 rounded-xl border border-border/60 bg-elevated/20 p-4">
+              <div className="text-sm font-medium">Commercial license agreement</div>
+              <p className="mt-2 text-xs leading-relaxed text-muted">
+                Professional and commercial use are permitted. Existing open-source
+                licenses remain in effect. No account or activation key is required.
+              </p>
+              <button
+                type="button"
+                onClick={() => void openUrl("https://snapvere.com/license/").catch((error) => setNotice(`Cannot open license: ${String(error)}`))}
+                className="mt-3 rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-elevated focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                Read license terms
+              </button>
+            </div>
             <div className="mt-6 rounded-xl border border-border/60 p-4">
               <div className="mb-1 text-sm font-medium">Diagnostics</div>
               <p className="mb-3 text-xs text-muted">

@@ -106,16 +106,16 @@ impl CursorPainter {
         }
 
         let key = ci.hCursor.0 as isize;
-        if !self.cache.contains_key(&key) {
+        if let std::collections::hash_map::Entry::Vacant(slot) = self.cache.entry(key) {
             let decoded = unsafe { decode_cursor(HICON(ci.hCursor.0)) };
             if decoded.is_none() {
                 crate::logging::log("kursor: dekodiranje nije uspjelo, snimam bez pokazivača");
             }
             // Keširaj i neuspjeh — inače pokušavamo dekodirati svaki frame.
-            self.cache.insert(key, decoded);
-            if self.cache.len() > 64 {
-                self.cache.clear();
-            }
+            slot.insert(decoded);
+        }
+        if self.cache.len() > 64 {
+            self.cache.clear();
         }
         let bmp = self.cache.get(&key)?.clone()?;
         Some((bmp, ci.ptScreenPos))
@@ -163,9 +163,9 @@ unsafe fn decode_cursor(icon: HICON) -> Option<CursorBitmap> {
         let mut px = dib_bgra(dc.0, color.0, w, h)?;
 
         // Neki kolor kursori imaju svugdje alpha=0 i oslanjaju se na AND masku.
-        if px.chunks_exact(4).all(|p| p[3] == 0) {
+        if px.as_chunks::<4>().0.iter().all(|p| p[3] == 0) {
             let and = mono_rows(dc.0, mask.0, w, h, 0, h)?;
-            for (i, p) in px.chunks_exact_mut(4).enumerate() {
+            for (i, p) in px.as_chunks_mut::<4>().0.iter_mut().enumerate() {
                 p[3] = if and[i] { 0 } else { 255 };
             }
         }

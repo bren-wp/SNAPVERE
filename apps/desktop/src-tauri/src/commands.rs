@@ -90,6 +90,27 @@ fn thumbs_dir(app: &AppHandle) -> Result<PathBuf, String> {
 
 // ──────────────────────────── interni helperi ────────────────────────────
 
+/// Create new media exclusively; never overwrite existing captures.
+/// Remove the newly created file if an interrupted write leaves partial bytes.
+fn write_new_capture(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+        .map_err(estr)?;
+    if let Err(error) = file.write_all(bytes) {
+        drop(file);
+        if let Err(cleanup) = fs::remove_file(path) {
+            log(&format!(
+                "incomplete capture cleanup {}: {cleanup}",
+                path.display()
+            ));
+        }
+        return Err(format!("Could not write capture: {error}"));
+    }
+    Ok(())
+}
+
 /// Spremi sliku u galeriju (datoteka + thumbnail + DB zapis) i vrati zapis.
 fn save_to_gallery(
     app: &AppHandle,
@@ -108,12 +129,7 @@ fn save_to_gallery(
     let name = format!("Snapvere {}", Local::now().format("%Y-%m-%d %H.%M.%S"));
     // Stable display name, unique on-disk filename: never overwrite captures in the same second.
     let path = dir.join(format!("{name}-{id}.{}", format.ext()));
-    let mut file = fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(&path)
-        .map_err(estr)?;
-    file.write_all(&bytes).map_err(estr)?;
+    write_new_capture(&path, &bytes)?;
 
     let thumb_path = write_thumbnail(app, &id, img);
 
@@ -132,7 +148,21 @@ fn save_to_gallery(
         tags: Vec::new(),
     };
 
-    lock(&state.db).insert(&shot).map_err(estr)?;
+    if let Err(error) = lock(&state.db).insert(&shot) {
+        // Clean up only newly generated media; never touch existing user files.
+        if let Some(thumb) = &shot.thumb_path {
+            if let Err(cleanup) = fs::remove_file(thumb) {
+                log(&format!("orphan thumbnail cleanup {thumb}: {cleanup}"));
+            }
+        }
+        if let Err(cleanup) = fs::remove_file(&path) {
+            log(&format!(
+                "orphan capture cleanup {}: {cleanup}",
+                path.display()
+            ));
+        }
+        return Err(format!("Could not index capture in gallery: {error}"));
+    }
     allow_media_dirs(app, std::slice::from_ref(&shot));
     Ok(shot)
 }
@@ -173,7 +203,18 @@ pub(crate) fn register_media(
     };
 
     let state = app.state::<AppState>();
-    lock(&state.db).insert(&shot).map_err(estr)?;
+    if let Err(error) = lock(&state.db).insert(&shot) {
+        // Keep the original recording on disk even if gallery indexing fails.
+        if let Some(thumb) = &shot.thumb_path {
+            if let Err(cleanup) = fs::remove_file(thumb) {
+                log(&format!("orphan thumbnail cleanup {thumb}: {cleanup}"));
+            }
+        }
+        return Err(format!(
+            "Could not index recording: {error}. Original file retained at {}",
+            path.display()
+        ));
+    }
     allow_media_dirs(app, std::slice::from_ref(&shot));
     Ok(shot)
 }
@@ -697,7 +738,26 @@ pub async fn capture_fullscreen(
 }
 
 /// Tray put za full-screen capture — na radnoj dretvi, bez blokiranja menija.
-pub fn dispatch_capture_fullscreen(app: &AppHandle, format: ImageFormat, quality: u8) {
+pub fn dispatch_capture_fullscreen(app: &AppHandle) {
+    // Tray captures run without a webview: read the same persisted settings
+    // that Home and the annotation editor use before starting the worker.
+    let (format, quality) = match app.store("settings.json") {
+        Ok(store) => {
+            let chosen_format = store.get("format");
+            let format = match chosen_format.as_ref().and_then(|v| v.as_str()) {
+                Some("jpg") => ImageFormat::Jpg,
+                Some("webp") => ImageFormat::Webp,
+                _ => ImageFormat::Png,
+            };
+            let quality = store
+                .get("quality")
+                .and_then(|v| v.as_u64())
+                .map(|q| q.clamp(1, 100) as u8)
+                .unwrap_or(92);
+            (format, quality)
+        }
+        Err(_) => (ImageFormat::Png, 92),
+    };
     let app = app.clone();
     let _ = std::thread::Builder::new()
         .name("snapvere-capture-full".into())
@@ -725,6 +785,59 @@ pub fn dispatch_capture_fullscreen(app: &AppHandle, format: ImageFormat, quality
         });
 }
 
+// Validate PNG canvas exports before allocating a full-size RGBA frame.
+// Legitimate 8K desktop captures still fit; forged dimensions and overly large
+// IPC messages cannot force unbounded decompression.
+const MAX_EDITOR_BASE64_LEN: usize = 192 * 1024 * 1024;
+const MAX_EDITOR_PIXELS: u64 = 50_000_000;
+
+fn validate_editor_png_header(bytes: &[u8]) -> Result<(), String> {
+    if bytes.len() < 24 || !bytes.starts_with(b"\x89PNG\r\n\x1a\n") || &bytes[12..16] != b"IHDR" {
+        return Err("Editor export must be a valid PNG image".into());
+    }
+    let width = u32::from_be_bytes(bytes[16..20].try_into().map_err(estr)?);
+    let height = u32::from_be_bytes(bytes[20..24].try_into().map_err(estr)?);
+    let pixels = u64::from(width) * u64::from(height);
+    if pixels == 0 || pixels > MAX_EDITOR_PIXELS {
+        return Err("Editor image exceeds supported pixel dimensions".into());
+    }
+    Ok(())
+}
+
+fn decode_editor_png(encoded: &str) -> Result<image::RgbaImage, String> {
+    let encoded = encoded.trim();
+    if encoded.len() > MAX_EDITOR_BASE64_LEN {
+        return Err("Editor PNG is too large to import safely".into());
+    }
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(encoded)
+        .map_err(estr)?;
+    validate_editor_png_header(&bytes)?;
+    let image =
+        image::load_from_memory_with_format(&bytes, image::ImageFormat::Png).map_err(estr)?;
+    Ok(image.to_rgba8())
+}
+
+fn validate_export_path(path: &str, format: ImageFormat) -> Result<PathBuf, String> {
+    let target = PathBuf::from(path);
+    if !target.is_absolute() {
+        return Err("Save As requires an absolute destination path".into());
+    }
+    let ext = target
+        .extension()
+        .and_then(|v| v.to_str())
+        .ok_or("Save As requires a supported image extension")?;
+    let matches = match format {
+        ImageFormat::Png => ext.eq_ignore_ascii_case("png"),
+        ImageFormat::Jpg => ext.eq_ignore_ascii_case("jpg") || ext.eq_ignore_ascii_case("jpeg"),
+        ImageFormat::Webp => ext.eq_ignore_ascii_case("webp"),
+    };
+    if !matches {
+        return Err("Image format must match the Save As file extension".into());
+    }
+    Ok(target)
+}
+
 /// Spremi sliku iz editora (base64 PNG s canvasa) u galeriju.
 #[tauri::command]
 pub fn save_edited_image(
@@ -734,10 +847,7 @@ pub fn save_edited_image(
     format: ImageFormat,
     quality: u8,
 ) -> Result<Screenshot, String> {
-    let bytes = base64::engine::general_purpose::STANDARD
-        .decode(base64_png.trim())
-        .map_err(estr)?;
-    let img = image::load_from_memory(&bytes).map_err(estr)?.to_rgba8();
+    let img = decode_editor_png(&base64_png)?;
     save_to_gallery(&app, &state, &img, CaptureSource::Region, format, quality)
 }
 
@@ -749,22 +859,31 @@ pub fn save_image_as(
     format: ImageFormat,
     quality: u8,
 ) -> Result<(), String> {
-    let bytes = base64::engine::general_purpose::STANDARD
-        .decode(base64_png.trim())
-        .map_err(estr)?;
-    let img = image::load_from_memory(&bytes).map_err(estr)?.to_rgba8();
+    let target = validate_export_path(&path, format)?;
+    let img = decode_editor_png(&base64_png)?;
     let out = capture::encode(&img, format, quality).map_err(estr)?;
-    fs::write(&path, out).map_err(estr)?;
+    // Stage beside the destination so that a disk-full / permission failure
+    // cannot truncate an existing export. Rename occurs only after all bytes
+    // are written and the handle is closed.
+    let parent = target.parent().ok_or("Invalid export destination")?;
+    let staged = parent.join(format!(".snapvere-export-{}.tmp", Uuid::new_v4()));
+    write_new_capture(&staged, &out)?;
+    if let Err(error) = fs::rename(&staged, &target) {
+        if let Err(cleanup) = fs::remove_file(&staged) {
+            log(&format!(
+                "failed to remove staged export {}: {cleanup}",
+                staged.display()
+            ));
+        }
+        return Err(format!("Could not finalize exported image: {error}"));
+    }
     Ok(())
 }
 
 /// Kopiraj base64 PNG (iz editora) u clipboard.
 #[tauri::command]
 pub fn copy_base64_to_clipboard(app: AppHandle, base64_png: String) -> Result<(), String> {
-    let bytes = base64::engine::general_purpose::STANDARD
-        .decode(base64_png.trim())
-        .map_err(estr)?;
-    let img = image::load_from_memory(&bytes).map_err(estr)?.to_rgba8();
+    let img = decode_editor_png(&base64_png)?;
     copy_rgba_to_clipboard(&app, &img)
 }
 
@@ -1099,13 +1218,17 @@ pub fn search_screenshots(
     app: AppHandle,
     state: State<AppState>,
     query: String,
+    limit: Option<u32>,
+    offset: Option<u32>,
 ) -> Result<Vec<Screenshot>, String> {
     let items = {
         let db = lock(&state.db);
+        let limit = limit.unwrap_or(120).min(500);
+        let offset = offset.unwrap_or(0);
         if query.trim().is_empty() {
-            db.list(200, 0).map_err(estr)?
+            db.list(limit, offset).map_err(estr)?
         } else {
-            db.search(query.trim()).map_err(estr)?
+            db.search(query.trim(), limit, offset).map_err(estr)?
         }
     };
     allow_media_dirs(&app, &items);
@@ -1162,12 +1285,43 @@ pub fn reveal_media(app: AppHandle, id: String) -> Result<(), String> {
     app.opener().reveal_item_in_dir(&path).map_err(estr)
 }
 
+const MAX_CLIPBOARD_FILE_BYTES: u64 = 200 * 1024 * 1024;
+
+fn can_copy_image(file_bytes: u64, width: u32, height: u32) -> bool {
+    file_bytes <= MAX_CLIPBOARD_FILE_BYTES
+        && width > 0
+        && height > 0
+        && u64::from(width) * u64::from(height) <= MAX_EDITOR_PIXELS
+}
+
+fn validate_copy_image(path: &Path) -> Result<(), String> {
+    let bytes = fs::metadata(path).map_err(estr)?.len();
+    if bytes > MAX_CLIPBOARD_FILE_BYTES {
+        return Err("Clipboard source exceeds safe file size (200 MB)".into());
+    }
+    let (width, height) = image::image_dimensions(path).map_err(estr)?;
+    if !can_copy_image(bytes, width, height) {
+        return Err("Clipboard image exceeds supported dimensions".into());
+    }
+    Ok(())
+}
+
+/// Copy only a gallery-registered media path, never an arbitrary UI-supplied path.
+#[tauri::command]
+pub fn copy_media_path(app: AppHandle, id: String) -> Result<(), String> {
+    let path = media_path(&app, &id)?;
+    app.clipboard()
+        .write_text(path.to_string_lossy().into_owned())
+        .map_err(estr)
+}
+
 /// Kopiraj sliku iz galerije u clipboard. Dekodiranje velikog PNG-a traje — ne na
 /// glavnoj dretvi.
 #[tauri::command]
 pub async fn copy_media_image(app: AppHandle, id: String) -> Result<(), String> {
     let path = media_path(&app, &id)?;
     tauri::async_runtime::spawn_blocking(move || {
+        validate_copy_image(&path)?;
         let img = image::open(&path).map_err(estr)?.to_rgba8();
         copy_rgba_to_clipboard(&app, &img)
     })
@@ -1274,6 +1428,57 @@ pub fn open_data_folder(app: AppHandle) -> Result<(), String> {
 }
 
 #[cfg(test)]
+mod export_safety_tests {
+    use super::*;
+
+    fn header(width: u32, height: u32) -> Vec<u8> {
+        let mut bytes = vec![0; 24];
+        bytes[..8].copy_from_slice(b"\x89PNG\r\n\x1a\n");
+        bytes[12..16].copy_from_slice(b"IHDR");
+        bytes[16..20].copy_from_slice(&width.to_be_bytes());
+        bytes[20..24].copy_from_slice(&height.to_be_bytes());
+        bytes
+    }
+
+    #[test]
+    fn clipboard_limits_guard_against_decode_memory_exhaustion() {
+        assert!(can_copy_image(123_456, 3840, 2160));
+        assert!(!can_copy_image(123_456, 0, 2160));
+        assert!(!can_copy_image(123_456, 100_000, 100_000));
+        assert!(!can_copy_image(MAX_CLIPBOARD_FILE_BYTES + 1, 100, 100));
+    }
+
+    #[test]
+    fn reject_malformed_and_oversized_editor_png() {
+        assert!(validate_editor_png_header(b"not a png").is_err());
+        assert!(validate_editor_png_header(&header(0, 100)).is_err());
+        assert!(validate_editor_png_header(&header(60_000, 60_000)).is_err());
+        assert!(validate_editor_png_header(&header(3840, 2160)).is_ok());
+        assert!(decode_editor_png("invalid base64").is_err());
+    }
+
+    #[test]
+    fn save_as_requires_matching_extension_and_absolute_path() {
+        let base = std::env::temp_dir();
+        let jpg = base.join("capture.JPEG");
+        let exe = base.join("capture.exe");
+        assert!(validate_export_path(&jpg.to_string_lossy(), ImageFormat::Jpg).is_ok());
+        assert!(validate_export_path(&jpg.to_string_lossy(), ImageFormat::Png).is_err());
+        assert!(validate_export_path(&exe.to_string_lossy(), ImageFormat::Png).is_err());
+        assert!(validate_export_path("capture.png", ImageFormat::Png).is_err());
+    }
+
+    #[test]
+    fn exclusive_capture_write_never_overwrites_existing_media() {
+        let path = std::env::temp_dir().join(format!("snapvere-test-{}.png", Uuid::new_v4()));
+        write_new_capture(&path, b"original").expect("create new capture");
+        assert!(write_new_capture(&path, b"replacement").is_err());
+        assert_eq!(fs::read(&path).expect("read"), b"original");
+        fs::remove_file(&path).expect("cleanup");
+    }
+}
+
+#[cfg(test)]
 mod frozen_capture_transport_tests {
     use super::frame_to_rgba_packet;
     use image::{Rgba, RgbaImage};
@@ -1287,7 +1492,7 @@ mod frozen_capture_transport_tests {
         assert_eq!(&packet[..4], &2u32.to_le_bytes());
         assert_eq!(&packet[4..8], &1u32.to_le_bytes());
         assert_eq!(&packet[8..], &[9, 191, 217, 255, 232, 42, 87, 255]);
-        assert_eq!(packet.len(), 8 + 2 * 1 * 4);
+        assert_eq!(packet.len(), 8 + 2 * 4);
     }
 
     #[test]

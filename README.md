@@ -13,15 +13,27 @@ A focused Windows capture workspace from **[BRENDIGO](https://brendigo.com)**.
 [![Product](https://img.shields.io/badge/Product-SNAPVERE-7648eb?style=flat-square)](https://snapvere.com)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-141416?style=flat-square)](https://snapvere.com/download/)
 [![Privacy](https://img.shields.io/badge/Storage-Local--first-141416?style=flat-square)](https://snapvere.com/privacy/)
-[![Release](https://img.shields.io/badge/Published-v0.2.7-141416?style=flat-square)](https://snapvere.com/download/)
+[![Release](https://img.shields.io/badge/Repository-v0.2.8-141416?style=flat-square)](https://github.com/bren-wp/Snapvere/releases)
 
-[**🌐 Explore SNAPVERE**](https://snapvere.com/) · [**⬇️ Download for Windows**](https://snapvere.com/download/) · [**🔐 Privacy**](https://snapvere.com/privacy/)
+[**🌐 Public SNAPVERE website (.NET edition)**](https://snapvere.com/) · [**⬇️ Tauri / Rust Windows releases**](https://github.com/bren-wp/Snapvere/releases) · [**🔐 Website privacy**](https://snapvere.com/privacy/)
 
 <img src="site/og.png" alt="Original SNAPVERE branded product artwork" width="860" />
 
 </div>
 
 ---
+
+> **Distribution notice:** snapvere.com currently publishes SNAPVERE v0.0.8 built with
+> .NET / WinUI 3. This repository builds the separate Tauri 2 / Rust Windows edition
+> (v0.2.8). Do not mix their installers, licenses, versions or upgrade paths.
+> The production website, email download flow, and its binaries are not modified
+> by this GitHub release.
+>
+> **Commercial installer agreement:** Windows NSIS/MSI setup packages include the
+> [Brendigo commercial end-user license](https://snapvere.com/license/), which is
+> presented for acceptance before installation. Business use does not require an
+> activation key. Existing MIT-licensed source and third-party license grants
+> remain valid. The separate public WinUI distribution has its own release path.
 
 ## Your screen. Your story. One streamlined workflow.
 
@@ -106,7 +118,7 @@ The source and interface images are built directly from the SNAPVERE project. Pr
 
 ## Get SNAPVERE for Windows
 
-**Windows preview v0.2.7 — prepared for release.** SNAPVERE provides three Windows package formats with SHA-256 integrity data. Use the verified [GitHub Releases](https://github.com/bren-wp/Snapvere/releases) page until the public website is confirmed to mirror the new binaries. These packages remain unsigned preview builds.
+**Windows v0.2.8 release candidate — under review in PR #18.** SNAPVERE builds three Windows package formats with SHA-256 integrity data. The latest published GitHub release remains v0.2.7 until the candidate passes its release workflow. Use the verified [GitHub Releases](https://github.com/bren-wp/Snapvere/releases) page until the public website is confirmed to mirror the new binaries. These packages remain unsigned preview builds.
 
 | Package | Ideal for | Official download |
 |---|---|---|

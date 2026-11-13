@@ -74,8 +74,8 @@ export const ipc = {
   // ── galerija ──
   listScreenshots: (limit?: number, offset?: number) =>
     invoke<Screenshot[]>("list_screenshots", { limit, offset }),
-  searchScreenshots: (query: string) =>
-    invoke<Screenshot[]>("search_screenshots", { query }),
+  searchScreenshots: (query: string, limit?: number, offset?: number) =>
+    invoke<Screenshot[]>("search_screenshots", { query, limit, offset }),
   deleteScreenshot: (id: string) =>
     invoke<void>("delete_screenshot", { id }),
   addTag: (id: string, tag: string) => invoke<void>("add_tag", { id, tag }),
@@ -86,6 +86,7 @@ export const ipc = {
   /** Pokaži datoteku u Exploreru. */
   revealMedia: (id: string) => invoke<void>("reveal_media", { id }),
   copyMediaImage: (id: string) => invoke<void>("copy_media_image", { id }),
+  copyMediaPath: (id: string) => invoke<void>("copy_media_path", { id }),
 
   // ── sustav ──
   showHome: () => invoke<void>("show_home"),

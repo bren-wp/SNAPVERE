@@ -12,7 +12,7 @@ concurrency:
   group: snapvere-quality-${{ github.ref }}
   cancel-in-progress: true
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   frontend:
@@ -21,6 +21,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
@@ -29,11 +31,21 @@ jobs:
       - name: Install locked dependencies
         working-directory: apps/desktop
         run: npm ci
+      - name: Strict TypeScript static analysis
+        working-directory: apps/desktop
+        run: npm run lint
+      - name: Test screenshot preferences and gallery pagination
+        working-directory: apps/desktop
+        run: npm run test:unit
       - name: Typecheck and build
         working-directory: apps/desktop
         run: npm run build
       - name: Verify first-party downloads, HTML links and checksums
         run: python tools/check_website.py
+      - name: Verify installer EULA and block public GitHub links
+        run: python tools/check_public_distribution.py
+      - name: Verify all frontend IPC commands are registered by Rust
+        run: python tools/check_ipc_contract.py
       - name: Verify matching public and desktop design tokens
         run: python tools/check_brand_tokens.py
       - name: Check capture overlay pipeline and legacy brand references
@@ -80,7 +92,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          persist-credentials: true
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
@@ -98,14 +110,13 @@ jobs:
       - name: Build frontend for Tauri
         working-directory: apps/desktop
         run: npm run build
-      - name: Format Rust sources
+      - name: Verify Rust format without changing source
         working-directory: apps/desktop/src-tauri
-        run: cargo fmt --all
+        run: cargo fmt --all -- --check
       - name: Run Rust tests with locked dependencies
         working-directory: apps/desktop/src-tauri
         run: cargo test --locked
-      - name: Clippy dead-code and correctness report
-        continue-on-error: true
+      - name: Enforce Clippy correctness and dead-code checks
         working-directory: apps/desktop/src-tauri
         run: cargo clippy --all-targets --locked -- -D warnings
       - name: Build portable / NSIS / MSI
@@ -139,15 +150,3 @@ jobs:
           path: dist-installers/*
           if-no-files-found: error
           retention-days: 30
-      - name: Commit formatting on the development branch
-        if: github.event_name == 'push'
-        shell: bash
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add apps/desktop/src-tauri/src
-          if ! git diff --cached --quiet; then
-            git commit -m 'style: apply Rust formatting after passing Windows tests'
-            git pull --rebase origin feature/snapvere-v0.2.6-capture-brand-polish
-            git push origin HEAD:feature/snapvere-v0.2.6-capture-brand-polish
-          fi

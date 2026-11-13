@@ -15,6 +15,7 @@ import {
   Save,
 } from "lucide-react";
 import { ipc } from "../lib/ipc";
+import { readCapturePreferences } from "../lib/capturePreferencesStore";
 import type { Annotation, EditorTool, Point } from "../lib/types";
 import WindowFrame from "../components/WindowFrame";
 
@@ -198,7 +199,8 @@ export default function Editor({ pathB64 }: { pathB64: string }) {
   };
   const onSave = async () => {
     try {
-      await ipc.saveEditedImage(exportBase64(), "png", 100);
+      const { format, quality } = await readCapturePreferences();
+      await ipc.saveEditedImage(exportBase64(), format, quality);
       setNotice("Saved to your local Snapvere gallery.");
     } catch (e) {
       setNotice(`Could not save the screenshot: ${String(e)}`);

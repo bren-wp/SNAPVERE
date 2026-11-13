@@ -27,8 +27,6 @@
     "clipboard-manager:allow-write-text",
     "clipboard-manager:allow-write-image",
     "clipboard-manager:allow-read-image",
-    "fs:default",
-    "opener:default",
-    "os:default"
+    "opener:default"
   ]
 }

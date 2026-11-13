@@ -7,9 +7,11 @@ on:
       - 'apps/**'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
   windows-release:
+    permissions:
+      contents: write
     name: Build and publish Windows Portable / NSIS / MSI
     runs-on: windows-latest
     timeout-minutes: 85
@@ -63,6 +65,12 @@ jobs:
       - name: Install dependencies using lockfile
         working-directory: apps/desktop
         run: npm ci --no-audit
+      - name: Strict TypeScript static analysis
+        working-directory: apps/desktop
+        run: npm run lint
+      - name: Verify screenshot exports and gallery pagination
+        working-directory: apps/desktop
+        run: npm run test:unit
       - name: Build and typecheck frontend
         working-directory: apps/desktop
         run: npm run build
@@ -72,9 +80,16 @@ jobs:
       - name: Verify Rust formatting
         working-directory: apps/desktop/src-tauri
         run: cargo fmt --all -- --check
+      - name: Enforce Rust Clippy
+        working-directory: apps/desktop/src-tauri
+        run: cargo clippy --all-targets --locked -- -D warnings
       - name: Test Rust core on Windows
         working-directory: apps/desktop/src-tauri
         run: cargo test --locked
+      - name: Verify installer license and public distribution
+        run: python tools/check_public_distribution.py
+      - name: Verify all frontend IPC commands are registered by Rust
+        run: python tools/check_ipc_contract.py
       - name: Build Windows NSIS EXE and WiX MSI bundles
         working-directory: apps/desktop
         run: npm run tauri -- build --bundles nsis,msi
@@ -136,16 +151,16 @@ jobs:
 
             All three Windows executables originate from the same Tauri build and were verified before publication.
 
-            ### What's new in v0.2.6
-            - In-memory RGBA frame transfer and PNG fallback help prevent an empty black screenshot selection overlay.
-            - Clear capture-failure reporting and cleanup of frozen image buffers.
-            - Improved SN​APVERE controls, keyboard focus, settings icons and editor feedback.
-            - Local Inter font shared with the website for closer visual consistency.
-            - Refreshed Tauri/Rust/TypeScript build dependencies and CI security checks.
-            - Updated marketing README with real rendered UI screenshots and versioned download details.
+            ### Changes in v${{ steps.version.outputs.value }}
+            - More accurate screenshot cropping for negative virtual-desktop coordinates.
+            - Literal gallery searches and consistent SQLite foreign key enforcement.
+            - Development-only WebView2 debugging flags and read-only CI.
+            - Non-mutating Rust format and strict Rust/TypeScript release gates.
 
-            **UI verification:** the actual public snapvere.com design and the repository site are not yet pixel-identical. The Windows hardware capture fix requires validation on representative devices.
+            **Preview release.** Native Windows 10/11 capture, recorder, audio, multi-monitor,
+            accessibility, install/upgrade/uninstall and 1:1 visual comparisons are not yet
+            confirmed on representative physical Windows devices. CI does not substitute for QA.
 
-            **Unsigned preview build.** Windows SmartScreen or corporate endpoint controls may flag unsigned software. Test on Windows 10/11 before production use.
-
-            **Release provenance:** Review the repository's license terms and third-party dependency notices before redistributing. This is an unsigned preview build.
+            The public snapvere.com service currently distributes a separate .NET/WinUI edition.
+            These packages are the Tauri/Rust repository edition, not interchangeable updates.
+            This release is unsigned; use SHA256SUMS.txt to check each file.

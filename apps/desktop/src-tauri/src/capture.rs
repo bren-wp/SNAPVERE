@@ -80,17 +80,26 @@ pub fn capture_primary() -> Result<RgbaImage> {
 
 /// Izreži pravokutnik iz slike (clamp na granice slike).
 pub fn crop(img: &RgbaImage, region: &Region) -> Result<RgbaImage> {
-    let x = region.x.max(0) as u32;
-    let y = region.y.max(0) as u32;
     if region.width == 0 || region.height == 0 {
         return Err(anyhow!("Cannot capture an empty region"));
     }
-    if x >= img.width() || y >= img.height() {
+    // Intersect in i64: negative virtual-desktop coordinates must not
+    // expand the selected rectangle or overflow 32-bit arithmetic.
+    let x0 = i64::from(region.x).clamp(0, i64::from(img.width()));
+    let y0 = i64::from(region.y).clamp(0, i64::from(img.height()));
+    let x1 = (i64::from(region.x) + i64::from(region.width)).clamp(0, i64::from(img.width()));
+    let y1 = (i64::from(region.y) + i64::from(region.height)).clamp(0, i64::from(img.height()));
+    if x1 <= x0 || y1 <= y0 {
         return Err(anyhow!("Capture region is outside the screen"));
     }
-    let w = region.width.min(img.width() - x);
-    let h = region.height.min(img.height() - y);
-    Ok(image::imageops::crop_imm(img, x, y, w, h).to_image())
+    Ok(image::imageops::crop_imm(
+        img,
+        x0 as u32,
+        y0 as u32,
+        (x1 - x0) as u32,
+        (y1 - y0) as u32,
+    )
+    .to_image())
 }
 
 /// Encode slike u traženi format. `quality` 1..=100 (ignorira se za PNG).
@@ -98,7 +107,13 @@ pub fn encode(img: &RgbaImage, format: ImageFormat, quality: u8) -> Result<Vec<u
     match format {
         ImageFormat::Png => {
             let mut buf = Cursor::new(Vec::new());
-            DynamicImage::ImageRgba8(img.clone()).write_to(&mut buf, image::ImageFormat::Png)?;
+            // Avoid cloning potentially hundreds of megabytes of RGBA pixels.
+            PngEncoder::new(&mut buf).write_image(
+                img.as_raw(),
+                img.width(),
+                img.height(),
+                image::ExtendedColorType::Rgba8,
+            )?;
             Ok(buf.into_inner())
         }
         ImageFormat::Jpg => {
@@ -182,5 +197,25 @@ mod crop_tests {
         assert!(crop(&img, &region(0, 0, 1, 0)).is_err());
         assert!(crop(&img, &region(10, 0, 1, 1)).is_err());
         assert!(crop(&img, &region(0, 6, 1, 1)).is_err());
+        assert!(crop(&img, &region(-30, 0, 5, 4)).is_err());
+    }
+
+    #[test]
+    fn saved_png_preserves_rgba_without_cloning() {
+        let mut original = RgbaImage::new(2, 2);
+        original.put_pixel(0, 0, image::Rgba([2, 3, 5, 7]));
+        original.put_pixel(1, 1, image::Rgba([97, 42, 128, 255]));
+        let bytes = encode(&original, ImageFormat::Png, 92).expect("encode PNG");
+        let decoded = image::load_from_memory(&bytes)
+            .expect("decode PNG")
+            .to_rgba8();
+        assert_eq!(original, decoded);
+    }
+
+    #[test]
+    fn negative_origin_clips_to_visible_overlap() {
+        let img = RgbaImage::new(10, 6);
+        let res = crop(&img, &region(-3, -2, 5, 4)).expect("visible overlap");
+        assert_eq!((res.width(), res.height()), (2, 2));
     }
 }
