@@ -98,7 +98,8 @@ with sync_playwright() as p:
     editor_path = b64encode(b"Snapvere-frontend-preview.png").decode("ascii")
     editor.goto("http://127.0.0.1:1420/#editor?p=" + editor_path, wait_until="networkidle")
     editor.wait_for_function(
-        "() => document.querySelector('canvas')?.width >= 900"\n        " && !document.body.textContent.includes(\'could not be loaded\')", timeout=20000
+        "() => document.querySelector('canvas')?.width >= 900"
+        " && !document.body.textContent.includes('could not be loaded')", timeout=20000
     )
     editor.screenshot(path=str(OUTPUT / "editor.png"))
     app.close()
