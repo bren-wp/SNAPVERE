@@ -7,7 +7,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: snapvere-dependency-refresh
+  group: snapvere-dependency-refresh-${{ github.sha }}
   cancel-in-progress: false
 
 jobs:
@@ -76,6 +76,7 @@ jobs:
           exit 1
 
   rust:
+    needs: frontend
     name: Refresh compatible Cargo dependencies on Windows
     runs-on: windows-latest
     timeout-minutes: 85
