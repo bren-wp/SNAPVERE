@@ -11,6 +11,7 @@
     "tauri": "tauri",
     "lint": "tsc --noEmit --pretty false",
     "test:capture": "node --test --experimental-strip-types tests/capturePreferences.test.mjs",
+    "test:unit": "node --test --experimental-strip-types tests/*.test.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\""
   },
   "dependencies": {

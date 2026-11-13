@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { ipc } from "../lib/ipc";
 import { isVideo } from "../lib/types";
+import { mergeUniqueById } from "../lib/galleryPaging";
 import type { RecordDone, Screenshot } from "../lib/types";
 import WindowFrame from "../components/WindowFrame";
 import Viewer, { fmtBytes } from "../components/Viewer";
@@ -38,6 +39,7 @@ export default function Home() {
   const [viewId, setViewId] = useState<string | null>(null);
   const galleryRequest = useRef(0);
   const pagingBusy = useRef(false);
+  const pageOffset = useRef(0);
 
   const load = useCallback(async (q: string) => {
     const request = ++galleryRequest.current;
@@ -47,6 +49,7 @@ export default function Home() {
         ? await ipc.searchScreenshots(q, PAGE_SIZE, 0)
         : await ipc.listScreenshots(PAGE_SIZE, 0);
       if (request === galleryRequest.current) {
+        pageOffset.current = res.length;
         setItems(res);
         setHasMore(res.length === PAGE_SIZE);
       }
@@ -62,17 +65,15 @@ export default function Home() {
     if (pagingBusy.current || loading || !hasMore) return;
     pagingBusy.current = true;
     const request = galleryRequest.current;
-    const offset = items.length;
+    const offset = pageOffset.current;
     setLoadingMore(true);
     try {
       const res = query.trim()
         ? await ipc.searchScreenshots(query, PAGE_SIZE, offset)
         : await ipc.listScreenshots(PAGE_SIZE, offset);
       if (request !== galleryRequest.current) return;
-      setItems((previous) => {
-        const ids = new Set(previous.map((item) => item.id));
-        return previous.concat(res.filter((item) => !ids.has(item.id)));
-      });
+      pageOffset.current = offset + res.length;
+      setItems((previous) => mergeUniqueById(previous, res));
       setHasMore(res.length === PAGE_SIZE);
     } catch (error) {
       if (request === galleryRequest.current) {
@@ -80,9 +81,9 @@ export default function Home() {
       }
     } finally {
       pagingBusy.current = false;
-      if (request === galleryRequest.current) setLoadingMore(false);
+      setLoadingMore(false);
     }
-  }, [hasMore, items.length, loading, query]);
+  }, [hasMore, loading, query]);
 
   useEffect(() => {
     const t = setTimeout(() => void load(query), 200);
@@ -220,7 +221,11 @@ export default function Home() {
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setHasMore(false);
+              pageOffset.current = 0;
+            }}
             placeholder="Search by name or tag…"
             aria-label="Search captures by name or tag"
             className="w-full rounded-full bg-elevated/80 py-2 pl-10 pr-4 text-sm outline-none ring-1 ring-white/10 transition focus:ring-2 focus:ring-accent"
