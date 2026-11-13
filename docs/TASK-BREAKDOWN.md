@@ -15,7 +15,7 @@ This file replaces the outdated initial-project scaffolding task list. It docume
 | Home, Settings, Editor, website previews | Implemented | Playwright-generated images in `docs/screenshots` |
 | Screenshot frozen-frame binary transfer | Implemented in development PR | Tauri IPC, header/pixel validation and PNG memory fallback |
 | Black-overlay error handling | Implemented in development PR | Cancel and report failure rather than display an empty canvas |
-| Windows package build | Published v0.2.5 | Native build workflow; three binaries and checksum manifest |
+| Windows package build | Published v0.2.6; v0.2.7 pending | Native build workflow; three binaries and checksum manifest |
 | Recording subsystem and HUD | Implemented | Rust/React source, release tests; live Windows device QA still required |
 
 ## Acceptance tests still requiring real Windows hardware
