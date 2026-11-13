@@ -9,6 +9,7 @@ import Settings from "./windows/Settings";
 import RecBar from "./windows/RecBar";
 import RecDraw from "./windows/RecDraw";
 import RecFrame from "./windows/RecFrame";
+import AppErrorBoundary from "./components/AppErrorBoundary";
 
 /**
  * Window router.
@@ -67,4 +68,6 @@ switch (kind) {
     node = <Home />;
 }
 
-ReactDOM.createRoot(document.getElementById("root")!).render(node);
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <AppErrorBoundary>{node}</AppErrorBoundary>,
+);

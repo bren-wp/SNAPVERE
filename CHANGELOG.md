@@ -10,6 +10,7 @@ SNAPVERE is a Windows screenshot and recording workspace published by **BRENDIGO
 - Split native PNG editor validation and recording pixel-processing into isolated Rust modules; improved negative-coordinate capture and truncated-driver-frame guards.
 - Serialized recording startup, guarded session cleanup against stale workers and gave recordings distinct filenames.
 - Recovered from blocked WebView storage and corrupt settings, rolled back failed autostart changes and handled failed save-folder dialogs.
+- Added a React error boundary with a recovery screen so a component render failure does not silently blank the WebView.
 - Removed `innerHTML` from consent/download flows to reduce web-script injection risk.
 - Added detailed source/permission audit evidence and verified release metadata across Cargo, npm and Tauri.
 
