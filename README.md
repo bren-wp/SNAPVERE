@@ -47,6 +47,12 @@ These are **actual browser renders of the project's React/Tauri frontend**, crea
 
   ![SNAPVERE compact desktop application](docs/screenshots/home-compact.png)
 
+  **Region selection overlay — verified in-memory framebuffer render**
+
+  ![SNAPVERE region selection with visible desktop content](docs/screenshots/capture-overlay.png)
+
+  This frame is sourced from a real render of the SNAPVERE website and passed through the preview's simulated native event and RGBA IPC format. The automated test asserts non-black pixels; real Windows capture is tested separately.
+
   **Screenshot editor — annotation controls and a real interface screenshot**
 
   ![SNAPVERE editor render](docs/screenshots/editor.png)
