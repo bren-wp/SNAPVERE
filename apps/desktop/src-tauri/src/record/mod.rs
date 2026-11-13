@@ -44,6 +44,27 @@ const PHASE_RECORDING: u8 = 1;
 const PHASE_PAUSED: u8 = 2;
 const PHASE_FINISHING: u8 = 3;
 
+// A recorder takes time to initialize its native encoder. Until its session
+// enters state.recorder, the ordinary is_active() guard cannot observe it.
+static RECORDER_STARTING: AtomicBool = AtomicBool::new(false);
+
+struct RecorderStartGuard;
+
+impl RecorderStartGuard {
+    fn acquire() -> Result<Self, String> {
+        RECORDER_STARTING
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .map_err(|_| "Recorder is already starting".to_string())?;
+        Ok(Self)
+    }
+}
+
+impl Drop for RecorderStartGuard {
+    fn drop(&mut self) {
+        RECORDER_STARTING.store(false, Ordering::Release);
+    }
+}
+
 /// Što snimamo: monitor u fizičkim koordinatama + opcionalna regija unutar njega.
 #[derive(Debug, Clone, Copy)]
 pub struct RecordTarget {
@@ -185,6 +206,7 @@ pub fn start(
     target: RecordTarget,
     opts: RecordOptions,
 ) -> Result<RecordStatus, String> {
+    let _starting = RecorderStartGuard::acquire()?;
     if is_active(app) {
         return Err("Snimanje je već u tijeku".into());
     }
@@ -255,11 +277,19 @@ pub fn start(
     }
 
     let state = app.state::<AppState>();
-    *crate::state::lock(&state.recorder) = Some(Session {
-        ctl: ctl.clone(),
-        join: Some(join),
-    });
-
+    {
+        let mut slot = crate::state::lock(&state.recorder);
+        // The worker can fail and finalize immediately after its ready
+        // handshake. Check under the same lock used by finish_session so
+        // a completed session is never reinserted as a stale live recording.
+        if ctl.phase.load(Ordering::SeqCst) == PHASE_IDLE {
+            return Err("Recorder finished during initialization".into());
+        }
+        *slot = Some(Session {
+            ctl: ctl.clone(),
+            join: Some(join),
+        });
+    }
     crate::tray::set_recording(app, true);
     let st = ctl.status();
     let _ = app.emit("snapvere:rec-state", &st);
@@ -839,22 +869,28 @@ fn finish_session(
         }
     };
 
-    ctl.phase.store(PHASE_IDLE, Ordering::SeqCst);
     ctl.size_bytes.store(
         std::fs::metadata(path).map(|m| m.len()).unwrap_or(0),
         Ordering::Relaxed,
     );
 
-    // Oslobodi slot da sljedeće snimanje može krenuti. Drop vlastitog JoinHandlea
-    // samo odspaja dretvu — dozvoljeno i kad se izvodi baš ta dretva.
-    {
-        let state = app.state::<AppState>();
-        *crate::state::lock(&state.recorder) = None;
-    }
-
+    // Send terminal notifications before making the recorder available again.
+    // Otherwise a new session can start while this worker is still emitting
+    // old "idle" events and resetting its tray UI.
     crate::tray::set_recording(app, false);
     let _ = app.emit("snapvere:rec-state", RecordStatus::idle());
     let _ = app.emit("snapvere:rec-done", payload);
+
+    let state = app.state::<AppState>();
+    let mut slot = crate::state::lock(&state.recorder);
+    ctl.phase.store(PHASE_IDLE, Ordering::SeqCst);
+    // Never erase a newer session when a previous worker finishes late.
+    if slot
+        .as_ref()
+        .is_some_and(|session| Arc::ptr_eq(&session.ctl, ctl))
+    {
+        *slot = None;
+    }
 }
 
 // ─────────────────────────────── pomoćno ───────────────────────────────
@@ -863,10 +899,25 @@ fn finish_session(
 fn output_path(app: &AppHandle, format: RecordFormat) -> Result<PathBuf, String> {
     let dir = crate::commands::gallery_dir(app)?;
     std::fs::create_dir_all(&dir).map_err(|e| format!("ne mogu kreirati galeriju: {e}"))?;
+    let suffix = uuid::Uuid::new_v4().simple().to_string();
     let name = format!(
-        "Snapvere {}.{}",
+        "Snapvere {} - {}.{}",
         chrono::Local::now().format("%Y-%m-%d %H.%M.%S"),
+        &suffix[..8],
         format.ext()
     );
     Ok(dir.join(name))
+}
+
+#[cfg(test)]
+mod recorder_start_tests {
+    use super::*;
+
+    #[test]
+    fn start_guard_rejects_overlapping_initialization() {
+        let first = RecorderStartGuard::acquire().expect("first launch guard");
+        assert!(RecorderStartGuard::acquire().is_err());
+        drop(first);
+        assert!(RecorderStartGuard::acquire().is_ok());
+    }
 }
