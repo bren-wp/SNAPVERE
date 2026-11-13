@@ -320,7 +320,7 @@ function Card({
         </div>
       </div>
       <div
-        className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+        className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
         onKeyDown={(e) => e.stopPropagation()}
       >
         <button
@@ -329,6 +329,7 @@ function Card({
             onReveal();
           }}
           title="Show in folder"
+          aria-label={`Show ${shot.name} in folder`}
           className="grid h-8 w-8 place-items-center rounded-full bg-black/55 text-white transition hover:bg-black/75"
         >
           <FolderOpen size={15} />
@@ -339,6 +340,7 @@ function Card({
             onDelete();
           }}
           title="Delete"
+          aria-label={`Delete ${shot.name}`}
           className="grid h-8 w-8 place-items-center rounded-full bg-black/55 text-white transition hover:bg-danger"
         >
           <Trash2 size={15} />

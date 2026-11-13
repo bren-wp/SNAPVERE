@@ -471,3 +471,29 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 @media (prefers-reduced-motion: reduce) {
   .snapvere-gallery-card,.snapvere-btn-primary,.snapvere-btn-secondary { transition: none !important; transform: none !important; }
 }
+
+/* SNAPVERE: keyboard-visible actions and consistent settings/editor materials. */
+.snapvere-settings-content {
+  background: linear-gradient(145deg, rgba(9, 191, 217, .022), transparent 45%);
+}
+.snapvere-settings-sidebar button[aria-current="page"] {
+  border: 1px solid rgba(85, 224, 229, .20);
+}
+.snapvere-editor-notice {
+  border-bottom: 1px solid rgba(85, 224, 229, .23);
+  background: rgba(9, 191, 217, .08);
+  color: rgb(var(--snapvere-text));
+}
+.snapvere-gallery-card:focus-within {
+  outline: 2px solid rgb(var(--snapvere-accent));
+  outline-offset: 2px;
+}
+.snapvere-gallery-card button:focus-visible {
+  opacity: 1;
+  outline: 2px solid #55e0e5;
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .snapvere-gallery-card:focus-within,
+  .snapvere-gallery-card button:focus-visible { transform: none; }
+}
