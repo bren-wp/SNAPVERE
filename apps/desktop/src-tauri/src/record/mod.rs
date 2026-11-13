@@ -161,7 +161,11 @@ pub fn status(app: &AppHandle) -> RecordStatus {
 
 /// Pokreni snimanje. Vraća početni status (dimenzije, format) ili grešku ako
 /// se izvor/enkoder nije dao otvoriti — greška stiže PRIJE nego HUD ode gore.
-pub fn start(app: &AppHandle, target: RecordTarget, opts: RecordOptions) -> Result<RecordStatus, String> {
+pub fn start(
+    app: &AppHandle,
+    target: RecordTarget,
+    opts: RecordOptions,
+) -> Result<RecordStatus, String> {
     if is_active(app) {
         return Err("Snimanje je već u tijeku".into());
     }
@@ -477,9 +481,14 @@ fn run(
             None
         } else {
             let m = audio::Mixer::start(&kinds);
-            ctl.mic.store(m.kinds.contains(&audio::Kind::Microphone), Ordering::Relaxed);
-            ctl.system_audio
-                .store(m.kinds.contains(&audio::Kind::SystemLoopback), Ordering::Relaxed);
+            ctl.mic.store(
+                m.kinds.contains(&audio::Kind::Microphone),
+                Ordering::Relaxed,
+            );
+            ctl.system_audio.store(
+                m.kinds.contains(&audio::Kind::SystemLoopback),
+                Ordering::Relaxed,
+            );
             if m.is_empty() {
                 None
             } else {
@@ -490,7 +499,15 @@ fn run(
     #[cfg(not(windows))]
     let mixer: Option<()> = None;
 
-    let mut encoder = open_encoder(path, opts.format, ow, oh, fps, opts.quality, mixer.is_some())?;
+    let mut encoder = open_encoder(
+        path,
+        opts.format,
+        ow,
+        oh,
+        fps,
+        opts.quality,
+        mixer.is_some(),
+    )?;
 
     #[cfg(windows)]
     let mut painter = cursor::CursorPainter::new();
@@ -629,7 +646,8 @@ fn run(
         }
 
         let frames = ctl.frames.fetch_add(1, Ordering::Relaxed) + 1;
-        ctl.elapsed_ms.store(media.as_millis() as u64, Ordering::Relaxed);
+        ctl.elapsed_ms
+            .store(media.as_millis() as u64, Ordering::Relaxed);
         work_total += work_started.elapsed();
 
         // ── HUD tick ~4x/s ──
@@ -728,7 +746,12 @@ fn open_encoder(
 }
 
 /// Zatvori sesiju: spremi u galeriju ili obriši datoteku, javi frontendu, očisti slot.
-fn finish_session(app: &AppHandle, ctl: &Arc<Ctl>, path: &PathBuf, outcome: Result<Recorded, String>) {
+fn finish_session(
+    app: &AppHandle,
+    ctl: &Arc<Ctl>,
+    path: &PathBuf,
+    outcome: Result<Recorded, String>,
+) {
     #[derive(serde::Serialize, Clone)]
     #[serde(rename_all = "camelCase")]
     struct Done {
@@ -741,12 +764,20 @@ fn finish_session(app: &AppHandle, ctl: &Arc<Ctl>, path: &PathBuf, outcome: Resu
         Err(e) => {
             let _ = std::fs::remove_file(path);
             log(&format!("snimanje neuspješno: {e}"));
-            Done { screenshot: None, error: Some(e), cancelled: false }
+            Done {
+                screenshot: None,
+                error: Some(e),
+                cancelled: false,
+            }
         }
         Ok(rec) if rec.cancelled => {
             let _ = std::fs::remove_file(path);
             log("snimanje otkazano, datoteka obrisana");
-            Done { screenshot: None, error: None, cancelled: true }
+            Done {
+                screenshot: None,
+                error: None,
+                cancelled: true,
+            }
         }
         Ok(rec) => {
             let frames = ctl.frames.load(Ordering::Relaxed);
@@ -773,9 +804,17 @@ fn finish_session(app: &AppHandle, ctl: &Arc<Ctl>, path: &PathBuf, outcome: Resu
                             shot.name,
                             shot.size_bytes / 1024
                         ));
-                        Done { screenshot: Some(shot), error: None, cancelled: false }
+                        Done {
+                            screenshot: Some(shot),
+                            error: None,
+                            cancelled: false,
+                        }
                     }
-                    Err(e) => Done { screenshot: None, error: Some(e), cancelled: false },
+                    Err(e) => Done {
+                        screenshot: None,
+                        error: Some(e),
+                        cancelled: false,
+                    },
                 }
             }
         }
@@ -811,7 +850,12 @@ pub fn crop_rect(t: &RecordTarget) -> Result<(u32, u32, u32, u32), String> {
         Some(r) => {
             let x = r.x.max(0) as u32;
             let y = r.y.max(0) as u32;
-            (x, y, r.width.min(mw.saturating_sub(x)), r.height.min(mh.saturating_sub(y)))
+            (
+                x,
+                y,
+                r.width.min(mw.saturating_sub(x)),
+                r.height.min(mh.saturating_sub(y)),
+            )
         }
         None => (0, 0, mw, mh),
     };

@@ -50,7 +50,9 @@ fn stored_hotkey(app: &AppHandle, key: &str) -> Option<String> {
     if is_free(app, &accel) {
         Some(accel)
     } else {
-        log(&format!("hotkey '{accel}' iz postavki nije dostupan — koristim default"));
+        log(&format!(
+            "hotkey '{accel}' iz postavki nije dostupan — koristim default"
+        ));
         None
     }
 }
@@ -58,8 +60,12 @@ fn stored_hotkey(app: &AppHandle, key: &str) -> Option<String> {
 /// Registriraj korisnikove hotkeye iz postavki, a ako ih nema (ili su zauzeti) prve
 /// slobodne defaulte. Vraća (capture, record) za log.
 pub fn register_defaults(app: &AppHandle) -> (Option<String>, Option<String>) {
-    let capture = stored_hotkey(app, "hotkey")
-        .or_else(|| DEFAULT_HOTKEYS.iter().find(|hk| is_free(app, hk)).map(|s| s.to_string()));
+    let capture = stored_hotkey(app, "hotkey").or_else(|| {
+        DEFAULT_HOTKEYS
+            .iter()
+            .find(|hk| is_free(app, hk))
+            .map(|s| s.to_string())
+    });
     let record = stored_hotkey(app, "recordHotkey")
         .filter(|hk| Some(hk) != capture.as_ref())
         .or_else(|| {

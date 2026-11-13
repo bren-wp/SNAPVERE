@@ -26,10 +26,20 @@ struct RecordItems {
 static RECORD_ITEMS: OnceLock<RecordItems> = OnceLock::new();
 
 pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
-    let capture_region =
-        MenuItem::with_id(app, "capture_region", "Capture Region", true, Some("PrintScreen"))?;
-    let capture_full =
-        MenuItem::with_id(app, "capture_full", "Capture Full Screen", true, None::<&str>)?;
+    let capture_region = MenuItem::with_id(
+        app,
+        "capture_region",
+        "Capture Region",
+        true,
+        Some("PrintScreen"),
+    )?;
+    let capture_full = MenuItem::with_id(
+        app,
+        "capture_full",
+        "Capture Full Screen",
+        true,
+        None::<&str>,
+    )?;
     let sep1 = PredefinedMenuItem::separator(app)?;
 
     let record_region = MenuItem::with_id(
@@ -39,10 +49,14 @@ pub fn build_tray(app: &AppHandle) -> tauri::Result<()> {
         true,
         Some("CmdOrCtrl+Shift+R"),
     )?;
-    let record_screen =
-        MenuItem::with_id(app, "record_screen", "Record This Screen", true, None::<&str>)?;
-    let record_stop =
-        MenuItem::with_id(app, "record_stop", "Stop Recording", false, None::<&str>)?;
+    let record_screen = MenuItem::with_id(
+        app,
+        "record_screen",
+        "Record This Screen",
+        true,
+        None::<&str>,
+    )?;
+    let record_stop = MenuItem::with_id(app, "record_stop", "Stop Recording", false, None::<&str>)?;
     let sep2 = PredefinedMenuItem::separator(app)?;
 
     let open_gallery = MenuItem::with_id(app, "open_gallery", "Gallery", true, None::<&str>)?;
