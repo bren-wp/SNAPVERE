@@ -3,6 +3,7 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ask } from "@tauri-apps/plugin-dialog";
+import { readCapturePreferences } from "../lib/capturePreferencesStore";
 import { listen } from "@tauri-apps/api/event";
 import {
   Crop,
@@ -143,7 +144,8 @@ export default function Home() {
       // captured on slower Windows / WebView2 devices.
       await win.hide();
       await new Promise<void>((resolve) => setTimeout(resolve, 180));
-      await ipc.captureFullscreen("png", 100);
+      const { format, quality } = await readCapturePreferences();
+      await ipc.captureFullscreen(format, quality);
       await load(query);
       setToast("Full-screen screenshot saved.");
     } catch (e) {

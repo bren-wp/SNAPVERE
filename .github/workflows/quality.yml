@@ -34,6 +34,9 @@ jobs:
       - name: Strict TypeScript static analysis
         working-directory: apps/desktop
         run: npm run lint
+      - name: Test screenshot saving preferences and filename validation
+        working-directory: apps/desktop
+        run: npm run test:capture
       - name: Typecheck and build
         working-directory: apps/desktop
         run: npm run build

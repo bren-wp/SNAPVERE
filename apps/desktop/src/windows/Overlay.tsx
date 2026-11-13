@@ -28,6 +28,8 @@ import { save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ipc } from "../lib/ipc";
+import { formatFromSavePath } from "../lib/capturePreferences";
+import { readCapturePreferences } from "../lib/capturePreferencesStore";
 import { renderAnnotations } from "../lib/canvas";
 import type {
   Annotation,
@@ -551,7 +553,11 @@ export default function Overlay() {
       try {
         const b64 = exportPng();
         if (action === "copy") { await ipc.copyBase64ToClipboard(b64); setToast("Copied to clipboard"); }
-        else { await ipc.saveEditedImage(b64, "png", 100); setToast("Saved to gallery"); }
+        else {
+          const { format, quality } = await readCapturePreferences();
+          await ipc.saveEditedImage(b64, format, quality);
+          setToast("Saved to gallery");
+        }
         closeSoon();
       } catch (err) {
         console.error(err);
@@ -565,8 +571,9 @@ export default function Overlay() {
   const saveAs = async () => {
     if (!sel) return;
     try {
+      const preferences = await readCapturePreferences();
       const path = await saveDialog({
-        defaultPath: "Snapvere.png",
+        defaultPath: `Snapvere.${preferences.format}`,
         filters: [
           { name: "PNG", extensions: ["png"] },
           { name: "JPEG", extensions: ["jpg"] },
@@ -574,12 +581,17 @@ export default function Overlay() {
         ],
       });
       if (!path) return;
-      const fmt = path.toLowerCase().endsWith(".jpg") ? "jpg" : path.toLowerCase().endsWith(".webp") ? "webp" : "png";
-      await ipc.saveImageAs(exportPng(), path, fmt, 92);
+      const fmt = formatFromSavePath(path);
+      if (!fmt) {
+        setToast("Choose a .png, .jpg, .jpeg or .webp filename.");
+        return;
+      }
+      await ipc.saveImageAs(exportPng(), path, fmt, preferences.quality);
       setToast("Saved");
       closeSoon();
     } catch (err) {
       console.error(err);
+      setToast(`Save failed: ${String(err)}`);
     }
   };
 
