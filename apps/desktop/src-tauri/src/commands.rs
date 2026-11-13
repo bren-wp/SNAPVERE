@@ -862,7 +862,18 @@ pub fn save_image_as(
     let target = validate_export_path(&path, format)?;
     let img = decode_editor_png(&base64_png)?;
     let out = capture::encode(&img, format, quality).map_err(estr)?;
-    fs::write(&target, out).map_err(estr)?;
+    // Stage beside the destination so that a disk-full / permission failure
+    // cannot truncate an existing export. Rename occurs only after all bytes
+    // are written and the handle is closed.
+    let parent = target.parent().ok_or("Invalid export destination")?;
+    let staged = parent.join(format!(".snapvere-export-{}.tmp", Uuid::new_v4()));
+    write_new_capture(&staged, &out)?;
+    if let Err(error) = fs::rename(&staged, &target) {
+        if let Err(cleanup) = fs::remove_file(&staged) {
+            log(&format!("failed to remove staged export {}: {cleanup}", staged.display()));
+        }
+        return Err(format!("Could not finalize exported image: {error}"));
+    }
     Ok(())
 }
 
