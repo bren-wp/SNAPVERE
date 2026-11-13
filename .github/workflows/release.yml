@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Checkout release revision
         uses: actions/checkout@v7
-      - name: Node 22
+      - name: Node 24
         uses: actions/setup-node@v7
         with:
           node-version: '24'
@@ -39,7 +39,23 @@ jobs:
           if ($config.identifier -ne 'com.brendigo.snapvere') { throw 'Incorrect application identifier' }
           if ($pkg.version -ne $config.version) { throw 'Package versions are not synchronized' }
           if ([string]::IsNullOrWhiteSpace($config.version)) { throw 'Empty release version' }
+          $cargo = Get-Content 'apps/desktop/src-tauri/Cargo.toml' -Raw
+          $cargoLock = Get-Content 'apps/desktop/src-tauri/Cargo.lock' -Raw
+          $npmLock = Get-Content 'apps/desktop/package-lock.json' -Raw | ConvertFrom-Json
+          if ($cargo -notmatch "(?m)^version = `"$([regex]::Escape($config.version))`"$") { throw 'Rust package version differs from release version' }
+          if ($cargoLock -notmatch "(?ms)\\[\\[package\\]\\]\\s+name = `"snapvere`"\\s+version = `"$([regex]::Escape($config.version))`"") { throw 'Cargo.lock package version differs from release version' }
+          if ($npmLock.version -ne $config.version -or $npmLock.packages.''.version -ne $config.version) { throw 'npm lockfile version differs from release version' }
           "value=$($config.version)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+      - name: Prevent overwriting an existing release tag
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $releaseTag = 'v${{ steps.version.outputs.value }}'
+          $matching = git ls-remote --tags origin "refs/tags/$releaseTag"
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot verify release tag availability' }
+          if (-not [string]::IsNullOrWhiteSpace(($matching | Out-String).Trim())) {
+            throw "Refusing to overwrite existing release: $releaseTag. Bump all app versions."
+          }
       - name: Install dependencies using lockfile
         working-directory: apps/desktop
         run: npm ci --no-audit
@@ -108,7 +124,17 @@ jobs:
             - **Snapvere-Setup.msi** — MSI installer
             - **SHA256SUMS.txt** — integrity checksums for all packages
 
-            All three executables originate from the same Tauri Windows build and are verified to exist before this release is published.
+            All three Windows executables originate from the same Tauri build and were verified before publication.
+
+            ### What's new in v0.2.6
+            - In-memory RGBA frame transfer and PNG fallback help prevent an empty black screenshot selection overlay.
+            - Clear capture-failure reporting and cleanup of frozen image buffers.
+            - Improved SN​APVERE controls, keyboard focus, settings icons and editor feedback.
+            - Local Inter font shared with the website for closer visual consistency.
+            - Refreshed Tauri/Rust/TypeScript build dependencies and CI security checks.
+            - Updated marketing README with real rendered UI screenshots and versioned download details.
+
+            **UI verification:** the actual public snapvere.com design and the repository site are not yet pixel-identical. The Windows hardware capture fix requires validation on representative devices.
 
             **Unsigned preview build.** Windows SmartScreen or corporate endpoint controls may flag unsigned software. Test on Windows 10/11 before production use.
 
