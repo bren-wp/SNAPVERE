@@ -184,7 +184,7 @@ export default function Settings() {
               label="Launch on startup"
               hint="Optional. Start Snapvere when you sign in (off by default)."
             >
-              <Toggle checked={autostart} onChange={toggleAutostart} />
+              <Toggle label="Launch on startup" checked={autostart} onChange={toggleAutostart} />
             </Row>
           </Section>
         )}
