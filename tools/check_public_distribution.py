@@ -40,4 +40,11 @@ for base, suffixes in ((SITE, {".html", ".js", ".css"}), (APP / "src", {".html",
             assert domain not in content, (
                 f"GitHub references must not appear in the public UI: {file.relative_to(ROOT)}"
             )
-print("Public Snapvere: license, installer EULA, links and brand check OK")
+caps = json.loads((TAURI / "capabilities/default.json").read_text(encoding="utf-8"))
+runtime = (TAURI / "src/lib.rs").read_text(encoding="utf-8")
+for unused, capability in (("tauri_plugin_fs::init()", "fs:default"),
+                           ("tauri_plugin_os::init()", "os:default")):
+    assert unused not in runtime, f"Unused runtime plugin enabled: {unused}"
+    assert capability not in caps["permissions"], f"Excess webview permission: {capability}"
+
+print("Public Snapvere: license, installer EULA, least privilege and links OK")

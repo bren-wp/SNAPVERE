@@ -88,6 +88,8 @@ jobs:
         run: cargo test --locked
       - name: Verify installer license and public distribution
         run: python tools/check_public_distribution.py
+      - name: Verify all frontend IPC commands are registered by Rust
+        run: python tools/check_ipc_contract.py
       - name: Build Windows NSIS EXE and WiX MSI bundles
         working-directory: apps/desktop
         run: npm run tauri -- build --bundles nsis,msi

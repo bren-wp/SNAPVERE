@@ -44,6 +44,8 @@ jobs:
         run: python tools/check_website.py
       - name: Verify installer EULA and block public GitHub links
         run: python tools/check_public_distribution.py
+      - name: Verify all frontend IPC commands are registered by Rust
+        run: python tools/check_ipc_contract.py
       - name: Verify matching public and desktop design tokens
         run: python tools/check_brand_tokens.py
       - name: Check capture overlay pipeline and legacy brand references

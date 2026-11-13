@@ -28,6 +28,12 @@ A focused Windows capture workspace from **[BRENDIGO](https://brendigo.com)**.
 > (v0.2.8). Do not mix their installers, licenses, versions or upgrade paths.
 > The production website, email download flow, and its binaries are not modified
 > by this GitHub release.
+>
+> **Commercial installer agreement:** Windows NSIS/MSI setup packages include the
+> [Brendigo commercial end-user license](https://snapvere.com/license/), which is
+> presented for acceptance before installation. Business use does not require an
+> activation key. Existing MIT-licensed source and third-party license grants
+> remain valid. The separate public WinUI distribution has its own release path.
 
 ## Your screen. Your story. One streamlined workflow.
 
