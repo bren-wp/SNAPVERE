@@ -24,13 +24,16 @@ pub fn run() {
 
     // Neki WebView2/GPU driveri ruše borderless overlay webview (exit 0xC..., "Edge se pojavi").
     // Isključi GPU akceleraciju u WebView2 → stabilno na svim mašinama.
-    // SNAPVERE_WEBVIEW_ARGS dodaje zastavice za dijagnostiku, npr. `--remote-debugging-port=9222`
-    // (DevTools / CDP nad release buildom) — bez njega ponašanje je nepromijenjeno.
-    let mut webview_args = String::from("--disable-gpu");
-    if let Ok(extra) = std::env::var("SNAPVERE_WEBVIEW_ARGS") {
-        webview_args.push(' ');
-        webview_args.push_str(extra.trim());
-    }
+    // Diagnostic flags may expose WebView2's remote debugger. Only use them in
+    // debug builds; production captures must never inherit such endpoints.
+    let webview_args = if cfg!(debug_assertions) {
+        match std::env::var("SNAPVERE_WEBVIEW_ARGS") {
+            Ok(extra) if !extra.trim().is_empty() => format!("--disable-gpu {}", extra.trim()),
+            _ => "--disable-gpu".to_owned(),
+        }
+    } else {
+        "--disable-gpu".to_owned()
+    };
     std::env::set_var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", webview_args);
 
     let app = tauri::Builder::default()

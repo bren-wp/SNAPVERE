@@ -30,6 +30,7 @@ impl Db {
     /// Povijest se tada ne pamti između pokretanja, ali capture i snimanje rade.
     pub fn open_in_memory() -> anyhow::Result<Self> {
         let conn = Connection::open_in_memory()?;
+        conn.pragma_update(None, "foreign_keys", "ON")?;
         let db = Self { conn };
         db.migrate()?;
         Ok(db)
@@ -134,14 +135,16 @@ impl Db {
 
     /// Pretraga po imenu ili tagu (LIKE; FTS5 dolazi u F2-14).
     pub fn search(&self, query: &str) -> anyhow::Result<Vec<Screenshot>> {
-        let like = format!("%{}%", query);
+        // A user's % and _ are literal search terms, not SQLite wildcards.
+        let escaped = query.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_");
+        let like = format!("%{escaped}%");
         let mut stmt = self.conn.prepare(
             r#"SELECT DISTINCT s.id, s.file_path, s.thumb_path, s.name, s.format, s.width, s.height,
                       s.size_bytes, s.source, s.created_at, s.is_uploaded
                FROM screenshots s
                LEFT JOIN screenshot_tags st ON st.screenshot_id = s.id
                LEFT JOIN tags t ON t.id = st.tag_id
-               WHERE s.name LIKE ?1 OR t.name LIKE ?1
+               WHERE s.name LIKE ?1 ESCAPE '\' OR t.name LIKE ?1 ESCAPE '\'
                ORDER BY s.created_at DESC
                LIMIT 500"#,
         )?;
@@ -208,7 +211,7 @@ impl Db {
                ORDER BY t.name"#,
         )?;
         let rows = stmt.query_map(params![screenshot_id], |row| row.get::<_, String>(0))?;
-        Ok(rows.filter_map(Result::ok).collect())
+        Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
     }
 
     fn map_row(row: &rusqlite::Row) -> rusqlite::Result<Screenshot> {
@@ -266,6 +269,31 @@ mod gallery_tests {
         assert_eq!(db.list(1, 1)?[0].id, "one");
         assert!(db.list(1, 10)?.is_empty());
         assert!(db.list(0, 0)?.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn search_treats_wildcards_as_literal_characters() -> anyhow::Result<()> {
+        let db = Db::open_in_memory()?;
+        db.insert(&shot("one%two", 100))?;
+        db.insert(&shot("one_two", 200))?;
+        db.insert(&shot("oneXtwo", 300))?;
+        assert_eq!(db.search("%")?[0].id, "one%two");
+        assert_eq!(db.search("%")?.len(), 1);
+        assert_eq!(db.search("_")?[0].id, "one_two");
+        assert_eq!(db.search("_")?.len(), 1);
+        assert_eq!(db.search("one")?.len(), 3);
+        Ok(())
+    }
+
+    #[test]
+    fn in_memory_delete_cascades_tag_relations() -> anyhow::Result<()> {
+        let db = Db::open_in_memory()?;
+        db.insert(&shot("one", 100))?;
+        db.add_tag("one", "important")?;
+        db.delete("one")?;
+        let count: i64 = db.conn.query_row("SELECT COUNT(*) FROM screenshot_tags", [], |r| r.get(0))?;
+        assert_eq!(count, 0);
         Ok(())
     }
 }
