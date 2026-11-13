@@ -42,8 +42,12 @@ jobs:
           $cargo = Get-Content 'apps/desktop/src-tauri/Cargo.toml' -Raw
           $cargoLock = Get-Content 'apps/desktop/src-tauri/Cargo.lock' -Raw
           $npmLock = Get-Content 'apps/desktop/package-lock.json' -Raw | ConvertFrom-Json -AsHashtable
-          if ($cargo -notmatch ('(?m)^version = "' + [regex]::Escape($config.version) + '"$')) { throw 'Rust package version differs from release version' }
-          if ($cargoLock -notmatch ('(?ms)^\[\[package\]\]\s+name = "snapvere"\s+version = "' + [regex]::Escape($config.version) + '"')) { throw 'Cargo.lock package version differs from release version' }
+          # Rust files may have CRLF on Windows. Compare parsed values, not lines
+          # anchored to LF-only endings.
+          $cargoVersion = [regex]::Match($cargo, '(?m)^version\s*=\s*"([^"]+)"').Groups[1].Value
+          $cargoLockVersion = [regex]::Match($cargoLock, '(?s)\[\[package\]\]\s+name\s*=\s*"snapvere"\s+version\s*=\s*"([^"]+)"').Groups[1].Value
+          if ($cargoVersion -ne $config.version) { throw "Rust package version mismatch: $cargoVersion" }
+          if ($cargoLockVersion -ne $config.version) { throw "Cargo.lock version mismatch: $cargoLockVersion" }
           if ($npmLock['version'] -ne $config.version -or $npmLock['packages']['']['version'] -ne $config.version) { throw 'npm lockfile version differs from release version' }
           "value=$($config.version)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
       - name: Prevent overwriting an existing release tag
