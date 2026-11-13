@@ -11,9 +11,12 @@ export function normalizeVolume(value: unknown): VolumePreference {
   return { volume, muted: stored.muted === true };
 }
 
-export function readVolume(store: Pick<Storage, "getItem"> = localStorage): VolumePreference {
+export function readVolume(store?: Pick<Storage, "getItem">): VolumePreference {
   try {
-    return normalizeVolume(JSON.parse(store.getItem("snapvere-volume") ?? "null"));
+    // Access localStorage inside try: WebView may throw a SecurityError just
+    // when resolving the storage getter, before getItem() can be called.
+    const source = store ?? localStorage;
+    return normalizeVolume(JSON.parse(source.getItem("snapvere-volume") ?? "null"));
   } catch {
     return { volume: 1, muted: false };
   }

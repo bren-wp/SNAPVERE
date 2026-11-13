@@ -128,7 +128,13 @@ export default function Viewer({ items, id, onNavigate, onClose, onDelete, onToa
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement) return;
+      // Focused sliders own their arrow/home/end keys; never navigate away
+      // from a recording while the user is scrubbing its timeline.
+      if (e.target instanceof HTMLInputElement
+        || e.target instanceof HTMLTextAreaElement
+        || (e.target instanceof HTMLElement
+          && e.target.closest('[role="slider"], [contenteditable="true"]'))
+      ) return;
       if (e.key === "Escape") {
         e.preventDefault();
         if (fullscreen) void setWindowFullscreen(false);

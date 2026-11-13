@@ -8,6 +8,11 @@ test("volume preference rejects invalid or corrupt local data", () => {
   assert.deepEqual(normalizeVolume({ volume: 9, muted: true }), { volume: 1, muted: true });
   assert.deepEqual(normalizeVolume({ volume: -4, muted: false }), { volume: 0, muted: false });
   assert.deepEqual(readVolume({ getItem: () => "broken json" }), { volume: 1, muted: false });
+  assert.deepEqual(readVolume({ getItem: () => { throw new Error("Storage denied"); } }),
+    { volume: 1, muted: false });
+  // In Node the global localStorage property is absent: the fallback must
+  // still succeed rather than throwing from a default parameter expression.
+  assert.deepEqual(readVolume(), { volume: 1, muted: false });
   assert.deepEqual(readVolume({ getItem: () => '{"volume":0.4,"muted":true}' }), { volume: 0.4, muted: true });
 });
 
