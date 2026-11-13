@@ -9,9 +9,9 @@
 
 mod image_export;
 
-use image_export::{decode_editor_png, validate_export_path, MAX_EDITOR_PIXELS};
 #[cfg(test)]
 use image_export::validate_editor_png_header;
+use image_export::{decode_editor_png, validate_export_path, MAX_EDITOR_PIXELS};
 
 use std::fs;
 use std::io::Write;

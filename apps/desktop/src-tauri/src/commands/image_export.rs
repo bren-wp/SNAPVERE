@@ -53,4 +53,3 @@ pub(super) fn validate_export_path(path: &str, format: ImageFormat) -> Result<Pa
     }
     Ok(target)
 }
-

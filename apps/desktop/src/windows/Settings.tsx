@@ -7,6 +7,7 @@ import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { ipc } from "../lib/ipc";
 import type { ImageFormat, RecordFormat } from "../lib/types";
 import WindowFrame from "../components/WindowFrame";
+import { DEFAULTS, normalizeSettings, type AppSettings } from "./settings/preferences";
 import { Section, Row, Toggle, Segmented, HotkeyInput } from "./settings/SettingsControls";
 import { version as appVersion } from "../../package.json";
 
@@ -18,38 +19,6 @@ type Tab =
   | "save"
   | "privacy"
   | "about";
-
-interface AppSettings {
-  theme: "dark" | "light";
-  hotkey: string;
-  recordHotkey: string;
-  format: ImageFormat;
-  quality: number;
-  recordFormat: RecordFormat;
-  recordFps: number;
-  recordQuality: number;
-  recordCursor: boolean;
-  recordMic: boolean;
-  recordSystemAudio: boolean;
-  recordMaxSeconds: number;
-  saveFolder: string;
-}
-
-const DEFAULTS: AppSettings = {
-  theme: "dark",
-  hotkey: "PrintScreen",
-  recordHotkey: "Ctrl+Shift+R",
-  format: "png",
-  quality: 92,
-  recordFormat: "mp4",
-  recordFps: 24,
-  recordQuality: 80,
-  recordCursor: true,
-  recordMic: false,
-  recordSystemAudio: false,
-  recordMaxSeconds: 1800,
-  saveFolder: "Pictures/Snapvere",
-};
 
 const TABS: { id: Tab; label: string; icon: typeof SlidersHorizontal }[] = [
   { id: "general", label: "General", icon: SlidersHorizontal },
@@ -73,11 +42,11 @@ export default function Settings() {
     (async () => {
       const st = await load("settings.json", { autoSave: true, defaults: {} });
       setStore(st);
-      const loaded = { ...DEFAULTS };
-      for (const k of Object.keys(DEFAULTS) as (keyof AppSettings)[]) {
-        const v = await st.get(k);
-        if (v !== undefined && v !== null) (loaded as Record<string, unknown>)[k] = v;
-      }
+      // Parallel, bounded reads: a bad/old settings.json must not break the UI.
+      const values = await Promise.all(
+        (Object.keys(DEFAULTS) as (keyof AppSettings)[]).map(async (key) => [key, await st.get(key)] as const),
+      );
+      const loaded = normalizeSettings(Object.fromEntries(values));
       // Ako je zeljeni hotkey zauzet, jezgra registrira fallback — prikazi STVARNO stanje.
       try {
         const [capture, record] = await ipc.activeHotkeys();
@@ -96,8 +65,12 @@ export default function Settings() {
   }, []);
 
   function set<K extends keyof AppSettings>(key: K, val: AppSettings[K]) {
+    if (!store) {
+      setNotice("Settings are not ready yet. Try again.");
+      return;
+    }
     setS((prev) => ({ ...prev, [key]: val }));
-    void store?.set(key, val).catch((error) => setNotice(`Could not save ${key}: ${String(error)}`));
+    void store.set(key, val).catch((error) => setNotice(`Could not save ${key}: ${String(error)}`));
   }
 
   // Save a hotkey only after the operating system has accepted it. On failure,
@@ -123,25 +96,53 @@ export default function Settings() {
   };
 
   const applyTheme = (theme: "dark" | "light") => {
+    if (!store) {
+      setNotice("Settings are not ready yet. Try again.");
+      return;
+    }
     set("theme", theme);
     document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("snapvere-theme", theme);
+    try {
+      localStorage.setItem("snapvere-theme", theme);
+    } catch {
+      setNotice("Theme could not be saved to browser preferences.");
+    }
   };
 
   const toggleAutostart = async (on: boolean) => {
+    if (!store) {
+      setNotice("Settings are not ready yet. Try again.");
+      return;
+    }
+    const previous = autostart;
     try {
-      on ? await enable() : await disable();
+      if (on) await enable();
+      else await disable();
+      // Persist only after the OS has accepted the change.
+      await store.set("autostart", on);
       setAutostart(on);
-      // Remember the explicit user preference. Portable mode never auto-enables startup.
-      await store?.set("autostart", on);
-    } catch (e) {
-      setNotice(`Could not change startup preference: ${String(e)}`);
+      setNotice(null);
+    } catch (error) {
+      // Keep actual Windows startup and settings in sync on partial failure.
+      try {
+        if (previous) await enable();
+        else await disable();
+      } catch (restoreError) {
+        setNotice(`Could not restore Windows startup: ${String(restoreError)}`);
+        return;
+      }
+      setAutostart(previous);
+      setNotice(`Could not change startup preference: ${String(error)}`);
     }
   };
 
   const pickFolder = async () => {
-    const dir = await openDialog({ directory: true, multiple: false });
-    if (typeof dir === "string") set("saveFolder", dir);
+    try {
+      const dir = await openDialog({ directory: true, multiple: false });
+      if (typeof dir === "string") set("saveFolder", dir);
+    } catch (error) {
+      setNotice(`Could not select capture folder: ${String(error)}`);
+    }
   };
 
   return (

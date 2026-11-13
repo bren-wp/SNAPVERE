@@ -37,7 +37,16 @@ pub(super) fn crop_rect(t: &RecordTarget) -> Result<(u32, u32, u32, u32), String
 
 /// Kopiraj pravokutnik iz punog framea u izlazni buffer (oba BGRA, gusto pakirana).
 #[allow(clippy::too_many_arguments)]
-pub(super) fn crop_bgra(src: &[u8], sw: u32, sh: u32, x: u32, y: u32, w: u32, h: u32, dst: &mut [u8]) {
+pub(super) fn crop_bgra(
+    src: &[u8],
+    sw: u32,
+    sh: u32,
+    x: u32,
+    y: u32,
+    w: u32,
+    h: u32,
+    dst: &mut [u8],
+) {
     let sw = sw as usize;
     let (x, y, w, h) = (x as usize, y as usize, w as usize, h as usize);
     let row = w * 4;
@@ -135,29 +144,56 @@ mod regression_tests {
 
     fn target(region: Region) -> RecordTarget {
         RecordTarget {
-            monitor_id: 0, monitor_x: 0, monitor_y: 0,
-            monitor_w: 100, monitor_h: 80, region: Some(region),
+            monitor_id: 0,
+            monitor_x: 0,
+            monitor_y: 0,
+            monitor_w: 100,
+            monitor_h: 80,
+            region: Some(region),
         }
     }
 
     #[test]
     fn clips_negative_selection_instead_of_expanding() {
-        let t = target(Region { monitor_id: 0, x: -8, y: -6, width: 50, height: 46 });
-        assert_eq!(crop_rect(&t).expect("overlapping selection"), (0, 0, 42, 40));
+        let t = target(Region {
+            monitor_id: 0,
+            x: -8,
+            y: -6,
+            width: 50,
+            height: 46,
+        });
+        assert_eq!(
+            crop_rect(&t).expect("overlapping selection"),
+            (0, 0, 42, 40)
+        );
     }
 
     #[test]
     fn outside_selection_returns_error_without_panic() {
-        let t = target(Region { monitor_id: 0, x: -100, y: -100, width: 20, height: 20 });
+        let t = target(Region {
+            monitor_id: 0,
+            x: -100,
+            y: -100,
+            width: 20,
+            height: 20,
+        });
         assert!(crop_rect(&t).is_err());
     }
 
     #[test]
     fn truncated_frame_does_not_crash_pixelation() {
         let mut frame = vec![0u8; 4];
-        pixelate_bgra(&mut frame, 1920, 1080, &PixelRect {
-            x: 0, y: 0, width: 50, height: 50,
-        });
+        pixelate_bgra(
+            &mut frame,
+            1920,
+            1080,
+            &PixelRect {
+                x: 0,
+                y: 0,
+                width: 50,
+                height: 50,
+            },
+        );
         assert_eq!(frame.len(), 4);
     }
 }
