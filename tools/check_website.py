@@ -32,7 +32,7 @@ class Links(HTMLParser):
 
 def verify_site() -> None:
     html_files = sorted(SITE.rglob("*.html"))
-    assert len(html_files) >= 3, "Expected home, download and privacy pages"
+    assert len(html_files) >= 4, "Expected home, download, privacy and license pages"
 
     for page in html_files:
         text = page.read_text(encoding="utf-8")

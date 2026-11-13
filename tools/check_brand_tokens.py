@@ -20,7 +20,7 @@ for token in TOKENS:
         f"Brand design mismatch for --brand-{token}: "
         f"web={value(SITE, token)!r}, app={value(APP, token)!r}")
 
-for relative in ("index.html", "download/index.html", "privacy/index.html"):
+for relative in ("index.html", "download/index.html", "privacy/index.html", "license/index.html"):
     html = (ROOT / "site" / relative).read_text(encoding="utf-8")
     assert re.search(
         r'<a class="brand"[^>]*>[\s\S]*?SNAPVERE\s*</a>', html

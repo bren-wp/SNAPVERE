@@ -42,6 +42,8 @@ jobs:
         run: npm run build
       - name: Verify first-party downloads, HTML links and checksums
         run: python tools/check_website.py
+      - name: Verify installer EULA and block public GitHub links
+        run: python tools/check_public_distribution.py
       - name: Verify matching public and desktop design tokens
         run: python tools/check_brand_tokens.py
       - name: Check capture overlay pipeline and legacy brand references
