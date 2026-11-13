@@ -31,6 +31,7 @@ import { ipc } from "../lib/ipc";
 import { formatFromSavePath } from "../lib/capturePreferences";
 import { readCapturePreferences } from "../lib/capturePreferencesStore";
 import { renderAnnotations } from "../lib/canvas";
+import { clampRect, applyResize } from "../lib/selectionGeometry";
 import type {
   Annotation,
   AnnotationTool,
@@ -39,13 +40,7 @@ import type {
   Point,
 } from "../lib/types";
 
-interface Rect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-type Dir = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
+import type { Rect, ResizeDirection as Dir } from "../lib/selectionGeometry";
 type DragOp = { type: "move" | "resize"; dir: Dir; sx: number; sy: number; start: Rect };
 
 const TOOLS: { id: EditorTool; icon: typeof Square; label: string }[] = [
@@ -66,7 +61,6 @@ const SWATCHES = [
   "#09BFD9", "#BF5AF2", "#FF375F", "#FFFFFF", "#1C1C1E",
 ];
 
-const MIN = 12;
 /** Koliko cloakan overlay čeka nakon iscrtanog framea da ga DWM preuzme (ms). */
 const REVEAL_DELAY_MS = 34;
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -339,7 +333,10 @@ export default function Overlay() {
       if (!op) return;
       const dx = e.clientX - op.sx;
       const dy = e.clientY - op.sy;
-      setSel(op.type === "move" ? clampRect({ ...op.start, x: op.start.x + dx, y: op.start.y + dy }) : applyResize(op.dir, op.start, dx, dy));
+      const viewport = { width: window.innerWidth, height: window.innerHeight };
+      setSel(op.type === "move"
+        ? clampRect({ ...op.start, x: op.start.x + dx, y: op.start.y + dy }, viewport)
+        : applyResize(op.dir, op.start, dx, dy, viewport));
     };
     const up = () => {
       dragOp.current = null;
@@ -379,6 +376,27 @@ export default function Overlay() {
       if (e.key === "Escape") {
         if (textEdit) { setTextEdit(null); setTextValue(""); }
         else void ipc.cancelCapture();
+        return;
+      }
+      // Premium precision control: nudge a capture area 1 px (Shift: 10 px).
+      // Alt+Arrow resizes instead. This also works before starting video.
+      const target = e.target;
+      if (phase === "edit" && sel && tool === "select" && !textEdit
+        && !e.ctrlKey && !e.metaKey
+        && !(target instanceof HTMLInputElement)
+        && !(target instanceof HTMLTextAreaElement)
+        && !(target instanceof HTMLElement && target.isContentEditable)
+        && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
+        e.preventDefault();
+        const step = e.shiftKey ? 10 : 1;
+        const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
+        const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
+        const viewport = { width: window.innerWidth, height: window.innerHeight };
+        setSel((previous) => previous
+          ? clampRect(e.altKey
+            ? { ...previous, w: previous.w + dx, h: previous.h + dy }
+            : { ...previous, x: previous.x + dx, y: previous.y + dy }, viewport)
+          : null);
         return;
       }
       if (mode === "record") {
@@ -929,23 +947,3 @@ export default function Overlay() {
   );
 }
 
-function clampRect(r: Rect): Rect {
-  const W = window.innerWidth;
-  const H = window.innerHeight;
-  const w = Math.max(MIN, Math.min(r.w, W));
-  const h = Math.max(MIN, Math.min(r.h, H));
-  const x = Math.max(0, Math.min(r.x, W - w));
-  const y = Math.max(0, Math.min(r.y, H - h));
-  return { x, y, w, h };
-}
-
-function applyResize(dir: Dir, s: Rect, dx: number, dy: number): Rect {
-  let { x, y, w, h } = s;
-  if (dir.includes("w")) { x = s.x + dx; w = s.w - dx; }
-  if (dir.includes("e")) { w = s.w + dx; }
-  if (dir.includes("n")) { y = s.y + dy; h = s.h - dy; }
-  if (dir.includes("s")) { h = s.h + dy; }
-  if (w < MIN) { if (dir.includes("w")) x = s.x + s.w - MIN; w = MIN; }
-  if (h < MIN) { if (dir.includes("n")) y = s.y + s.h - MIN; h = MIN; }
-  return clampRect({ x, y, w, h });
-}
