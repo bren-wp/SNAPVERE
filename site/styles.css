@@ -20,16 +20,16 @@
 }
 
 :root {
-  --brand-bg: #0a0a0b;
-  --brand-surface: #141416;
-  --brand-elevated: #1a1a1d;
-  --brand-accent: #09bfd9;
-  --brand-accent-hi: #55e0e5;
-  --brand-text: #f5f5f7;
-  --brand-muted: #a1a1a6;
-  --brand-border: rgba(255, 255, 255, 0.12);
-  --brand-card-radius: 18px;
-  --brand-control-radius: 999px;
+  --brand-bg: #151831;
+  --brand-surface: #10172c;
+  --brand-elevated: #1c2441;
+  --brand-accent: #7648eb;
+  --brand-accent-hi: #a78bfa;
+  --brand-text: #f7f6ff;
+  --brand-muted: #abb7d7;
+  --brand-border: rgba(164, 141, 255, 0.19);
+  --brand-card-radius: 22px;
+  --brand-control-radius: 14px;
   --bg: var(--brand-bg);
   --bg-raise: #0f0f11;
   --panel: var(--brand-surface);
@@ -257,7 +257,7 @@ kbd {
     0 1px 2px rgb(0 0 0 / 0.4);
 }
 .btn--primary:hover {
-  background: #2490ff;
+  background: #8b5cf6;
 }
 .btn--ghost {
   background: rgb(255 255 255 / 0.05);
@@ -1168,7 +1168,7 @@ kbd {
   background: #4cc2ff;
 }
 .taskbar__app--snapvere {
-  background: linear-gradient(135deg, #5ac8fa, #09bfd9 55%, #7a5bff);
+  background: linear-gradient(135deg, #5ac8fa, #7648eb 55%, #7a5bff);
 }
 .taskbar__tray {
   position: absolute;
@@ -1185,7 +1185,7 @@ kbd {
   width: 1.25em;
   height: 1.25em;
   border-radius: 0.32em;
-  background: linear-gradient(135deg, #5ac8fa, #09bfd9 55%, #7a5bff);
+  background: linear-gradient(135deg, #5ac8fa, #7648eb 55%, #7a5bff);
 }
 
 /* prozor (Windows 11) */
@@ -1840,7 +1840,7 @@ kbd {
   position: relative;
   flex: 1;
   min-height: 0;
-  background: #0a0a0b;
+  background: #151831;
 }
 .viewer__top {
   position: absolute;
@@ -2130,12 +2130,12 @@ kbd {
 .dl__editions-title { margin: 1.35rem 0 .75rem; font-size: .95rem; font-weight: 700; color: var(--text, #fff); text-align: center; }
 .dl__editions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; width: 100%; }
 .dl__edition { min-width: 0; padding: .9rem .55rem; border-radius: 14px; border: 1px solid rgba(144,177,198,.22); background: rgba(111,147,171,.08); color: inherit; text-align: center; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: .32rem; transition: border-color .2s, transform .2s, background .2s; }
-.dl__edition:hover, .dl__edition:focus-visible { border-color: #55e0e5; background: rgba(85,224,229,.12); transform: translateY(-2px); }
+.dl__edition:hover, .dl__edition:focus-visible { border-color: #a78bfa; background: rgba(167,139,250,.12); transform: translateY(-2px); }
 .dl__edition-icon { font-size: 1.28rem; }
 .dl__edition strong { font-size: .85rem; }
 .dl__edition small { font-size: .72rem; color: #aab9c7; }
 .dl__integrity { color: #aab9c7; text-align: center; font-size: .76rem; margin: .85rem 0 0; line-height: 1.5; }
-.dl__integrity a { color: #55e0e5; text-decoration: underline; }
+.dl__integrity a { color: #a78bfa; text-decoration: underline; }
 @media (max-width: 600px) { .dl__editions { grid-template-columns: 1fr; } .dl__edition { padding: .75rem 1rem; } }
 
 /* Shared Snapvere product styling: visual consistency with the desktop application */
@@ -2205,10 +2205,10 @@ kbd {
 .hero__title { letter-spacing: -.056em; font-weight: 780; }
 .hero__title span { color: var(--brand-accent-hi); }
 .hero__news {
-  background: linear-gradient(90deg, rgba(9,191,217,.11), rgba(85,224,229,.025));
-  border: 1px solid rgba(85,224,229,.23);
+  background: linear-gradient(90deg, rgba(118,72,235,.11), rgba(167,139,250,.025));
+  border: 1px solid rgba(167,139,250,.23);
 }
-.btn--primary { border: 1px solid rgba(85,224,229,.35); }
+.btn--primary { border: 1px solid rgba(167,139,250,.35); }
 .btn--ghost { border: 1px solid var(--brand-border); }
 :where(.faq__item,.dl__card,.dl__edition,.snapvere-preview__card) {
   border-color: var(--brand-border);
@@ -2225,4 +2225,63 @@ kbd {
 @media (min-width: 781px) and (max-width: 1140px) {
   .snapvere-preview__grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .snapvere-preview__card:last-child { grid-column: 1 / -1; max-width: 650px; justify-self: center; }
+}
+
+/* Public SNAPVERE identity reference: navy/violet palette and split hero. */
+:root { --bg-raise: #10162b; --text-3: #8493c0; --line: rgba(164,141,255,.12); --line-2: rgba(164,141,255,.2); }
+body { background: var(--brand-bg); }
+.nav { background: #0b1022; border-bottom: 1px solid rgba(164,141,255,.12); }
+.nav.is-scrolled { background: rgba(11,16,34,.95); }
+.nav__inner { height: 76px; gap: clamp(16px,2.2vw,34px); }
+.brand { letter-spacing: .025em; font-size: 15px; font-weight: 780; }
+.brand__mark { height: 46px; width: 46px; border-radius: 13px; }
+.nav__links { gap: clamp(14px,2vw,28px); color: #d3dcf3; }
+.nav__links a:hover { color: #fff; }
+.nav__end .btn--sm { background: #201d3e; border: 1px solid #7045d4; box-shadow: none; }
+.btn--primary { background: #7045d4; border-color: #9e7ef9; }
+.btn--primary:hover { background: #875cf2; }
+.btn--ghost { border-color: rgba(164,141,255,.24); }
+.hero {
+  display: grid; grid-template-columns: minmax(0,.9fr) minmax(0,1.1fr);
+  align-items: center; gap: clamp(28px,4vw,70px);
+  padding: clamp(68px,7vw,108px) max(var(--gutter),calc((100vw - 1200px) / 2));
+  background: linear-gradient(128deg,#161935 0%,#141731 62%,#101629 100%);
+  min-height: 820px;
+}
+.hero::before { height: 95%; inset: 0; background: radial-gradient(ellipse at 40% 42%,rgba(108,77,217,.09),transparent 68%); }
+.hero > .wrap { position: relative; max-width: none; width: 100%; min-width: 0; padding: 0; margin: 0; }
+.hero__inner { text-align: left; }
+.hero__news {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 0; margin: 0 0 18px; border: 0; background: transparent;
+  color: #b89bff; font-size: 12px; letter-spacing: .13em; font-weight: 720;
+}
+.hero__news::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #3cdc9b; box-shadow: 0 0 0 4px rgba(60,220,155,.1); }
+.hero__news b { margin: 0; color: inherit; }
+.hero__news .i { display: none; }
+.hero__title { max-width: 520px; margin: 0; font-size: clamp(54px,5.2vw,83px); font-weight: 800; line-height: 1.04; letter-spacing: -.06em; text-align: left; text-wrap: initial; color: var(--brand-text); }
+.hero__title span { color: inherit; }
+.hero__lead { max-width: 525px; margin: 30px 0 0; color: #b5c4ea; font-size: 18px; line-height: 1.65; text-align: left; }
+.hero__cta { justify-content: flex-start; margin-top: 28px; }
+.hero__meta { color: #a6b1d1; text-align: left; }
+.hero__stage { margin: 0; }
+.snapvere-hero-product { overflow: hidden; margin: 0; width: 100%; background: #0c1328; border: 1px solid rgba(175,156,255,.18); border-radius: 26px; box-shadow: 0 20px 70px rgba(0,0,0,.22); }
+.snapvere-hero-product__screen { padding: 12px 12px 0; background: linear-gradient(135deg,#091634,#1c3c82); }
+.snapvere-hero-product__screen img { display: block; width: 100%; height: auto; aspect-ratio: 16/9; object-fit: contain; border-radius: 14px 14px 0 0; }
+.snapvere-hero-product figcaption { padding: 21px 24px 24px; color: #b8c6e9; font-size: 14px; line-height: 1.6; }
+.snapvere-hero-product figcaption strong { display:block; margin-bottom: 5px; font-size: 17px; color: #f7f6ff; }
+.snapvere-preview__card { border: 1px solid rgba(164,141,255,.18); background: #0e152c; }
+@media (max-width: 1000px) {
+  .hero { grid-template-columns: 1fr; padding: 65px var(--gutter) 80px; min-height: 0; }
+  .hero > .wrap { max-width: 700px; margin-inline: auto; }
+  .hero__title { font-size: clamp(44px,7vw,70px); }
+  .snapvere-hero-product { max-width: 670px; }
+}
+@media (max-width: 600px) {
+  .nav__inner { height: 65px; } .brand__mark { width: 36px; height: 36px; }
+  .hero { padding-top: 50px; }
+  .hero__title { font-size: clamp(40px,11vw,60px); letter-spacing: -.045em; }
+  .hero__lead { font-size: 16px; }
+  .hero__cta { gap: 10px; }
+  .snapvere-hero-product figcaption { padding: 16px; }
 }
