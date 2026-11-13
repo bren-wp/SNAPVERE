@@ -140,6 +140,22 @@ pub fn is_active(app: &AppHandle) -> bool {
         .unwrap_or(false)
 }
 
+/// Block a deliberate application shutdown until the recorder has finalized the
+/// media file and registered it in the local gallery. Bounded to avoid hanging
+/// forever on a driver deadlock; never hold a database or recorder lock while
+/// waiting because the worker must acquire those to complete.
+pub fn wait_for_finalize(app: &AppHandle, timeout: Duration) -> bool {
+    let start = Instant::now();
+    while is_active(app) {
+        if start.elapsed() >= timeout {
+            log("Recorder did not finalize before shutdown timeout; data may be incomplete");
+            return false;
+        }
+        std::thread::sleep(Duration::from_millis(40));
+    }
+    true
+}
+
 /// Koliko dugo aktivno snimanje traje (None kad se ne snima).
 pub fn age(app: &AppHandle) -> Option<Duration> {
     let state = app.state::<AppState>();

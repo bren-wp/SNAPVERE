@@ -178,7 +178,12 @@ pub fn run() {
                 // Programski izlaz (tray → Quit): pusti snimatelja da zatvori datoteku.
                 if record::is_active(app_handle) {
                     let _ = record::stop(app_handle);
-                    std::thread::sleep(std::time::Duration::from_millis(600));
+                    // H.264/GIF finalization and SQLite registration may exceed
+                    // 600 ms on slow disks: wait for the worker, not a fixed guess.
+                    let _ = record::wait_for_finalize(
+                        app_handle,
+                        std::time::Duration::from_secs(12),
+                    );
                 }
                 log("izlaz iz aplikacije");
             }

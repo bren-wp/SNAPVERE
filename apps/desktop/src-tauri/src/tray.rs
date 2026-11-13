@@ -136,7 +136,8 @@ fn on_menu_event(app: &AppHandle, event: MenuEvent) {
             // Snimanje u tijeku mora uredno zatvoriti datoteku prije izlaza.
             if record::is_active(app) {
                 let _ = record::stop(app);
-                std::thread::sleep(std::time::Duration::from_millis(600));
+                // ExitRequested waits for encoding and gallery registration; do
+                // not exit based on an arbitrary 600 ms delay.
             }
             app.exit(0);
         }
