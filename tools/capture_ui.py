@@ -34,7 +34,7 @@ TAURI_PREVIEW = r"""
   }
   window.__TAURI_INTERNALS__ = {
     metadata: { currentWindow: { label: "home" }, windows: [{ label: "home" }] },
-    convertFileSrc(path) { return "http://127.0.0.1:4173/screenshots/home.png"; },
+    convertFileSrc(path) { return window.__SNAPVERE_EDITOR_IMAGE || "http://127.0.0.1:4173/screenshots/home.png"; },
     transformCallback(cb) { const id = nextCallback++; callbacks.set(id, cb); return id; },
     unregisterCallback(id) { callbacks.delete(id); },
     previewListenerReady() { return eventCallbacks.has("snapvere:capture"); },
@@ -71,6 +71,11 @@ with sync_playwright() as p:
     browser = p.chromium.launch(headless=True, args=["--disable-web-security"])
     app = browser.new_context(viewport={"width": 1120, "height": 740},
                               device_scale_factor=1, color_scheme="dark")
+    # Re-use an actual SNAPVERE screenshot as the editor's image fixture.
+    editor_source = ROOT / "site/screenshots/home.png"
+    assert editor_source.is_file(), "SNAPVERE editor preview fixture is missing"
+    editor_uri = "data:image/png;base64," + b64encode(editor_source.read_bytes()).decode("ascii")
+    app.add_init_script("window.__SNAPVERE_EDITOR_IMAGE = " + json.dumps(editor_uri))
     app.add_init_script(TAURI_PREVIEW)
     page = app.new_page()
     page.goto("http://127.0.0.1:1420/", wait_until="networkidle")
@@ -93,7 +98,7 @@ with sync_playwright() as p:
     editor_path = b64encode(b"Snapvere-frontend-preview.png").decode("ascii")
     editor.goto("http://127.0.0.1:1420/#editor?p=" + editor_path, wait_until="networkidle")
     editor.wait_for_function(
-        "() => document.querySelector('canvas')?.width > 1", timeout=20000
+        "() => document.querySelector('canvas')?.width >= 900"\n        " && !document.body.textContent.includes(\'could not be loaded\')", timeout=20000
     )
     editor.screenshot(path=str(OUTPUT / "editor.png"))
     app.close()
