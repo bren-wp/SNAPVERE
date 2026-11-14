@@ -66,8 +66,9 @@ export const ipc = {
   // ── editor ──
   saveEditedImage: (base64Png: string, format: ImageFormat, quality: number) =>
     invoke<Screenshot>("save_edited_image", { base64Png, format, quality }),
-  saveImageAs: (base64Png: string, path: string, format: ImageFormat, quality: number) =>
-    invoke<void>("save_image_as", { base64Png, path, format, quality }),
+  /** Rust opens the OS Save As picker. True = exported; false = user cancelled. */
+  saveImageAs: (base64Png: string, format: ImageFormat, quality: number) =>
+    invoke<boolean>("save_image_as", { base64Png, format, quality }),
   copyBase64ToClipboard: (base64Png: string) =>
     invoke<void>("copy_base64_to_clipboard", { base64Png }),
 

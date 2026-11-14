@@ -14,11 +14,9 @@ import {
   VolumeX,
 } from "lucide-react";
 import { load as loadStore } from "@tauri-apps/plugin-store";
-import { save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ipc } from "../lib/ipc";
-import { formatFromSavePath } from "../lib/capturePreferences";
 import { readCapturePreferences } from "../lib/capturePreferencesStore";
 import { renderAnnotations } from "../lib/canvas";
 import { clampRect, applyResize } from "../lib/selectionGeometry";
@@ -545,21 +543,10 @@ export default function Overlay() {
     if (!sel) return;
     try {
       const preferences = await readCapturePreferences();
-      const path = await saveDialog({
-        defaultPath: `Snapvere.${preferences.format}`,
-        filters: [
-          { name: "PNG", extensions: ["png"] },
-          { name: "JPEG", extensions: ["jpg"] },
-          { name: "WebP", extensions: ["webp"] },
-        ],
-      });
-      if (!path) return;
-      const fmt = formatFromSavePath(path);
-      if (!fmt) {
-        setToast("Choose a .png, .jpg, .jpeg or .webp filename.");
-        return;
-      }
-      await ipc.saveImageAs(exportPng(), path, fmt, preferences.quality);
+      // The Rust backend shows the OS picker and selects the encoder based
+      // on the extension chosen there; never forward a webview-provided path.
+      const saved = await ipc.saveImageAs(exportPng(), preferences.format, preferences.quality);
+      if (!saved) return;
       setToast("Saved");
       closeSoon();
     } catch (err) {
