@@ -821,7 +821,10 @@ pub async fn save_image_as(
     quality: u8,
 ) -> Result<bool, String> {
     image_export::validate_export_origin(window.label())?;
+    let dialog_guard = image_export::SaveAsGuard::acquire()?;
     tauri::async_runtime::spawn_blocking(move || {
+        // Keeps the global picker slot occupied until this background task exits.
+        let _dialog_guard = dialog_guard;
         use tauri_plugin_dialog::DialogExt;
 
         let selected = app
