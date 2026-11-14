@@ -1,0 +1,12 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "settings-privileged",
+  "description": "Allow Windows autostart management and opening known user-initiated files/URLs from the Settings window only.",
+  "windows": [
+    "settings"
+  ],
+  "permissions": [
+    "autostart:default",
+    "opener:default"
+  ]
+}

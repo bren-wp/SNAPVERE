@@ -45,3 +45,10 @@ A single gallery viewer file has been decomposed into focused video/image/error 
 Before final release, verify real Windows 10/11 and mixed-DPI multi-monitor capture, H.264/GIF lifecycle, microphone and system loopback, redaction, large-file export, interrupted disk writes, browser window lifecycle, NSIS/MSI license acceptance/decline and upgrade, 500+ gallery items, hotkey conflicts, keyboard navigation and zoom 200–400%, then compare every screen with correct reference images at the same resolution/theme/scaling.
 
 **Distribution boundary:** GitHub repository Tauri Windows release and the live snapvere.com .NET/WinUI distribution are separate products. Do not silently sync binaries or claim 1:1 UI equality between them.
+
+## Privilege reduction (v0.2.9)
+
+- Extracted `autostart:default` and `opener:default` from the shared WebView capability to a new `settings-privileged` capability restricted to the `settings` window.
+- Removed `global-shortcut:default` and all frontend `clipboard-manager:*` image/text permissions: shortcut registration and clipboard writes run in native Rust handlers, not through direct untrusted WebView plugin calls. Kept native registered plugins, so native functionality remains available.
+- Added a CI verifier that rejects any accidental reintroduction of shared privileged permissions and imports from other windows.
+- This narrows WebView plugin permissions but is *not* a guarantee of isolated Rust commands: custom `invoke` handlers must still validate inputs and intended window contexts before acting on local files.
