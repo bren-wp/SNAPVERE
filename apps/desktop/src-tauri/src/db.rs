@@ -349,7 +349,8 @@ mod gallery_tests {
     }
 
     #[test]
-    fn reopening_existing_gallery_preserves_capture_tags_and_legacy_metadata() -> anyhow::Result<()> {
+    fn reopening_existing_gallery_preserves_capture_tags_and_legacy_metadata() -> anyhow::Result<()>
+    {
         let folder = std::env::temp_dir().join(format!(
             "snapvere-db-upgrade-{}",
             uuid::Uuid::new_v4().simple()
