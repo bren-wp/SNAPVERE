@@ -14,6 +14,7 @@ SNAPVERE is a Windows screenshot and recording workspace published by **BRENDIGO
 - Fixed a focus/keyboard collision between the video seek slider and gallery navigation; recovered from WebView localStorage getter failures before the player mounts.
 - Removed `innerHTML` from consent/download flows to reduce web-script injection risk.
 - Added detailed source/permission audit evidence and verified release metadata across Cargo, npm and Tauri.
+- Removed the obsolete native fs/os plugin dependencies and prepared an isolated, manually reviewed dependency lockfile refresh (including React 19 migration checks), with RustSec and npm advisory gates.
 
 **Release gate:** this version remains an unmerged candidate until Windows Rust fmt/test/Clippy, portable+NSIS+MSI, hashes and device-level acceptance are complete. The public website still serves a separate WinUI edition.
 

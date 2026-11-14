@@ -1,66 +1,61 @@
-name: Refresh tested Snapvere dependencies (existing PR)
+name: Refresh tested SNAPVERE v0.2.9 dependencies in existing PR
+
+# One-shot branch-scoped updater. A push caused by GITHUB_TOKEN does not
+# recursively trigger another workflow. Re-run final CI against the commit
+# produced by the updater (e.g. manually dispatch quality on the PR branch).
 on:
   push:
-    branches: [feature/snapvere-v0.2.6-capture-brand-polish]
+    branches: [feature/snapvere-v0.2.9-premium-modular-audit]
     paths: ['.github/workflows/dependency-refresh.yml']
-  workflow_dispatch:
 permissions:
   contents: write
+
 concurrency:
-  group: snapvere-dependency-refresh-${{ github.sha }}
+  group: snapvere-deps-v029
   cancel-in-progress: false
 
 jobs:
   frontend:
-    name: Update npm dependencies with typecheck and security gates
+    if: github.ref == 'refs/heads/feature/snapvere-v0.2.9-premium-modular-audit'
+    name: Refresh npm dependency manifest and lockfile; test before committing
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
-          persist-credentials: true
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
-          cache: npm
-          cache-dependency-path: apps/desktop/package-lock.json
-      - name: Install exact current dependencies
-        working-directory: apps/desktop
-        run: npm ci
-      # TypeScript 6+ no longer supports baseUrl; aliases are relative paths.
-      - name: Refresh compatible packages and current stable Tauri 2 / build tooling
+      - name: Refresh stable npm packages, safely regenerating the exact lockfile
         working-directory: apps/desktop
         shell: bash
         run: |
           set -euo pipefail
-          # Remove installed JS bridges and utilities that are absent from source.
-          # Native Rust plugins remain registered in Cargo; they do not require
-          # their unused JavaScript wrapper packages to stay installed.
-          npm uninstall --save --no-fund \
-            clsx zustand \
-            @tauri-apps/plugin-clipboard-manager \
-            @tauri-apps/plugin-fs \
-            @tauri-apps/plugin-global-shortcut \
-            @tauri-apps/plugin-os
-          npm update --no-fund
-          npm install --save --no-fund \
-            @tauri-apps/api@latest \
-            @tauri-apps/plugin-autostart@latest \
-            @tauri-apps/plugin-dialog@latest \
-            @tauri-apps/plugin-opener@latest \
-            @tauri-apps/plugin-store@latest \
-            lucide-react@latest
-          npm install --save-dev --no-fund \
-            @tauri-apps/cli@latest @vitejs/plugin-react@latest \
-            vite@latest typescript@latest autoprefixer@latest postcss@latest
-          # React 18 and Tailwind 3 remain on their newest
-          # compatible patch/minor series until the tested UI migration.
+          # Dependency lifecycle scripts are untrusted: do not run them while
+          # any GitHub write credentials are accessible to this job.
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm update --ignore-scripts --no-audit --no-fund
+          npm install --save --ignore-scripts --no-audit --no-fund \
+            @tauri-apps/api@latest @tauri-apps/plugin-autostart@latest \
+            @tauri-apps/plugin-dialog@latest @tauri-apps/plugin-opener@latest \
+            @tauri-apps/plugin-store@latest lucide-react@latest \
+            react@latest react-dom@latest
+          npm install --save-dev --ignore-scripts --no-audit --no-fund \
+            @tauri-apps/cli@latest @types/react@latest @types/react-dom@latest \
+            @vitejs/plugin-react@latest vite@latest typescript@latest \
+            autoprefixer@latest postcss@latest
+          # Tailwind 3 -> 4 requires a separate CSS/visual migration; retain
+          # latest compatible v3 for this pixel-parity-sensitive release.
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run lint
+          npm run test:unit
           npm run build
           npm audit --audit-level=high
-          npm ci
-          npm run build
           npm outdated || true
-      - name: Commit only verified npm manifest and lockfile changes
+      - name: Commit only tested npm manifest and lockfile
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
@@ -68,38 +63,45 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add apps/desktop/package.json apps/desktop/package-lock.json
           if git diff --cached --quiet; then
-            echo "All compatible npm dependencies are already current"
+            echo "No npm updates required"
             exit 0
           fi
-          git commit -m "chore(deps): refresh tested npm and Tauri frontend packages"
-          for attempt in 1 2 3; do
-            git fetch origin "${GITHUB_REF_NAME}"
-            git rebase "origin/${GITHUB_REF_NAME}"
-            if git push origin "HEAD:${GITHUB_REF_NAME}"; then exit 0; fi
-            sleep 2
-          done
-          exit 1
+          git commit -m "chore(deps): update tested stable npm and React dependencies"
+          gh auth setup-git
+          git fetch origin "${GITHUB_REF_NAME}"
+          git rebase "origin/${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
   rust:
     needs: frontend
-    name: Refresh compatible Cargo dependencies on Windows
+    name: Refresh compatible Rust dependency graph; test on Windows
     runs-on: windows-latest
-    timeout-minutes: 85
+    timeout-minutes: 80
     steps:
       - uses: actions/checkout@v7
         with:
-          persist-credentials: true
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: apps/desktop/src-tauri -> target
-      - name: Update registry dependency lockfile (within declared major compatibility)
+      - name: Update Cargo.lock against actual compatible crates
         working-directory: apps/desktop/src-tauri
         run: cargo update
-      - name: Verify native Rust tests with updated lockfile
+      - name: Check Rust formatting
+        working-directory: apps/desktop/src-tauri
+        run: cargo fmt --all -- --check
+      - name: Run all Rust tests
         working-directory: apps/desktop/src-tauri
         run: cargo test --locked
+      - name: Strict Rust lint
+        working-directory: apps/desktop/src-tauri
+        run: cargo clippy --all-targets --locked -- -D warnings
       - name: Commit only tested Cargo.lock
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -107,15 +109,15 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add apps/desktop/src-tauri/Cargo.lock
           git diff --cached --quiet
-          if ($LASTEXITCODE -eq 0) { Write-Host 'Rust dependencies already current'; exit 0 }
-          git commit -m 'chore(deps): update compatible Rust crate lockfile after Windows tests'
-          foreach ($attempt in 1..3) {
-            git fetch origin $env:GITHUB_REF_NAME
-            if ($LASTEXITCODE -ne 0) { throw 'Git fetch failed' }
-            git rebase "origin/$env:GITHUB_REF_NAME"
-            if ($LASTEXITCODE -ne 0) { throw 'Git rebase failed' }
-            git push origin "HEAD:$env:GITHUB_REF_NAME"
-            if ($LASTEXITCODE -eq 0) { exit 0 }
-            Start-Sleep -Seconds 2
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host 'No Rust lockfile updates required'
+            exit 0
           }
-          throw 'Could not safely push tested Rust dependency updates'
+          git commit -m 'chore(deps): update tested Rust crates; remove unused plugin dependencies'
+          gh auth setup-git
+          git fetch origin $env:GITHUB_REF_NAME
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot fetch PR branch' }
+          git rebase "origin/$env:GITHUB_REF_NAME"
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot rebase onto updated PR' }
+          git push origin "HEAD:$env:GITHUB_REF_NAME"
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot push validated Cargo.lock' }
