@@ -35,7 +35,7 @@ pub(super) fn media_path(app: &AppHandle, id: &str) -> Result<PathBuf, String> {
     Ok(path)
 }
 
-const MAX_CLIPBOARD_FILE_BYTES: u64 = 200 * 1024 * 1024;
+pub(super) const MAX_CLIPBOARD_FILE_BYTES: u64 = 200 * 1024 * 1024;
 
 pub(super) fn can_copy_image(file_bytes: u64, width: u32, height: u32) -> bool {
     file_bytes <= MAX_CLIPBOARD_FILE_BYTES

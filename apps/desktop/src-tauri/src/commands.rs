@@ -11,7 +11,7 @@ mod gallery_helpers;
 mod image_export;
 
 #[cfg(test)]
-use gallery_helpers::can_copy_image;
+use gallery_helpers::{can_copy_image, MAX_CLIPBOARD_FILE_BYTES};
 use gallery_helpers::{allow_media_dirs, media_path, validate_copy_image};
 
 #[cfg(test)]

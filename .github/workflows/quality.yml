@@ -31,6 +31,8 @@ jobs:
       - name: Install locked dependencies without lifecycle hooks
         working-directory: apps/desktop
         run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Enforce reachable Rust modules (dead-code graph)
+        run: python tools/check_rust_modules.py
       - name: Enforce reachable TypeScript modules (dead-code graph)
         working-directory: apps/desktop
         run: node ../../tools/check_dead_code.mjs

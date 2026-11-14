@@ -76,3 +76,9 @@ Extracted registered-gallery media path resolution, Tauri asset scope extensions
 
 - Upgraded the direct xcap screen-capture crate from 0.4 to 0.9.10 and the GIF codec crate from 0.13 to 0.14.2; both preserve the methods used in SNAPVERE's existing monitor/GIF backend public APIs according to current upstream documentation. Their actual transitive dependencies, locked build, Windows MSVC tests, Clippy, RustSec and full NSIS/MSI packaging are required to pass before merge. On Linux/macOS the dependency tree changes separately, but this release targets Windows.
 - Rust for Windows `windows 0.60` direct FFI bindings are not blindly bumped to the future 0.100 series; that family has distinct Rust edition/MSRV and binary API migrations. The Windows-specific DXGI, D3D11, Media Foundation and CoreAudio bindings require a dedicated feature-by-feature migration and hardware QA, not simply a major version pin.
+
+## Native dead-code dependency and file review
+
+- A source scan of native Rust, including the build script and example, found no production direct references to the explicit `serde_json` or `thiserror` packages; removed these as direct dependencies. They may remain transitively required by third-party crates. `tauri-plugin-fs` and `tauri-plugin-os` had already been removed from the active native configuration.
+- Added `tools/check_rust_modules.py` as a CI gate that traverses every external Rust `mod` declaration from `lib.rs` and `main.rs`, fails on unreachable Rust source files or blind `#[allow(dead_code)]` suppressions, and complements `cargo clippy --all-targets -- -D warnings` for symbol-level warnings.
+- Fixed clipboard safety test compile break after extracting gallery helpers: `MAX_CLIPBOARD_FILE_BYTES` is visible only to the parent command module; no frontend IPC permission changed.

@@ -96,6 +96,8 @@ jobs:
         run: cargo test --locked
       - name: Verify offline app and block unreviewed backdoor/network/process patterns
         run: python tools/check_no_backdoor_patterns.py
+      - name: Enforce reachable Rust modules (dead-code graph)
+        run: python tools/check_rust_modules.py
       - name: Verify Tailwind 4 migration and CSS-first design tokens
         run: python tools/check_tailwind4.py
       - name: Fail on unsafe dynamic HTML/code execution in public JavaScript
