@@ -3,10 +3,14 @@
  * noUnusedParameters plus Rust Clippy check individual symbols separately. */
 import fs from "node:fs";
 import path from "node:path";
-import { pathToFileURL, fileURLToPath } from "node:url";
+import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 const project = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../apps/desktop");
 const src = path.join(project, "src");
-const js = await import(pathToFileURL(path.join(project, "node_modules/typescript/lib/typescript.js")).href);
+// TypeScript 7 ships a native compiler but no JavaScript Compiler API.
+// The official TypeScript 6 compatibility package supplies AST parsing only.
+const requireTs = createRequire(path.join(project, "package.json"));
+const js = requireTs("@typescript/typescript6");
 const ts = js.default ?? js;
 function walk(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((ent) =>

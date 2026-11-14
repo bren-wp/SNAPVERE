@@ -30,7 +30,9 @@ serde_json = "1"
 # Capture ekrana (monitor / prozor). NAPOMENA: provjeri/uskladi verziju s `cargo update`.
 xcap = "0.4"
 # Encode/decode + crop + blur.
-image = "0.25"
+# Decode only the formats this desktop app actually stores; skip AVIF/JPEG2000/etc.
+# This shrinks the transitive codec surface and avoids unused encoders.
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif"] }
 webp = "0.3"
 # Animirani GIF izlaz za snimanje (cross-platform fallback).
 gif = "0.13"

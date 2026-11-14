@@ -28,7 +28,6 @@ mod tests;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, Ordering};
 use std::sync::{Arc, Mutex};
-use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use tauri::{AppHandle, Emitter, Manager};
@@ -121,8 +120,6 @@ impl Ctl {
 
 pub struct Session {
     pub ctl: Arc<Ctl>,
-    #[allow(dead_code)] // drži se samo da dretva ne ostane "orphan" u ps listi
-    join: Option<JoinHandle<()>>,
 }
 
 // ────────────────────────────── javno API ──────────────────────────────
@@ -241,7 +238,9 @@ pub fn start(
     let thread_ctl = ctl.clone();
     let thread_app = app.clone();
     let thread_path = out_path.clone();
-    let join = std::thread::Builder::new()
+    // Dropping JoinHandle detaches the recording worker; session cleanup is
+    // asynchronous via finish_session(), never a blocking join on the UI thread.
+    let _worker = std::thread::Builder::new()
         .name("snapvere-recorder".into())
         .spawn(move || {
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -286,10 +285,7 @@ pub fn start(
         if ctl.phase.load(Ordering::SeqCst) == PHASE_IDLE {
             return Err("Recorder finished during initialization".into());
         }
-        *slot = Some(Session {
-            ctl: ctl.clone(),
-            join: Some(join),
-        });
+        *slot = Some(Session { ctl: ctl.clone() });
     }
     crate::tray::set_recording(app, true);
     let st = ctl.status();

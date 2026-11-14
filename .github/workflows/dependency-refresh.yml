@@ -1,6 +1,6 @@
 name: Refresh tested SNAPVERE v0.2.9 dependencies in existing PR
 
-# One-shot branch-scoped updater (Tailwind 4 guard corrected and modular gallery). A push caused by GITHUB_TOKEN does not
+# One-shot branch-scoped updater (TypeScript 7 uses the TS6 compatibility API for AST audit). A push caused by GITHUB_TOKEN does not
 # recursively trigger another workflow. Re-run final CI against the commit
 # produced by the updater (e.g. manually dispatch quality on the PR branch).
 on:
@@ -45,7 +45,8 @@ jobs:
           npm install --save-dev --ignore-scripts --no-audit --no-fund \
             @tauri-apps/cli@latest @types/react@latest @types/react-dom@latest \
             @vitejs/plugin-react@latest vite@latest typescript@latest \
-            postcss@latest tailwindcss@latest @tailwindcss/postcss@latest
+            postcss@latest tailwindcss@latest @tailwindcss/postcss@latest \
+            @typescript/typescript6@latest
           # Tailwind 4 performs its own prefixing, so autoprefixer is dead code.
           npm uninstall --save-dev --ignore-scripts --no-audit --no-fund autoprefixer
           npm ci --ignore-scripts --no-audit --no-fund
