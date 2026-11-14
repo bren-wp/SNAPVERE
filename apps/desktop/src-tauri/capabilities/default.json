@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Shared least-privilege UI capabilities. Settings-only startup and URL opening permissions live in settings-privileged.json. Native Rust clipboard/shortcut services do not expose these commands to arbitrary WebViews.",
+  "description": "Shared UI-only operations. Creation of new WebViews and native dialogs are limited to their owning windows in separate capability files.",
   "windows": [
     "home",
     "overlay",
@@ -25,10 +25,7 @@
     "core:window:allow-set-size",
     "core:window:allow-set-fullscreen",
     "core:window:allow-current-monitor",
-    "core:webview:allow-create-webview-window",
     "core:event:default",
-    "store:default",
-    "dialog:default",
-    "dialog:allow-ask"
+    "store:default"
   ]
 }
