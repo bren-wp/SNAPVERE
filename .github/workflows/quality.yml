@@ -100,6 +100,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Install pinned RustSec cargo-audit scanner
         run: cargo install cargo-audit --version 0.23.0 --locked
+      - name: Assert SQLite bundled crate contains known CVE-2026-119375 fix
+        run: python tools/check_sqlite_security.py
       - name: Fail on RustSec dependency security advisories
         run: cargo audit --file apps/desktop/src-tauri/Cargo.lock
 

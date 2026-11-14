@@ -81,6 +81,8 @@ jobs:
         run: npm audit --audit-level=high
       - name: Install pinned RustSec advisory scanner
         run: cargo install cargo-audit --version 0.23.0 --locked
+      - name: Assert SQLite bundled crate contains known CVE-2026-119375 fix
+        run: python tools/check_sqlite_security.py
       - name: Check Rust dependency advisories before publishing
         run: cargo audit --file apps/desktop/src-tauri/Cargo.lock
       - name: Verify Rust formatting
