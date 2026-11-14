@@ -7,12 +7,12 @@
 //! bilo kojoj od njih zna blokirati petlju poruka ili paničariti u tuđem FFI kodu,
 //! što je uz `panic = "abort"` značilo trenutni nestanak aplikacije.
 
-mod image_export;
 mod gallery_helpers;
+mod image_export;
 
-use gallery_helpers::{allow_media_dirs, media_path, validate_copy_image};
 #[cfg(test)]
 use gallery_helpers::can_copy_image;
+use gallery_helpers::{allow_media_dirs, media_path, validate_copy_image};
 
 #[cfg(test)]
 use image_export::validate_editor_png_header;
