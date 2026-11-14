@@ -13,6 +13,7 @@ import {
   Redo2,
   Copy,
   Save,
+  FileDown,
 } from "lucide-react";
 import { ipc } from "../lib/ipc";
 import { readCapturePreferences } from "../lib/capturePreferencesStore";
@@ -40,6 +41,7 @@ export default function Editor({ pathB64 }: { pathB64: string }) {
   const baseImg = useRef<HTMLImageElement | null>(null);
   const [ready, setReady] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const [tool, setTool] = useState<EditorTool>("arrow");
   const [color, setColor] = useState("#ef4444");
@@ -207,6 +209,21 @@ export default function Editor({ pathB64 }: { pathB64: string }) {
       console.error(e);
     }
   };
+  const onSaveAs = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const { format, quality } = await readCapturePreferences();
+      // The native backend owns the file picker; the webview never supplies a path.
+      const saved = await ipc.saveImageAs(exportBase64(), format, quality);
+      if (saved) setNotice("Image exported to the selected location.");
+    } catch (e) {
+      setNotice(`Could not export the screenshot: ${String(e)}`);
+      console.error(e);
+    } finally {
+      setExporting(false);
+    }
+  };
   const onCopy = async () => {
     try {
       await ipc.copyBase64ToClipboard(exportBase64());
@@ -268,6 +285,9 @@ export default function Editor({ pathB64 }: { pathB64: string }) {
           <div className="mx-1 h-5 w-px bg-border" />
           <button onClick={onCopy} disabled={!ready} className="snapvere-btn-secondary flex items-center gap-2 rounded-full px-3 py-1.5 text-sm hover:bg-elevated">
             <Copy size={16} /> Copy
+          </button>
+          <button onClick={onSaveAs} disabled={!ready || exporting} aria-label="Save image as a new file" className="snapvere-btn-secondary flex items-center gap-2 rounded-full px-3 py-1.5 text-sm hover:bg-elevated disabled:cursor-not-allowed disabled:opacity-40">
+            <FileDown size={16} /> {exporting ? "Exporting…" : "Save As"}
           </button>
           <button onClick={onSave} disabled={!ready} className="snapvere-btn-primary flex items-center gap-2 rounded-full bg-accent px-3 py-1.5 text-sm text-white hover:opacity-90">
             <Save size={16} /> Save
