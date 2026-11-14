@@ -809,33 +809,55 @@ pub fn save_edited_image(
     save_to_gallery(&app, &state, &img, CaptureSource::Region, format, quality)
 }
 
-/// Spremi sliku (base64 PNG s canvasa) na proizvoljnu putanju iz "Save As" dialoga.
+/// Save As uses a *native* picker owned by the Rust backend. A renderer cannot
+/// submit an arbitrary filesystem path through IPC. Only the editor window can
+/// request an export; cancellation is a normal, non-error outcome.
 #[tauri::command]
-pub fn save_image_as(
+pub async fn save_image_as(
+    app: AppHandle,
+    window: tauri::WebviewWindow,
     base64_png: String,
-    path: String,
     format: ImageFormat,
     quality: u8,
-) -> Result<(), String> {
-    let target = validate_export_path(&path, format)?;
-    let img = decode_editor_png(&base64_png)?;
-    let out = capture::encode(&img, format, quality).map_err(estr)?;
-    // Stage beside the destination so that a disk-full / permission failure
-    // cannot truncate an existing export. Rename occurs only after all bytes
-    // are written and the handle is closed.
-    let parent = target.parent().ok_or("Invalid export destination")?;
-    let staged = parent.join(format!(".snapvere-export-{}.tmp", Uuid::new_v4()));
-    write_new_capture(&staged, &out)?;
-    if let Err(error) = fs::rename(&staged, &target) {
-        if let Err(cleanup) = fs::remove_file(&staged) {
-            log(&format!(
-                "failed to remove staged export {}: {cleanup}",
-                staged.display()
-            ));
+) -> Result<bool, String> {
+    image_export::validate_export_origin(window.label())?;
+    tauri::async_runtime::spawn_blocking(move || {
+        use tauri_plugin_dialog::DialogExt;
+
+        let selected = app
+            .dialog()
+            .file()
+            .set_parent(&window)
+            .set_title("Save Snapvere image")
+            .set_file_name(format!("Snapvere image.{}", format.ext()))
+            .add_filter("Image", &[format.ext()])
+            .blocking_save_file();
+        let Some(selected) = selected else {
+            return Ok(false);
+        };
+        let selected = selected.into_path().map_err(estr)?;
+        let target = validate_export_path(&selected.to_string_lossy(), format)?;
+        let img = decode_editor_png(&base64_png)?;
+        let out = capture::encode(&img, format, quality).map_err(estr)?;
+
+        // Complete the image beside its destination before replacing it. Failed
+        // writes leave any previously exported image intact.
+        let parent = target.parent().ok_or("Invalid export destination")?;
+        let staged = parent.join(format!(".snapvere-export-{}.tmp", Uuid::new_v4()));
+        write_new_capture(&staged, &out)?;
+        if let Err(error) = fs::rename(&staged, &target) {
+            if let Err(cleanup) = fs::remove_file(&staged) {
+                log(&format!(
+                    "failed to remove staged export {}: {cleanup}",
+                    staged.display()
+                ));
+            }
+            return Err(format!("Could not finalize exported image: {error}"));
         }
-        return Err(format!("Could not finalize exported image: {error}"));
-    }
-    Ok(())
+        Ok(true)
+    })
+    .await
+    .map_err(|e| format!("Save As task failed: {e}"))?
 }
 
 /// Kopiraj base64 PNG (iz editora) u clipboard.
