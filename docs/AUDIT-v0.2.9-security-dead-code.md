@@ -52,3 +52,8 @@ Before final release, verify real Windows 10/11 and mixed-DPI multi-monitor capt
 - Removed `global-shortcut:default` and all frontend `clipboard-manager:*` image/text permissions: shortcut registration and clipboard writes run in native Rust handlers, not through direct untrusted WebView plugin calls. Kept native registered plugins, so native functionality remains available.
 - Added a CI verifier that rejects any accidental reintroduction of shared privileged permissions and imports from other windows.
 - This narrows WebView plugin permissions but is *not* a guarantee of isolated Rust commands: custom `invoke` handlers must still validate inputs and intended window contexts before acting on local files.
+
+
+## Release credential isolation and dependency lifecycle (v0.2.9)
+
+The published Windows release job requires `contents: write` to create releases. Prior to v0.2.9 its checkout persisted the write-capable Git credentials, and `npm ci` allowed third-party dependency lifecycle scripts to run. That combination provides a potential supply-chain exfiltration path if a dependency or build script is compromised. The new release workflow uses `persist-credentials: false` and `npm ci --ignore-scripts` so npm packages cannot read a persisted Git write token or run arbitrary post-install scripts during CI dependency installation. Rust build scripts still execute as part of compiling trusted dependency sources and must be covered by RustSec and release provenance review. The release-publishing action still has a write-scoped token, so third-party GitHub Actions should be commit-SHA pinned or replaced with reviewed first-party tooling before high-assurance production distribution.

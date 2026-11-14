@@ -16,8 +16,10 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 85
     steps:
-      - name: Checkout release revision
+      - name: Checkout release revision without persisting publish credentials
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Node 24
         uses: actions/setup-node@v7
         with:
@@ -62,9 +64,9 @@ jobs:
           if (-not [string]::IsNullOrWhiteSpace(($matching | Out-String).Trim())) {
             throw "Refusing to overwrite existing release: $releaseTag. Bump all app versions."
           }
-      - name: Install dependencies using lockfile
+      - name: Install dependencies using lockfile without arbitrary lifecycle scripts
         working-directory: apps/desktop
-        run: npm ci --no-audit
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Strict TypeScript static analysis
         working-directory: apps/desktop
         run: npm run lint
