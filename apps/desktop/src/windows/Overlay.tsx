@@ -1,15 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
-  MousePointer2,
-  ArrowUpRight,
-  Square,
-  Circle,
-  Minus,
-  PenTool,
-  Highlighter,
-  EyeOff,
-  Type,
-  ListOrdered,
   Pipette,
   Undo2,
   Redo2,
@@ -32,6 +22,8 @@ import { formatFromSavePath } from "../lib/capturePreferences";
 import { readCapturePreferences } from "../lib/capturePreferencesStore";
 import { renderAnnotations } from "../lib/canvas";
 import { clampRect, applyResize } from "../lib/selectionGeometry";
+import { TOOLS, SWATCHES, uid, textFont, cursorFor } from "../lib/overlay/toolkit";
+import { REVEAL_DELAY_MS, sleep, painted } from "../lib/overlay/paint";
 import type {
   Annotation,
   AnnotationTool,
@@ -42,44 +34,6 @@ import type {
 
 import type { Rect, ResizeDirection as Dir } from "../lib/selectionGeometry";
 type DragOp = { type: "move" | "resize"; dir: Dir; sx: number; sy: number; start: Rect };
-
-const TOOLS: { id: EditorTool; icon: typeof Square; label: string }[] = [
-  { id: "select", icon: MousePointer2, label: "Move / resize frame" },
-  { id: "arrow", icon: ArrowUpRight, label: "Arrow" },
-  { id: "rect", icon: Square, label: "Rectangle" },
-  { id: "ellipse", icon: Circle, label: "Ellipse" },
-  { id: "line", icon: Minus, label: "Line" },
-  { id: "pen", icon: PenTool, label: "Pen" },
-  { id: "marker", icon: Highlighter, label: "Marker" },
-  { id: "step", icon: ListOrdered, label: "Numbered step" },
-  { id: "blur", icon: EyeOff, label: "Blur / redact" },
-  { id: "text", icon: Type, label: "Text" },
-];
-
-const SWATCHES = [
-  "#FF453A", "#FF9F0A", "#FFD60A", "#30D158", "#40C8E0",
-  "#09BFD9", "#BF5AF2", "#FF375F", "#FFFFFF", "#1C1C1E",
-];
-
-/** Koliko cloakan overlay čeka nakon iscrtanog framea da ga DWM preuzme (ms). */
-const REVEAL_DELAY_MS = 34;
-const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-/** Dva animation framea = DOM i canvas su predani kompozitoru. Timeout je osigurač:
- *  cloakan prozor ne smije ostati nevidljiv ako rAF iz nekog razloga ne stigne. */
-const painted = () =>
-  new Promise<void>((resolve) => {
-    let done = false;
-    const finish = () => {
-      if (!done) { done = true; resolve(); }
-    };
-    requestAnimationFrame(() => requestAnimationFrame(finish));
-    setTimeout(finish, 200);
-  });
-let counter = 0;
-const uid = () => `a${++counter}`;
-const textFont = (size: number) => Math.round(size * 3.5 + 8);
-const cursorFor = (d: Dir) =>
-  d === "nw" || d === "se" ? "nwse-resize" : d === "ne" || d === "sw" ? "nesw-resize" : d === "n" || d === "s" ? "ns-resize" : "ew-resize";
 
 export default function Overlay() {
   const [imgReady, setImgReady] = useState(false);
