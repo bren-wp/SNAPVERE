@@ -13,7 +13,7 @@ A focused Windows capture workspace from **[BRENDIGO](https://brendigo.com)**.
 [![Product](https://img.shields.io/badge/Product-SNAPVERE-7648eb?style=flat-square)](https://snapvere.com)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-141416?style=flat-square)](https://snapvere.com/download/)
 [![Privacy](https://img.shields.io/badge/Storage-Local--first-141416?style=flat-square)](https://snapvere.com/privacy/)
-[![Release](https://img.shields.io/badge/Repository-v0.2.9-141416?style=flat-square)](https://github.com/bren-wp/Snapvere/releases)
+[![Release](https://img.shields.io/badge/Repository--candidate-v0.2.10-141416?style=flat-square)](https://github.com/bren-wp/Snapvere/releases)
 
 [**🌐 Public SNAPVERE website (.NET edition)**](https://snapvere.com/) · [**⬇️ Tauri / Rust Windows releases**](https://github.com/bren-wp/Snapvere/releases) · [**🔐 Website privacy**](https://snapvere.com/privacy/)
 
@@ -25,7 +25,7 @@ A focused Windows capture workspace from **[BRENDIGO](https://brendigo.com)**.
 
 > **Distribution notice:** snapvere.com currently publishes SNAPVERE v0.0.8 built with
 > .NET / WinUI 3. This repository builds the separate Tauri 2 / Rust Windows edition
-> (v0.2.9 development candidate). Do not mix their installers, licenses, versions or upgrade paths.
+> (v0.2.10 release candidate). Do not mix their installers, licenses, versions or upgrade paths.
 > The production website, email download flow, and its binaries are not modified
 > by this GitHub release.
 >
@@ -92,6 +92,14 @@ The screenshots below come from **actual rendered React application screens in t
 </table>
 
 </details>
+
+## What's improved in v0.2.10 (release candidate)
+
+- **Native, safer Save As:** the editor and capture overlay use the operating-system destination picker; the renderer no longer supplies an arbitrary path to native file-write IPC.
+- **Scoped Tauri permissions:** the Home window alone can create Settings and confirm deletes; Settings alone owns its folder picker, autostart and opener rights. Capture and recording windows do not inherit those grants.
+- **Stronger CI gates:** static per-window capability validation and a pre-merge check for duplicate Windows release tags reduce regressions and post-merge publishing failures.
+
+Until the v0.2.10 workflow has finished successfully, **v0.2.9 remains the latest published repository release**. The separately deployed WinUI website binaries are unchanged. Physical Windows and 1:1 reference-image QA remain open; this candidate is not an independently certified production release.
 
 ## What's improved in v0.2.9
 

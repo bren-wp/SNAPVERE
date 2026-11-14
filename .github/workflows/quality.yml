@@ -59,6 +59,25 @@ jobs:
         run: python tools/check_ipc_contract.py
       - name: Enforce per-window Tauri capability isolation
         run: python tools/check_tauri_capabilities.py
+      - name: Reject duplicate release version before merging application changes
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          if ! git diff --name-only "$BASE_SHA" HEAD -- apps/ .github/workflows/release.yml | grep -q .; then
+            echo "No packaged application or release workflow changes: release version bump not required."
+            exit 0
+          fi
+          version=$(node -p "require('./apps/desktop/package.json').version")
+          matching=$(git ls-remote --tags origin "refs/tags/v$version")
+          if [ -n "$matching" ]; then
+            echo "::error::Release tag v$version already exists; bump Cargo, Tauri and npm versions/lockfiles before merging."
+            exit 1
+          fi
+          echo "Release tag v$version is available for this application change."
       - name: Verify matching public and desktop design tokens
         run: python tools/check_brand_tokens.py
       - name: Check capture overlay pipeline and legacy brand references

@@ -8,6 +8,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: snapvere-windows-release-main
+  cancel-in-progress: false
 jobs:
   windows-release:
     permissions:
@@ -106,6 +109,8 @@ jobs:
         run: python tools/check_public_distribution.py
       - name: Verify all frontend IPC commands are registered by Rust
         run: python tools/check_ipc_contract.py
+      - name: Enforce per-window Tauri capability isolation
+        run: python tools/check_tauri_capabilities.py
       - name: Build Windows NSIS EXE and WiX MSI bundles
         working-directory: apps/desktop
         run: npm run tauri -- build --bundles nsis,msi
@@ -168,10 +173,10 @@ jobs:
             All three Windows executables originate from the same Tauri build and were verified before publication.
 
             ### Changes in v${{ steps.version.outputs.value }}
-            - More accurate screenshot cropping for negative virtual-desktop coordinates.
-            - Literal gallery searches and consistent SQLite foreign key enforcement.
-            - Development-only WebView2 debugging flags and read-only CI.
-            - Non-mutating Rust format and strict Rust/TypeScript release gates.
+            - Native Save As chooser from the editor and capture overlay; the renderer no longer controls arbitrary export destinations.
+            - Per-window Tauri capability isolation for Home, Settings, editor, overlay and recording HUD with automated policy validation.
+            - Previous v0.2.9 recording, screenshot and dependency hardening, carried forward without replacing the existing release.
+            - Locked Rust/TypeScript tests, RustSec advisory review, three Windows packages and SHA-256 checksums.
 
             **Preview release.** Native Windows 10/11 capture, recorder, audio, multi-monitor,
             accessibility, install/upgrade/uninstall and 1:1 visual comparisons are not yet
