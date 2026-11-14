@@ -349,6 +349,49 @@ mod gallery_tests {
     }
 
     #[test]
+    fn reopening_existing_gallery_preserves_capture_tags_and_legacy_metadata() -> anyhow::Result<()> {
+        let folder = std::env::temp_dir().join(format!(
+            "snapvere-db-upgrade-{}",
+            uuid::Uuid::new_v4().simple()
+        ));
+        std::fs::create_dir_all(&folder)?;
+        let path = folder.join("gallery.db");
+
+        let result = (|| -> anyhow::Result<()> {
+            {
+                let original = Db::open(&path)?;
+                original.insert(&shot("saved-before-upgrade", 100))?;
+                original.add_tag("saved-before-upgrade", "keep-me")?;
+                original.conn.execute(
+                    "UPDATE screenshots SET remote_id = ?1, remote_url = ?2 WHERE id = ?3",
+                    params!["legacy-upload", "https://snapvere.com/example", "saved-before-upgrade"],
+                )?;
+            }
+            {
+                // The same public API opens an existing on-disk SQLite/WAL
+                // gallery after a dependency upgrade; no destructive migrations.
+                let upgraded = Db::open(&path)?;
+                let record = upgraded.get("saved-before-upgrade")?.expect("saved record");
+                assert_eq!(record.tags, vec!["keep-me"]);
+                assert_eq!(upgraded.list(10, 0)?.len(), 1);
+                let (id, url): (String, String) = upgraded.conn.query_row(
+                    "SELECT remote_id, remote_url FROM screenshots WHERE id = ?1",
+                    params!["saved-before-upgrade"],
+                    |row| Ok((row.get(0)?, row.get(1)?)),
+                )?;
+                assert_eq!(id, "legacy-upload");
+                assert_eq!(url, "https://snapvere.com/example");
+            }
+            Ok(())
+        })();
+
+        // Remove test-only DB and its WAL/SHM companions after closing both
+        // connections, leaving no real user data touched.
+        let _ = std::fs::remove_dir_all(folder);
+        result
+    }
+
+    #[test]
     fn in_memory_delete_cascades_tag_relations() -> anyhow::Result<()> {
         let db = Db::open_in_memory()?;
         db.insert(&shot("one", 100))?;
