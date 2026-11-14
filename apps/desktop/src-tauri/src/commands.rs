@@ -830,15 +830,18 @@ pub async fn save_image_as(
             .set_parent(&window)
             .set_title("Save Snapvere image")
             .set_file_name(format!("Snapvere image.{}", format.ext()))
-            .add_filter("Image", &[format.ext()])
+            .add_filter("PNG image", &["png"])
+            .add_filter("JPEG image", &["jpg", "jpeg"])
+            .add_filter("WebP image", &["webp"])
             .blocking_save_file();
         let Some(selected) = selected else {
             return Ok(false);
         };
         let selected = selected.into_path().map_err(estr)?;
-        let target = validate_export_path(&selected.to_string_lossy(), format)?;
+        let selected_format = image_export::format_from_export_path(&selected)?;
+        let target = validate_export_path(&selected.to_string_lossy(), selected_format)?;
         let img = decode_editor_png(&base64_png)?;
-        let out = capture::encode(&img, format, quality).map_err(estr)?;
+        let out = capture::encode(&img, selected_format, quality).map_err(estr)?;
 
         // Complete the image beside its destination before replacing it. Failed
         // writes leave any previously exported image intact.
