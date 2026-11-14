@@ -14,6 +14,20 @@ use crate::logging::log;
 
 /// Najveća širina GIF-a; iznad ovoga datoteka postaje neupotrebljivo velika.
 const MAX_WIDTH: u32 = 960;
+/// Upper bound for capture geometry so malformed GPU buffers cannot exhaust RAM.
+const MAX_SOURCE_DIMENSION: u32 = 16_384;
+const MAX_SOURCE_PIXELS: u64 = 134_217_728;
+
+fn input_frame_bytes(width: u32, height: u32) -> Result<usize, String> {
+    if width == 0 || height == 0 || width > MAX_SOURCE_DIMENSION || height > MAX_SOURCE_DIMENSION {
+        return Err("GIF source dimensions exceed supported limits".into());
+    }
+    let pixels = u64::from(width) * u64::from(height);
+    if pixels > MAX_SOURCE_PIXELS {
+        return Err("GIF input exceeds safe pixel count".into());
+    }
+    usize::try_from(pixels * 4).map_err(|_| "GIF pixel count overflow".into())
+}
 
 pub struct GifEncoder {
     /// `Option` da ga `finish()` može konzumirati: `Encoder::into_inner` zapisuje
@@ -31,6 +45,7 @@ pub struct GifEncoder {
 
 impl GifEncoder {
     pub fn new(path: &Path, w: u32, h: u32, fps: u32) -> Result<Self, String> {
+        input_frame_bytes(w, h)?;
         let (out_w, out_h) = fit(w, h);
         let file = File::create(path).map_err(|e| format!("GIF create: {e}"))?;
         let mut enc = Encoder::new(BufWriter::new(file), out_w as u16, out_h as u16, &[])
@@ -59,6 +74,10 @@ impl GifEncoder {
 
     /// Dodaj jedan BGRA frame.
     pub fn write(&mut self, bgra: &[u8]) -> Result<(), String> {
+        let required = input_frame_bytes(self.src_w, self.src_h)?;
+        if bgra.len() < required {
+            return Err("GIF input frame is truncated".into());
+        }
         self.fill_rgba(bgra);
         // Razdvojene posudbe polja — `from_rgba_speed` traži &mut rgba dok držimo &mut enc.
         let Self {
@@ -132,4 +151,18 @@ fn fit(w: u32, h: u32) -> (u32, u32) {
     }
     let nh = ((h as u64 * MAX_WIDTH as u64) / w as u64).max(1) as u32;
     (MAX_WIDTH, nh)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rejects_unbounded_capture_dimensions() {
+        assert!(input_frame_bytes(0, 1080).is_err());
+        assert!(input_frame_bytes(1920, 0).is_err());
+        assert!(input_frame_bytes(16_385, 100).is_err());
+        assert!(input_frame_bytes(16_384, 16_384).is_err());
+        assert_eq!(input_frame_bytes(7680, 4320).unwrap(), 7680 * 4320 * 4);
+    }
 }
