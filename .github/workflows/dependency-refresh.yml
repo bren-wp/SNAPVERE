@@ -1,6 +1,6 @@
 name: Refresh tested SNAPVERE v0.2.9 dependencies in existing PR
 
-# One-shot branch-scoped updater (Rustfmt-corrected SQLite 3.54 DB regression). A push caused by GITHUB_TOKEN does not
+# One-shot branch-scoped updater (Tailwind 4 guard corrected and modular gallery). A push caused by GITHUB_TOKEN does not
 # recursively trigger another workflow. Re-run final CI against the commit
 # produced by the updater (e.g. manually dispatch quality on the PR branch).
 on:

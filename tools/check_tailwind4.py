@@ -20,7 +20,8 @@ for token in ("bg", "surface", "elevated", "border", "muted", "text",
               "accent", "accent-soft", "danger", "warn"):
     assert f"--color-{token}: rgb(var(--snapvere-{token}));" in css, token
 assert '"@tailwindcss/postcss": {}' in postcss
-assert 'tailwindcss: {}' not in postcss and 'autoprefixer' not in postcss
+assert not re.search(r'(?m)^\s*tailwindcss\s*:', postcss), "Legacy PostCSS plugin"
+assert not re.search(r'(?m)^\s*autoprefixer\s*:', postcss), "Unused PostCSS plugin"
 dev = pkg["devDependencies"]
 assert dev.get("tailwindcss", "").startswith("^4."), "Tailwind 4 is required"
 assert dev.get("@tailwindcss/postcss", "").startswith("^4."), "Tailwind 4 PostCSS plugin is required"

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { convertFileSrc } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { ask } from "@tauri-apps/plugin-dialog";
@@ -10,18 +9,16 @@ import {
   Monitor,
   Settings as SettingsIcon,
   Search,
-  Trash2,
-  FolderOpen,
-  ImageOff,
   Video,
-  Play,
 } from "lucide-react";
 import { ipc } from "../lib/ipc";
 import { isVideo } from "../lib/types";
 import { mergeUniqueById } from "../lib/galleryPaging";
 import type { RecordDone, Screenshot } from "../lib/types";
 import WindowFrame from "../components/WindowFrame";
-import Viewer, { fmtBytes } from "../components/Viewer";
+import Viewer from "../components/Viewer";
+import CaptureCard from "../components/home/CaptureCard";
+import EmptyGallery from "../components/home/EmptyGallery";
 
 type Filter = "all" | "images" | "videos";
 const PAGE_SIZE = 120;
@@ -278,11 +275,11 @@ export default function Home() {
         {loading && items.length === 0 ? (
           <div className="grid h-full place-items-center text-muted">Loading…</div>
         ) : visible.length === 0 ? (
-          <EmptyState onCapture={captureRegion} hasQuery={!!query.trim() || filter !== "all"} />
+          <EmptyGallery onCapture={captureRegion} hasQuery={!!query.trim() || filter !== "all"} />
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {visible.map((s) => (
-              <Card
+              <CaptureCard
                 key={s.id}
                 shot={s}
                 onOpen={() => setViewId(s.id)}
@@ -324,118 +321,5 @@ export default function Home() {
         </div>
       )}
     </WindowFrame>
-  );
-}
-
-function Card({
-  shot,
-  onOpen,
-  onReveal,
-  onDelete,
-}: {
-  shot: Screenshot;
-  onOpen: () => void;
-  onReveal: () => void;
-  onDelete: () => void;
-}) {
-  const video = isVideo(shot);
-  // MP4 se ne moze prikazati u <img>; bez thumbnaila ide placeholder.
-  const src = shot.thumbPath ?? (video ? null : shot.filePath);
-  return (
-    <article
-      role="group"
-      aria-label={shot.name}
-      className="snapvere-gallery-card group relative overflow-hidden outline-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card focus-within:ring-2 focus-within:ring-accent"
-    >
-      {/* A real focusable button; utility buttons are siblings, never nested in it. */}
-      <button
-        type="button"
-        onClick={onOpen}
-        aria-label={`${video ? "Play recording" : "View screenshot"}: ${shot.name}`}
-        className="absolute inset-0 z-[1] cursor-pointer rounded-[inherit] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent"
-      />
-      <div className="pointer-events-none relative aspect-video w-full bg-black/30">
-        {src ? (
-          <img
-            src={convertFileSrc(src)}
-            alt={shot.name}
-            className="h-full w-full object-cover"
-            loading="lazy"
-            draggable={false}
-          />
-        ) : (
-          <div className="grid h-full w-full place-items-center text-muted">
-            <Video size={26} />
-          </div>
-        )}
-        {video && (
-          <>
-            <div className="pointer-events-none absolute inset-0 grid place-items-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-              <span className="grid h-11 w-11 place-items-center rounded-full bg-black/65 text-white shadow-card ring-1 ring-white/20 transition-transform duration-200 group-hover:scale-105">
-                <Play size={18} fill="currentColor" className="ml-0.5" />
-              </span>
-            </div>
-            <span className="pointer-events-none absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[10px] uppercase text-white">
-              <Play size={8} fill="currentColor" />
-              {shot.format}
-            </span>
-          </>
-        )}
-      </div>
-      <div className="pointer-events-none relative px-3 py-2">
-        <div className="truncate text-[13px] font-medium">{shot.name}</div>
-        <div className="font-mono text-[11px] text-muted">
-          {shot.width}×{shot.height} · {fmtBytes(shot.sizeBytes)}
-        </div>
-      </div>
-      <div
-        className="absolute right-2 top-2 z-10 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onReveal();
-          }}
-          title="Show in folder"
-          aria-label={`Show ${shot.name} in folder`}
-          className="grid h-8 w-8 place-items-center rounded-full bg-black/55 text-white transition hover:bg-black/75"
-        >
-          <FolderOpen size={15} />
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          title="Delete"
-          aria-label={`Delete ${shot.name}`}
-          className="grid h-8 w-8 place-items-center rounded-full bg-black/55 text-white transition hover:bg-danger"
-        >
-          <Trash2 size={15} />
-        </button>
-      </div>
-    </article>
-  );
-}
-
-function EmptyState({ onCapture, hasQuery }: { onCapture: () => void; hasQuery: boolean }) {
-  return (
-    <div className="grid h-full place-items-center text-center">
-      <div className="max-w-sm">
-        <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-elevated/60 ring-1 ring-white/10">
-          <ImageOff size={26} className="text-muted" />
-        </div>
-        <h2 className="mb-1 text-lg font-semibold tracking-tight">{hasQuery ? "No results" : "No screenshots yet"}</h2>
-        <p className="mb-5 text-sm text-muted">
-          {hasQuery ? "Try a different term." : "Press the hotkey or button to capture your first screenshot."}
-        </p>
-        {!hasQuery && (
-          <button onClick={onCapture} className="snapvere-btn-primary rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 active:scale-95">
-            Capture region
-          </button>
-        )}
-      </div>
-    </div>
   );
 }

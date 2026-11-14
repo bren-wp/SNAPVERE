@@ -15,6 +15,7 @@ SNAPVERE is a Windows screenshot and recording workspace published by **BRENDIGO
 - Removed `innerHTML` from consent/download flows to reduce web-script injection risk.
 - Added detailed source/permission audit evidence and verified release metadata across Cargo, npm and Tauri.
 - Removed the obsolete native fs/os plugin dependencies and prepared an isolated, manually reviewed dependency lockfile refresh (including React 19 migration checks), with RustSec and npm advisory gates.
+- Split gallery capture cards and empty-state views into independent components and added an AST-based dead-module reachability audit alongside TypeScript noUnusedLocals and Rust Clippy.
 - Migrated the desktop design system to Tailwind CSS 4, with CSS-first tokens, explicit source paths, dark/light theme parity, updated PostCSS plugin and no legacy autoprefixer; full visual regression validation is still required.
 - Addressed RustSec RUSTSEC-2026-0459 / CVE-2026-119375 by upgrading the bundled SQLite abstraction to rusqlite 0.42 and requiring libsqlite3-sys >=0.39 in every locked release, subject to passing Windows DB migration tests.
 - Reduced release supply-chain exposure: prevent Git checkout from persisting write-capable credentials and install npm packages with lifecycle scripts disabled.
