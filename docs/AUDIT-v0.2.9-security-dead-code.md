@@ -71,3 +71,8 @@ The native UI uses TypeScript 7's fast type-checking CLI, but TypeScript 7 remov
 ## Extended modularity and GIF buffer safety
 
 Extracted registered-gallery media path resolution, Tauri asset scope extensions and clipboard image limits from the oversized `commands.rs` into `commands/gallery_helpers.rs`. Public `#[tauri::command]` entrypoints remain in their original module, preserving Tauri macro registration and IPC names. GIF recording now validates input capture dimensions and truncated BGRA buffers *before* pixel access; regression tests cover empty/oversized dimensions and 8K UHD. Native CI must pass before this can be marked production-ready.
+
+## Major-version codec/capture upgrades
+
+- Upgraded the direct xcap screen-capture crate from 0.4 to 0.9.10 and the GIF codec crate from 0.13 to 0.14.2; both preserve the methods used in SNAPVERE's existing monitor/GIF backend public APIs according to current upstream documentation. Their actual transitive dependencies, locked build, Windows MSVC tests, Clippy, RustSec and full NSIS/MSI packaging are required to pass before merge. On Linux/macOS the dependency tree changes separately, but this release targets Windows.
+- Rust for Windows `windows 0.60` direct FFI bindings are not blindly bumped to the future 0.100 series; that family has distinct Rust edition/MSRV and binary API migrations. The Windows-specific DXGI, D3D11, Media Foundation and CoreAudio bindings require a dedicated feature-by-feature migration and hardware QA, not simply a major version pin.
