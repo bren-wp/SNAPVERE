@@ -28,7 +28,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
-      - name: Refresh stable npm packages, safely regenerating the exact lockfile
+      - name: Refresh stable npm and migrate Tailwind 4 packages, safely regenerate the exact lockfile
         working-directory: apps/desktop
         shell: bash
         run: |
@@ -45,15 +45,17 @@ jobs:
           npm install --save-dev --ignore-scripts --no-audit --no-fund \
             @tauri-apps/cli@latest @types/react@latest @types/react-dom@latest \
             @vitejs/plugin-react@latest vite@latest typescript@latest \
-            autoprefixer@latest postcss@latest
-          # Tailwind 3 -> 4 requires a separate CSS/visual migration; retain
-          # latest compatible v3 for this pixel-parity-sensitive release.
+            postcss@latest tailwindcss@latest @tailwindcss/postcss@latest
+          # Tailwind 4 performs its own prefixing, so autoprefixer is dead code.
+          npm uninstall --save-dev --ignore-scripts --no-audit --no-fund autoprefixer
           npm ci --ignore-scripts --no-audit --no-fund
           npm run lint
           npm run test:unit
           npm run build
           npm audit --audit-level=high
           npm outdated || true
+      - name: Verify Tailwind 4 CSS-first production contract
+        run: python tools/check_tailwind4.py
       - name: Commit only tested npm manifest and lockfile
         env:
           GH_TOKEN: ${{ github.token }}
