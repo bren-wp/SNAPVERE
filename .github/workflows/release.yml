@@ -90,6 +90,8 @@ jobs:
       - name: Test Rust core on Windows
         working-directory: apps/desktop/src-tauri
         run: cargo test --locked
+      - name: Verify offline app and block unreviewed backdoor/network/process patterns
+        run: python tools/check_no_backdoor_patterns.py
       - name: Fail on unsafe dynamic HTML/code execution in public JavaScript
         run: python tools/check_frontend_security.py
       - name: Verify installer license and public distribution

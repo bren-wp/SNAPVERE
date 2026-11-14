@@ -40,6 +40,8 @@ jobs:
       - name: Typecheck and build
         working-directory: apps/desktop
         run: npm run build
+      - name: Verify offline app and block unreviewed backdoor/network/process patterns
+        run: python tools/check_no_backdoor_patterns.py
       - name: Fail on unsafe dynamic HTML/code execution in public JavaScript
         run: python tools/check_frontend_security.py
       - name: Verify first-party downloads, HTML links and checksums
