@@ -93,9 +93,9 @@ The screenshots below come from **actual rendered React application screens in t
 
 </details>
 
-## Upcoming v0.2.9 improvements
+## What's improved in v0.2.9
 
-The next SNAPVERE Windows edition brings precision keyboard capture controls, smoother video playback, resilient settings, stronger recorder startup and memory safety, and more maintainable native modules. Its PR build is undergoing verification and is not yet a published production update.
+The [v0.2.9 GitHub release](https://github.com/bren-wp/Snapvere/releases/tag/v0.2.9) includes precision keyboard capture controls, smoother video playback, more resilient settings, recorder startup and buffer safeguards, and more maintainable native modules. Hardware-specific capture and recording scenarios still need verification on real Windows 10/11 systems.
 
 ## What's improved in v0.2.7
 
@@ -122,19 +122,19 @@ The source and interface images are built directly from the SNAPVERE project. Pr
 
 ## Get SNAPVERE for Windows
 
-**Windows v0.2.8 release candidate — under review in PR #18.** SNAPVERE builds three Windows package formats with SHA-256 integrity data. The latest published GitHub release remains v0.2.7 until the candidate passes its release workflow. Use the verified [GitHub Releases](https://github.com/bren-wp/Snapvere/releases) page until the public website is confirmed to mirror the new binaries. These packages remain unsigned preview builds.
+**Latest published repository release: v0.2.9 (14 November 2026).** SNAPVERE provides three Windows package formats with a SHA-256 manifest. Obtain the Tauri/Rust edition from [GitHub Releases](https://github.com/bren-wp/Snapvere/releases/tag/v0.2.9). The downloads on snapvere.com are maintained separately for the .NET/WinUI edition and are **not** interchangeable. The repository packages remain unsigned preview builds.
 
 | Package | Ideal for | Official download |
 |---|---|---|
-| 💻 **Portable EXE** | Run without installing SNAPVERE | [Snapvere-Portable.exe](https://github.com/bren-wp/Snapvere/releases/download/v0.2.7/Snapvere-Portable.exe) |
-| 📦 **EXE Setup** | Guided installation | [Snapvere-Setup.exe](https://github.com/bren-wp/Snapvere/releases/download/v0.2.7/Snapvere-Setup.exe) |
-| 🏢 **MSI Setup** | Windows managed installation | [Snapvere-Setup.msi](https://github.com/bren-wp/Snapvere/releases/download/v0.2.7/Snapvere-Setup.msi) |
+| 💻 **Portable EXE** | Run without installing SNAPVERE | [Snapvere-Portable.exe](https://github.com/bren-wp/Snapvere/releases/download/v0.2.9/Snapvere-Portable.exe) |
+| 📦 **EXE Setup** | Guided installation | [Snapvere-Setup.exe](https://github.com/bren-wp/Snapvere/releases/download/v0.2.9/Snapvere-Setup.exe) |
+| 🏢 **MSI Setup** | Windows managed installation | [Snapvere-Setup.msi](https://github.com/bren-wp/Snapvere/releases/download/v0.2.9/Snapvere-Setup.msi) |
 
 **Requires:** 64-bit Windows 10/11 and Microsoft WebView2 Runtime. Portable means the SNAPVERE installer is not needed; some systems may still need WebView2 installed. These are **unsigned preview builds** and Windows SmartScreen may display a warning.
 
 ### Verify what you install
 
-Download [SHA256SUMS.txt](https://github.com/bren-wp/Snapvere/releases/download/v0.2.7/SHA256SUMS.txt) **from the same package version**, then run:
+Download [SHA256SUMS.txt](https://github.com/bren-wp/Snapvere/releases/download/v0.2.9/SHA256SUMS.txt) **from the same package version**, then run:
 
 ```powershell
 Get-FileHash .\Snapvere-Portable.exe -Algorithm SHA256
@@ -144,7 +144,7 @@ Compare the digest against the manifest. **Do not install files with mismatched 
 
 ## Capture confidence — and current engineering work
 
-An application should not show a black selection screen when a captured website is expected. The open development branch replaces temporary file-based image loading with memory-based RGBA transfer, a PNG fallback and clear error handling. The native packet format and visible frontend rendering have automated tests. Physical Windows verification remains required for protected content, mixed-DPI multi-monitor desktops, WebView2 variants and real recording workflows.
+An application should not show a black selection screen when a captured website is expected. The current code uses memory-based RGBA transfer, a PNG fallback and explicit error handling. The native packet format and visible frontend rendering have automated tests. Physical Windows verification remains required for protected content, mixed-DPI multi-monitor desktops, WebView2 variants and real recording workflows.
 
 **Supported in this implementation:** Region screenshot capture, full-display capture, annotation tools, local gallery and screen recording.
 
