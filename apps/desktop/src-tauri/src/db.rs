@@ -364,7 +364,11 @@ mod gallery_tests {
                 original.add_tag("saved-before-upgrade", "keep-me")?;
                 original.conn.execute(
                     "UPDATE screenshots SET remote_id = ?1, remote_url = ?2 WHERE id = ?3",
-                    params!["legacy-upload", "https://snapvere.com/example", "saved-before-upgrade"],
+                    params![
+                        "legacy-upload",
+                        "legacy-remote-link",
+                        "saved-before-upgrade"
+                    ],
                 )?;
             }
             {
@@ -380,7 +384,7 @@ mod gallery_tests {
                     |row| Ok((row.get(0)?, row.get(1)?)),
                 )?;
                 assert_eq!(id, "legacy-upload");
-                assert_eq!(url, "https://snapvere.com/example");
+                assert_eq!(url, "legacy-remote-link");
             }
             Ok(())
         })();
