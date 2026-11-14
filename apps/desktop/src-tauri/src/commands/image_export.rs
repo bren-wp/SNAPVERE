@@ -1,6 +1,15 @@
 //! Native validation for editor images and Save As destinations.
 use super::*;
 
+/// Custom IPC commands are available to multiple Tauri windows by default.
+/// Exports are only valid from the dedicated editor webview.
+pub(super) fn validate_export_origin(label: &str) -> Result<(), String> {
+    if label != "editor" {
+        return Err("Save As is only available from the image editor".into());
+    }
+    Ok(())
+}
+
 // Validate PNG canvas exports before allocating a full-size RGBA frame.
 // Legitimate 8K desktop captures still fit; forged dimensions and overly large
 // IPC messages cannot force unbounded decompression.
@@ -52,4 +61,31 @@ pub(super) fn validate_export_path(path: &str, format: ImageFormat) -> Result<Pa
         return Err("Image format must match the Save As file extension".into());
     }
     Ok(target)
+}
+
+#[cfg(test)]
+mod export_security_tests {
+    use super::*;
+
+    #[test]
+    fn save_as_is_restricted_to_the_editor_window() {
+        assert!(validate_export_origin("editor").is_ok());
+        for label in ["home", "settings", "overlay", "recdraw", "recbar", "editor-evil", ""] {
+            assert!(validate_export_origin(label).is_err(), "{label}");
+        }
+    }
+
+    #[test]
+    fn export_destination_requires_an_absolute_matching_image_extension() {
+        let png = std::env::temp_dir().join("snapvere-export.png");
+        let jpeg = std::env::temp_dir().join("snapvere-export.jpeg");
+        let png_path = png.to_string_lossy();
+        let jpeg_path = jpeg.to_string_lossy();
+
+        assert!(validate_export_path(&png_path, ImageFormat::Png).is_ok());
+        assert!(validate_export_path(&jpeg_path, ImageFormat::Jpg).is_ok());
+        assert!(validate_export_path(&png_path, ImageFormat::Webp).is_err());
+        assert!(validate_export_path("relative-image.png", ImageFormat::Png).is_err());
+        assert!(validate_export_path("relative-image.exe", ImageFormat::Png).is_err());
+    }
 }
