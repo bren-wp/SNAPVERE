@@ -51,7 +51,7 @@ export default function Viewer({ items, id, onNavigate, onClose, onDelete, onToa
   const [fullscreen, setFullscreen] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [idle, setIdle] = useState(false);
-  const idleTimer = useRef<number>();
+  const idleTimer = useRef<number | undefined>(undefined);
 
   // Zapis je nestao (obrisan izvana, novi filter) → nema se što pokazati.
   useEffect(() => {

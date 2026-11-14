@@ -87,6 +87,20 @@ jobs:
         working-directory: apps/desktop
         run: npm audit --audit-level=high
 
+  rustsec:
+    name: RustSec advisory audit of locked Rust dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install pinned RustSec cargo-audit scanner
+        run: cargo install cargo-audit --version 0.23.0 --locked
+      - name: Fail on RustSec dependency security advisories
+        run: cargo audit --file apps/desktop/src-tauri/Cargo.lock
+
   native:
     name: Rust tests and all Windows packages
     runs-on: windows-latest

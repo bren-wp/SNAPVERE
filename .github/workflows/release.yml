@@ -77,6 +77,10 @@ jobs:
       - name: Audit locked JavaScript dependencies
         working-directory: apps/desktop
         run: npm audit --audit-level=high
+      - name: Install pinned RustSec advisory scanner
+        run: cargo install cargo-audit --version 0.23.0 --locked
+      - name: Check Rust dependency advisories before publishing
+        run: cargo audit --file apps/desktop/src-tauri/Cargo.lock
       - name: Verify Rust formatting
         working-directory: apps/desktop/src-tauri
         run: cargo fmt --all -- --check
