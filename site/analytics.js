@@ -93,15 +93,34 @@
       banner.className = "consent";
       banner.setAttribute("role", "dialog");
       banner.setAttribute("aria-label", "Cookie consent");
-      banner.innerHTML =
-        '<p class="consent__text"><strong>Mind if we count?</strong> ' +
-        "We&rsquo;d like to use Google Analytics cookies to see how many people " +
-        "visit and download Snapvere. No ads, no selling data, and the app " +
-        'itself never phones home. <a href="/privacy/">Privacy policy</a></p>' +
-        '<div class="consent__actions">' +
-        '<button type="button" class="btn btn--ghost btn--sm" data-choice="denied">Decline</button>' +
-        '<button type="button" class="btn btn--primary btn--sm" data-choice="granted">Accept</button>' +
-        "</div>";
+      // Build the consent dialog with explicit DOM nodes. Avoid innerHTML so
+      // future dynamic strings cannot accidentally introduce script injection.
+      const message = document.createElement("p");
+      message.className = "consent__text";
+      const heading = document.createElement("strong");
+      heading.textContent = "Mind if we count?";
+      const privacy = document.createElement("a");
+      privacy.href = "/privacy/";
+      privacy.textContent = "Privacy policy";
+      message.append(
+        heading,
+        document.createTextNode(" We’d like to use Google Analytics cookies to see how many people visit and download Snapvere. No ads, no selling data, and the app itself never phones home. "),
+        privacy
+      );
+      const actions = document.createElement("div");
+      actions.className = "consent__actions";
+      for (const [choice, text, variant] of [
+        ["denied", "Decline", "btn--ghost"],
+        ["granted", "Accept", "btn--primary"],
+      ]) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn " + variant + " btn--sm";
+        button.dataset.choice = choice;
+        button.textContent = text;
+        actions.appendChild(button);
+      }
+      banner.append(message, actions);
       banner.addEventListener("click", function (e) {
         var btn = e.target.closest("[data-choice]");
         if (btn) decide(btn.getAttribute("data-choice"));

@@ -28,9 +28,14 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: apps/desktop/package-lock.json
-      - name: Install locked dependencies
+      - name: Install locked dependencies without lifecycle hooks
         working-directory: apps/desktop
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Enforce reachable Rust modules (dead-code graph)
+        run: python tools/check_rust_modules.py
+      - name: Enforce reachable TypeScript modules (dead-code graph)
+        working-directory: apps/desktop
+        run: node ../../tools/check_dead_code.mjs
       - name: Strict TypeScript static analysis
         working-directory: apps/desktop
         run: npm run lint
@@ -40,6 +45,12 @@ jobs:
       - name: Typecheck and build
         working-directory: apps/desktop
         run: npm run build
+      - name: Verify offline app and block unreviewed backdoor/network/process patterns
+        run: python tools/check_no_backdoor_patterns.py
+      - name: Verify Tailwind 4 migration and CSS-first design tokens
+        run: python tools/check_tailwind4.py
+      - name: Fail on unsafe dynamic HTML/code execution in public JavaScript
+        run: python tools/check_frontend_security.py
       - name: Verify first-party downloads, HTML links and checksums
         run: python tools/check_website.py
       - name: Verify installer EULA and block public GitHub links
@@ -85,6 +96,22 @@ jobs:
         working-directory: apps/desktop
         run: npm audit --audit-level=high
 
+  rustsec:
+    name: RustSec advisory audit of locked Rust dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install pinned RustSec cargo-audit scanner
+        run: cargo install cargo-audit --version 0.23.0 --locked
+      - name: Assert SQLite bundled crate contains known CVE-2026-119375 fix
+        run: python tools/check_sqlite_security.py
+      - name: Fail on RustSec dependency security advisories
+        run: cargo audit --file apps/desktop/src-tauri/Cargo.lock
+
   native:
     name: Rust tests and all Windows packages
     runs-on: windows-latest
@@ -104,9 +131,9 @@ jobs:
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: apps/desktop/src-tauri -> target
-      - name: Install locked dependencies
+      - name: Install locked dependencies without lifecycle hooks
         working-directory: apps/desktop
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Build frontend for Tauri
         working-directory: apps/desktop
         run: npm run build

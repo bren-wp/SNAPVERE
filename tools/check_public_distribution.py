@@ -47,4 +47,31 @@ for unused, capability in (("tauri_plugin_fs::init()", "fs:default"),
     assert unused not in runtime, f"Unused runtime plugin enabled: {unused}"
     assert capability not in caps["permissions"], f"Excess webview permission: {capability}"
 
+# UI shortcut and image clipboard APIs are handled in native Rust commands,
+# not directly by arbitrary WebViews. Only Settings needs autostart or opener.
+for unexpected in (
+    "global-shortcut:default", "autostart:default", "opener:default",
+    "clipboard-manager:allow-write-text", "clipboard-manager:allow-write-image",
+    "clipboard-manager:allow-read-image",
+):
+    assert unexpected not in caps["permissions"], f"Overprivileged shared capability: {unexpected}"
+privileged = json.loads(
+    (TAURI / "capabilities/settings-privileged.json").read_text(encoding="utf-8")
+)
+assert privileged["windows"] == ["settings"]
+assert set(privileged["permissions"]) == {"autostart:default", "opener:default"}
+app_src = (APP / "src")
+for source in app_src.rglob("*.tsx"):
+    if source.name == "Settings.tsx":
+        continue
+    value = source.read_text(encoding="utf-8")
+    assert '@tauri-apps/plugin-autostart' not in value, source
+    assert '@tauri-apps/plugin-opener' not in value, source
+for source in app_src.rglob("*"):
+    if source.suffix not in {".ts", ".tsx"}:
+        continue
+    value = source.read_text(encoding="utf-8")
+    assert '@tauri-apps/plugin-clipboard-manager' not in value, source
+    assert '@tauri-apps/plugin-global-shortcut' not in value, source
+
 print("Public Snapvere: license, installer EULA, least privilege and links OK")

@@ -9,6 +9,7 @@ import Settings from "./windows/Settings";
 import RecBar from "./windows/RecBar";
 import RecDraw from "./windows/RecDraw";
 import RecFrame from "./windows/RecFrame";
+import AppErrorBoundary from "./components/AppErrorBoundary";
 
 /**
  * Window router.
@@ -28,7 +29,13 @@ function resolveWindow() {
 }
 
 // Primijeni spremljenu temu što ranije (izbjegne bljesak).
-const theme = localStorage.getItem("snapvere-theme") ?? "dark";
+let theme: "dark" | "light" = "dark";
+try {
+  // Storage can throw when WebView2 denies local access; never crash startup.
+  if (localStorage.getItem("snapvere-theme") === "light") theme = "light";
+} catch {
+  // Use the secure default; Settings can still recover later.
+}
 document.documentElement.setAttribute("data-theme", theme);
 
 const { kind, params } = resolveWindow();
@@ -61,4 +68,6 @@ switch (kind) {
     node = <Home />;
 }
 
-ReactDOM.createRoot(document.getElementById("root")!).render(node);
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <AppErrorBoundary>{node}</AppErrorBoundary>,
+);

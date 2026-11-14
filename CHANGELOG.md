@@ -2,6 +2,28 @@
 
 SNAPVERE is a Windows screenshot and recording workspace published by **BRENDIGO**.
 
+## v0.2.9 — premium stability candidate (unreleased)
+
+- Split the gallery viewer into image/video/error modules; extracted Settings controls and validated preference model.
+- Expanded video speeds (including 0.75× and 1.25×), added keyboard-seek accessibility, repaired corrupted volume preferences and reduced playback CPU updates to 10 Hz.
+- Added keyboard precision selection: arrows move by 1 px, Shift+arrow by 10 px, Alt+arrow resizes, with tested viewport clamping.
+- Split native PNG editor validation and recording pixel-processing into isolated Rust modules; improved negative-coordinate capture and truncated-driver-frame guards.
+- Serialized recording startup, guarded session cleanup against stale workers and gave recordings distinct filenames.
+- Recovered from blocked WebView storage and corrupt settings, rolled back failed autostart changes and handled failed save-folder dialogs.
+- Added a React error boundary with a recovery screen so a component render failure does not silently blank the WebView.
+- Fixed a focus/keyboard collision between the video seek slider and gallery navigation; recovered from WebView localStorage getter failures before the player mounts.
+- Removed `innerHTML` from consent/download flows to reduce web-script injection risk.
+- Added detailed source/permission audit evidence and verified release metadata across Cargo, npm and Tauri.
+- Removed the obsolete native fs/os plugin dependencies and prepared an isolated, manually reviewed dependency lockfile refresh (including React 19 migration checks), with RustSec and npm advisory gates.
+- Split gallery capture cards and empty-state views into independent components and added an AST-based dead-module reachability audit alongside TypeScript noUnusedLocals and Rust Clippy.
+- Migrated the desktop design system to Tailwind CSS 4, with CSS-first tokens, explicit source paths, dark/light theme parity, updated PostCSS plugin and no legacy autoprefixer; full visual regression validation is still required.
+- Addressed RustSec RUSTSEC-2026-0459 / CVE-2026-119375 by upgrading the bundled SQLite abstraction to rusqlite 0.42 and requiring libsqlite3-sys >=0.39 in every locked release, subject to passing Windows DB migration tests.
+- Reduced release supply-chain exposure: prevent Git checkout from persisting write-capable credentials and install npm packages with lifecycle scripts disabled.
+- Added an explicit offline-app source guard rejecting unreviewed outbound HTTP/process-launch primitives, install-time npm lifecycle scripts and hidden WebView network requests. Reviewed the only public third-party script: consent-gated Google Analytics, not the native app.
+- Retired obsolete branch-specific privileged workflows for earlier 0.2.4–0.2.6 releases. The active dependency refresh remains scoped to this open PR.
+
+**Release gate:** this version remains an unmerged candidate until Windows Rust fmt/test/Clippy, portable+NSIS+MSI, hashes and device-level acceptance are complete. The public website still serves a separate WinUI edition.
+
 ## v0.2.8 — November 13, 2026 (Tauri/Rust preview)
 
 - Added a versioned Brendigo commercial-use installer license with an acceptance page for NSIS/MSI, matching first-party website terms and an in-app About link; previously issued MIT and third-party open-source rights remain intact.

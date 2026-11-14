@@ -1,3 +1,52 @@
+@import "tailwindcss" source(none);
+@source "../index.html";
+@source "./";
+
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+/* Tailwind 4 CSS-first tokens replace unused tailwind.config.ts.
+   Inline variables ensure changing data-theme or a viewer's scoped accent
+   does not freeze the colors to the root element's initial theme. */
+@theme inline {
+  --color-bg: rgb(var(--snapvere-bg));
+  --color-surface: rgb(var(--snapvere-surface));
+  --color-elevated: rgb(var(--snapvere-elevated));
+  --color-border: rgb(var(--snapvere-border));
+  --color-muted: rgb(var(--snapvere-muted));
+  --color-text: rgb(var(--snapvere-text));
+  --color-accent: rgb(var(--snapvere-accent));
+  --color-accent-soft: rgb(var(--snapvere-accent-soft));
+  --color-danger: rgb(var(--snapvere-danger));
+  --color-warn: rgb(var(--snapvere-warn));
+  --font-sans: -apple-system, "SF Pro Display", "SF Pro Text", Inter, system-ui, "Segoe UI", sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --shadow-toolbar: 0 12px 40px rgb(0 0 0 / 0.45);
+  --shadow-card: 0 8px 30px rgb(0 0 0 / 0.25);
+  --shadow-glow: 0 4px 20px rgb(var(--snapvere-accent) / 0.45);
+  --ease-snappy: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-pop: pop 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-rec-pulse: recPulse 1.4s ease-in-out infinite;
+
+  @keyframes pop {
+    from { opacity: 0; transform: scale(0.94) translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes recPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.25; }
+  }
+}
+
+@layer base {
+  /* Match the legacy v3 border preflight; v4 defaults to currentColor. */
+  *, ::before, ::after {
+    border-color: #e5e7eb;
+  }
+}
+
 @font-face {
   font-family: "Inter";
   src: url("/fonts/inter-latin.woff2") format("woff2");
@@ -5,10 +54,6 @@
   font-style: normal;
   font-display: swap;
 }
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /* ─────────────────────────────────────────────────────────────
    Snapvere — Liquid Glass design system
    ───────────────────────────────────────────────────────────── */

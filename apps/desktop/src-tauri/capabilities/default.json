@@ -1,8 +1,17 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Dozvole za sve Snapvere prozore (home, overlay, editor, settings, recbar, recdraw, recframe).",
-  "windows": ["home", "overlay", "editor", "settings", "recbar", "recdraw", "recframe", "overlay-*"],
+  "description": "Shared least-privilege UI capabilities. Settings-only startup and URL opening permissions live in settings-privileged.json. Native Rust clipboard/shortcut services do not expose these commands to arbitrary WebViews.",
+  "windows": [
+    "home",
+    "overlay",
+    "editor",
+    "settings",
+    "recbar",
+    "recdraw",
+    "recframe",
+    "overlay-*"
+  ],
   "permissions": [
     "core:default",
     "core:window:allow-close",
@@ -18,15 +27,8 @@
     "core:window:allow-current-monitor",
     "core:webview:allow-create-webview-window",
     "core:event:default",
-
-    "global-shortcut:default",
-    "autostart:default",
     "store:default",
     "dialog:default",
-    "dialog:allow-ask",
-    "clipboard-manager:allow-write-text",
-    "clipboard-manager:allow-write-image",
-    "clipboard-manager:allow-read-image",
-    "opener:default"
+    "dialog:allow-ask"
   ]
 }

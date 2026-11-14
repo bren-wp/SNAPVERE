@@ -110,8 +110,13 @@ function render() {
     card.dataset.state = "starting";
     title.textContent = "Your download is starting…";
     sub.textContent = `Snapvere ${v}for ${OS_LABEL[target]} — free, no account, no ads.`;
-    note.innerHTML = 'Didn’t start? <a id="dl-retry" href="">Download it directly</a>.';
-    $("dl-retry").href = url;
+    // DOM API only: no HTML string injection in the download flow.
+    const retry = document.createElement("a");
+    retry.id = "dl-retry";
+    retry.textContent = "Download it directly";
+    retry.href = url;
+    note.replaceChildren(document.createTextNode("Didn’t start? "), retry, document.createTextNode("."));
+
     // ponovni klik (link ili veliki gumb) = retry, ne novi download u statistici
     [$("dl-retry"), $("dl-btn")].forEach((el) =>
       el.addEventListener("click", () => track("download_retry", { os: target, placement: from }))
