@@ -47,8 +47,9 @@ for unused, capability in (("tauri_plugin_fs::init()", "fs:default"),
     assert unused not in runtime, f"Unused runtime plugin enabled: {unused}"
     assert capability not in caps["permissions"], f"Excess webview permission: {capability}"
 
-# UI shortcut and image clipboard APIs are handled in native Rust commands,
-# not directly by arbitrary WebViews. Only Settings needs autostart or opener.
+# UI shortcut and image clipboard APIs are handled in native Rust commands.
+# Dialog and WebView creation grants are scoped by check_tauri_capabilities.py;
+# only Settings can open the capture-folder picker, manage autostart or use opener.
 for unexpected in (
     "global-shortcut:default", "autostart:default", "opener:default",
     "clipboard-manager:allow-write-text", "clipboard-manager:allow-write-image",
@@ -59,7 +60,9 @@ privileged = json.loads(
     (TAURI / "capabilities/settings-privileged.json").read_text(encoding="utf-8")
 )
 assert privileged["windows"] == ["settings"]
-assert set(privileged["permissions"]) == {"autostart:default", "opener:default"}
+assert set(privileged["permissions"]) == {
+    "autostart:default", "opener:default", "dialog:allow-open"
+}, "Settings permissions must be restricted to startup, opener and folder picker"
 app_src = (APP / "src")
 for source in app_src.rglob("*.tsx"):
     if source.name == "Settings.tsx":
