@@ -1,6 +1,27 @@
 //! Native validation for editor images and Save As destinations.
 use super::*;
 
+/// Only one native file picker may be open across editor and overlay windows.
+/// The guard is held by the background worker and released even on failure.
+static SAVE_AS_BUSY: AtomicBool = AtomicBool::new(false);
+
+pub(super) struct SaveAsGuard;
+
+impl SaveAsGuard {
+    pub(super) fn acquire() -> Result<Self, String> {
+        SAVE_AS_BUSY
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Relaxed)
+            .map(|_| Self)
+            .map_err(|_| "Another Save As dialog is already open".to_string())
+    }
+}
+
+impl Drop for SaveAsGuard {
+    fn drop(&mut self) {
+        SAVE_AS_BUSY.store(false, Ordering::Release);
+    }
+}
+
 /// Custom IPC commands are available to multiple Tauri windows by default.
 /// Exports are allowed only from the editor and screenshot-selection webviews.
 pub(super) fn validate_export_origin(label: &str) -> Result<(), String> {
@@ -85,6 +106,14 @@ pub(super) fn validate_export_path(path: &str, format: ImageFormat) -> Result<Pa
 #[cfg(test)]
 mod export_security_tests {
     use super::*;
+
+    #[test]
+    fn a_second_save_as_cannot_open_another_native_picker() {
+        let first = SaveAsGuard::acquire().expect("first picker");
+        assert!(SaveAsGuard::acquire().is_err());
+        drop(first);
+        assert!(SaveAsGuard::acquire().is_ok());
+    }
 
     #[test]
     fn save_as_is_restricted_to_the_editor_window() {
