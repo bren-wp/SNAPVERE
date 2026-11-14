@@ -2,10 +2,10 @@
 use super::*;
 
 /// Custom IPC commands are available to multiple Tauri windows by default.
-/// Exports are only valid from the dedicated editor webview.
+/// Exports are allowed only from the editor and screenshot-selection webviews.
 pub(super) fn validate_export_origin(label: &str) -> Result<(), String> {
-    if label != "editor" {
-        return Err("Save As is only available from the image editor".into());
+    if !matches!(label, "editor" | "overlay") {
+        return Err("Save As is only available from the editor or screenshot overlay".into());
     }
     Ok(())
 }
@@ -43,6 +43,25 @@ pub(super) fn decode_editor_png(encoded: &str) -> Result<image::RgbaImage, Strin
     Ok(image.to_rgba8())
 }
 
+/// The OS picker lets the user choose PNG, JPEG or WebP, independently
+/// of the default format in Settings. Infer the actual encoder from the
+/// selected extension, never from an untrusted IPC-supplied path.
+pub(super) fn format_from_export_path(path: &Path) -> Result<ImageFormat, String> {
+    let ext = path
+        .extension()
+        .and_then(|v| v.to_str())
+        .ok_or("Save As requires a supported image extension")?;
+    if ext.eq_ignore_ascii_case("png") {
+        Ok(ImageFormat::Png)
+    } else if ext.eq_ignore_ascii_case("jpg") || ext.eq_ignore_ascii_case("jpeg") {
+        Ok(ImageFormat::Jpg)
+    } else if ext.eq_ignore_ascii_case("webp") {
+        Ok(ImageFormat::Webp)
+    } else {
+        Err("Save As supports PNG, JPEG and WebP only".into())
+    }
+}
+
 pub(super) fn validate_export_path(path: &str, format: ImageFormat) -> Result<PathBuf, String> {
     let target = PathBuf::from(path);
     if !target.is_absolute() {
@@ -70,7 +89,8 @@ mod export_security_tests {
     #[test]
     fn save_as_is_restricted_to_the_editor_window() {
         assert!(validate_export_origin("editor").is_ok());
-        for label in ["home", "settings", "overlay", "recdraw", "recbar", "editor-evil", ""] {
+        assert!(validate_export_origin("overlay").is_ok());
+        for label in ["home", "settings", "overlay-evil", "recdraw", "recbar", "editor-evil", ""] {
             assert!(validate_export_origin(label).is_err(), "{label}");
         }
     }
@@ -84,6 +104,9 @@ mod export_security_tests {
 
         assert!(validate_export_path(&png_path, ImageFormat::Png).is_ok());
         assert!(validate_export_path(&jpeg_path, ImageFormat::Jpg).is_ok());
+        assert_eq!(format_from_export_path(&jpeg).unwrap(), ImageFormat::Jpg);
+        assert_eq!(format_from_export_path(&png).unwrap(), ImageFormat::Png);
+        assert!(format_from_export_path(&std::env::temp_dir().join("unsafe.exe")).is_err());
         assert!(validate_export_path(&png_path, ImageFormat::Webp).is_err());
         assert!(validate_export_path("relative-image.png", ImageFormat::Png).is_err());
         assert!(validate_export_path("relative-image.exe", ImageFormat::Png).is_err());
