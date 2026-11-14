@@ -2,7 +2,7 @@
 use super::*;
 
 /// Izlazni pravokutnik unutar monitora, poravnat na parne dimenzije (zahtjev NV12/H.264).
-pub(super) fn crop_rect(t: &RecordTarget) -> Result<(u32, u32, u32, u32), String> {
+pub fn crop_rect(t: &RecordTarget) -> Result<(u32, u32, u32, u32), String> {
     let (mw, mh) = (t.monitor_w, t.monitor_h);
     if mw < 2 || mh < 2 {
         return Err("monitor prijavljuje nevaljanu veličinu".into());

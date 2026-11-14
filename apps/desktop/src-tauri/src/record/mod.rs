@@ -19,7 +19,8 @@ mod mp4;
 mod gifenc;
 mod pixels;
 
-use pixels::{bgra_to_rgba_image, crop_bgra, crop_rect, pixelate_bgra};
+pub use pixels::crop_rect;
+use pixels::{bgra_to_rgba_image, crop_bgra, pixelate_bgra};
 
 #[cfg(test)]
 mod tests;
