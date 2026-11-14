@@ -116,10 +116,18 @@ mod export_security_tests {
     }
 
     #[test]
-    fn save_as_is_restricted_to_the_editor_window() {
+    fn save_as_is_restricted_to_authorized_windows() {
         assert!(validate_export_origin("editor").is_ok());
         assert!(validate_export_origin("overlay").is_ok());
-        for label in ["home", "settings", "overlay-evil", "recdraw", "recbar", "editor-evil", ""] {
+        for label in [
+            "home",
+            "settings",
+            "overlay-evil",
+            "recdraw",
+            "recbar",
+            "editor-evil",
+            "",
+        ] {
             assert!(validate_export_origin(label).is_err(), "{label}");
         }
     }
