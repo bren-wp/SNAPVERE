@@ -12,7 +12,8 @@ permissions:
 
 concurrency:
   group: snapvere-deps-v029
-  cancel-in-progress: false
+  # Replace obsolete attempts that use an older vulnerable Cargo.toml.
+  cancel-in-progress: true
 
 jobs:
   frontend:

@@ -28,9 +28,9 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: apps/desktop/package-lock.json
-      - name: Install locked dependencies
+      - name: Install locked dependencies without lifecycle hooks
         working-directory: apps/desktop
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Strict TypeScript static analysis
         working-directory: apps/desktop
         run: npm run lint
@@ -124,9 +124,9 @@ jobs:
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: apps/desktop/src-tauri -> target
-      - name: Install locked dependencies
+      - name: Install locked dependencies without lifecycle hooks
         working-directory: apps/desktop
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Build frontend for Tauri
         working-directory: apps/desktop
         run: npm run build
